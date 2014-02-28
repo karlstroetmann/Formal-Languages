@@ -1,0 +1,119 @@
+// CUP specification for a simple expression evaluator (with actions)
+import java_cup.runtime.*;
+import java.util.*;
+
+/* Terminals (tokens returned by the scanner). */
+terminal           COMMA, PLUS, MINUS, TIMES, SLASH, LPAREN, RPAREN, LBRACE, RBRACE;
+terminal           ASSIGN, EQUALS, LT, GT, LE, GE, NEQUALS, AND, OR, NOT;
+terminal           IF, ELSE, WHILE, RETURN, SEMICOLON; 
+terminal           INT;
+terminal String    IDENTIFIER;
+terminal Integer   NUMBER;
+
+/* Non-terminals */
+nonterminal Program           program;
+nonterminal List<Function>    functionList;
+nonterminal Function          function;
+nonterminal List<String>      paramList, neParamList;
+nonterminal Declaration       declaration;
+nonterminal List<Declaration> declarations;
+nonterminal Statement         statement;
+nonterminal List<Statement>   statementList;
+nonterminal Expr              expr;
+nonterminal Expr              simpleExpr;
+nonterminal List<Expr>        exprList, neExprList;
+nonterminal BoolExpr          boolExpr;
+
+precedence left     OR;
+precedence left     AND;
+precedence right    NOT;
+precedence left     PLUS, MINUS;
+precedence left     TIMES, SLASH;
+
+/* The grammar */
+program ::= functionList:l {: RESULT = new Program(l); :} ;
+
+functionList ::= /* epsilon */ {: RESULT = new LinkedList<Function>(); :}
+              |  functionList:l function:f {: l.add(f); RESULT = l;    :}
+              ;
+
+function ::= INT IDENTIFIER:f LPAREN paramList:p RPAREN {: Function.sName = f; :} 
+             LBRACE declarations:d statementList:l RBRACE
+             {: RESULT = new Function(f, p, d, l); :}
+          ;
+
+paramList ::= /* epsilon */ {: RESULT = new LinkedList<String>(); :}
+           |  neParamList:l {: RESULT = l;                        :}
+           ;
+
+neParamList ::= INT IDENTIFIER:v                     
+                {: List<String> l = new LinkedList<String>(); 
+                   l.add(v); 
+                   RESULT = l; 
+                :}
+             |  neParamList:l COMMA INT IDENTIFIER:v {: l.add(v); RESULT = l; :}
+             ;           
+
+declaration ::= INT IDENTIFIER:v SEMICOLON {: RESULT = new Declaration(v); :} ;
+
+declarations ::= /* epsilon */                {: RESULT = new LinkedList<Declaration>(); :}
+              |  declarations:l declaration:d {: l.add(d); RESULT = l;                   :}
+              ;
+
+statement ::= LBRACE statementList:l RBRACE {: RESULT = new Block(l);     :}
+           |  IDENTIFIER:v ASSIGN expr:e    {: RESULT = new Assign(v, e); :}
+           |  IF LPAREN boolExpr:b RPAREN statement:s                 
+              {: RESULT = new IfThen(b, s); :}        
+           |  IF LPAREN boolExpr:b RPAREN statement:t ELSE statement:e
+              {: RESULT = new IfThenElse(b, t, e); :}
+           |  WHILE LPAREN boolExpr:b RPAREN statement:s
+              {: RESULT = new While(b, s); :}
+           |  RETURN simpleExpr:e    {: RESULT = new ReturnStmnt(e, Function.sName); :}
+           ;
+
+statementList ::= /* epsilon */ {: RESULT = new LinkedList<Statement>(); :}
+               |  statement:s SEMICOLON statementList:l 
+                  {: List<Statement> r = new LinkedList<Statement>();
+                     r.add(s); 
+                     r.addAll(l);
+                     RESULT = r; 
+                  :}
+               ;
+
+expr ::= simpleExpr:e {: RESULT = e; :}
+      |  IDENTIFIER:n LPAREN exprList:l RPAREN 
+         {: RESULT = new FunctionCall(n, l); :}
+    ;
+      
+simpleExpr 
+     ::= simpleExpr:l PLUS  simpleExpr:r     {: RESULT = new Sum(       l, r); :}
+      |  simpleExpr:l MINUS simpleExpr:r     {: RESULT = new Difference(l, r); :}
+      |  simpleExpr:l TIMES simpleExpr:r     {: RESULT = new Product(   l, r); :}
+      |  simpleExpr:l SLASH simpleExpr:r     {: RESULT = new Quotient(  l, r); :}
+      |  LPAREN simpleExpr:e RPAREN          {: RESULT = e;                    :}
+      |  NUMBER:n                            {: RESULT = new MyNumber(n);      :}
+      |  IDENTIFIER:v                        {: RESULT = new Variable(v);      :}
+      ;
+
+exprList ::= /* epsilon */ {: RESULT = new LinkedList<Expr>(); :}
+          |  neExprList:l  {: RESULT = l;                      :}
+          ;
+
+neExprList ::= simpleExpr:e 
+               {: List<Expr> l = new LinkedList<Expr>();
+                  l.add(e);
+                  RESULT = l;
+               :}                  
+            |  neExprList:l COMMA simpleExpr:e {: l.add(e); RESULT = l; :}
+            ;
+
+boolExpr ::= simpleExpr:l EQUALS  simpleExpr:r {: RESULT = new Equation(      l, r); :}
+          |  simpleExpr:l NEQUALS simpleExpr:r {: RESULT = new Inequation(    l, r); :}
+          |  simpleExpr:l LE      simpleExpr:r {: RESULT = new LessOrEqual(   l, r); :}
+          |  simpleExpr:l GE      simpleExpr:r {: RESULT = new GreaterOrEqual(l, r); :}
+          |  simpleExpr:l LT      simpleExpr:r {: RESULT = new LessThan(      l, r); :}
+          |  simpleExpr:l GT      simpleExpr:r {: RESULT = new GreaterThan(   l, r); :}
+          |  NOT boolExpr:e                    {: RESULT = new Negation(      e   ); :}
+          |  boolExpr:l AND boolExpr:r         {: RESULT = new Conjunction(   l, r); :}
+          |  boolExpr:l OR  boolExpr:r         {: RESULT = new Disjunction(   l, r); :}
+          ;

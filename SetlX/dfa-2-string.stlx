@@ -1,0 +1,63 @@
+// convert a DFA into a string
+dfa2string := procedure(dfa) {
+    [states, sigma, deltaNew, q0, final] := dfa;
+    result := "";
+    n := 0;
+    statesToNames := {};
+    for (q in states) {
+        statesToNames += { [q, "S" + n] };
+        n += 1;
+    }
+    result += "states: { S0, ..., S$n-1$ }\n\n";   
+    result += "start state: $statesToNames[q0]$\n\n";
+    result += "state encoding:\n";
+    for (q in states) {
+        result += "$statesToNames[q]$ = $q$\n";
+    }
+    result += "\ntransitions:\n";
+    for (q in states, c in sigma) {
+        if (deltaNew(q, c) != om) {
+            result += "delta($statesToNames[q]$, $c$) = $statesToNames[deltaNew(q, c)]$\n";
+        }
+    }
+    result += "\nset of accepting states: {";
+    result += join({ statesToNames[q] : q in final }, ", ");
+    result += "}\n";
+    return result;
+};
+
+// converts a dfa into dot-format
+dfa2dot := procedure(dfa, file) {
+    [states, sigma, deltaNew, q0, final] := dfa;
+    result := "";
+    n := 0;              // used to assign names to states
+    statesToNames := {}; // assigns a name to every state
+    for (q in states) {
+        statesToNames += { [q, "q" + n] };
+        n += 1;
+    }
+    startName := statesToNames[q0];
+    result += "digraph G {\n";
+    result += "    rankdir = LR;\n";
+    result += "    size = \"5,7\";\n";
+    result += "    1 -> $startName$;\n";
+    result += "    1 [label=\"\",width=0.00001,height=0.00001];\n";
+    for (q in states) {
+        result += "    " + statesToNames[q];
+        if (q in final) {
+            result += " [peripheries=2]";
+        }
+        result += ";\n";
+    }
+    for (q in states, c in sigma) {
+        p := deltaNew(q, c);
+        if (p != om) {
+            result += "    $statesToNames[q]$ -> $statesToNames[p]$ ";
+            result += "[label = \"$c$\"];\n";
+        }
+    }
+    result += "}\n";
+    writeFile("$file$.dot", [ result ]);
+    run("dot -Tps $file$.dot -o $file$.eps");
+    run("open $file$.eps");
+};  

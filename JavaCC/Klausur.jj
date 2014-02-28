@@ -1,0 +1,50 @@
+PARSER_BEGIN(Klausur)
+
+public class Klausur {
+    static String  sName      = null;
+    static Integer sSumPoints = 0;
+    static Integer sMaxPoints = 0;
+    
+    public static void main(String args[]) throws ParseException {
+		SimpleCharStream    stream  = new SimpleCharStream(System.in);
+		KlausurTokenManager manager = new KlausurTokenManager(stream);
+		Token t;
+        sMaxPoints = new Integer(args[0]);
+		do {
+			t = manager.getNextToken();
+		} while (t.kind != 0); // end of file gives t.kind = 0 
+    }
+    static Double note() {
+        return 7.0 - 6.0 * sSumPoints / sMaxPoints;
+    }
+}
+
+PARSER_END(Klausur)
+
+TOKEN: {
+    <KOPF:    (<LETTER>)+ ":" (~["\n"])* "\n">
+  | <NAME:    (<LETTER>)+ " " (<LETTER>)+>  
+              {
+                  Klausur.sName      = image.toString(); 
+                  Klausur.sSumPoints = 0;
+                  System.out.print(Klausur.sName);
+              }
+  | <COLON:   ":" ([ " ", "\t" ])+>         
+              { 
+                  System.out.print(image); 
+              }
+  | <ZAHL:    "0" | ["1"-"9"] (["0"-"9"])*> 
+              { 
+                  Klausur.sSumPoints += new Integer(image.toString()); 
+              }
+  | <HYPHEN:  "-">
+  | <EOL:     ([" ", "\t"])* "\n">          
+              { 
+                  if (Klausur.sName != null) {
+                      System.out.printf(" %3.1f\n", Klausur.note()); 
+                  }
+              }
+  | <WHITE:   [" ", "\t"]>
+  | <#LETTER: ["a"-"z", "A"-"Z", "ö", "ä", "ü", "Ö", "Ä", "Ü", "ß"]>
+}
+

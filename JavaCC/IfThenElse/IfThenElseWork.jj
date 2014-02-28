@@ -1,0 +1,26 @@
+PARSER_BEGIN(IfThenElseWorkParser)
+
+public class IfThenElseWorkParser {
+	public static void main(String[] args) throws ParseException {
+		IfThenElseWorkParser parser = new IfThenElseWorkParser(System.in);
+		parser.statement();
+	}
+}
+
+PARSER_END(IfThenElseWorkParser)
+
+// statement : assignment
+//           | "if" "(" boolExpr ")" statement
+//           | "if" "(" boolExpr ")" statement "else" statement
+//           | while "(" boolExpr ")" statement
+//           ;
+void statement() : {} {
+	  assignment()
+		  | "if" "(" boolExpr() ")" statement() [ LOOKAHEAD(1) "else" statement() ]
+    | "while" "(" boolExpr() ")" statement()
+}
+
+void assignment() : {} { "assign" }
+void boolExpr()   : {} { "bool"   }
+
+SKIP : { " " | "\t" | "\n" | "\r" }

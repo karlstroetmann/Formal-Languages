@@ -1,0 +1,204 @@
+\documentclass{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{german}
+\usepackage{a4wide}
+\usepackage{epsfig}
+\usepackage{fleqn}
+
+\pagestyle{plain}
+
+\newcounter{aufgabe}
+
+\renewcommand{\labelenumi}{(\alph{enumi})}
+
+\newcommand{\exercise}{\vspace*{0.1cm}
+
+\stepcounter{aufgabe}
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Aufgabe \arabic{aufgabe}}: }
+
+\newcommand{\solution}{
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Lösung}: }
+\newcommand{\quoted}[1]{\;\mbox{``\texttt{#1}''}\;}
+
+
+\begin{document}
+
+
+\noindent
+{\large  Aufgaben zur Klausurvorbereitung für die Vorlesung ``{\sl Compilerbau}''}
+\vspace{0.5cm}
+
+\noindent
+\textbf{Hinweis}: Bei der Klausur müssen alle Aufgabenbläter mit abgegeben werden, sonst
+ist die Klausur ungültig!
+\vspace{0.5cm}
+
+
+\exercise
+Die Grammatik $G = \langle \{ S \}, \{ \mathtt{+}, \mathtt{-}, \mathtt{a} \}, R, S \rangle$
+habe  die folgenden Regeln:
+\[ S \rightarrow S\, S\, \mathtt{+} \mid S\, S\, \mathtt{-} \mid \mathtt{a}. \]
+\begin{enumerate}
+\item Berechnen Sie die Mengen $\textsl{First}(S)$ und $\textsl{Follow}(S)$.
+\item Berechnen Sie die Menge der SLR-Zustände für diese Grammatik.
+\item Berechnen Sie die Funktionen $\textsl{action}()$ und $\textsl{goto}()$ für diese Grammatik.
+\item Berechnen Sie die Menge der LR-Zustände für diese Grammatik.
+\end{enumerate}
+
+\exercise
+Die Grammatik $G = \langle \{ A, B \}, \{ \quoted{u}, \quoted{x}, \quoted{y}, \quoted{z} \}, R, A \rangle$
+habe  die folgenden Regeln:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{lcl}
+  A & \rightarrow & B \quoted{x} \\
+    & \mid        & \quoted{y} B \quoted{z} \\
+    & \mid        & \quoted{u} \quoted{z} \\
+    & \mid        & \quoted{y} \quoted{u} \quoted{x} \\[0.1cm]
+  B & \rightarrow &\quoted{u} 
+ \end{array}
+$
+\\[0.2cm]
+Bearbeiten Sie die folgenden Teilaufgaben:
+\begin{enumerate}
+\item Überprüfen Sie, ob die  diese Grammatik eine LL(1)-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\item Überprüfen Sie, ob die  diese Grammatik eine LL($*$)-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\item Überprüfen Sie, ob die  diese Grammatik eine SLR-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\end{enumerate}
+
+
+\exercise
+Wir definieren \emph{geschachtelte Listen} rekursiv als solche Listen, 
+deren Elemente natürliche Zahlen oder geschachtelte Listen sind.  Die Elemente in
+geschachtelten Listen sollen durch Kommata getrennt werden und die Listen selber sollen
+durch die eckigen Klammern ``\texttt{[}'' und ``\texttt{]}'' begrenzt sein.
+Beispiele für geschachtelte Listen sind also:
+\begin{enumerate}
+\item \texttt{[ 1, [ 1, [], [ 2, 3]], 7]}
+\item \texttt{[ [], [ [], [], [ 4], 5], []]}
+\end{enumerate}
+Lösen Sie die folgenden Teilaufgaben:
+\begin{enumerate}
+\item Geben Sie eine Grammatik für geschachtelte Listen an.
+\item Geben Sie die EP-Spezifikation von Klassen an, mit deren Hilfe sich
+      geschachtelte Listen repräsentieren lassen.
+\item Geben Sie einen \textsl{JavaCup}-Parser an, der eine geschachtelte Liste einliest
+      und einen abstrakten Syntax-Baum der Liste berechnet.
+
+      \textbf{Hinweis:} In der Klausur können Sie später davon ausgehen, dass ein geeigneter
+      \textsl{JFlex}-Scanner bereits gegeben ist, aber bei dieser Aufgabe sollen Sie den
+      Scanner ebenfalls erstellen, damit Sie Ihre Lösung auch testen können.
+\end{enumerate}
+
+
+\exercise
+Der Typ $\texttt{list}(T)$ sei wie folgt definiert:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{type list(X) := nil + cons(X, list(X));}
+\\[0.2cm]
+Die Funktion \texttt{addLast} habe die folgende Signatur:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{signature addLast: list(T) * T -> list(T);}
+\\[0.2cm]
+und die Variablen \texttt{x} und \texttt{z} haben den Typ \texttt{int}.
+\begin{enumerate}
+\item Berechnen Sie 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{typeEqs}\bigl(\texttt{addLast(cons(x, nil), z): list(int)}\bigr)$.
+\item Lösen Sie die in Teil (a) berechneten Typ-Gleichungen.
+\end{enumerate}
+
+\exercise
+Nehmen Sie an, dass die im Skript eingeführte Sprache \textsl{Integer}-\texttt{C} um eine 
+\texttt{do-while}-Schleife erweitert werden soll, deren Syntax durch die folgende Grammatik-Regel gegeben ist:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{statement} \rightarrow \quoted{do} \textsl{statement} \quoted{while}
+ \quoted{(} \textsl{boolExpr} \quoted{)}$.
+\\[0.2cm]
+Die Semantik dieses Konstruktes soll mit der Semantik des entsprechenden Konstruktes in
+der Sprache \texttt{C} übereinstimmen.
+\begin{enumerate}
+\item Geben Sie eine Gleichung an, die beschreibt, wie eine \texttt{do-while}-Schleife in
+      \textsl{Java-Byte-Code} übersetzt werden kann.
+\item Geben Sie die Methode $\textsl{compile}()$ an, die das entsprechende
+      Konstrukt übersetzt.  Gehen Sie dabei davon aus, dass Sie diese Methode innerhalb
+      einer Klasse \texttt{DoWhile} implementieren, wobei diese Klasse für \textsc{Ep}
+      wie folgt spezifiziert ist:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{Statement} \;=\; \cdots \;+\; \texttt{DoWhile}(\texttt{Statement}\; stmnt,\;
+      \mathtt{BoolExpr}\; cond)\; +\; \cdots; $      
+\end{enumerate}
+
+\noindent
+\framebox{\epsfig{file=danger.eps,scale=0.05}}
+\exercise
+Zeigen Sie, dass die wie folgt definierte Menge $M$ 
+\\[0.2cm]
+\hspace*{1.3cm}
+$M := \{ x \in \mathbb{R} \mid 0 \leq x \leq 1 \}$
+\\[0.2cm] 
+nicht abzählbar ist.
+
+\noindent
+\textbf{Hinweis}: Nehmen Sie an, dass Sie eine Funktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$f: \mathbb{N} \rightarrow M$
+\\[0.2cm]
+gibt, so dass es für jedes $x \in M$ eine Zahl $n \in \mathbb{N}$ gibt, für die
+$x = f(n)$ ist.  Führen Sie diese Annahme zum Widerspruch, indem Sie eine Zahl 
+$\gamma \in M$ konstruieren, für die 
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(n) \not= \gamma$ \quad für alle $n \in \mathbb{N}$
+\\[0.2cm]
+gilt.  Zur Konstruktion von $\gamma$ ist es sinnvoll die Hilfsfunktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}: M \times \mathbb{N} \rightarrow \{ 0, 1, 2, 3, 4, 5, 6,7, 8, 9\}$
+\\[0.2cm]
+zu benutzen, die so definiert ist, dass
+$\textsl{digit}(x,k)$
+die $k$-te Ziffer der Zahl $x$ ist.  Beispielsweise gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}(0.125, 1) = 1$, \quad
+$\textsl{digit}(0.125, 2) = 2$, \quad
+$\textsl{digit}(0.125, 3) = 5$, \quad und 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}(0.125, k) = 0$, \quad für alle $k > 3$.
+\pagebreak
+
+\noindent
+\framebox{\epsfig{file=danger.eps,scale=0.05}}
+\exercise
+Aus wieviel Zeichen muss der kleinste Ausdruck $e$ mindestens bestehen, für den
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{ershov}(e) = 30$
+\\[0.2cm]
+gilt?
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

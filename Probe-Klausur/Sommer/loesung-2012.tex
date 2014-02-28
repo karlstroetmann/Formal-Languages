@@ -1,0 +1,515 @@
+\documentclass{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{german}
+\usepackage{a4wide}
+\usepackage{epsfig}
+\usepackage{fleqn}
+
+\pagestyle{plain}
+
+\def\pair(#1,#2){\langle #1, #2 \rangle}
+
+\newcounter{aufgabe}
+
+\renewcommand{\labelenumi}{(\alph{enumi})}
+\renewcommand{\labelenumii}{\arabic{enumii}.}
+
+\newcommand{\exercise}{\vspace*{0.1cm}
+
+\stepcounter{aufgabe}
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Aufgabe \arabic{aufgabe}}: }
+
+\newcommand{\solution}{
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Lösung}: }
+\newcommand{\quoted}[1]{\mbox{``\texttt{#1}''}}
+\def\pair(#1,#2){\langle #1, #2 \rangle}
+
+
+\begin{document}
+
+
+\noindent
+{\large  Lösungen zu den Aufgaben zur Klausurvorbereitung}
+\vspace{0.5cm}
+
+\exercise
+Die Grammatik $G = \langle \{ E \}, \{ \quoted{+}, \quoted{*}, \quoted{x} \}, R, E \rangle$
+habe  die folgenden Regeln:
+\[ E \rightarrow E\, E\, \quoted{+}\, \mid E\, E\, \quoted{*}\, \mid \quoted{x}. \]
+Wenden Sie den Algorithmus von Earley auf den String ``\texttt{xx+x*}'' an.
+
+\solution
+Wir definieren  $s := \mbox{``\texttt{xx+x*}''}$.
+Der Earley-Algorithmus berechnet die folgenden Mengen:
+\begin{enumerate}
+\item $Q_0 = \{
+       \begin{array}[t]{l}
+         \pair(\widehat{S} \rightarrow \bullet\; E, 0), \\
+         \pair(E \rightarrow \bullet \;E\; E\; \quoted{+}, 0), \\
+         \pair(E \rightarrow \bullet \;E\; E\; \quoted{*}, 0), \\
+         \pair(E \rightarrow \bullet \quoted{x}, 0)\;  \}
+       \end{array}
+       $
+\item Wegen $s[1] = \quoted{x}$ gilt:
+
+       $Q_1 = \{
+       \begin{array}[t]{l}
+         \pair(E \rightarrow  \quoted{x}\bullet, 0), \\
+         \pair(\widehat{S} \rightarrow  E\;\bullet, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{+}, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{*}, 0), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{+}, 1), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{*}, 1), \\
+         \pair(E \rightarrow \bullet \quoted{x}, 1)\; \}
+       \end{array}
+       $
+\item Wegen $s[2] = \quoted{x}$ gilt:
+
+      $Q_2 = \{
+       \begin{array}[t]{l}    
+         \pair(E \rightarrow  \quoted{x}\bullet, 1), \\
+         \pair(E \rightarrow  E\; E\bullet \quoted{*}, 0), \\
+         \pair(E \rightarrow  E\; E\bullet \quoted{+}, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{*}, 1), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{+}, 1), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{*}, 2), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{+}, 2), \\
+         \pair(E \rightarrow \bullet \quoted{x}, 2)\; \}
+       \end{array}
+       $
+\item Wegen $s[3] = \quoted{+}$ gilt:
+
+      $Q_3 = \{
+       \begin{array}[t]{l} 
+         \pair(E \rightarrow  E\; E\; \quoted{+}\bullet, 0), \\
+         \pair(\widehat{S} \rightarrow  E\;\bullet, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{*}, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{+}, 0), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{*}, 3), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{+}, 3), \\
+         \pair(E \rightarrow \bullet \quoted{x}, 3)\; \}
+       \end{array}
+      $
+\item Wegen $s[4] = \quoted{x}$ gilt:
+
+      $Q_4 = \{
+       \begin{array}[t]{l}
+         \pair(E \rightarrow  \quoted{x}\bullet, 3), \\
+         \pair(E \rightarrow  E\; E\bullet \quoted{*}, 0), \\
+         \pair(E \rightarrow  E\; E\bullet \quoted{+}, 0)\, \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{*}, 3), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{+}, 3), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{*}, 4), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{+}, 4), \\
+         \pair(E \rightarrow \bullet \quoted{x}, 4)\; \}
+       \end{array}
+      $
+
+\item Wegen $s[5] = \quoted{*}$ gilt:
+
+      $Q_5 = \{
+       \begin{array}[t]{l}    
+         \pair(E \rightarrow  E\; E\; \quoted{*}\bullet, 0), \\
+         \pair(\widehat{S} \rightarrow  E\;\bullet, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{*}, 0), \\
+         \pair(E \rightarrow  E\bullet E\; \quoted{+}, 0), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{*}, 5), \\
+         \pair(E \rightarrow \bullet\; E\; E\; \quoted{+}, 5), \\
+         \pair(E \rightarrow \bullet \quoted{x}, 5)\; \}
+       \end{array}
+      $
+
+      Da dieser Zustand das Earley-Item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$
+      enthält, liegt der String $s$ in der von der Grammatik $G$ erzeugten Sprache.
+      
+\end{enumerate}
+
+\exercise
+Die Grammatik $G = \langle \{ E \}, \{ \quoted{+}, \quoted{-}, \quoted{a} \}, R, E \rangle$
+habe  die folgenden Regeln:
+\[ E \rightarrow E\, E\, \quoted{+} \mid E\, E\, \quoted{-} \mid \quoted{a}. \]
+\begin{enumerate}
+\item Berechnen Sie die Mengen $\textsl{First}(E)$ und $\textsl{Follow}(E)$.
+\item Berechnen Sie die Menge der SLR-Zustände für diese Grammatik.
+\item Berechnen Sie die Funktionen $\textsl{action}()$ und $\textsl{goto}()$ für diese Grammatik.
+\item Berechnen Sie die Menge der LR-Zustände für diese Grammatik.
+\item Untersuchen Sie, ob diese Grammatik mehrdeutig ist.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Es gilt offenbar
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(E) = \{ a \}$ \quad und \quad
+      $\textsl{Follow}(E) = \{ \quoted{+}, \quoted{-}, \quoted{a}, \symbol{36} \}$.
+
+      Bemerkung: Das Zeichen ``$\symbol{36}$'' liegt in der Menge $\textsl{Follow}(E)$, weil 
+      $E$ das Start-Symbol der Grammatik ist.
+\item Wir erhalten die folgenden Zustände:
+      \begin{enumerate}
+      \item Wir definieren $s_0 = \textsl{closure}\bigl(\{\widehat{S} \rightarrow \star E\}\bigr)$ und 
+            finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_0 = \{\; \widehat{S} \rightarrow \bullet\; E,\;
+                      E \rightarrow \bullet \; E\; E \quoted{+},\; 
+                      E \rightarrow \bullet \; E\; E \quoted{-},\;
+                      E \rightarrow \bullet \quoted{a}\; 
+            \}$.
+      \item Wir definieren $s_1 = \textsl{goto}(s_0, E)$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl}
+            s_1 \;= & \{ & \widehat{S} \rightarrow E\; \bullet,             \\
+                    &    & E \rightarrow E \bullet E \quoted{+},            \\
+                    &    & E \rightarrow E \bullet E \quoted{-},            \\
+                    &    & E \rightarrow \bullet\; E\, E \quoted{+},        \\
+                    &    & E \rightarrow \bullet\; E\, E \quoted{-},        \\
+                    &    & E \rightarrow \bullet \quoted{a}                \\
+                    & \}.
+            \end{array}
+            $
+
+      \item Wir definieren $s_2 = \textsl{goto}(s_1, E)$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl}
+            s_2 \;= & \{ & E \rightarrow E\; E \bullet \quoted{+},  \\
+                    &    & E \rightarrow E\; E \bullet \quoted{-},   \\
+                    &    & E \rightarrow E \bullet E \quoted{+},    \\
+                    &    & E \rightarrow E \bullet E \quoted{-},    \\
+                    &    & E \rightarrow \bullet\; E\; E \quoted{+},  \\
+                    &    & E \rightarrow \bullet\; E\; E \quoted{-},  \\
+                    &    & E \rightarrow \bullet \quoted{a}           \\
+                    & \}.
+            \end{array}
+            $
+      \item Wir definieren $s_3 = \textsl{goto}(s_2, \quoted{a})$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_3 = \{ E \rightarrow \quoted{a} \bullet \}$.
+      \item Wir definieren $s_4 = \textsl{goto}(s_2, \quoted{+})$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_4 = \{ E \rightarrow E\, E \quoted{+} \bullet \}$.
+      \item Wir definieren $s_5 = \textsl{goto}(s_2, \quoted{-})$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_5 = \{ E \rightarrow E \, E \quoted{-} \bullet \}$.
+      \item Als nächstes berechnen wir: 
+        \begin{enumerate}
+        \item $\textsl{goto}(s_0, \quoted{a}) = s_3$.
+        \item $\textsl{goto}(s_1, \quoted{a}) = s_3$.
+        \item $\textsl{goto}(s_2, E) = s_2$.
+        \end{enumerate}
+            
+
+            Damit haben wir nun alle interessanten Werte der Funktion $\textsl{goto}()$ berechnet,
+            denn für alle bisher nicht explizit angegebenen Werte liefert diese Funktion die leere Menge.
+      \end{enumerate}
+
+\item Damit erhalten wir für die Funktion $\textsl{action}()$ die folgende Tabelle:
+      \begin{enumerate}
+      \item $\textsl{action}(s_0, \quoted{a}) = \pair(\texttt{shift}, s_3)$
+      \item $\textsl{action}(s_1, \quoted{\symbol{36}}) = \mathtt{accept}$
+      \item $\textsl{action}(s_1, \quoted{a}) = \pair(\texttt{shift}, s_3)$
+      \item $\textsl{action}(s_2, \quoted{+}) = \pair(\texttt{shift}, s_4)$
+      \item $\textsl{action}(s_2, \quoted{-}) = \pair(\texttt{shift}, s_5)$
+      \item $\textsl{action}(s_2, \quoted{a}) = \pair(\texttt{shift}, s_3)$
+      \item $\textsl{action}(s_3, \quoted{\symbol{36}}) = \pair(\texttt{reduce}, E \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_3, \quoted{+}) = \pair(\texttt{reduce}, E \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_3, \quoted{-}) = \pair(\texttt{reduce}, E \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_3, \quoted{a}) = \pair(\texttt{reduce}, E \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_4, \quoted{\symbol{36}}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{+})$
+      \item $\textsl{action}(s_4, \quoted{+}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{+})$
+      \item $\textsl{action}(s_4, \quoted{-}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{+})$
+      \item $\textsl{action}(s_4, \quoted{a}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{+})$
+      \item $\textsl{action}(s_5, \quoted{\symbol{36}}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{-})$
+      \item $\textsl{action}(s_5, \quoted{+}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{-})$
+      \item $\textsl{action}(s_5, \quoted{-}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{-})$
+      \item $\textsl{action}(s_5, \quoted{a}) = \pair(\texttt{reduce}, E \rightarrow E\, E \quoted{-})$
+      \end{enumerate}
+      Für die Funktion $\textsl{goto}()$ finden wir:
+      \begin{enumerate}
+      \item $\textsl{goto}(s_0, E) = s_1$
+      \item $\textsl{goto}(s_1, E) = s_2$
+      \item $\textsl{goto}(s_2, E) = s_2$
+      \end{enumerate}
+
+\item Wir erhalten die folgenden Zustände:
+      \begin{enumerate}
+      \item Wir setzen wieder 
+            $s_0 = \textsl{closure}\Bigl(\bigl\{\widehat{S} \rightarrow \bullet E: \symbol{36}\bigr\}\Bigr)$ 
+            und erhalten diesmal
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl}  
+            s_0 \;= & \bigl\{ & \widehat{S} \rightarrow \bullet\; E: \quoted{\symbol{36}},                  \\
+                    &         & E \rightarrow \bullet\; E\; E \quoted{+}: \{\quoted{\symbol{36}}, \quoted{a}\}, \\
+                    &         & E \rightarrow \bullet\; E\; E \quoted{-}: \{\quoted{\symbol{36}}, \quoted{a}\},  \\
+                    &         & E \rightarrow \bullet \quoted{a}: \{\quoted{\symbol{36}}, \quoted{a}\}       \\
+                    & \bigr\}.
+            \end{array}
+            $
+      \item Wir definieren $s_1 = \textsl{goto}(s_0, E)$ und erhalten
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl} 
+         s_1 \; = & \bigl\{ & \widehat{S} \rightarrow E \bullet: \quoted{\symbol{36}},    \\
+                  &         & E \rightarrow E \bullet E \quoted{+}: \{\quoted{\symbol{36}}, \quoted{a}\},       \\
+                  &         & E \rightarrow E \bullet E \quoted{-}: \{\quoted{\symbol{36}}, \quoted{a}\},       \\
+                  &         & E \rightarrow \bullet\; E\; E \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & E \rightarrow \bullet\; E\; E \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & E \rightarrow \bullet \quoted{a}: \{\quoted{+}, \quoted{-}, \quoted{a}\}          \\
+                  & \bigr\}.
+            \end{array}
+            $
+       \item Wir definieren $s_2 = \textsl{goto}(s_1, E)$ und erhalten
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $
+             \begin{array}[t]{lcl} 
+          s_2 \;= & \bigl\{ & E \rightarrow E\; E \bullet \quoted{+}: \{\quoted{\symbol{36}}, \quoted{a}\},   \\
+                  &         & E \rightarrow E\; E \bullet \quoted{-}: \{\quoted{\symbol{36}}, \quoted{a}\},    \\
+                  &         & E \rightarrow E \bullet E \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & E \rightarrow E \bullet E \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & E \rightarrow \bullet\; E\; E \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & E \rightarrow \bullet\; E\; E \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & E \rightarrow \bullet \quoted{a}: \{\quoted{+}, \quoted{-}, \quoted{a}\},       \\
+                  & \bigr\}.
+             \end{array}
+             $
+       \item Wir definieren $s_3 = \textsl{goto}(s_2, E)$ und erhalten
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $
+             \begin{array}[t]{lcl} 
+          s_3 \;= & \bigl\{ & E \rightarrow E\; E \bullet \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & E \rightarrow E\; E \bullet \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & E \rightarrow E \bullet E \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\},     \\
+                  &         & E \rightarrow E \bullet E \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\},     \\
+                  &         & E \rightarrow \bullet\; E\; E \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & E \rightarrow \bullet\; E\; E \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & E \rightarrow \bullet \quoted{a}: \{\quoted{+}, \quoted{-}, \quoted{a}\}          \\
+                  & \bigr\}.
+             \end{array}
+             $
+
+             Beachten Sie, dass $s_2 \not= s_3$ ist, denn die Menge der Folge-Token sind für die markierten
+             Regeln $ E \rightarrow E\; E \bullet \quoted{+}$ und $ E \rightarrow E\; E \bullet \quoted{-}$ 
+             in den Mengen $s_2$ und $s_3$ unterschiedlich.
+       \item Wir definieren $s_4 = \textsl{goto}(s_0, \quoted{a})$ und erhalten
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_4 = \{ E \rightarrow \quoted{a} \bullet: \{\quoted{\symbol{36}}, \quoted{a}\} \}$.
+       \item Wir definieren $s_5 = \textsl{goto}(s_2, \quoted{a})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_5 = \bigl\{ E \rightarrow \quoted{a} \bullet: \{\quoted{+}, \quoted{-}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_6 = \textsl{goto}(s_2, \quoted{+})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_6 = \bigl\{ E \rightarrow E\, E \quoted{+} \bullet: \{\quoted{\symbol{36}}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_7 = \textsl{goto}(s_3, \quoted{+})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_7 = \bigl\{ E \rightarrow E\, E \quoted{+} \bullet: \{\quoted{+}, \quoted{-}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_8 = \textsl{goto}(s_2, \quoted{-})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_8 = \bigl\{ E \rightarrow E\, E \quoted{-} \bullet: \{\quoted{\symbol{36}}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_9 = \textsl{goto}(s_3, \quoted{-})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_9 = \bigl\{ E \rightarrow E\, E \quoted{-} \bullet: \{\quoted{+}, \quoted{-}, \quoted{a}\} \bigr\}$
+       \end{enumerate}
+\item Bei der Berechnung der Funktion $\textsl{action}()$ in Teil (c) der Aufgabe haben wir gesehen, dass
+      es keine Konflikte gibt.  Daher ist die Grammatik eine SLR-Grammatik und damit sicher nicht mehrdeutig.
+\end{enumerate}
+\pagebreak
+
+\exercise
+Die Grammatik $G = \langle \{ A, B \}, \{ \quoted{u}, \quoted{x}, \quoted{y}, \quoted{z} \}, R, A \rangle$
+habe  die folgenden Regeln:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{lcl}
+  A & \rightarrow & B \quoted{x} \\
+    & \mid        & \quoted{y} B \quoted{z} \\
+    & \mid        & \quoted{u} \quoted{z} \\
+    & \mid        & \quoted{y} \quoted{u} \quoted{x} \\[0.1cm]
+  B & \rightarrow &\quoted{u} 
+ \end{array}
+$
+\\[0.2cm]
+Bearbeiten Sie die folgenden Teilaufgaben:
+\begin{enumerate}
+\item Überprüfen Sie, ob die  diese Grammatik eine LL(1)-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\item Überprüfen Sie, ob die  diese Grammatik eine LL($*$)-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\item Überprüfen Sie, ob die  diese Grammatik eine SLR-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Die Grammatik ist keine $LL(1)$-Grammatik, denn zwischen den beiden Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \quoted{y} B \quoted{z}$ \quad und \quad
+      $A \rightarrow \quoted{y} \quoted{u} \quoted{x}$ 
+      \\[0.2cm]
+      gibt es einen Konflikt, wir haben
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\quoted{y} B \quoted{z}) = \{ \quoted{y} \}$ \quad und \quad
+      $\textsl{First}(\quoted{y} \quoted{u} \quoted{z}) = \{ \quoted{y} \}$ 
+      \\[0.2cm]
+      und damit folgt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\quoted{y} B \quoted{z}) \cap \textsl{First}(\quoted{y} \quoted{u} \quoted{z}) = 
+      \{ \quoted{y} \} \not= \{\}$.
+\item Um zu überprüfen, ob die Grammatik eine LL($*$)-Grammatik ist, ersetzen wir zunächst die Variable $B$ 
+      durch ihre Definition.  Für $A$ erhalten wir dann die folgenden Grammatik-Regeln:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\begin{array}[t]{lcl}
+        A & \rightarrow & \quoted{u} \quoted{x} \\
+          & \mid        & \quoted{y} \quoted{u} \quoted{z} \\
+          & \mid        & \quoted{u} \quoted{z} \\
+          & \mid        & \quoted{y} \quoted{u} \quoted{x} 
+        \end{array}
+       $
+      \\[0.2cm]
+      Basteln wir daraus nun, wie im Skript beschrieben, einen endlichen Automaten, so ist leicht zu
+      sehen, dass die akzeptierenden Zustände homogen sind.  Damit handelt es sich bei der
+      angegebenen Grammatik um eine $LL(*)$-Grammatik.
+\item Die angegebene Grammatik ist keine SLR-Grammatik.  Um das zu sehen, erweitern wir die Grammatik
+      um die Regel $\widehat{S} \rightarrow A$ und berechnen den Zustand
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_0 = \textsl{closure}( \{ \widehat{S} \rightarrow A \})$.
+      \\[0.2cm]
+      Wir finden
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $
+      \begin{array}[t]{lcl}  
+       s_0 \;= & \{ & S \rightarrow \bullet\; A,                              \\
+               &    & A \rightarrow \bullet\; B \quoted{x},                   \\
+               &    & A \rightarrow \bullet \quoted{y} B \quoted{z},          \\
+               &    & A \rightarrow \bullet \quoted{u} \quoted{z},            \\
+               &    & A \rightarrow \bullet \quoted{y} \quoted{u} \quoted{x}, \\
+               &    & B \rightarrow \bullet \quoted{u}                        \\
+               & \}. 
+      \end{array}
+      $
+      \\[0.2cm]
+      Wir berechnen nun $\textsl{goto}(s_0, \quoted{u})$ und erhalten
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_1 = \{ A \rightarrow \quoted{u} \bullet \quoted{z},\;
+                B \rightarrow \quoted{u} \bullet
+             \}
+      $.
+      \\[0.2cm]
+      Bei der Berechnung von $\textsl{action}(s_1, \quoted{z})$ tritt nun eine Shift-Reduce-Konflikt auf,
+      denn es gilt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{follow}(B) = \{ \quoted{x}, \quoted{z} \}$.
+
+      \noindent
+      \textbf{Bemerkung}:  Die in der Aufgabe angegebene Grammatik ist sowohl eine LR-Grammatik als
+      auch eine LALR-Grammatik.  Letzteres läßt sich mit \textsl{Bison} oder \textsl{JavaCup} nachweisen 
+      und Ersteres folgt aus der Tatsache, dass jede LALR-Grammatik auch eine LR-Grammatik ist.
+\end{enumerate}
+
+
+\exercise
+Nehmen Sie an, dass die im Skript eingeführte Sprache \textsl{Integer}-\texttt{C} um eine 
+\texttt{do-while}-Schleife erweitert werden soll, deren Syntax durch die folgende Grammatik-Regel gegeben ist:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{statement} \rightarrow \quoted{do}\; \textsl{statement}\; \quoted{while}\;
+ \quoted{(} \;\textsl{boolExpr} \;\quoted{)}$.
+\\[0.2cm]
+Die Semantik dieses Konstruktes soll mit der Semantik des entsprechenden Konstruktes in
+der Sprache \texttt{C} übereinstimmen.
+\begin{enumerate}
+\item Geben Sie eine Gleichung an, die beschreibt, wie eine \texttt{do-while}-Schleife in
+      \textsl{Java-Byte-Code} übersetzt werden kann.
+\item Geben Sie die Methode $\textsl{compile}()$ an, die das entsprechende
+      Konstrukt übersetzt.  Gehen Sie dabei davon aus, dass Sie diese Methode innerhalb
+      einer Klasse \texttt{DoWhile} implementieren, wobei diese Klasse für \textsc{Ep}
+      wie folgt spezifiziert ist:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{Statement} \;=\; \cdots \;+\; \texttt{DoWhile}(\texttt{Statement}\; stmnt,\;
+      \mathtt{BoolExpr}\; cond)\; +\; \cdots; $      
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Die Übersetzung einer \texttt{do-while}-Schleife der Form
+      \[ \textsl{do}\; \textsl{statement}\; \texttt{while}\;(\textsl{cond})\; \quoted{;} \]
+      orientiert sich an der folgenden Spezifikation:
+      \[
+      \begin{array}[t]{lcl}
+        \textsl{compile}\bigl(\mathtt{do}\; \textsl{stmnt}\; \texttt{while}\; (\textsl{cond})\;\bigr) 
+        & = & 
+        [\;\textsl{loop}\texttt{:}\;]            \\
+        & + & \textsl{stmnt}.\textsl{compile}()    \\    
+        & + & \textsl{cond}.\textsl{compile}()         \\
+        & + & [\;\texttt{ifeq}\;\textsl{next}\;] \\
+        & + & [\;\texttt{goto}\;\textsl{loop}\;]    \\    
+        & + & [\;\textsl{next}\texttt{:}\;]         
+      \end{array}
+      \]
+\item Die Methode $\textsl{compile}()$ kann in der Klasse \texttt{DoWhile} wie folgt implementiert werden:
+      \begin{Verbatim}[ frame         = lines, 
+                        framesep      = 0.3cm, 
+                        labelposition = bottomline,
+                        numbers       = left,
+                        numbersep     = -0.2cm,
+                        xleftmargin   = 0.0cm,
+                        xrightmargin  = 1.1cm,
+                      ]
+      public List<AssemblerCmd> compile() {
+          List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+          LABEL        loopLabel = new LABEL();
+          LABEL        nextLabel = new LABEL();
+          AssemblerCmd ifeq      = new IFEQ(nextLabel.getLabel());
+          AssemblerCmd gotoLoop  = new GOTO(loopLabel.getLabel());
+          result.add(loopLabel);
+          result.addAll(mStmnt.compile());
+          result.addAll(mCond.compile());
+          result.add(ifeq);
+          result.add(gotoLoop);
+          result.add(nextLabel);
+          return result;
+      }
+      \end{Verbatim}
+\end{enumerate}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

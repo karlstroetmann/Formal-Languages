@@ -1,0 +1,544 @@
+\chapter{Entwicklung eines einfachen Compilers} 
+In diesem Kapitel konstruieren wir einen Compiler, der ein Fragment der Sprache \texttt{C}
+in \textsl{Java}-Assembler übersetzt.  
+Das von dem Compiler übersetzte Fragment der Sprache \texttt{C} bezeichnen wir als
+\textsl{Integer}-\texttt{C}, denn es steht dort nur der Datentyp \texttt{int} zur Verfügung.
+
+Ein Compiler besteht prinzipiell aus den folgenden Komponenten:
+\begin{enumerate}
+\item Der Scanner liest die zu übersetzende Datei ein und zerlegt diese in eine Folge von Token.
+      
+      Wir werden unseren Scanner mit Hilfe des Werkzeugs \textsl{JFlex} entwickeln.
+\item Der Parser liest die Folge von Token und produziert als Ergebnis einen abstrakten Syntax-Baum.
+
+      Wir werden den Parser mit Hilfe von \textsl{JavaCup} generieren.
+\item Der Typ-Checker überprüft den abstrakten Syntax-Baum auf Typ-Fehler.
+
+      Da die von uns übersetzte Sprache nur einen einzelnen Datentyp enthält, erübrigt
+      sich diese Phase für den von uns entwickelten Compiler.
+\item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgründen aber nicht betrachten.
+\item Der Code-Generator übersetzt schließlich den Parse-Baum in eine Folge von
+      \textsc{Java}-Assembler-Befehlen.  
+\end{enumerate}
+Bei unseren Compiler sind wir an dieser Stelle schon fertig.  Bei Compilern, deren Zielcode ein
+\textsc{Risc}-Assembler-Programm ist, wird normalerweise zunächst auch ein Code erzeugt, der dem
+\textsc{Jvm}-Code ähnelt.  Ein solcher Code wird als \emph{Zwischen-Code} bezeichnet.  Es bleibt
+dann die Aufgabe eines sogenannten \emph{Backends}, daraus ein Assembler-Programm für einen gegebene
+Prozessor-Architektur zur erzeugen.  Die schwierigste Aufgabe besteht hier darin, für die
+verwendeten Variablen eine Register-Zuordnung zu finden, bei der möglichst alle Variablen in
+Registern vorgehalten werden können.  
+Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung nicht mehr behandeln.
+% Dieses Thema ist allerdings so komplex, dass wir es in einem separaten Kapitel diskutieren.
+
+\section{Die Programmiersprache \textsl{Integer}-\texttt{C}}
+
+\begin{figure}[!ht]
+  \begin{center}
+  \begin{minipage}[t]{12.5cm}
+  \begin{eqnarray*}    
+\textsl{program}      & \rightarrow & \;\textsl{function}^* \\[0.2cm]
+\textsl{function}     & \rightarrow & \quoted{int} \textsc{Id} \quoted{(} \textsl{paramList} \quoted{)} \quoted{\{} \textsl{decl}\,^*\; (\textsl{stmnt}\; \squoted{;})^* \;\squoted{\}} \\[0.2cm]
+\textsl{paramList}    & \rightarrow & \;(\squoted{int}\, \textsc{Id}\; (\squoted{,}\, \quoted{int} \textsc{Id})^*)?  \\[0.2cm]
+\textsl{decl}  & \rightarrow & \quoted{int} \textsc{Id} \quoted{;}  \\[0.2cm]
+\textsl{stmnt}    & \rightarrow & \quoted{\{} (\textsl{stmnt}\; \squoted{;})^* \quoted{\}}  \\[0.0cm]
+                      & \mid        & \;\textsc{Id} \quoted{=} \textsl{expr} \\[0.0cm]
+                      & \mid        &  \quoted{if} \quoted{(} \textsl{boolExpr} \quoted{)} \textsl{stmnt} \\[0.0cm]
+                     & \mid         &  \quoted{if} \quoted{(} \textsl{boolExpr} \quoted{)} \textsl{stmnt} \quoted{else} \textsl{stmnt} \\[0.0cm]
+                     & \mid        &  \quoted{while} \quoted{(} \textsl{boolExpr} \quoted{)} \textsl{stmnt} \\[0.0cm]
+                     & \mid        &  \quoted{return} \textsl{expr}     \\[0.0cm]
+                     & \mid        &  \;\textsl{expr}                  \\[0.2cm]
+   \textsl{boolExpr} & \rightarrow & \textsl{expr} \;(\squoted{==} \mid \squoted{!=} \mid \squoted{<=} \mid \squoted{>=} \mid \squoted{<} \mid \squoted{>})\;  \textsl{expr} \\
+         & \mid        &  \quoted{!} \textsl{boolExpr}             \\[0.0cm]
+         & \mid        &  \textsl{boolExpr} \;(\squoted{\&\&} \mid \squoted{||})\; \textsl{boolExpr}   \\[0.2cm]
+ \textsl{expr} & \rightarrow & \textsl{expr} \;(\squoted{+} \mid \squoted{-} \mid \squoted{*} \mid \squoted{/})\; \textsl{expr} \\[0.0cm]
+     & \mid        &  \quoted{(} \textsl{expr} \quoted{)}                 \\[0.0cm]
+     & \mid        &  \textsc{Number}                             \\[0.0cm]
+     & \mid        &  \textsc{Id}\; (\squoted{(} (\textsl{expr}\; (\squoted{,}\; \textsl{expr})^*)?\;\squoted{)})?  
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}
+  \end{center}
+  \caption{Eine Grammatik für \textsl{Integer}-\textsc{C}}
+\label{fig:compiler.cup}
+\end{figure}
+
+\noindent
+Wir stellen nun die Sprache \textsl{Integer}-\texttt{C} vor, die unser Compiler übersetzen
+soll.  In diesem Zusammenhang sprechen wir auch von der \emph{Quellsprache} unseres Compilers.
+Abbildung \ref{fig:compiler.cup} zeigt die Grammatik der Quellsprache in 
+erweiterter Backus-Naur-Form (\textsc{Ebnf}). 
+Die Grammatik für \textsl{Integer}-\texttt{C} verwendet die folgenden beiden Terminale:
+\begin{enumerate}
+\item \textsc{Id} steht für eine Folge von Ziffern, Buchstaben und dem Unterstrich, die 
+      mit einem Buchstaben beginnt.  Eine \textsc{Id} bezeichnet entweder eine Variable oder
+      den Namen einer Funktion.
+\item \textsc{Number} steht für eine Folge von Ziffern, die als Dezimalzahl interpretiert wird.
+\end{enumerate}
+Nach der oben angegebenen Grammatik ist ein Programm eine Liste von Funktionen.
+Eine Funktion besteht aus der Deklaration der Signatur, worauf in geschweiften Klammern
+eine Liste von Deklarationen (\textsl{decl}) und Befehlen (\textsl{stmt}) folgt.  Jeder Befehl wird
+durch ein Semikolon abgeschlossen.  Der Aufbau der einzelnen Befehle ist dann
+ähnlich wie bei der Sprache \textsc{Sl}, für die wir im Kapitel \ref{chapter:interpreter}
+einen Interpreter entwickelt haben.
+
+Die in Abbildung \ref{fig:compiler.cup} gezeigte Grammatik ist mehrdeutig:
+\begin{enumerate}
+\item Die Grammatik hat das \emph{Dangling-Else-Problem}.
+
+      Da wir im Kapitel \ref{chapter:cup} bereits gesehen haben, wie dieses Problem
+      professionell gelöst werden kann, nehme ich mir hier die Freiheit, \textsc{JavaCup} mit der Option
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      ``\texttt{-expect 1}
+      \\[0.2cm]
+      aufzurufen und dadurch die Fehlermeldung zu unterdrücken, denn wir hatten ja bereits gesehen, das
+      \textsc{Cup} per default den durch die Mehrdeutigkeit entstehenden Shift-Reduce-Konflikt in unserem
+      Sinne auflöst. 
+\item Für die bei arithmetischen und Boole'schen Ausdrücken verwendeten Operatoren
+      müssen Präzedenzen festgelegt werden.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    int sum(int n) {
+        int s;
+        s = 0;
+        while (n != 0) {
+            s = s + n;
+            n = n - 1;    
+        };
+        return s;
+    }  
+    int main() {
+        int n;
+        n = 6 * 6;
+        println(sum(n));
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Ein einfaches \textsc{Integer}-\texttt{C}-Programm.}
+\label{fig:sum.c}
+\end{figure}
+
+\noindent
+Abbildung \ref{fig:sum.c} zeigt ein einfaches \textsc{Integer}-\texttt{C}-Programm.  Die Funktion
+$\textsl{sum}(n)$ berechnet die Summe
+\\[0.2cm]
+\hspace*{1.3cm}
+ $\sum\limits_{i=1}^n i$
+\\[0.2cm]
+und die Funktion $\textsl{main}()$ ruft die Funktion \texttt{sum} mit dem Argument $6 \cdot 6$ auf.
+Die in dem Programm verwendete Funktion \texttt{println} gibt ihr Argument gefolgt von einem
+Zeilenumbruch aus.
+
+
+\section{Entwicklung von Scanner und Parsers}
+Scanner und Parser werden mit Hilfe von \textsl{JFlex} und \textsc{JavaCup} in der
+gleichen Art und Weise entwickelt, wie wir das bereits mehrfach in dieser Vorlesung
+gesehen haben. 
+Abbildung \ref{fig:compiler.jflex} zeigt die Implementierung des Scanners.  Der Scanner
+erkennt die verwendeten Operatoren und Schlüsselwörter, sowie Variablen und natürliche
+Zahlen.  Gegenüber den bisher gesehenen \textsl{JFlex}-Scannnern gibt es hier keine
+erwähnenswerten Unterschiede.  Daher werden wir den Scanner nicht weiter diskutieren.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    import java_cup.runtime.*;    
+    %%
+    %char
+    %line
+    %column
+    %cup
+    %{   
+        private Symbol symbol(int type) {
+            return new Symbol(type, yychar, yychar + yylength());
+        }   
+        private Symbol symbol(int type, Object value) {
+            return new Symbol(type, yychar, yychar + yylength(), value);
+        }
+    %}
+    %%
+       
+    "+"                   { return symbol( sym.PLUS      ); } 
+    "-"                   { return symbol( sym.MINUS     ); } 
+    "*"                   { return symbol( sym.TIMES     ); } 
+    "/"                   { return symbol( sym.SLASH     ); } 
+    "("                   { return symbol( sym.LPAREN    ); } 
+    ")"                   { return symbol( sym.RPAREN    ); }
+    "{"                   { return symbol( sym.LBRACE    ); }
+    "}"                   { return symbol( sym.RBRACE    ); }
+    ","                   { return symbol( sym.COMMA     ); }
+    ";"                   { return symbol( sym.SEMICOLON ); }
+    "="                   { return symbol( sym.ASSIGN    ); }
+    "=="                  { return symbol( sym.EQUALS    ); }
+    "!="                  { return symbol( sym.NEQUALS   ); }
+    "<"                   { return symbol( sym.LT        ); }
+    ">"                   { return symbol( sym.GT        ); }
+    "<="                  { return symbol( sym.LE        ); }
+    ">="                  { return symbol( sym.GE        ); }
+    "&&"                  { return symbol( sym.AND       ); }
+    "||"                  { return symbol( sym.OR        ); }
+    "!"                   { return symbol( sym.NOT       ); }
+    "int"                 { return symbol( sym.INT       ); }
+    "return"              { return symbol( sym.RETURN    ); }
+    "if"                  { return symbol( sym.IF        ); }
+    "else"                { return symbol( sym.ELSE      ); }
+    "while"               { return symbol( sym.WHILE     ); }
+    
+    [a-zA-Z][a-zA-Z_0-9]* { return symbol(sym.IDENTIFIER, yytext());          }
+    [0-9]|[1-9][0-9]*     { return symbol(sym.NUMBER, new Integer(yytext())); }
+    [ \t\v\n\r]           { /* skip white space */ }   
+    "//" [^\n]*           { /* skip comments    */ }   
+    [^] { throw new Error("Illegal character '" + yytext() + 
+                          "' at line " + yyline + ", column " + yycolumn); }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Der Scanner für \textsl{Integer}-\texttt{C}}
+\label{fig:compiler.jflex}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    Program = Program(List<Function> functionList);
+    
+    Function = Function(String            name, 
+                        List<String>      parameterList, 
+                        List<Declaration> mDeclarations,
+                        List<Statement>   body);
+    
+    Statement = Block(List<Statement> statementList)
+              + Assign(String var, Expr expr)
+              + IfThen(BoolExpr boolExpr, Statement statement)
+              + IfThenElse(BoolExpr condition, Statement then, Statement else)
+              + While(BoolExpr condition, Statement statement)
+              + Return(Expr expr)
+              + ExprStatement(Expr expr);
+    
+    Declaration = Declaration(String var);
+    
+    Expr = Sum(Expr lhs, Expr rhs)
+         + Difference(Expr lhs, Expr rhs)
+         + Product(Expr lhs, Expr rhs)
+         + Quotient(Expr lhs, Expr rhs)
+         + MyNumber(Integer number)
+         + Variable(String name)
+         + FunctionCall(String name, List<Expr> args);
+    
+    BoolExpr = Equation(Expr lhs, Expr rhs)
+             + Inequation(Expr lhs, Expr rhs)
+             + LessOrEqual(Expr lhs, Expr rhs)
+             + GreaterOrEqual(Expr lhs, Expr rhs)
+             + LessThan(Expr lhs, Expr rhs)
+             + GreaterThan(Expr lhs, Expr rhs)
+             + Negation(BoolExpr expr)
+             + Conjunction(BoolExpr lhs, BoolExpr rhs)
+             + Disjunction(BoolExpr lhs, BoolExpr rhs);
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Spezifikation der Klassen zur Darstellung des Syntax-Baums.}
+\label{fig:program.ep}
+\end{figure}
+
+Bevor wir die Implementierung des Parsers diskutieren können, müssen wir angeben, durch welche
+Klassen wir den Syntax-Baum darstellen wollen.  Wir beschreiben diese Klassen mit Hilfe
+der in Abbildung \ref{fig:program.ep} auf Seite \pageref{fig:program.ep} gezeigten
+Spezifikation.  Diese Spezifikation ist wie folgt zu lesen:
+\begin{enumerate}
+\item In line 1, the equation
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{Program = Program(List<Function> functionList)}
+      \\[0.2cm]
+      specifies that the class \texttt{Program} has one member variable called
+      \texttt{mFunctionList}.  This variable has the type \texttt{List<Function>}.
+      Therefore, an object of class \texttt{Program} is essentially a list of objects of
+      class \texttt{Function}.
+\item Similarly, in line 3 to 6 the equation
+      \begin{verbatim}
+    Function = Function(String            name, 
+                        List<String>      parameterList, 
+                        List<Declaration> mDeclarations,
+                        List<Statement>   body);
+      \end{verbatim}
+      \vspace*{-0.5cm}
+
+      specifies that the class \texttt{Function} has four attributes:
+      \begin{enumerate}
+      \item \texttt{mName} is a \texttt{String} storing the name of the function,
+      \item \texttt{mParameterList} is the list of formal parameters of the function,
+      \item \texttt{mDeclarations} is the list of local variable declarations occurring in
+            the body of the function, while
+      \item \texttt{mBody} is the list of statements that make up the definition of the function.
+      \end{enumerate}
+      \pagebreak
+
+\item Next, the equation
+      \begin{verbatim}
+    Statement = Block(List<Statement> statementList)
+              + Assign(String var, Expr expr)
+              + IfThen(BoolExpr boolExpr, Statement statement)
+              + IfThenElse(BoolExpr condition, Statement then, Statement else)
+              + While(BoolExpr condition, Statement statement)
+              + Return(Expr expr)
+              + ExprStatement(Expr expr);
+      \end{verbatim}
+      tells us that there is an abstract class \texttt{Statement} and that the classes
+      \texttt{Block}, \texttt{Assign}, $\cdots$, \texttt{ExprStatement} are derived from
+      this class.
+      \begin{enumerate}
+      \item \texttt{Block} is a class representing a list of statements enclosed in
+            the curly braces \squoted{\{} and \squoted{\}}.  This list of statemments is
+            stored in the member variable \texttt{mStatementList}.
+      \item \texttt{Assign} is a class representing an assignment statement.  Therefore,
+            this class has two attributes:
+            \begin{itemize}
+            \item \texttt{mVar} is the name of the variable on the left hand side of the
+                  assignment and
+            \item \texttt{mExpr} is the expression on the right hand side of the  assignment.
+            \end{itemize}
+      \item \texttt{IfThen} is a class representing an \texttt{if-then} statement without
+            a trailing \texttt{else} clause.  This class has two member variables:
+            \begin{itemize}
+            \item \texttt{mBoolExpr} is the Boolean expression controlling whether the
+            \item \texttt{mStatement} is to be executed.
+            \end{itemize}
+      \item \texttt{IfThenElse} is a class representing an \texttt{if-then-else}
+            statement. This class has three member variables:
+            \begin{itemize}
+            \item \texttt{mBoolExpr} is the Boolean expression controlling the execution.
+            \item \texttt{mThen} is the statement that is executed if
+                  \texttt{mBoolExpr} evaluates as \texttt{true}.
+            \item \texttt{mElse} is the statement that is executed if
+                  \texttt{mBoolExpr} evaluates as \texttt{false}.
+            \end{itemize}
+      \item \texttt{While} is a class representing a \texttt{while} loop. 
+            This class has two member variables:
+            \begin{itemize}
+            \item \texttt{mBoolExpr} is the Boolean expression controlling the loop.
+            \item \texttt{mStatement} is a statement that is executed as long as
+                  \texttt{mBoolExpr} evaluates to \texttt{true}.
+            \end{itemize}
+      \item \texttt{Return} is a class representing a \texttt{return} statement. 
+            This class has the member variable \texttt{mExpr}.  Evaluation of this expression
+            yields the value to be returned.  Note that in the grammar given in Figure
+            \ref{fig:compiler.cup} on page \pageref{fig:compiler.cup} the expression following the
+            return statement is not optional.
+      \item \texttt{ExprStatement} is a class representing an expression that is to be
+             evaluated as a statement.        
+      \end{enumerate}
+\item The equation in line 16 specifies that the class \texttt{Declaration} has one member
+      variable with name \texttt{mVar}.  This variable stores the name of the variable
+      that is declared in the variable declaration associated with the corresponding
+      object of class \texttt{Declaration}.
+\item Similarly, the equations defining \texttt{Expr} and \texttt{BoolExpr} specify the
+      representation of arithmetical and Boolean expressions.
+\end{enumerate}
+
+Damit können wir nun die \textsl{Java}-\textsc{Cup}-Datei angeben, mit der wir den Syntaxbaum
+erzeugen.  Wir haben diese Datei aus Platzgründen in drei Teile aufgespalten:
+\begin{enumerate}
+\item Abbildung \ref{fig:compiler.cup-1} zeigt die Spezifikation der Terminale, Nicht-Terminale und
+      Operator-Präzedenzen.  Bei den Präzedenzen ist es sinnvoll diese so zu spezifizieren, dass die
+      arithmetischen Operatoren stärker binden als die logischen Operatoren.
+\item Abbildung \ref{fig:compiler.cup-2} und \ref{fig:compiler.cup-3} zeigen die eigentliche
+      Grammatik und die Erzeugung des abstrakten Syntaxbaums.  In der Grammatik lassen 
+      wir auch zu, dass die Liste der Funktionen leer ist.  Das vereinfacht die
+      Konstruktion der Liste etwas.
+\end{enumerate}
+Observe that the actions only construct the abstract syntax tree.  Everything else is then
+delegated to appropriate methods in the classes representing the syntax tree.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    import java_cup.runtime.*;
+    import java.util.*;
+    
+    /* Terminals (tokens returned by the scanner). */
+    terminal           COMMA, PLUS, MINUS, TIMES, SLASH, LPAREN, RPAREN, LBRACE, RBRACE;
+    terminal           ASSIGN, EQUALS, LT, GT, LE, GE, NEQUALS, AND, OR, NOT;
+    terminal           IF, ELSE, WHILE, RETURN, SEMICOLON; 
+    terminal           INT;
+    terminal String    IDENTIFIER;
+    terminal Integer   NUMBER;
+    
+    /* Non-terminals */
+    nonterminal Program           program;
+    nonterminal List<Function>    functionList;
+    nonterminal Function          function;
+    nonterminal List<String>      paramList, neParamList;
+    nonterminal Declaration       declaration;
+    nonterminal List<Declaration> declarations;
+    nonterminal Statement         statement;
+    nonterminal List<Statement>   statementList;
+    nonterminal Expr              expr;
+    nonterminal List<Expr>        exprList, neExprList;
+    nonterminal BoolExpr          boolExpr;
+    
+    precedence left     OR;
+    precedence left     AND;
+    precedence right    NOT;
+    precedence left     PLUS, MINUS;
+    precedence left     TIMES, SLASH;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Deklaration der Terminale, Nicht-Terminale und Operator-Präzedenzen}
+\label{fig:compiler.cup-1}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = last,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    program ::= functionList:l {: RESULT = new Program(l); :} ;
+    
+    functionList ::= /* epsilon */ {: RESULT = new LinkedList<Function>(); :}
+                  |  functionList:l function:f {: l.add(f); RESULT = l;    :}
+                  ;
+    
+    function ::= INT IDENTIFIER:f LPAREN paramList:p RPAREN 
+                 LBRACE declarations:d statementList:l RBRACE
+                 {: RESULT = new Function(f, p, d, l); :}
+              ;
+    
+    paramList ::= /* epsilon */ {: RESULT = new LinkedList<String>(); :}
+               |  neParamList:l {: RESULT = l;                        :}
+               ;
+    
+    neParamList ::= INT IDENTIFIER:v                     
+                    {: RESULT = new LinkedList<String>(); 
+                       RESULT.add(v); 
+                    :}
+                 |  neParamList:l COMMA INT IDENTIFIER:v {: RESULT = l; RESULT.add(v);  :}
+                 ;           
+    
+    declaration ::= INT IDENTIFIER:v SEMICOLON {: RESULT = new Declaration(v); :} ;
+    
+    declarations ::= /* epsilon */                {: RESULT = new LinkedList<Declaration>(); :}
+                  |  declarations:l declaration:d {: RESULT = l; RESULT.add(d);              :}
+                  ;
+    
+    statement ::= LBRACE statementList:l RBRACE {: RESULT = new Block(l);     :}
+               |  IDENTIFIER:v ASSIGN expr:e    {: RESULT = new Assign(v, e); :}
+               |  IF LPAREN boolExpr:b RPAREN statement:s                 
+                  {: RESULT = new IfThen(b, s); :}        
+               |  IF LPAREN boolExpr:b RPAREN statement:t ELSE statement:e
+                  {: RESULT = new IfThenElse(b, t, e); :}
+               |  WHILE LPAREN boolExpr:b RPAREN statement:s
+                  {: RESULT = new While(b, s); :}
+               |  RETURN expr:e    {: RESULT = new Return(e);        :}
+               |  expr:e           {: RESULT = new ExprStatement(e); :}
+               ;
+    
+    statementList ::= /* epsilon */ {: RESULT = new LinkedList<Statement>(); :}
+                   |  statement:s SEMICOLON statementList:l 
+                      {: RESULT = new LinkedList<Statement>();
+                         RESULT.add(s); 
+                         RESULT.addAll(l);
+                      :}
+                   ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Der erste Teil der \textsl{Java}-\textsc{Cup}-Grammatik.}
+\label{fig:compiler.cup-2}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = last,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    expr ::= expr:l PLUS  expr:r                 {: RESULT = new Sum(       l, r); :}
+          |  expr:l MINUS expr:r                 {: RESULT = new Difference(l, r); :}
+          |  expr:l TIMES expr:r                 {: RESULT = new Product(   l, r); :}
+          |  expr:l SLASH expr:r                 {: RESULT = new Quotient(  l, r); :}
+          |  LPAREN expr:e RPAREN                {: RESULT = e;                    :}
+          |  NUMBER:n                            {: RESULT = new MyNumber(n);      :}
+          |  IDENTIFIER:v                        {: RESULT = new Variable(v);      :}
+          |  IDENTIFIER:n LPAREN exprList:l RPAREN 
+             {: RESULT = new FunctionCall(n, l); :}
+          ;
+    
+    exprList ::= /* epsilon */ {: RESULT = new LinkedList<Expr>(); :}
+              |  neExprList:l  {: RESULT = l;                      :}
+              ;
+    
+    neExprList ::= expr:e 
+                   {: List<Expr> l = new LinkedList<Expr>();
+                      l.add(e);
+                      RESULT = l;
+                   :}                  
+                |  neExprList:l COMMA expr:e {: l.add(e); RESULT = l; :}
+                ;
+    
+    boolExpr ::= expr:l EQUALS  expr:r     {: RESULT = new Equation(      l, r); :}
+              |  expr:l NEQUALS expr:r     {: RESULT = new Inequation(    l, r); :}
+              |  expr:l LE      expr:r     {: RESULT = new LessOrEqual(   l, r); :}
+              |  expr:l GE      expr:r     {: RESULT = new GreaterOrEqual(l, r); :}
+              |  expr:l LT      expr:r     {: RESULT = new LessThan(      l, r); :}
+              |  expr:l GT      expr:r     {: RESULT = new GreaterThan(   l, r); :}
+              |  NOT boolExpr:e            {: RESULT = new Negation(      e   ); :}
+              |  boolExpr:l AND boolExpr:r {: RESULT = new Conjunction(   l, r); :}
+              |  boolExpr:l OR  boolExpr:r {: RESULT = new Disjunction(   l, r); :}
+              ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Der zweite Teil der \textsl{Java}-\textsc{Cup}-Grammatik.}
+\label{fig:compiler.cup-3}
+\end{figure}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 

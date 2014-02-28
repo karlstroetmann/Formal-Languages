@@ -1,0 +1,111 @@
+Tokens:    [$, 'a', 'b', 'x']
+
+Variables: [S, s, u]
+
+Grammar: 
+S -> s
+s -> 'a' u
+s -> 'b' u
+u -> 
+u -> s 'x'
+
+
+u is nullable
+s0 = { S -> <*> s: [$],
+       s -> <*> 'a' u: [$],
+       s -> <*> 'b' u: [$]
+     }
+
+s1 = { S -> s <*>: [$] }
+
+s2 = { s -> <*> 'a' u: ['x'],
+       s -> <*> 'b' u: ['x'],
+       s -> 'a' <*> u: [$],
+       u -> <*>: [$],
+       u -> <*> s 'x': [$]
+     }
+
+s3 = { s -> <*> 'a' u: ['x'],
+       s -> <*> 'b' u: ['x'],
+       s -> 'a' <*> u: ['x'],
+       u -> <*>: ['x'],
+       u -> <*> s 'x': ['x']
+     }
+
+s4 = { s -> <*> 'a' u: ['x'],
+       s -> <*> 'b' u: ['x'],
+       s -> 'b' <*> u: [$],
+       u -> <*>: [$],
+       u -> <*> s 'x': [$]
+     }
+
+s5 = { s -> <*> 'a' u: ['x'],
+       s -> <*> 'b' u: ['x'],
+       s -> 'b' <*> u: ['x'],
+       u -> <*>: ['x'],
+       u -> <*> s 'x': ['x']
+     }
+
+s6 = { s -> 'a' u <*>: [$] }
+
+s7 = { s -> 'a' u <*>: ['x'] }
+
+s8 = { s -> 'b' u <*>: [$] }
+
+s9 = { s -> 'b' u <*>: ['x'] }
+
+s10 = { u -> s <*> 'x': [$] }
+
+s11 = { u -> s <*> 'x': ['x'] }
+
+s12 = { u -> s 'x' <*>: [$] }
+
+s13 = { u -> s 'x' <*>: ['x'] }
+
+Action Table:
+action(s0, 'a') = <shift, s2>
+action(s0, 'b') = <shift, s4>
+action(s1, $) = <accept>
+action(s2, $) = <reduce, u -> >
+action(s2, 'a') = <shift, s3>
+action(s2, 'b') = <shift, s5>
+action(s3, 'a') = <shift, s3>
+action(s3, 'b') = <shift, s5>
+action(s3, 'x') = <reduce, u -> >
+action(s4, $) = <reduce, u -> >
+action(s4, 'a') = <shift, s3>
+action(s4, 'b') = <shift, s5>
+action(s5, 'a') = <shift, s3>
+action(s5, 'b') = <shift, s5>
+action(s5, 'x') = <reduce, u -> >
+action(s6, $) = <reduce, s -> 'a' u>
+action(s7, 'x') = <reduce, s -> 'a' u>
+action(s8, $) = <reduce, s -> 'b' u>
+action(s9, 'x') = <reduce, s -> 'b' u>
+action(s10, 'x') = <shift, s12>
+action(s11, 'x') = <shift, s13>
+action(s12, $) = <reduce, u -> s 'x'>
+action(s13, 'x') = <reduce, u -> s 'x'>
+
+Goto Table:
+goto(s0, s) = s1
+goto(s0, 'a') = s2
+goto(s0, 'b') = s4
+goto(s2, s) = s10
+goto(s2, u) = s6
+goto(s2, 'a') = s3
+goto(s2, 'b') = s5
+goto(s3, s) = s11
+goto(s3, u) = s7
+goto(s3, 'a') = s3
+goto(s3, 'b') = s5
+goto(s4, s) = s10
+goto(s4, u) = s8
+goto(s4, 'a') = s3
+goto(s4, 'b') = s5
+goto(s5, s) = s11
+goto(s5, u) = s9
+goto(s5, 'a') = s3
+goto(s5, 'b') = s5
+goto(s10, 'x') = s12
+goto(s11, 'x') = s13

@@ -1,0 +1,71 @@
+PARSER_BEGIN(ExprParser)
+
+public class ExprParser {  
+    public static void main(String args[]) throws ParseException {
+        ExprParser parser = new ExprParser(System.in);
+        Expr       expr   = parser.expr();
+        Variable   x      = new Variable("x");
+        Expr       deriv  = expr.diff(x);
+        System.out.println(deriv);
+    }
+}
+PARSER_END(ExprParser)
+
+// expr : product exprRest;
+Expr expr() : {
+    Expr p, r;
+} {
+    p = product() r = exprRest(p) { return r; }
+}
+
+// exprRest : '+' product exprRest
+//          | '-' product exprRest
+//          | /* epsilon */
+//          ;
+Expr exprRest(Expr s) : {
+    Expr p, a, r;
+} {
+      "+" p = product() { a = new Sum       (s, p); } r = exprRest(a) { return r; }
+    | "-" p = product() { a = new Difference(s, p); } r = exprRest(a) { return r; }
+    | /* epsilon */                                                { return s; }
+}
+
+// product : factor productRest;
+Expr product() : {
+    Expr f, r;
+} {
+    f = factor() r = productRest(f) { return r; }
+}
+
+// productRest : '+' factor productRest
+//             | '-' factor productRest
+//             | /* epsilon */
+//             ;
+Expr productRest(Expr p) : {
+    Expr f, a, r;
+} {
+      "*" f = factor() { a = new Product (p, f); } r = productRest(a) { return r; }
+    | "/" f = factor() { a = new Quotient(p, f); } r = productRest(a) { return r; }
+    | /* epsilon */                                                   { return p; }
+}
+
+// factor : '(' expr ')'
+//        | NUMBER
+//        ;
+Expr factor() : {
+    Expr  r;
+    Token t;
+} {
+      "(" r = expr() ")" { return r; }
+    | t = <NUMBER>       { return new MyNumber(t.image); }
+    | t = <IDENTIFIER>   { return new Variable(t.image); }
+}
+
+// forget about white space
+SKIP: { " " | "\t" | "\r" | "\n" }
+
+TOKEN: {
+    <NUMBER:     ("0" | ["1"-"9"] (["0"-"9"])*) ("." (["0"-"9"])*)?> 
+  | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+}
+

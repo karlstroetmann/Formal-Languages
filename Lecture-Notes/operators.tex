@@ -1,0 +1,134 @@
+\documentclass{article}
+\usepackage{ngerman}
+\usepackage[latin1]{inputenc}
+\usepackage{a4wide}
+\usepackage{epsfig}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{alltt}
+\usepackage{fleqn}
+\usepackage{theorem}
+
+\setlength{\mathindent}{1.3cm}
+
+
+\newcommand{\exercise}{\vspace*{0.1cm}
+\stepcounter{aufgabe}
+
+\noindent
+\textbf{Aufgabe \arabic{aufgabe}}: }
+
+\newcommand{\proof}{\vspace*{0.1cm}
+
+\noindent
+\textbf{Beweis}: }
+
+\newcommand{\remark}{\vspace*{0.1cm}
+
+\noindent
+\textbf{Bemerkung}: }
+
+
+\newcommand{\solution}{\vspace*{0.1cm}
+
+\noindent
+\textbf{Lösung}: }
+
+\newcommand{\example}{\vspace*{0.2cm}
+
+\noindent
+\textbf{Beispiel}: \ }
+
+\newcommand{\examples}{\vspace*{0.2cm}
+
+\noindent
+\textbf{Beispiele}: \ }
+
+%\newcommand{\next}{\vspace*{0.2cm}}
+
+\newcommand{\shft}[1]{$\pair(\textsl{shft},s_{#1})$}
+\newcommand{\rdc}[1]{$\pair(\textsl{rdc},r_#1)$}
+\newcommand{\accept}{\textsl{accept}}
+
+\newcommand{\squoted}[1]{\mbox{``\texttt{#1}''}}
+\newcommand{\quoted}[1]{\;\mbox{``\texttt{#1}''}\;}
+\newcommand{\qote}[1]{``\texttt{#1}''}
+\newcommand{\comp}[1]{\stackrel{#1}{\mapsto}}
+\newcommand{\dx}{\,\textrm{d}}
+\newcommand{\bruch}[2]{\frac{\displaystyle#1}{\displaystyle #2}}
+\newcommand{\folge}[1]{\bigl(#1\bigr)_{n\in\mathbb{N}}}
+\def\pair(#1,#2){\langle #1, #2 \rangle}
+\def\trip(#1,#2,#3){\langle #1, #2, #3 \rangle}
+\newcommand{\qed}{\hspace*{\fill} $\Box$}
+\newcommand{\lmderiv}{\;\raisebox{-2.3mm}{$\stackrel{\mbox{\large$\Rightarrow$}}{\mbox{\scriptsize l}}$}\;}
+
+
+{\theorembodyfont{\sf}
+\newtheorem{Definition}{Definition}
+\newtheorem{Satz}[Definition]{Satz}
+\newtheorem{Lemma}[Definition]{Lemma}
+\newtheorem{Korollar}[Definition]{Korollar}
+}
+
+\newcounter{aufgabe}
+
+
+\title{Eindeutige kontextfreie Grammatiken zur Festlegung von Operator-Präzedenzen}
+\author{Karl Stroetmann}
+
+\begin{document}
+\maketitle
+
+In den meisten Programmiersprachen gibt es eine größere Zahl von Operatoren, für die 
+unterschiedliche Bindungsstärken festgelegt werden.  Wir nehmen an, dass im allgemeinen
+Dall eine Menge \textsl{Operators} von Operatoren gegeben ist, die folgende Form hat:
+\[ 
+   \textsl{Operators} = 
+   \bigl\{ \oplus_{i,j} \mid i \in \{1,\cdots,n\} \wedge j \in \{ 1, \cdots, n(i) \} \bigl\}
+\]
+Die Idee ist dabei, dass es $n$ verschieden Prioritäts-Stufen gibt:  Für ein gegebenes 
+$i \in \{1,\cdots,n\}$ gibt es $n(i)$ verschieden Operatoren, die in der der Menge
+$\bigl\{ \oplus_{i,j} \mid j \in \{ 1, \cdots, n(i) \} \bigl\}$
+zusammengefasst sind.  Alle diese  Operatoren $\oplus_{i,j}$ haben die Präzedenz $i$.
+Eine einfache Grammatik, welche die von diesen Operatoren erzeugte Sprache beschreibt,
+besteht aus folgenden Regeln:
+\begin{enumerate}
+\item $\textsl{Expr} \rightarrow \textsl{Expr} \;\oplus_{i,j}\, \textsl{Expr}$
+
+      für alle $i \in \{ 1, \cdots, n \}$ und alle $j \in \{ 1, \cdots, n(i) \}$.
+\item $\textsl{Expr} \rightarrow \squoted{(} \;\textsl{Expr}\; \squoted{)}$
+\item $\textsl{Expr} \rightarrow \textsl{Simple}$
+
+      Hier steht \textsl{Simple} für eine syntaktische Variable, die beispielsweise
+      Zahlen und Strings erzeugt.
+\end{enumerate}
+Diese Grammatik ist allerdings mehrdeutig und zum Parsen daher nicht geeignet.
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+  \begin{eqnarray*}
+  \textsl{Expr}        & \rightarrow & \;\textsl{Product}\;\;\textsl{ExprRest}            \\[0.2cm]
+  \textsl{ExprRest}    & \rightarrow & \quoted{+} \textsl{Product}\;\;\textsl{ExprRest}   \\
+                       & \mid        & \quoted{-} \textsl{Product}\;\;\textsl{ExprRest}   \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{Product}     & \rightarrow & \;\textsl{Factor}\;\;\textsl{ProductRest}          \\[0.2cm]
+  \textsl{ProductRest} & \rightarrow & \quoted{*} \textsl{Factor}\;\;\textsl{ProductRest} \\
+                       & \mid        & \quoted{/} \textsl{Factor}\;\;\textsl{ProductRest} \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{Factor}      & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)}                \\
+                       & \mid        & \;\textsc{Number} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+  \end{minipage}}}
+  \end{center}
+  \caption{Grammatik für arithmetische Ausdrücke ohne Links-Rekursion.}
+  \label{fig:Expr2}
+\end{figure}
+
+
+
+\end{document}
+

@@ -1,0 +1,294 @@
+load("grammar-parser.stlx");
+
+list2str := procedure(l) {
+    result := "";
+    for (x in l) {
+        match (x) {
+            case Var(v)   : result += " " + v;
+            case Token(t) : result += " " + t;
+        }
+    }
+    return result;
+};
+
+/* The objects of this class represent a merked rule  of the form
+   variable -> alpha * beta.
+*/
+class markedRule(variable, alpha, beta) {
+    this.mVariable := variable;
+    this.mAlpha    := alpha;
+    this.mBeta     := beta;
+
+    isComplete := procedure() { return mBeta == []; };
+    nextVar := procedure() {
+        if (#mBeta > 0) {
+            match (mBeta[1]) {
+                case Var(v): return v;
+            }
+        }
+    };
+    next := procedure() {
+        if (#mBeta > 0) { return mBeta[1]; }
+    };
+    moveDot := procedure() {
+        return markedRule(mVariable, mAlpha + [mBeta[1]], mBeta[2..]);
+    };  
+    toRule := procedure() {
+        return grammarRule(mVariable, mAlpha + mBeta);
+    };
+    f_str := procedure() {
+        return mVariable + " ->" + list2str(mAlpha) + " (*)" + list2str(mBeta);
+    };
+}
+
+class grammarRule(variable, gamma) {
+    this.mVariable := variable;
+    this.mGamma    := gamma;
+    f_str := procedure() {
+        return mVariable + " ->" + list2str(mGamma);
+    };
+}
+
+append := procedure(s, t) {
+    if ("" in s) {
+        if ("" in t) {
+            return s + t;
+        } 
+        return s + t - { "" };
+    }
+    return s;
+};
+
+initializeMap := procedure(variables) {
+    return { [a, {}] : a in variables };
+};
+
+extractArg := procedure(x) {
+    match (x) {
+        case Var(v)   : return v;
+        case Token(t) : return t;
+    }
+};
+
+class grammar(rules, variables, start) {
+    this.mRules       := rules;
+    this.mVariables   := variables;
+    this.mStart       := start;
+    this.mRules       += { ["S", [Var(mStart)]] };
+    this.mVariables   += { "S" };
+    this.mFirst       := initializeMap(mVariables);
+    this.mFollow      := initializeMap(mVariables);
+    this.mTokens      := {};
+    this.mStates      := {};
+    this.mStateNames  := {};
+    this.mActionTable := {};
+    this.mConflicts   := false;
+    print("Given grammar:");
+    print(this);
+    computeTokens();
+    computeFirst();
+    computeFollow();
+    computeAllStates();
+    computeActionTable();
+    computeGotoTable();
+    if (!mConflicts) {
+        print("The grammar is an SLR grammar.");
+    } else {
+        print("The grammar is not an SLR grammar!");
+    }
+
+  static {
+    computeTokens := procedure() {
+        for ([_, body] in mRules, x in body) {
+            match (x) {
+                case Token(t): this.mTokens += { x };
+            }
+        }
+    };
+    startRule := procedure() {
+          return markedRule("S", [], [ Var(mStart) ]);
+    };
+    firstList := procedure(alpha) {
+        match (alpha) {
+             case []:               return { "" };
+             case [ Var(v)   | r ]: return append(mFirst[v], firstList(r));
+             case [ Token(t) | r ]: return { t };
+        }
+    };
+    computeFirst := procedure() {
+        change := true;
+        while (change) {
+            change := false;    
+            for ([a, body] in mRules) {
+                found := firstList(body);
+                if (!(found <= mFirst[a])) { 
+                    change := true;
+                    this.mFirst[a] += found;
+                }
+            }
+        }
+        print("First sets:");
+        for (v in mVariables) {
+            print("First($v$) = $mFirst[v]$");
+        }
+        print("");
+    };
+    computeFollow := procedure() {
+        this.mFollow["S"] := { "\$" };
+        change := true;
+        while (change) {
+            change := false;    
+            for ([a, body] in mRules) {
+                for (i in [1 .. #body]) {
+                    match (body[i]) {
+                        case Var(yi):
+                            tail  := firstList(body[i+1 ..]);
+                            found := append(tail, mFollow[a]);
+                            if (!(found <= mFollow[yi])) { 
+                                change := true; 
+                                this.mFollow[yi] += found;
+                            }
+                    }
+                }
+            }
+        }
+        print("Follow sets:");
+        for (v in mVariables) {
+            print("Follow($v$) = $mFollow[v]$");
+        }
+        print("");
+    };
+    epsClosure := procedure(markedRules) {
+        allRules := markedRules;
+        newRules := markedRules;
+        while (true) {
+            found := {};
+            for (rule in newRules) {
+                c := rule.nextVar();
+                if (c == om) { continue; }
+                for (r in mRules | c == r[1]) {
+                    found += { markedRule(c, [], r[2]) };
+                }
+            }
+            if (found <= allRules) {
+                return allRules;
+            }
+            newRules := found - allRules;
+            allRules += newRules;
+        }
+    };
+    goto := procedure(markedRules, x) {
+        result := {};
+        for (mr in markedRules | mr.next() == x) {
+            result += { mr.moveDot() };
+        }
+        return epsClosure(result);
+    };
+    computeAllStates := procedure() {
+        this.mStates := newStates := { epsClosure({ startRule() }) };
+        while (true) {
+            found := {};
+            for (ruleSet in newStates) {
+                for (mr in ruleSet | !mr.isComplete()) {
+                    x := mr.next();
+                    found += { goto(ruleSet, x) };
+                }
+            }
+            if (found <= mStates) {
+                break;
+            }
+            newStates := found - mStates;
+            this.mStates += newStates;
+        }
+        print("All SLR-states:");
+        counter := 0;
+        for (state in mStates) {
+            this.mStateNames[state] := "s" + counter;
+            print("s$counter$ = $state$");
+            counter += 1;
+        }
+    };
+    computeActionTable := procedure() {
+        print("\nAction Table:");
+        for (state in mStates, token in mTokens) {
+            stateName := mStateNames[state];
+            newState  := goto(state, token);
+            t := extractArg(token);
+            if (newState != {}) {
+                newName := mStateNames[newState];
+                mActionTable[ [state,t] ] := Shift(newName);
+                print("action(\"$stateName$\", $t$) = $Shift(newName)$");
+            }
+            for (mr in state | mr.isComplete()) {
+                for (t in mFollow[mr.mVariable]) {
+                    action1 := mActionTable[ [state, t] ];
+                    action2 := Reduce(mr.toRule());
+                    if (action1 == om) {
+                        mActionTable[ [state, t] ] := action2;
+                        print("action(\"$stateName$\", $t$) = $action2$");
+                    } else if (action1 != action2) {
+                        this.mConflicts := true;
+                        print("");
+                        print("conflict:");
+                        print("action(\"$stateName$\", $t$) = $action1$");                        
+                        print("action(\"$stateName$\", $t$) = $action2$");
+                        print("");
+                    }
+                }
+            }
+        }
+    };
+    computeGotoTable := procedure() {
+        print("\nGoto Table:");
+        for (state in mStates, var in mVariables) {
+            newState := goto(state, Var(var));
+            if (newState != {}) {
+                stateName := mStateNames[state];
+                newName   := mStateNames[newState];
+                print("goto($stateName$, $var$) = $newName$");
+            }
+        }
+    };
+    f_str := procedure() {
+        result := "";
+        for ([head, body] in mRules) {
+            result += "$head$ ->";
+            for (i in body) {
+                result += " " + extractArg(i);
+            }
+            result += ";\n";
+        }                  
+        return result;
+    };
+  }
+}
+
+test := procedure(file) {
+    [rules, variables, start] := readGrammar(file);
+    gr := grammar(rules, variables, start);
+};
+
+if (params != []) {
+    test(params[1]);
+} else {
+    print("Call tis program as follows: \"setlx slr-table-generator.stlx --params \'file\'");
+    print("Here file should contains the grammar.");
+}
+
+// Example grammar for arithmetic expressions:
+//
+// expr: expr '+' product
+//     | expr '-' product
+//     | product 
+//     ;
+// 
+// product
+//     : product '*' factor
+//     | product '/' factor
+//     | factor 
+//     ;
+// 
+// factor
+//     : '(' expr ')'
+//     | NUMBER
+//     ;

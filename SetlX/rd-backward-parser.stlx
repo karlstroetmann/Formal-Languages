@@ -1,0 +1,64 @@
+myParse := procedure(s) {
+     tl := tokenizeString(s);
+     [fp, result] := parseExpr(tl);
+     assert(fp == [], "Parse Error: could not parse $tl$");
+     return(result);
+};
+// This procedure takes a token list tl and tries to interpret this list
+// as an arithmetic expression.
+parseExpr := procedure(tl) {
+    [fp, product] := parseProduct(tl);
+    [rp, op] := split(fp);
+    if (op in ["+", "-"]) {
+        [fp, expr] := parseExpr(rp);
+        match (op) {
+            case "+": return [fp, expr + product];
+            case "-": return [fp, expr - product];
+        }
+    }
+    return [fp, product];
+};
+parseProduct := procedure(tl) {
+    [fp, factor] := parseFactor(tl);
+    [rp, op]     := split(fp);
+    if (op in ["*", "/"]) {
+        [fp, product] := parseProduct(rp);
+        match (op) {
+            case "*": return [fp, product * factor];
+            case "/": return [fp, product / factor];
+        }
+    }
+    return [fp, factor];
+};
+parseFactor := procedure(tl) {
+    [fp, op] := split(tl);
+    if (op == ")") {
+        [fp, expr] := parseExpr(fp);
+        [fp, op] := split(fp);
+        assert(op == "(", "parse error in $parseFactor(tl)$");
+        return [fp, expr];
+    }
+    assert(isNumber(op), "parse error in $parseFactor(tl)$");
+    return [fp, op];
+};
+split := procedure(l) {
+    if (#l > 0) {
+        return [l[1 .. #l-1], l[#l]];
+    } 
+    return [[], ""];
+};
+
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/", "**"
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex '0|[1-9][0-9]*' as [ number   ]: tokenList += [ int(number) ];
+        regex '[-+*/()]'      as [ operator ]: tokenList += [ operator    ];
+        regex '[ \t\v\n]+'                   : // skip
+    }
+    return tokenList;
+};
+
+print(myParse("1+2*(3-2)+5"));

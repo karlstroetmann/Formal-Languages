@@ -1,0 +1,32 @@
+import java_cup.runtime.*;
+
+terminal         SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD, POW;
+terminal         UMINUS, LPAREN, RPAREN;
+terminal Double  NUMBER;
+
+nonterminal        expr_list, expr_part;
+nonterminal Double expr;
+
+precedence left   PLUS, MINUS;
+precedence left   TIMES, DIVIDE, MOD;
+precedence right  UMINUS, POW;
+
+expr_list ::= expr_list expr_part 
+           |  expr_part
+           ;
+
+expr_part ::= expr:e {: System.out.println("result = " + e); :} SEMI 
+           ;
+
+expr ::= expr:e1 PLUS   expr:e2 {: RESULT = e1 + e2; :} 
+      |  expr:e1 MINUS  expr:e2 {: RESULT = e1 - e2; :} 
+      |  expr:e1 TIMES  expr:e2 {: RESULT = e1 * e2; :}
+      |  expr:e1 DIVIDE expr:e2 {: RESULT = e1 / e2; :} 
+      |  expr:e1 MOD    expr:e2 {: RESULT = e1 % e2; :} 
+      |  expr:e1 POW    expr:e2 {: RESULT = Math.pow(e1, e2); :} 
+      |  NUMBER:n               {: RESULT = n;       :} 
+      |  MINUS expr:e           {: RESULT = - e;     :} %prec UMINUS
+      |  LPAREN expr:e RPAREN   {: RESULT = e;       :} 
+      ;
+  
+

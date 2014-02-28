@@ -1,0 +1,1361 @@
+\chapter{Types and Type Checking}
+There are two fundamentally different approaches to typing.  Either the user is
+required to declare the types of variables or instead the program has to check the types
+of objects at runtime.  In the first case, the programming language is called 
+\emph{statically typed}, in the second case it is called \emph{dynamically typed}.
+\begin{enumerate}
+\item Statically typed languages like \textsl{Java} or \texttt{C} require that the user
+      declares the types of functions and variables.  The compiler is then able to check
+      that these variables will indeed have the declared type at runtime.  This approach
+      has the following advantages:
+      \begin{enumerate}
+      \item A number of runtime errors can be excluded.  For example, if a variable is 
+            declared as a \texttt{float} in \texttt{C}, we are guaranteed that the program
+            will not try to store a string in this variable.
+      \item The program does not need to check the type of variables at runtime and can
+            this be more efficient.
+      \item Adding type information serves as a form of documentation that can be checked
+            automatically.  This enhances the readability of typed programs.
+      \item Typed programs are easier to maintain as many violations of interfaces between
+            different parts of a typed program will actually manifest itself as type
+            errors.  Therefore, the compiler is able to detect these violations.
+      \end{enumerate}
+\item Dynamically typed languages like \textsl{Perl}, \textsl{Python}, or
+      \textsl{JavaScript} do not require the programmer to declare any types.  Rather, the types
+      are checked at runtime.  For example, if a program in a dynamically typed language
+      contains an expression of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $x + y$,
+      \\[0.2cm]
+      the compiler generates code that checks the type of $x$ and $y$ at runtime.  Then,
+      if $x$ and $y$ are discovered to be integers, the program performs an integer
+      addition.  However, if $x$ and $y$ happen to be strings,  these strings are 
+      concatenated.  Dynamic typing  has the following advantages:
+      \begin{enumerate}
+      \item Programs written in dynamically typed languages are typically shorter
+            than the corresponding programs in statically typed languages.  
+      \item If the types used in an algorithm are very complex, then using an untyped
+            language is sometimes the only way to code an algorithm in the intended way. 
+            The reason is that in some cases the expressiveness of current type system is 
+            not sufficient to be able to code certain algorithms conveniently.
+      \end{enumerate}
+\end{enumerate}
+The disadvantages of statically typed languages are the advantages of dynamically typed
+languages and vice versa.  Therefore, dynamically typed languages are often used for
+prototyping, while statically typed languages are used for production systems.
+
+In practice, most statically typed languages offer some escape mechanism to cover the
+cases where the type system gets to unwieldy.  For example, in \texttt{C} the programmer
+can declare a variable $x$ to have type \texttt{void*} and then cast this pointer to any other
+pointer type.  In \textsl{Java}, programmer can declare a variable $x$ as having type \texttt{Object}.
+This variable can then hold any object and when this variable is used the user 
+needs to cast it to the appropriate type.  
+
+In this chapter we are going to show how the compiler is able to type check a statically
+typed program.  To this end,  we first introduce a very simple statically typed programming
+language and then we develop a type checker for this language.
+
+
+\section{Eine Beispielsprache}
+Wir stellen jetzt die Sprache \textsc{Ttl} (\emph{typed term language} vor.  Dabei handelt es sich
+um eine sehr einfache Beispielsprache, die es dem Benutzer ermöglicht
+\begin{itemize}
+\item Typen zu definieren,
+\item Funktionen zu deklarieren und
+\item Terme anzugeben,
+\end{itemize}
+für die dann die Typ-Korrektheit nachgewiesen wird.
+Die Sprache \textsc{Ttl} ist sehr einfach gehalten,
+damit wir uns auf die wesentlichen Ideen der Typ-Überprüfung konzentrieren können.
+Daher können wir in \textsc{Ttl} auch keine wirklichen Programme schreiben,
+sondern einzig und allein überprüfen, ob Ausdrücke wohlgetypt sind.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\}
+                ]
+    \underline{t}yp\underline{e} list(X) := nil + cons(X, list(X));
+    
+    \underline{si}g\underline{nature} concat: list(T) * list(T) -> list(T);
+    \underline{si}g\underline{nature} x: int;
+    \underline{si}g\underline{nature} y: int;
+    \underline{si}g\underline{nature} z: int;
+    
+    concat(nil, nil): list(int);
+    concat(cons(x, nil), cons(y, cons(z, nil))): list(int);
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Ein \textsc{Ttl}-Beispiel-Programm}
+\label{fig:types.ttl}
+\end{figure}
+
+Abbildung \ref{fig:types.ttl} zeigt ein einfaches Beispiel-Programm.  Die Schlüsselwörter habe ich
+unterstrichen.  Wir diskutieren dieses Programm jetzt im Detail.
+\begin{enumerate}
+\item In Zeile 1 definieren wir den \emph{generischen} Typ $\texttt{list}(X)$.  Das $X$ ist hier der
+      Typ-Parameter, der später durch einen konkreten Typ wie z.B. \texttt{int},
+      \texttt{string} oder $\mathtt{list}(\mathtt{string})$ ersetzt werden kann.
+
+      Semantisch ist die Zeile als induktive Definition zu lesen, durch die eine Menge von Termen
+      definiert wird, wobei $X$ eine gegebene Menge bezeichnet. 
+      $\textsl{nil}$ und $\textsl{cons}$ werden in diesem Zusammenhang als Funktions-Zeichen verwendet.
+      Formal hat die induktive Definition die folgende Gestalt:
+      \begin{enumerate}
+      \item Induktions-Anfang:  Der Term $\textsl{nil}$ ist ein Element der Menge $\textsl{List}(X)$:
+            \[ \textsl{nil} \in \textsl{list}(X) \]
+      \item Induktions-Schritt:  Falls $a$ ein Element der Menge $X$ und $l$ ein Element der
+            Menge $\textsl{list}(X)$ ist, dann ist der Term $\textsl{cons}(a,l)$ ebenfalls
+            ein Element der Menge $\textsl{list}(X)$:
+            \[ a \in X \wedge l \in \textsl{list}(X) \rightarrow \textsl{cons}(a,l) \in \textsl{list}(X). \]
+      \end{enumerate}
+\item In Zeile 3 deklarieren wir die Funktion \textsl{concat} als zweistellige Funktion.  Die
+      beiden Argumente haben jeweils den Typ $\texttt{list}(T)$ und das Ergebnis hat ebenfalls
+      diesen Typ.
+\item In den Zeilen 4 -- 6 legen wir fest, dass die Variablen $x$, $y$ und $z$ jeweils den Typ
+      \texttt{int} haben.
+\item In Zeile 8 und 9 werden schließlich die beiden Terme
+      \[ \mathtt{concat(nil, nil)} \quad \mbox{und} \quad
+         \mathtt{concat(cons(x, nil), cons(y, cons(z, nil)))}
+      \] 
+      angegeben und es wird behauptet, dass diese den Typ $\texttt{list}(\texttt{int})$ haben.
+      Die Aufgabe der Typ-Überprüfung besteht darin, diese Aussage zu verifizieren.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    grammar ttl;
+    
+    program   : typeDef* signature* typedTerm*
+              ;
+    
+    typeDef   : 'type' FCT ':=' type ('+' type)* ';'
+              | 'type' FCT '(' PARAM (',' PARAM)* ')' ':=' type ('+' type)* ';' 
+              ;
+    
+    type      : FCT '(' type (',' type)* ')'
+              | FCT                               
+              | PARAM                              
+              ;
+    
+    signature : 'signature' FCT ':' type ('*' type)* '->' type ';'                
+              | 'signature' FCT ':' type ';'
+              ;
+    
+    term      : FCT '(' term (',' term)* ')'
+              | FCT    
+              ;
+    
+    typedTerm : term ':' type ';' 
+              ;
+    
+    PARAM   : ('A'..'Z')('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+    FCT     : ('a'..'z')('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+\end{Verbatim}
+\vspace*{-0.3cm}
+  \caption{Eine EBNF-Grammatik für die getypte Beispielsprache}
+\label{fig:typeChecker-grammar}
+\end{figure}
+
+
+
+\noindent
+Die genaue Syntax der Sprache \textsc{Ttl} wird durch die in Abbildung \ref{fig:typeChecker-grammar}
+gezeigte Grammatik definiert.  Diese Grammatik verwendet neben den Zeichen-Reihen, die in doppelten
+Anführungs-Zeichen gesetzt sind, die folgenden Terminale:
+\begin{enumerate}
+\item \textsc{Function} bezeichnet entweder einen Typ-Konstruktor wie \texttt{list}, eine Variable
+      wie \texttt{x} oder \texttt{y} oder einen Funktionsnamen wie \texttt{concat}.  Syntaktisch
+      werden Typ-Konstruktoren, Variablen und Funktionsnamen dadurch erkannt, dass sie mit
+      einem Kleinbuchstaben beginnen. 
+\item \textsc{Parameter} bezeichnet einen Typ-Parameter wie z.B.~das $X$ in $\texttt{list}(X)$.
+      Diese beginnen immer mit einem Großbuchstaben.
+\end{enumerate}
+Bevor wir einen Algorithmus zur Typ-Überprüfung vorstellen können ist es erforderlich,
+einige grundlegende Begriffe wie 
+den Begriff der Substitution und die Anwendung von Substitutionen auf Typen zu diskutieren.
+
+\section{Grundlegende Begriffe}
+Als erstes definieren wir den Begriff der Signatur eines Funktions-Zeichens.
+Die \emph{Signatur} eines Funktionszeichens legt fest, 
+\begin{itemize}
+\item welchen Typ die Argumente der Funktion haben und
+\item von welchem Typ das Ergebnis der Funktion ist.
+\end{itemize}
+Wir geben die Signatur einer Funktion $f$ in der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho$
+\\[0.2cm]
+an.  Damit spezifizieren wir:
+\begin{enumerate}
+\item Die Funktion $f$ erwartet $n$ Argumente.
+\item Das $i$-te Argument hat den Typ $\sigma_i$.  
+\item Das von der Funktion berechnete Ergebnis hat den Typ $\varrho$.
+\end{enumerate}
+Als nächstes definieren wir, was wir unter einem Typ verstehen wollen.
+Anschaulich sind das Ausdrücke wie 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{map}(K,V)$, \quad $\textsl{double}$, \quad oder \quad $\textsl{list}(\textsl{int})$.
+\\[0.2cm]
+Formal werden Typen aus Typ-Parametern und Typ-Konstruktoren aufgebaut.
+In dem obigen Beispiel sind \textsl{map}, \textsl{double}, \textsl{list} und \textsl{int}
+Typ-Konstruktoren, während $K$ und $V$ Typ-Parameter sind.
+Wir nehmen an, dass einerseits eine Menge $\mathbb{P}$ von Typ-Parametern und
+andererseits eine Menge von Typ-Konstruktoren $\mathbb{K}$ gegeben sind.  In dem letzten Beispiel
+könnten wir
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathbb{K} = \bigl\{ \textsl{map}, \textsl{list}, \textsl{int}, \textsl{double}\bigr\}$
+\quad und \quad
+$\mathbb{P} = \bigl\{ K, V \bigr\}$
+\\[0.2cm]
+setzen.  Zusätzlich muss noch eine Funktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{arity}: \mathbb{K} \rightarrow \mathbb{N}$
+\\[0.2cm]
+gegeben sein, die für jeden Typ-Konstruktor festlegt, wieviel Argumente er erwartet.
+In dem obigen Beispiel hätten wir
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{arity}(\textsl{map}) = 2$, \quad
+$\textsl{arity}(\textsl{list}) = 1$, \quad
+$\textsl{arity}(\textsl{int}) = 0$ \quad und \quad
+$\textsl{arity}(\textsl{double}) = 0$.
+\\[0.2cm]
+Dann wird die Menge $\mathcal{T}$ der Typen induktiv definiert:
+\begin{enumerate}
+\item Jeder Typ-Parameter $X$ ist ein Typ:
+      \\[0.2cm]
+      \hspace*{1.3cm} $X \in \mathbb{P} \Rightarrow X \in \mathcal{T}$.
+\item Ist $c$ ein Typ-Konstruktor mit $\textsl{arity}(c) = 0$, so ist auch $c$ ein Typ:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $c \in \mathbb{K} \wedge \textsl{arity}(c) = 0 \Rightarrow c \in \mathcal{T}$.
+\item Ist $f$ ein $n$-stelliger Typ-Konstruktor und sind $\tau_1$, $\cdots$, $\tau_n$
+      Typen, so ist auch $f(\tau_1,\cdots,\tau_n)$ ein Typ:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $f \in \mathbb{K} \wedge \textsl{arity}(f) = n \wedge n > 0 \wedge
+       \tau_1 \in \mathcal{T} \wedge \cdots \wedge \tau_n \in \mathcal{T} \Rightarrow
+       f(\tau_1, \cdots, \tau_n) \in \mathcal{T}$.
+\end{enumerate}
+
+\examplesEng
+If the type constructors \textsl{map}, \textsl{int}, \textsl{list}, and \textsl{double}
+have the arities given above and if, furthermore, $K$ and $V$ are type parameters, then
+the following are types:
+\begin{enumerate}
+\item \textsl{int},
+\item \textsl{double},
+\item $\textsl{list}(\textsl{double})$, 
+\item $\textsl{list}(V)$, 
+\item $\textsl{map}(K,\textsl{list}(\textsl{double}))$.  \eox
+\end{enumerate}  
+
+
+\begin{Definition}[Parameter Substitution]
+{\em
+    A \emph{parameter substitution} is a finite set of pairs of the form \\[0.2cm]
+    \hspace*{1.3cm} $\sigma = \bigl\{ \langle X_1, \tau_1 \rangle, \cdots, \langle X_n, \tau_n \rangle \bigr\}$ \\[0.2cm]
+    such that
+    \begin{enumerate}
+    \item $X_i$ is a type parameter for all $i \in \{1, \cdots, n\}$,
+    \item $\tau_i$ is a type for all $i \in \{1, \cdots, n\}$,
+    \item the type parameters occurring in $\sigma$ are pairwise distinct, that is we have
+          \\[0.2cm]
+          \hspace*{1.3cm}
+          $i\not=j \rightarrow X_i \not= X_j$ \quad for all $i,j  \in \{1, \cdots, n\}$.
+    \end{enumerate}
+    If $\sigma = \bigl\{ \langle X_1, \tau_1 \rangle, \cdots, \langle X_n, \tau_n \rangle
+    \bigr\}$ is a  parameter substitution, then $\sigma$ is written as  \\[0.2cm]
+    \hspace*{1.3cm} 
+    $\sigma = \bigl[ X_1 \mapsto \tau_1, \cdots, X_n \mapsto \tau_n \bigr]$.  
+    \\[0.2cm]
+    In this case, the  \emph{domain} of $\sigma$ is defined as 
+    \\[0.2cm]
+    \hspace*{1.3cm}
+    $\textsl{dom}(\sigma) = \{ X_1, \cdots, X_n\}$.
+    \\[0.2cm]
+    The set of all parameter substitutions is denoted as \textsc{Subst}.
+    In the following, \emph{parameter substitutions} are just called
+    \emph{substitutions}.  \qed
+}  
+\end{Definition}
+
+\noindent
+Substitutions can be \emph{applied} to types.
+If $\tau$ is a type and 
+$\vartheta = \bigl[ X_1 \mapsto \tau_1, \cdots, X_n \mapsto \tau_n \bigr]$ 
+is a substitution, then $\tau\vartheta$ is the type
+that we get if we replace all occurrences of $X_i$ in $\tau$ by $\tau_i$,
+The formal definition follows. 
+
+\begin{Definition}[Application of a  Substitution]
+{\em \hspace*{\fill} \\
+If  $\tau$ is a type and  
+$\vartheta = \bigl[ X_1 \mapsto \tau_1, \cdots, X_n \mapsto \tau_n \bigr]$ is a
+substitution, then the \emph{application} of $\vartheta$ to $\tau$   
+(written $\tau\vartheta$) is defined by  induction on  $\tau$: 
+\begin{enumerate}
+\item If $\tau$ is a  type parameter, there are two cases:
+  \begin{enumerate}
+  \item $\tau = X_i$ for some $i\in\{1,\cdots,n\}$.  Then
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $X_i\vartheta := \tau_i$.
+  \item $\tau = Y$ where $Y$ is a type parameter such that $Y \not\in \{X_1,\cdots,X_n\}$. 
+        Then
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $Y\vartheta := Y$.
+  \end{enumerate}
+\item Otherwise $\tau$ must have the form $\tau = f(\sigma_1,\cdots,\sigma_m)$.
+      Then $\tau\vartheta$ is defined as \\[0.2cm] 
+      \hspace*{1.3cm} 
+      $f(\sigma_1, \cdots, \sigma_m)\vartheta := f(\sigma_1\vartheta, \cdots,
+      \sigma_m\vartheta)$.   \qed
+\end{enumerate}
+}
+\end{Definition}
+
+\examplesEng
+Define the substitution $\vartheta$ as \\[0.2cm]
+\hspace*{1.3cm} 
+$\vartheta := \big[ X_1 \mapsto \mathtt{double},\; X_2 \mapsto \mathtt{list(int)} \big]$. \\[0.2cm]
+Then we have the following:
+\begin{enumerate}
+\item $X_3\vartheta = X_3$,
+\item $\mathtt{list}(X_2)\vartheta = \mathtt{list}\bigl(\mathtt{list(int)}\bigr)$,
+\item $\mathtt{map}(X_1,\mathtt{set}(X_2))\vartheta = 
+       \mathtt{map}\bigl(\mathtt{double},\mathtt{set}(\mathtt{list}(\mathtt{int}))\bigr)$.
+\end{enumerate}
+
+
+\noindent
+Next, we show how substitutions can be composed.
+\begin{Definition}[Composition of Substitutions] 
+{\em
+    If \\[0.2cm]
+    \hspace*{1.3cm}  
+    $\vartheta = \big[ X_1 \mapsto \sigma_1, \cdots, X_m \mapsto \sigma_m \big]$ \quad and \quad
+    $\eta = \big[ Y_1 \mapsto \tau_1, \cdots, Y_n \mapsto \tau_n \big]$ 
+    \\[0.2cm]
+    are substitutions such that $\textsl{dom}(\vartheta) \cap \textsl{dom}(\eta) = \{\}$,
+    then we define the \emph{composition} $\vartheta\eta$ of $\vartheta$ and $\eta$ as \\[0.2cm]
+    \hspace*{1.3cm} $\vartheta\eta := 
+    \big[ X_1 \mapsto \sigma_1\eta, \cdots, X_m \mapsto \sigma_m\eta,\; 
+          Y_1 \mapsto \tau_1, \cdots, Y_n \mapsto \tau_n \big]$.
+    \qed
+}
+\end{Definition}
+
+\exampleEng
+Define \\[0.2cm]
+\hspace*{1.3cm} 
+$\vartheta := \big[ X_1 \mapsto \mathtt{double},\; X_2 \mapsto \mathtt{list(X_3)} \big]$
+\quad and 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\eta := \big[ X_3 \mapsto \texttt{map}(\mathtt{int},\mathtt{double}),\; X_4 \mapsto \mathtt{char} \big]$. 
+\\[0.2cm]
+Then we have \\[0.2cm]
+\hspace*{1.3cm} 
+$\vartheta\eta = \big[ X_1 \mapsto \mathtt{double},\; 
+                       X_2 \mapsto \mathtt{list}(\mathtt{map(int, double)}),\;
+ X_3 \mapsto \mathtt{map(int, double)},\; X_4 \mapsto \mathtt{char} \big]
+$.
+\eox
+\vspace{0.3cm}
+
+\exerciseEng
+How would we have to change the definition of the composition of $\vartheta$ and
+$\eta$ if we drop the condition $\textsl{dom}(\vartheta) \cap \textsl{dom}(\eta) = \{\}$?
+\vspace{0.3cm}
+
+The following theorem is a consequence of the previous definition.
+\begin{Theorem}[Associativity of Composition]\label{satz:komposition}  \hspace*{\fill} \\
+{\em
+    If $\tau$ is a type and $\vartheta$ and $\eta$ are substitutions such that 
+    $\textsl{dom}(\vartheta) \cap \textsl{dom}(\eta) = \{\}$ holds, then we have \\[0.2cm]
+    \hspace*{1.3cm} $(\tau \vartheta)\eta = \tau (\vartheta\eta)$.
+    \hspace*{\fill} $\Box$
+}
+\end{Theorem}
+This theorem is proved by an easy induction on $\tau$.
+\vspace{0.3cm}
+
+\noindent
+Next, we formalize the notion of a term $t$ being of type $\tau$.
+\begin{Definition}[$t:\tau$]  \lb
+{\em
+  For a term  $t$ and a type $\tau$ the relation $t: \tau$ 
+  (read: $t$ has type $\tau$) is defined by induction on  $t$.
+  \begin{enumerate}
+  \item If $c$ is a nullary function symbol with signature $c: \tau$ and if
+        $\vartheta$ is any  parameter substitution, then
+        \\[0.2cm]
+        \hspace*{1.3cm} $c: \tau\vartheta$.
+  \item Assume that
+        \begin{enumerate}
+        \item  $f$ is an  $n$-ary function symbol such that $n > 0$.
+        \item  $f$ has the signature
+               \\[0.2cm]
+               \hspace*{1.3cm}
+               $f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho$.
+        \item $\vartheta$ is a substitution such that we have $t_i:\sigma_i\vartheta$.
+        \end{enumerate}
+        Then  $f(t_1, \cdots, t_n): \varrho\vartheta$.
+  \end{enumerate}
+}  
+\end{Definition}
+
+\examplesEng
+The following examples assume that the types and signatures are given as in Figure
+ \ref{fig:types.ttl} on page \pageref{fig:types.ttl}.
+\begin{enumerate}
+\item We have $\textsl{nil}: \mathtt{list(int)}$, 
+      because $\textsl{nil}$ has the signature
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{nil}: \mathtt{list(X)}$. 
+      \\[0.2cm]
+      Therefore, defining
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\vartheta = [ X \mapsto \mathtt{int} ]$
+      \\[0.2cm]
+      gives $\mathtt{list}(X)\vartheta = \mathtt{list(int)}$ showing the claim.
+\item Next, we show 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{concat}(\textsl{nil}, \textsl{nil}): \mathtt{list(int)}$.
+      \\[0.2cm]
+      The signature of $\textsl{concat}$ is
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{concat}: \textsl{list}(T) \times \textsl{list}(T) \rightarrow \textsl{list}(T)$. 
+      \\[0.2cm]
+      Define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\vartheta = [ T \mapsto \mathtt{int} ]$.
+      \\[0.2cm]
+      We have already seen that
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{nil}: \mathtt{list(int)}$
+      \\[0.2cm]
+      holds.  Because of $\mathtt{list(T)}\vartheta = \mathtt{list(int)}$ this shows the claim.  \eox
+\end{enumerate}
+
+
+\section{A Type Checking Algorithm}
+Assume a  term $t = f(t_1,\cdots,t_n)$ and a type $\tau$ is given and we want to check
+whether $t:\tau$ holds.  Furthermore, assume that the signature of  $f$ is given as
+\[ f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho. \]
+According to the definition of  $t:\tau$ the term $t$ has type $\tau$ iff there is a
+parameter substitution $\vartheta$ such that $\varrho \vartheta = \tau$
+and  $t_i:\sigma_i \vartheta$. Therefore
+\[ 
+           f(t_1,\cdots,t_n): \tau \;\Leftrightarrow\; 
+           \exists \vartheta \in \textsc{Subst}: \bigl(\varrho \vartheta = \tau \wedge 
+           \forall i \in \{1,\cdots,n\}: t_i : \sigma_i \vartheta \bigr)
+\]
+The problem of type checking is to compute the substitution $\vartheta$ or to show that
+$\vartheta$ can not exist.
+ 
+
+\examplesEng
+We discuss the previous examples (that is $\textsl{nil}: \mathtt{list(int)}$ and
+$\textsl{concat}(\textsl{nil}, \textsl{nil}): \mathtt{list(int)}$) 
+again using the formula
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(t_1,\cdots,t_n): \tau \;\Leftrightarrow\; 
+ \exists \vartheta \in \textsc{Subst}: \bigl(\varrho \vartheta = \tau \wedge 
+ \forall i \in \{1,\cdots,n\}: t_i : \sigma_i \vartheta \bigr)
+$.
+\begin{enumerate}
+\item Lets prove $\textsl{nil}: \mathtt{list(int)}$ again.  We have the signature
+      \[ \textsl{nil}: \mathtt{list(X)}. \]
+      Therefore, we have
+      \[ \textsl{nil}: \mathtt{list(int)} \;\Leftrightarrow\; 
+         \exists \vartheta \in \textsc{Subst}: \bigl(\mathtt{list}(X) \vartheta = \mathtt{list(int)}  \bigr).
+      \]
+      Obviously, we can define 
+      \[ \vartheta = [ X \mapsto \mathtt{int} ]. \]
+      Then, the equation $\mathtt{list}(X) \vartheta = \mathtt{list(int)}$ is true and we
+      conclude that $\textsl{nil}: \mathtt{list(int)}$ holds. 
+\item Next, we prove $\textsl{concat}(\textsl{nil}, \textsl{nil}): \mathtt{list(int)}$.
+      The signature of \textsl{concat} is given as
+      \[ \textsl{concat}: \textsl{list}(T) \times \textsl{list}(T) \rightarrow \textsl{list}(T). \]
+      Therefore, our claim is equivalent to
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $
+      \begin{array}{cl}
+                        & \textsl{concat}(\textsl{nil},\textsl{nil}): \mathtt{list(int)} \\[0.2cm]
+       \Leftrightarrow  & \exists \vartheta \in \textsc{Subst}: \bigl(\mathtt{list}(T) \vartheta = \mathtt{list(int)}
+                          \wedge \textsl{nil} : \textsl{list}(T) \vartheta \wedge \textsl{nil} : \textsl{list}(T)
+                          \vartheta \bigr).
+      \end{array}
+      $
+      \\[0.2cm]
+      The equation $\mathtt{list}(T) \vartheta = \mathtt{list(int)}$ is solved by the substitution
+      \[ \vartheta = [ T \mapsto \mathtt{int} ] \]
+      and therefore the correctness of 
+      \[ \textsl{concat}(\textsl{nil},\textsl{nil}): \mathtt{list(int)} \]
+      is reduced to the correctness of
+      \[ \textsl{nil} : \textsl{list}(T) \vartheta,  \]      
+      As $\textsl{list}(T) \vartheta = \textsl{list}(\textsl{int})$ and 
+      $\textsl{nil} : \textsl{list(int})$ holds, the proof is complete. \qed
+\end{enumerate}
+
+
+The previous examples show that the correctness of an expression
+$t: \tau$ can be reduced to the solution of a set of  \emph{type equations} of the form
+$\varrho \vartheta = \tau$.
+We formalize this observation by defining a function 
+\[ \textsl{typeEqs}: \mathtt{Term} \times \mathtt{Type} \rightarrow \mathtt{set}(\mathtt{Equation}). \]
+For a term $t$ and a  type $\tau$ 
+\[ \textsl{typeEqs}(t, \tau) \]
+yields a set of type equations.  These type equations will be solvable if and only if
+ $t: \tau$ is correct.
+The function $\textsl{typeEqs}$ is defined as follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\bigl(f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho\bigr) \;\Longrightarrow\;
+ \textsl{typeEqs}\bigl( f(t_1,\cdots,t_n), \tau \bigr) := 
+   \{ \varrho = \tau \} \cup \bigcup\limits_{i=1}^n \textsl{typeEqs}(t_i, \sigma_i)$.
+\\[0.2cm]
+This definition has to be read as follows:  If the function  $f$ has the signature
+$f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho$, 
+then  $f(t_1, \cdots, t_n): \tau$ is true if and only if the set of \emph{type equations}
+\[ \{ \varrho = \tau \} \cup \bigcup\limits_{i=1}^n \textsl{typeEqs}(t_i, \sigma_i) \]
+has a solution $\vartheta$.  We formalize the notion of a \emph{type equation} next.
+
+
+\begin{Definition}[Type Equation]
+{\em
+If $\sigma$ and $\tau$ are types, then the expression
+\\[0.2cm]
+\hspace*{1.3cm}
+$\sigma \doteq \tau$
+\\[0.2cm]
+is called a \emph{type equation}.  A \emph{system of type equations} is a set of type
+equations. A substitution $\vartheta$ \emph{solves} a type equation
+ $\sigma \doteq \tau$ if and only if $\sigma\vartheta = \tau\vartheta$.  A substitution
+ $\vartheta$ solves a system of type equations $E$ iff it solves every type equation in $E$.
+}
+\qed
+\end{Definition}
+
+In order to implement type checking we still need an algorithm to solve systems of type equations.
+The crucial observation is that type equations can be solved by unification.  We do not
+need the general form of unification because if we have a type equation of the form
+ $\varrho = \tau$ then only the left hand side $\varrho$ will contain type parameters.
+We use the algorithm given by  Martelli and Montanari \cite{martelliMontanari:82}.
+This algorithm works with pairs of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle E, \vartheta \rangle$
+\\[0.2cm]
+where $E$ is a set of type equations and $\vartheta$ is a substitution. 
+We start with the pair
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle E, [] \rangle$. 
+\\[0.2cm]
+Here, the substitution is empty, while  $E$ is the set of type equations we want to solve.
+These pairs will be gradually transformed until we arrive a a pair of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle \{\}, \vartheta \rangle$
+\\[0.2cm]
+such that $\vartheta$ is the solution of the system of type equations $E$.
+We use the following rules to rewrite the pairs.
+\begin{enumerate}
+\item If $X$ is a type parameter, then 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ X \doteq \tau \big\}, \vartheta \Big\rangle \quad\leadsto\quad 
+       \Big\langle E[X \mapsto \tau], \vartheta\big[ X \mapsto \tau \big] \Big\rangle$.
+      \\[0.2cm]
+      This works as follows:  If $E$ contains a type equation of the form $X \doteq \tau$      , 
+      then we can remove this type equation from $E$ if we incorporate this equation
+      in the substitution $\vartheta$ by transforming $\vartheta$ into the new substitution
+      $\vartheta\big[ X \mapsto \tau \big]$.  Of course, we also have to apply the
+      substitution $[X \mapsto \tau]$ to the remaining type equations in $E$.
+\item If $f$ is an $n$-ary type constructor we have the rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ f(\sigma_1,\cdots,\sigma_n) \doteq f(\tau_1,\cdots,\tau_n) \big\}, 
+        \vartheta \Big\rangle 
+        \;\leadsto\; 
+        \Big\langle E \cup \big\{ \sigma_1 \doteq \tau_1, \cdots, \sigma_n \doteq \tau_n\}, 
+        \vartheta \Big\rangle$.
+      \\[0.2cm]
+      Therefore, a type equation of the form $f(\sigma_1,\cdots,\sigma_n) \doteq f(\tau_1,\cdots,\tau_n)$
+      is replaced by the  $n$ type equations  
+      $\sigma_1 \doteq \tau_1$, $\cdots$, $\sigma_n \doteq \tau_n$.
+
+      A special case of this occurs if $n=0$.  It reads
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ c \doteq c \big\}, \vartheta \Big\rangle \;\leadsto\; 
+       \Big\langle E, \vartheta \Big\rangle$.
+      \\[0.2cm]
+      Here $c$ is a nullary type constructor.   This rule just says that trivial 
+      type equations can be dropped.
+\item A system of type equations of the form  $E \cup \big\{ f(\sigma_1,\cdots,\sigma_m) \doteq g(\tau_1,\cdots,\tau_n) \big\}$
+      has no solution if $f$ and $g$ are different.   Therefore, we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ f(\sigma_1,\cdots,\sigma_m) \doteq g(\tau_1,\cdots,\tau_n) \big\}, 
+       \vartheta \Big\rangle 
+         \;\leadsto\; \Omega$  \quad if $f \not= g$.
+      \\[0.2cm]
+      Here $\Omega$ denotes unsolvability.  If the solution of $\textsl{typeEqs}(t,\tau)$ yields $\Omega$,
+      then the set of type equations $E$ can not be solved and  $t:\tau$ 
+      is wrong.  \eox
+\end{enumerate}
+
+\exampleEng
+We demonstrate the algorithm by solving the type equation \\[0.1cm]
+\hspace*{1.3cm}  $\texttt{map}( X_2, X_3) \doteq \texttt{map}(\texttt{char}, \mathtt{list}(\texttt{int}))$.  
+\\[0.1cm]
+We proceed as follows:
+$$
+\begin{array}{ll}
+          &  \big\langle \big\{ \texttt{map}( X_2, X_3) \doteq \texttt{map}(\texttt{char}, \texttt{list}(\texttt{int}))  \big\}, \big[ \big] \big\rangle \\[0.2cm]
+ \leadsto &  \big\langle \big\{ X_2 \doteq \mathtt{char},\;  X_3 \doteq\texttt{list}(\texttt{int}) \big\}, \big[ \big] \big\rangle \\[0.2cm]
+ \leadsto &  \big\langle \big\{ X_3 \doteq \texttt{list}(\texttt{int}) \big\}, \big[ X_2 \mapsto \mathtt{char} \big] \big\rangle \\[0.2cm]
+ \leadsto &  \big\langle \big\{\big\}, \big[ X_2 \mapsto \texttt{char},\; X_3 \mapsto \texttt{list}(\texttt{int}) \big] \big\rangle \\[0.2cm]
+\end{array}
+$$
+In this case, the algorithm is successful and the resulting  substitution  \\[0.1cm]
+\hspace*{1.3cm} $\big[ X_2 \mapsto \texttt{char},\; X_3 \mapsto \texttt{list}(\texttt{int}) \big]$ \\[0.1cm]
+is a solution of the type equation given above.  
+\pagebreak
+
+%\input{ep}
+
+\section{Implementierung eines Typ-Checkers für \textsc{TTL}}
+Zur Illustration der dargestellten Theorie implementieren wir einen Typ-Checker für \textsc{TTL}.
+Die Grammatik hatten wir ja bereits in Abbildung \ref{fig:typeChecker-grammar} auf Seite
+\pageref{fig:typeChecker-grammar} präsentiert.  Die Abbildungen 
+\ref{fig:typeChecker.cup-1}, \ref{fig:typeChecker.cup-2} und \ref{fig:typeChecker.cup-3} 
+auf den folgenden Seiten zeigen die \textsl{JavaCup}-Spezifikation eines Parsers für diese Grammatik.
+Der zugehörige Scanner ist in Abbildungen  \ref{fig:typeChecker.jflex} auf Seite
+\pageref{fig:typeChecker.jflex} gezeigt.  Der Scanner unterscheidet in den Zeilen 34 und 35 zwischen
+Namen, die mit einem großen Buchstaben beginnen und solchen Namen, die mit einem kleinen Buchstaben
+beginnen.  Erstere bezeichnen Typ-Parameter, letztere bezeichnen sowohl Funktionen als auch Typ-Konstruktoren.
+Der von \textsl{JavaCup} generierte Parser baut einen abstrakten
+Syntax-Baum auf.  Die zugehörigen Klassen wurden mit Hilfe des im vorhergehenden Abschnitts diskutierten
+Klassen-Generators 
+\textsc{EP} aus der in Abbildung \ref{fig:typeExpr.ep} gezeigten Spezifikation erzeugt.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    import java_cup.runtime.*;
+    import java.util.*;
+    
+    terminal           TYPE, SIGNATURE, LEFT_PAR, RIGHT_PAR;
+    terminal           COMMA, COLON, SEMICOLON, ASSIGN, ARROW, PLUS, TIMES;
+    terminal String    FUNCTION, PARAMETER;
+    
+    nonterminal Program         program;
+    nonterminal Term            term;
+    nonterminal List<Term>      termList;
+    nonterminal List<Parameter>  varList;
+    nonterminal Type            type;
+    nonterminal List<Type>      typeList;
+    nonterminal List<Type>      typeSum;
+    nonterminal TypeDef         typeDef;
+    nonterminal List<TypeDef>   typeDefList;
+    nonterminal Signature       signature;
+    nonterminal List<Signature> signatures;
+    nonterminal List<Type>      argTypes;
+    nonterminal TypedTerm       typedTerm;
+    nonterminal List<TypedTerm> typedTerms;
+    
+    program     ::= typeDefList:typDefs signatures:signList typedTerms:termList 
+                    {: RESULT = new Program(typDefs, signList, termList); :}
+                 ;
+    typeDefList ::= typeDefList:l typeDef:t {: l.add(t); RESULT = l; :}
+                 |  typeDef:t               
+                    {: List<TypeDef> l = new LinkedList<TypeDef>(); 
+                       l.add(t); RESULT = l; 
+                    :}
+                 ;
+    typeDef     ::= TYPE FUNCTION:f ASSIGN typeSum:s SEMICOLON
+                    {: RESULT = new SimpleTypeDef(f, s); :}
+                 |  TYPE FUNCTION:f LEFT_PAR varList:a RIGHT_PAR ASSIGN 
+                         typeSum:s SEMICOLON 
+                    {: RESULT = new ParamTypeDef(f, a, s); :}
+                 ;
+    type        ::= FUNCTION:f LEFT_PAR typeList:t RIGHT_PAR 
+                                {: RESULT = new CompositeType(f, t); :}
+                 |  FUNCTION:f  {: RESULT = new CompositeType(f);    :}
+                 |  PARAMETER:v {: RESULT = new Parameter(v);        :}
+                 ;    
+    typeList    ::= typeList:l COMMA type:t {: l.add(t); RESULT = l; :}
+                 |  type:t {: List<Type> l = new LinkedList<Type>(); 
+                              l.add(t); 
+                              RESULT = l; 
+                           :}   
+                 ;   
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsl{JavaCup}-Spezifikation der \textsc{Ttl}-Grammatik, 1. Teil}
+\label{fig:typeChecker.cup-1}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    typeSum     ::= typeSum:l PLUS type:t {: l.add(t); RESULT = l; :}   
+                 |  type:t 
+                    {: 
+                       List<Type> l = new LinkedList<Type>(); 
+                       l.add(t);  
+                       RESULT = l; 
+                    :}   
+                 ;
+    signature   ::= SIGNATURE FUNCTION:f COLON argTypes:a 
+                              ARROW type:t SEMICOLON
+                    {: RESULT = new Signature(f, a, t); :}
+                 |  SIGNATURE FUNCTION:f COLON type:t SEMICOLON
+                    {: List a = new LinkedList<Type>(); 
+                       RESULT = new Signature(f, a, t); 
+                    :}
+                 ;
+    signatures  ::= signatures:l signature:s {: l.add(s); RESULT = l; :}
+                 |  signature:s 
+                    {: List<Signature> l = new LinkedList(); 
+                       l.add(s); 
+                       RESULT = l; 
+                    :}
+                 ;    
+    argTypes    ::= argTypes:l TIMES type:t {: l.add(t); RESULT = l; :}
+                 |  type:t 
+                    {: List<Type> l = new LinkedList(); 
+                       l.add(t); RESULT = l; 
+                    :}
+                 ;
+    varList     ::= varList:l COMMA PARAMETER:v 
+                                {: l.add(new Parameter(v)); RESULT = l; :}
+                 |  PARAMETER:v {: List<Parameter> l = new LinkedList(); 
+                                   l.add(new Parameter(v)); 
+                                   RESULT = l; 
+                                :}
+                 ;    
+    term        ::= FUNCTION:f LEFT_PAR termList:l RIGHT_PAR 
+                               {: RESULT = new Term(f, l); :}
+                 |  FUNCTION:f {: List<Term> l = new LinkedList<Term>(); 
+                                  RESULT = new Term(f, l); 
+                               :}
+                 ;
+    termList    ::= termList:l COMMA term:t 
+                           {: l.add(t); RESULT = l;            :}
+                 |  term:t {: List<Term> l = new LinkedList(); 
+                              l.add(t); RESULT = l; 
+                           :}
+                 ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsl{JavaCup}-Spezifikation der \textsc{Ttl}-Grammatik, 2. Teil}
+\label{fig:typeChecker.cup-2}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    typedTerm   ::= term:t COLON type:s SEMICOLON 
+                    {: RESULT = new TypedTerm(t, s); :}
+                 ;
+    
+    typedTerms  ::= typedTerms:l typedTerm:t 
+                    {: l.add(t); RESULT = l; :}
+                 |  typedTerm:t 
+                    {: List<TypedTerm> l = new LinkedList<TypedTerm>(); 
+                       l.add(t); 
+                       RESULT = l; 
+                    :}
+                 ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsl{JavaCup}-Spezifikation der \textsc{Ttl}-Grammatik, 3. Teil}
+\label{fig:typeChecker.cup-3}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    Program = Program(List<TypeDef>   typeDefs, 
+                      List<Signature> signatures, 
+                      List<TypedTerm> typedTerms);
+    
+    TypeDef = SimpleTypeDef(String name, List<Type> typeSum)
+            + ParamTypeDef(String       name, 
+                           List<String> parameters, 
+                           List<Type>   typeSum);
+    
+    Type = Parameter(String name) 
+         + CompositeType(String name, List<Type> argTypes);
+    
+    substitute: Type * Parameter * Type -> Type;
+    
+    Signature = Signature(String name, List<Type> argList, Type result);
+    
+    Term = Term(String function, List<Term> termList);
+    
+    typeEqs: Term * Type * Map<String, Signature> -> List<Equation>;
+    
+    TypedTerm = TypedTerm(Term term, Type type);
+    
+    Substitution = Substitution(List<Parameter> variables, List<Type> types);
+    
+    Equation = Equation(Type lhs, Type rhs);
+    
+    substitute: Equation * Parameter * Term -> Equation;
+    
+    MartelliMontanari = 
+        MartelliMontanari(List<Equation> equations, Substitution theta);
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Definition der benötigten \textsl{Java}-Klassen mit Hilfe von \textsc{EP}.}
+\label{fig:typeExpr.ep}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    import java_cup.runtime.*;
+          
+    %%
+       
+    %char
+    %line
+    %column
+    %cup
+       
+    %{   
+        private Symbol symbol(int type) {
+            return new Symbol(type, yychar, yychar + yylength());
+        }
+        
+        private Symbol symbol(int type, Object value) {
+            return new Symbol(type, yychar, yychar + yylength(), value);
+        }
+    %}
+       
+    %%
+       
+    "+"                { return symbol( sym.PLUS      ); } 
+    "*"                { return symbol( sym.TIMES     ); } 
+    "("                { return symbol( sym.LEFT_PAR  ); } 
+    ")"                { return symbol( sym.RIGHT_PAR ); }
+    ","                { return symbol( sym.COMMA     ); }
+    ":"                { return symbol( sym.COLON     ); }
+    ";"                { return symbol( sym.SEMICOLON ); }
+    ":="               { return symbol( sym.ASSIGN    ); }
+    "->"               { return symbol( sym.ARROW     ); }
+    "type"             { return symbol( sym.TYPE      ); }
+    "signature"        { return symbol( sym.SIGNATURE ); }
+    
+    [a-z][a-zA-Z_0-9]* { return symbol(sym.FUNCTION,  yytext()); }
+    [A-Z][a-zA-Z_0-0]* { return symbol(sym.PARAMETER, yytext()); }
+    
+    [ \t\n]            { /* skip white space */ }   
+    "//" [^\n]*        { /* skip comments    */ }   
+    
+    [^] { throw new Error("Illegal character '" + yytext() + 
+                          "' at line " + yyline + ", column " + yycolumn); }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsl{JFlex}-Spezifikation des Scanners}
+\label{fig:typeChecker.jflex}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public Substitution solve() {
+        while (mEquations.size() != 0) {
+            Equation eq = mEquations.remove(0);
+            Type lhs = eq.getLhs();
+            Type rhs = eq.getRhs();
+            if (lhs instanceof Parameter) {
+                Parameter var = (Parameter) lhs;
+                List<Equation> newEquations = new LinkedList<Equation>();
+                for (Equation equation: mEquations) {
+                    Equation neq = equation.substitute(var, rhs);
+                    newEquations.add(neq);
+                }
+                mEquations = newEquations;
+                mTheta     = mTheta.substitute(var, rhs);
+            } else if (lhs instanceof CompositeType) {
+                CompositeType compLhs = (CompositeType) lhs;
+                CompositeType compRhs = (CompositeType) rhs;
+                if (!compLhs.getName().equals(compRhs.getName())) {
+                    // different type constructors, no solution
+                    System.err.println("Error: different type constructors\n");
+                    return null;
+                }
+                List<Type> lhsArgs = compLhs.getArgTypes();
+                List<Type> rhsArgs = compRhs.getArgTypes();
+                for (int i = 0; i < lhsArgs.size(); ++i) {
+                    Type sigmaLhs = lhsArgs.get(i);
+                    Type sigmaRhs = rhsArgs.get(i);
+                    mEquations.add(0, new Equation(sigmaLhs, sigmaRhs));
+                }
+            } 
+        }
+        return mTheta;
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Methode $\textsl{solve}()$ aus der Klasse \texttt{MartelliMontanari}.}
+\label{fig:MartelliMontanari:solve.java}
+\end{figure}
+
+Die Klasse \texttt{MartelliMontanari} enthält die in Abbildung \ref{fig:MartelliMontanari:solve.java}
+gezeigte Methode $\textsl{solve}()$, mit der sich ein syntaktisches Gleichungs-System lösen läßt.
+Wir diskutieren diese Methode jetzt im Detail.
+\begin{enumerate}
+\item Am Anfang wählen wir in  Zeilen 3 willkürlich die erste syntaktische Gleichung aus der Menge
+      \texttt{mEquations} der zu lösenden syntaktischen Gleichungen aus.  
+      
+      Das weitere Vorgehen richtet sich dann nach der Art der Gleichung.
+\item In den Zeilen 6 -- 14 behandeln wir den Fall, dass auf der linken Seite der syntaktischen Gleichung
+      ein Typ-Parameter steht.  In diesem Fall formen wir das syntaktische Gleichungs-System nach
+      der folgenden Regel um:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ X \doteq \tau \big\}, \vartheta \Big\rangle \quad\leadsto\quad 
+       \Big\langle E[X \mapsto \tau], \vartheta\big[ X \mapsto \tau \big] \Big\rangle$. 
+      \\[0.2cm]
+      Der Typ-Parameter, der in der obigen Formel mit \texttt{X} bezeichnet wird, trägt im Programm 
+      den Namen \texttt{var} und der Typ $\tau$ wird im Programm mit \texttt{rhs} bezeichnet.
+\item In Zeile 15 betrachten wir den Fall, dass auf der linken Seite der syntaktischen Gleichung
+      ein zusammengesetzter Typ steht.  Wenn die Typ-Gleichung lösbar sein soll, muss dann auch auf der
+      rechten Seite ein zusammengesetzter Typ stehen.  Dies wird in  Zeile 16 überprüft.
+
+      Der restliche Code beschäftigt sich nun mit dem Fall, dass auf beiden Seiten der syntaktischen
+      Gleichung ein zusammengesetzter Typ steht.
+\item Die Zeilen 22 -- 25 behandeln den Fall, dass die Typ-Konstruktoren auf beiden Seiten verschieden sind,
+      es wird also der Fall
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ f(\sigma_1,\cdots,\sigma_m) \doteq g(\tau_1,\cdots,\tau_n) \big\}, 
+       \vartheta \Big\rangle 
+       \;\leadsto\; \Omega$. 
+      \\[0.2cm]
+      behandelt.  Die Methode liefert in diesem Fall statt einer Substitution den Wert \texttt{null}
+      zurück.
+\item Die Zeilen 27 -- 32 behandeln schließlich den Fall, in dem wir das Gleichungs-System nach der Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\Big\langle E \cup \big\{ f(\sigma_1,\cdots,\sigma_n) \doteq f(\tau_1,\cdots,\tau_n) \big\}, 
+       \vartheta \Big\rangle 
+       \;\leadsto\; 
+       \Big\langle E \cup \big\{ \sigma_1 \doteq \tau_1, \cdots, \sigma_n \doteq \tau_n\}, 
+       \vartheta \Big\rangle$.
+      \\[0.2cm]
+      umformen.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public List<Equation> typeEqs(Type tau, Map<String, Signature> map) {
+        Signature sign = map.get(mFunction);
+        if (sign == null) {
+            System.err.println("The function " + mFunction + 
+                               " has not been declared!");
+            throw new Error("Undeclared function in " + myString());
+        }
+        List<Type> argTypes = sign.getArgList();
+        if (argTypes.size() != mTermList.size()) {
+            System.err.println("Wrong number of parameters for function " + 
+                               mFunction);
+            System.err.println("expected: " + argTypes.size());
+            System.err.println("found:    " + mTermList.size());
+            throw new Error("Wrong number of parameters in " + myString());
+        }
+        List<Equation> result = new LinkedList<Equation>();
+        Equation eq = new Equation(sign.getResult(), tau);
+        result.add(eq);
+        for (int i = 0; i < mTermList.size(); ++i) {
+            Term argI   = mTermList.get(i);
+            Type sigmaI = argTypes.get(i);
+            result.addAll( argI.typeEqs(sigmaI, map) );
+        }
+        return result;
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Berechnung der Typ-Gleichungen}
+\label{fig:Term:typeEqs.java}
+\end{figure}
+
+Als letztes diskutieren wir die Berechnung der Typ-Gleichungen, die in der Methode $\textsl{typeEqs}()$ der
+Klasse \texttt{Term} implementiert ist.  
+Ein Term $f(s_1, \cdots, s_n)$ hat genau dann den Typ $\tau$, falls die Funktion $f$
+eine Signatur
+\\[0.2cm]
+\hspace*{1.3cm}
+$f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho$
+\\[0.2cm]
+hat und es darüber hinaus eine Parameter-Substitution $\vartheta$ gibt, so dass
+$\tau = \varrho\vartheta$ gilt und weiterhin die Terme $s_i$ vom Typ $\sigma_i\vartheta$ sind:
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(s_1,\cdots,s_n):\tau \;\Leftrightarrow\; 
+ \exists \vartheta\in\textsc{Subst}: \varrho\vartheta = \tau \wedge 
+ s_1:\sigma_1\vartheta \wedge \cdots \wedge s_n:\sigma_n\vartheta$.
+\begin{enumerate}
+\item Um die obige Definition von $t:\tau$ umzusetzen, suchen wir für einen Term der Form
+      $f(s_1,\cdots,s_n)$ zunächst in Zeile 2 nach der Signatur des Funktions-Zeichens $f$.
+      Diese Signaturen sind in der Symboltabelle \texttt{map} hinterlegt.
+      Findet sich für das Funktions-Zeichen keine Signatur, so liegt offenbar ein Fehler vor, 
+      der in Zeile 4 ausgegeben wird.
+\item Ansonsten speichern wir in Zeile 8 die Argument-Typen $\sigma_1, \cdots, \sigma_n$ in der Variablen
+      \texttt{argTypes}.  Die Signatur von $f$ muss natürlich genau so viele Argument-Typen
+      haben, wie das Funktions-Zeichen $f$ Argumente hat.  Dies wird in Zeile  9 überprüft.
+\item Falls bis hierhin keine Probleme aufgetreten sind, erzeugen wir nun die Typ-Gleichungen nach der Formel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\bigl(f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho\bigr) \;\Longrightarrow\;
+      \textsl{typeEqs}\bigl( f(t_1,\cdots,t_n), \tau \bigr) := 
+      \{ \varrho = \tau \} \cup \bigcup\limits_{i=1}^n \textsl{typeEqs}(t_i, \sigma_i)$.
+      \\[0.2cm]
+      Dazu erstellen wir in Zeile 17 zuächst die Typ-Gleichungen
+      \\[0.2cm]      
+      \hspace*{1.3cm}
+      $\varrho \doteq \tau$
+      \\[0.2cm]
+      und berechnen dann in der Schleife in den Zeilen 19 -- 22 rekursiv die Typ-Gleichungen, die sich aus
+      den Forderungen 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_i:\sigma_i \quad \mbox{für} \; i=1,\cdots,n$
+      \\[0.2cm]
+      ergeben.  Als Ergebnis erhalten wir eine Menge von Typ-Gleichungen, die genau
+      dann lösbar sind, wenn der Term $f(s_1,\cdots,s_n)$ den Typ $\tau$ hat.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = -0.3cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public Program(List<TypeDef>   typeDefs, 
+                   List<Signature> signatures, 
+                   List<TypedTerm> typedTerms) 
+    {
+        mTypeDefs   = typeDefs;
+        mSignatures = signatures;
+        mTypedTerms = typedTerms;
+        mSignatureMap = new TreeMap<String, Signature>();
+        for (Signature s: mSignatures) {
+            mSignatureMap.put(s.getName(), s);
+        }
+        for (TypeDef td: mTypeDefs) {
+            if (td instanceof SimpleTypeDef) {
+                SimpleTypeDef std = (SimpleTypeDef) td;
+                Type rho = new CompositeType(std.getName(), new LinkedList<Type>());
+                for (Type tau: std.getTypeSum()) {
+                    CompositeType c = (CompositeType) tau;
+                    String name = c.getName();
+                    Signature s = new Signature(name, c.getArgTypes(), rho);
+                    mSignatureMap.put(name, s);
+                }
+            } else {
+                ParamTypeDef ctd = (ParamTypeDef) td;
+                List<Type> paramList = new LinkedList<Type>();
+                for (Parameter v : ctd.getParameters()) {
+                    paramList.add(v);
+                }
+                Type rho = new CompositeType(ctd.getName(), paramList);
+                for (Type tau: ctd.getTypeSum()) {
+                    CompositeType c = (CompositeType) tau;
+                    String name = c.getName();
+                    Signature s = new Signature(name, c.getArgTypes(), rho);
+                    mSignatureMap.put(name, s);
+                }
+            }
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Der Konstruktor der Klasse \texttt{Program}.}
+\label{fig:Program.Program.java}
+\end{figure}
+\vspace*{0.3cm}
+
+
+\noindent
+Als letztes diskutieren wir die Klasse \texttt{Program}.  Abbildung \ref{fig:Program.Program.java}
+zeigt den Konstruktor dieser Klasse.  Dieser Konstruktor bekommt als Argumente 
+\begin{itemize}
+\item eine Liste von Typ-Definitionen \texttt{typeDefs},
+\item eine Liste von Signaturen \texttt{signatures} und
+\item eine Liste von getypten Termen \texttt{typedTerms}, deren Typ-Korrektheit
+      überprüft werden soll.
+\end{itemize}
+Die wesentliche Aufgabe des Konstruktors besteht darin,  die Member-Variable
+\texttt{mSignatureMap} zu initialisieren.  Hierbei handelt es sich um eine Symboltabelle,
+in der zu jedem Funktions-Namen die zugehörige Signatur abgelegt ist.
+Dazu werden zunächst in der Schleife in Zeile 9 -- 11 alle
+Signaturen aus der als Argument übergebenen Liste \texttt{signatures} in dieser Liste eingetragen.
+Dies alleine ist allerdings nicht ausreichend, denn durch die Typ-Definitionen werden implizit noch
+weitere Funktions-Zeichen deklariert.  Beispielsweise werden durch die Typ-Definition
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{type \ list(X) := nil + cons(X, list(X));}
+\\[0.2cm]
+implizit die Funktionszeichen \textsl{nil} und \textsl{cons} definiert.  Diese Funktionszeichen
+haben die folgenden Signaturen:
+\begin{enumerate}
+\item \texttt{nil: List(T)},
+\item \texttt{cons: T * List(T) -> List(T)}.
+\end{enumerate}
+Die Aufgabe des Konstruktors der Klasse \texttt{Program} besteht also darin, aus den in dem Argument
+\texttt{typeDefs} enthaltenen Typ-Definitionen die Signaturen der implizit deklarierten
+Funktionszeichen zu generieren.  Dazu iteriert die Schleife in Zeile 12 zunächst über alle
+Typ-Definitionen.   Es gibt zwei Arten von Typ-Definitionen:  Typ-Definitionen, bei denen der
+erzeugte Typ noch von einem oder mehreren Parametern abhängt, wie dies z.B.~bei der Typ-Definition
+von \texttt{List(T)} der Fall ist, oder solche Typ-Definitionen, bei denen der erzeugte Typ keine
+Parameter hat.  Letztere Typ-Definitionen werden durch die Klasse \texttt{SimpleTypeDef}
+dargestellt, erstere durch die Klasse \texttt{CompositeType}.  Diese beiden Fälle werden durch die
+\texttt{if}-Abfrage in Zeile 13 unterschieden.
+\begin{enumerate}
+\item Falls die untersuchte Typ-Definition \texttt{td} eine einfache Typ-Definition der Form
+      \[ \tau := f_1(\sigma_1^{(1)}, \cdots, \sigma_{n_1}^{(1)}) + \cdots
+                 f_k(\sigma_1^{(k)}, \cdots, \sigma_{n_k}^{(k)})
+      \]
+      ist, so wird der Typ $\tau$ von den Funktionen $f_1$, $\cdots$, $f_k$ erzeugt.  Die $i$-te
+      Funktion $f_i$ hat die Signatur
+      \[ f_i: \sigma_1^{(i)} \times \cdots \times \sigma_{n_i}^{(i)} \rightarrow \tau.  \]
+      Diese Signatur wird in Zeile 19 aus dem Ergebnis-Typ $\tau$ und den Argument-Typen 
+      \texttt{c.getArgTypes()} der Funktion $f_i$ zusammengebaut.  Die so konstruierte Signatur
+      wird dann in der Symboltabelle \texttt{mSignatureMap} abgelegt.
+\item Falls es sich bei der untersuchten Typ-Definition um die Definition eines parametrisierten
+      Typs handelt, muss darauf geachtet werden, dass der Ergebnis-Typ der Signatur der Funktionen
+      $f_i$ auch von diesen Parametern abhängt.  Zu diesem Zweck wird in Zeile 24 zunächst eine neue
+      Parameter-Liste \texttt{paramList} angelegt, in die dann in der Schleife in Zeile 25 --- 27
+      die Parameter des Typs hineinkopiert werden.  Der Rest dieses Falls ist analog zum ersten Fall.
+\end{enumerate}
+Neben dem Konstruktor enthält die Klasse \texttt{Program} noch die Methode \texttt{typeCheck()},
+welche die Typüberprüfung ausführt.  Die Implementierung dieser Methode ist in der Abbildung
+\ref{fig:Program.typeCheck} gezeigt.  Diese Methode iteriert in der Schleife, die in Zeile 2
+beginnt, über alle getypten Terme $t: \tau$, die dem Konstruktor der Klasse \texttt{Program}
+übergeben wurden.   Dazu wird in Zeile 6 zu jedem Term $t$ und Typ $\tau$ die Menge der
+Typ-Gleichungen $\textsl{typeEqs}(t,\tau)$ berechnet.  Dazu wird der Methode \texttt{typeEqs()}, die
+die Funktion $\textsl{typeEqs}()$ implementiert, noch die vom Konstruktor berechnete Symboltabelle
+übergeben.  In dieser Symboltabelle sind die Signaturen der verschiedenen Funktions-Zeichen
+abgespeichert.   Die berechneten Typ-Gleichungen werden anschließend mit Hilfe der Methode
+\texttt{solve()}  der Klasse \texttt{MartelliMontanari} gelöst.  Falls die Typ-Gleichungen
+gelöst werden konnten, hat der Term $t$ tatsächlich den Typ $\tau$.  Andernfalls wird eine
+Fehlermeldung ausgegeben.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    public void typeCheck() {
+        for (TypedTerm tt: mTypedTerms) {
+            System.out.println("\nChecking " + tt.myString());
+            Term t   = tt.getTerm();
+            Type tau = tt.getType();
+            List<Equation> typeEquations = t.typeEqs(tau, mSignatureMap);
+            MartelliMontanari mm = new MartelliMontanari(typeEquations);
+            Substitution theta = mm.solve();
+            if (theta != null) {
+                System.out.println(tt.myString() + " has been verified!");
+                System.out.println(theta);
+            } else {
+                System.out.println(tt.myString() + " type ERROR!!!");
+            }
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Methode \textsl{typeCheck()} in der Klasse \texttt{Program}.}
+\label{fig:Program.typeCheck}
+\end{figure}
+
+
+\section{Inklusions-Polymorphismus}
+Interpretieren wir Typen als Mengen von Werten, so stellen wir fest, dass es bei Typen eine
+Inklusions-Hierarchy gibt.  In der Sprache \textsl{Java} hat jeder Wert vom Typ \texttt{String} auch
+gleichzeitig den Typ \texttt{Object}, es gilt also
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{String} \subseteq \texttt{Object}$.
+\\[0.2cm]
+Allgemein gilt: Ist $e$ ein Ausdruck, der den Typ $A$ hat und ist $A$ weiter eine Klasse, die von der
+Klasse $B$ abgeleitet ist, so kann der Ausdruck $e$ überall dort verwendet werden, wo ein Ausdruck vom Typ
+$B$ benötigt wird.  Damit kann der Ausdruck $e$ sowohl als ein $A$, als auch als ein $B$ verwendet werden:
+$e$ kann also \emph{polymorph} verwendet werden.  Im Gegensatz zu dem \emph{parametrischen Polymorphismus},
+den wir bisher betrachtet haben, sprechen wir hier von \emph{Inklusions-Polymorphismus}.  Die Behandlung von
+Inklusions-Polymorphismus ist besonders dann interessant, wenn dieser zusammen mit parametrischen
+Polymorphismus auftritt.  Wir zeigen exemplarisch ein Beispiel in Abbildung \ref{fig:TypeSurprise.java}.
+\begin{enumerate}
+\item In Zeile 4 wird hier zunächst ein Feld \texttt{x} von Strings angelegt.
+\item In Zeile 5 definieren wir ein Feld \texttt{y} von Objekten und initialisieren dieses Feld mit
+      dem bereits erzeugten Feld \texttt{x}.  Da jeder String zugleich auch ein Objekt ist,
+      ist dies möglich.
+\item In Zeile 6 weisen wir dem zweiten Element des Feldes \texttt{y} die Zahl 2 zu.
+      Da \texttt{y} ein Feld von Objekten ist und eine Zahl ebenfalls als Objekt angesehen werden kann,
+      sollte auch dies kein Problem sein.
+\end{enumerate}
+In der Tat läßt sich das Programm fehlerfrei übersetzen.  Bei der Ausführung wird aber eine Ausnahme
+ausgelöst.  Der Grund ist, dass mit der Zuweisung in Zeile 5 die Variable \texttt{y} eine Referenz auf das
+Feld von Strings ist, das in Zeile 4 angelegt worden ist.  Wenn wir nun versuchen, in dieses Feld eine Zahl
+einzufügen, dann gibt es eine \texttt{ArrayStoreException}.  Dieses Beispiel zeigt, dass die Sprache
+\textsl{Java} nicht statisch auf Typ-Sicherheit geprüft werden kann.  Es zeigt auch, dass die Behandlung der
+Kombiation von Inklusions-Polymorphismus und parametrischen Polymorphismus deutlich komplexer ist, als die
+Behandlung von parametrischem Polymorphismus alleine.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    public class TypeSurprise {
+    
+        public static void main(String[] args) {
+            String[] x = { "a", "b", "c" };
+            Object[] y = x;
+            y[1] = new Integer(2);
+            System.out.println(x[1]);
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Ein Typ-Problem in \textsl{Java}.}
+\label{fig:TypeSurprise.java}
+\end{figure}
+In dem Papier ``\emph{Type Inference for Java 5}''  von Mazurak und Zdancewic wird das Typ-System
+der Sprache \textsl{Java} näher untersucht.  Die Autoren kommen zu dem Schluss, dass die Frage, ob
+ein gegebenes \textsl{Java}-Programm korrekt getypt ist, unentscheidbar ist.  Es ist daher auch
+nicht verwunderlich,  dass sich der \textsl{Java}-Compiler bei manchen Programmen mit einem
+Stack-Overflow verabschiedet, der seine Ursache im Typ-Checker des Compilers hat.
+Desweiteren ist der folgende Satz aus der ``\textsl{Java Language Specifiaction}'', also
+der verbindlichen Definition der Sprache \textsl{Java}, aufschlussreich:
+\vspace*{0.3cm}
+
+\begin{minipage}[c]{0.9\linewidth}
+{\em
+The type inference algorithm should be viewed as a heuristic, designed to perform well in
+practice. If it fails to infer the desired result, explicit type parameters may be used
+instead.   
+}  
+\end{minipage}
+
+\vspace*{0.3cm}
+\noindent
+Dies zeigt, dass die Kombination von parametrischem Polymorphismus und Inklusions-Polymor\-phismus zu
+sehr komplexen Problemen führen kann, die wir aber aus Zeitgründen nicht tiefer betrachten können.
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formale-sprachen"
+%%% End: 

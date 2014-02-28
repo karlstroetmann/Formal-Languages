@@ -1,0 +1,842 @@
+\chapter{The Theory of Regular Languages \label{chapter:regulaere-sprachen}}
+Recall that a formal language $L \subseteq \Sigma^*$ is called \emph{regular language} if there is a regular expression $r$ such that the language $L$ is
+specified by $r$, i.e.~if
+\\[0.2cm]
+\hspace*{1.3cm}
+$L = L(r)$ 
+\\[0.2cm]
+holds.  In Chapter \ref{chapter:finit-state-machines.tex} we have shown that the regular languages
+are those languages that are recognized by a finite state machine.  In this chapter, we begin by showing
+that regular languages have certain closure properties:
+\begin{enumerate}
+\item The union $L_1 \cup L_2$ of two regular languages $L_1$ and $L_2$ is a regular language.
+\item The intersection $L_1 \cap L_2$ of two regular languages $L_1$ und $L_2$ is a regular language.
+\item The complement $\Sigma^* \backslash L$ of a regular language $L$ is itself a regular language.
+\end{enumerate}
+As an application of these closure properties we then show how it is possible to decide whether two
+regular expressions are equivalent.
+After that, we proceed to discuss the limits of regular languages.  To this end we prove the
+\href{http://en.wikipedia.org/wiki/Pumping_lemma_for_regular_languages}{\emph{pumping lemma}}.
+Using the pumping lemma we will again be able to show that the language
+\\[0.2cm]
+\hspace*{1.3cm} $\{ \mathtt{a}^n \mathtt{b}^n \mid n \in \mathbb{N} \}$
+\\[0.2cm]
+is not regular.
+
+\section{Abschluss-Eigenschaften regulärer Sprachen}
+In diesem Abschnitt zeigen wir, dass reguläre Sprachen unter den Boole'schen Operationen
+\emph{Vereinigung}, \emph{Durchschnitt} und \emph{Komplement} abgeschlossen sind.  Wir beginnen mit
+der Vereinigung.  
+
+\begin{Satz}
+  Sind $L_1$ und $L_2$ reguläre Sprachen, so ist auch die Vereinigung $L_1 \cup L_2$ 
+  eine reguläre Sprache.
+\end{Satz}
+
+\proof
+Da $L_1$ und $L_2$ reguläre Sprachen sind, gibt es reguläre Ausdrücke $r_1$ und $r_2$, so dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_1 = L(r_1)$ \quad und \quad $L_2 = L(r_2)$
+\\[0.2cm]
+gilt.  Wir definieren $r := r_1 + r_2$.  Offenbar gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(r) = L(r_1 + r_2) = L(r_1) \cup L(r_2) = L_1 \cup L_2$.
+\\[0.2cm]
+Damit ist klar, dass $L_1 \cup L_2$ eine reguläre Sprache ist. \qed
+
+\begin{Satz} \label{satz:schnitt}
+  Sind $L_1$ und $L_2$ reguläre Sprachen, so ist auch der Durchschnitt $L_1 \cap L_2$ 
+  eine reguläre Sprache.
+\end{Satz}
+
+\proof Während der letzte Satz unmittelbar aus der Definition der regulären Ausdrücke
+gefolgert werden kann, müssen wir nun etwas weiter ausholen.  Im letzten Kapitel haben wir
+gesehen, dass es zu jedem regulären Ausdruck $r$ einen äquivalenten deterministischen
+endlichen Automaten $A$ gibt, der die durch $r$ spezifizierte Sprache akzeptiert und wir
+können außerdem annehmen, dass dieser Automat vollständig ist.  Es seien $r_1$ und $r_2$
+reguläre Ausdrücke, die die Sprachen $L_1$ und $L_2$ spezifizieren:
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_1 = L(r_1)$ \quad und \quad $L_2 = L(r_2)$.
+\\[0.2cm]
+Dann konstruieren wir zunächst zwei vollständige deterministische endliche Automaten $A_1$
+und $A_2$, die diese Sprachen akzeptieren, es gilt also
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(A_1) = L_1$ \quad und \quad $L(A_2) = L_2$.
+\\[0.2cm]
+Wir werden für die Sprache $L_1 \cap L_2$ einen Automaten $A$ bauen, der diese Sprache
+akzeptiert.  Da es zu jedem Automaten auch einen regulären Ausdruck gibt, 
+der die Sprache beschreibt, die von dem Automaten akzeptiert wird, 
+haben wir damit dann gezeigt, dass die Sprache $L_1 \cap L_2$ regulär ist.
+Als Baumaterial für den Automaten $A$, der die Sprache $L_1 \cup L_2$ akzeptiert, 
+verwenden wir natürlich die Automaten $A_1$ und $A_2$.  Wir nehmen an, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$A_1 = \langle Q_1, \Sigma, \delta_1, q_1, F_1 \rangle$ \quad und \quad
+$A_2 = \langle Q_2, \Sigma, \delta_2, q_2, F_2 \rangle$
+\\[0.2cm]
+gilt und definieren $A$ als eine Art kartesisches Produkt von $A_1$ und $A_2$:
+\\[0.2cm]
+\hspace*{1.3cm}
+$A := \langle Q_1 \times Q_2, \Sigma, \delta, \pair(q_1,q_2), F_1 \times F_2 \rangle$,
+\\[0.2cm]
+wobei die Zustands-Übergangs-Funktion 
+\\[0.2cm]
+\hspace*{1.3cm}
+ $\delta : (Q_1 \times Q_2) \times \Sigma \rightarrow Q_1 \times Q_2$ 
+\\[0.2cm]
+durch die Gleichung
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta\bigl( \pair(p_1, p_2), c \bigr) := \bigl\langle\delta_1(p_1,c), \delta_2(p_2,c)\bigr\rangle$
+\\[0.2cm]
+definiert wird.  Der so definierte endliche Automat $A$ simuliert gleichzeitig die 
+beiden Automaten $A_1$ und $A_2$ indem er parallel berechnet, in
+welchem Zustand die Automaten $A_1$ und $A_2$ jeweils sind.  Damit das möglich ist, bestehen die Zustände
+von $A$ aus Paaren $\pair(p_1,p_2)$, so dass $p_1$ ein Zustand von $A_1$ und $p_2$ ein
+Zustand von $A_2$ ist und die Funktion $\delta$ berechnet den Nachfolgezustand zu
+$\pair(p_1,p_2)$, indem gleichzeitig die Nachfolgezustände von $p_1$ und $p_2$ berechnet werden.
+Ein String wird genau dann akzeptiert, wenn sowohl der Automat $A_1$ als auch der Automat $A_2$ einen
+akzeptierenden Zustand erreicht haben.  Daher wird die Menge der akzeptierenden Zustände 
+wie folgt definiert:
+\\[0.2cm]
+\hspace*{1.3cm}
+$F := \bigl\{ \pair(p_1,p_2) \in Q_1 \times Q_2 \mid p_1 \in F_1 \wedge p_2 \in F_2 \bigr\} = F_1 \times F_2$.
+\\[0.2cm]
+Damit gilt für alle $s \in \Sigma^*$:
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{cl}
+                & s \in L(A)                                                           \\[0.1cm]
+\Leftrightarrow & \delta(\pair(q_1,q_2), s) \in F                                      \\[0.1cm]
+\Leftrightarrow & \langle \delta_1(q_1,s), \delta_2(q_2, s) \rangle \in F_1 \times F_2 \\[0.1cm]
+\Leftrightarrow & \delta_1(q_1,s) \in F_1 \wedge  \delta_2(q_2, s) \in F_2             \\[0.1cm]
+\Leftrightarrow & s \in L(A_1) \wedge  s \in L(A_2)                                    \\[0.1cm]
+\Leftrightarrow & s \in L(A_1) \cap L(A_2)                                             \\[0.1cm]
+\Leftrightarrow & s \in L_1 \cap L_2                                                 
+\end{array}
+$
+\\[0.2cm]
+Also haben wir nachgewiesen, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+ $L(A) = L_1 \cap L_2$ 
+\\[0.2cm]
+gilt und das war zu zeigen. \qed
+
+\remark
+Prinzipiell wäre es möglich, für reguläre Ausdrücke eine Funktion 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\wedge: \textsl{RegExp} \times \textsl{RegExp} \rightarrow \textsl{RegExp}$
+\\[0.2cm]
+zu definieren, so dass für den Ausdruck $r_1 \wedge r_2$ die Beziehung
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(r_1 \wedge r_2) = L(r_1) \cap L(r_2)$
+\\[0.2cm]
+gilt:  Zunächst berechnen wir zu $r_1$ und $r_2$ äquivalente nicht-deterministische
+endliche Automaten, überführen diese Automaten dann in einen vollständigen
+deterministischen Automaten, bilden wie oben gezeigt das kartesische Produkt dieser
+Automaten und gewinnen schließlich aus diesem Automaten einen regulären 
+Ausdruck zurück.  Der so gewonnene reguläre Ausdruck wäre allerdings so groß,
+dass diese Funktion in der Praxis nicht implementiert wird, denn bei der Überführung
+eines nicht-deterministischen in einen deterministischen Automaten kann der Automat
+stark anwachsen und der reguläre Ausdruck, der sich aus einem Automaten ergibt, kann schon
+bei verhältnismäßig kleinen Automaten sehr unübersichtlich werden.
+
+\begin{Satz}
+  Ist $L$ eine reguläre Sprache über dem Alphabet $\Sigma$, so ist auch das Komplement
+  von $L$, die Sprache $\Sigma^* \backslash L$ eine reguläre Sprache.
+\end{Satz}
+
+\proof Wir gehen ähnlich vor wie beim Beweis des letzten Satzes und nehmen an, dass ein
+vollständiger deterministischer endlicher Automat $A$ gegeben ist, der die Sprache $L$
+akzeptiert:
+\\[0.2cm]
+\hspace*{1.3cm} $L = L(A)$.
+\\[0.2cm]
+Wir konstruieren einen Automaten $\hat{A}$, der ein Wort $w$ genau dann akzeptiert, wenn
+$A$ dieses Wort nicht akzeptiert.  Dazu ist es lediglich erforderlich das Komplement der
+Menge der akzeptierenden Zustände von $A$ zu bilden.  Sei also
+\\[0.2cm]
+\hspace*{1.3cm} $A = \langle Q, \Sigma, \delta, q_0, F \rangle$.
+\\[0.2cm]
+Dann definieren wir
+\\[0.2cm]
+\hspace*{1.3cm} $\hat{A} = \langle Q, \Sigma, \delta, q_0, Q \backslash F \rangle$.
+\\[0.2cm]
+Offenbar gilt
+\\[0.2cm]
+\hspace*{1.3cm} $\begin{array}[t]{cl}
+  & w \in L(\hat{A})                      \\[0.1cm]
+  \Leftrightarrow & \delta(q_0, w) \in Q \backslash F     \\[0.1cm]
+  \Leftrightarrow & \delta(q_0, w) \not\in F \\[0.1cm]
+  \Leftrightarrow & w \not\in L(A)
+ \end{array}
+$
+\\[0.2cm]
+und daraus folgt die Behauptung. \qed
+
+\begin{Korollar} \label{kor:mengendif}
+  Sind $L_1$ und $L_2$ reguläre Sprachen, so ist auch die Mengen-Differenz $L_1 \backslash L_2$ 
+  eine reguläre Sprache.
+\end{Korollar}
+
+\proof
+Es sei $\Sigma$ das Alphabet, das den Sprachen $L_1$ und $L_2$ zu Grunde liegt.  Dann gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_1 \backslash L_2 = L_1 \cap (\Sigma^* \backslash L_2)$,
+\\[0.2cm]
+denn ein Wort $w$ ist genau dann in $L_1 \backslash L_2$, wenn $w$ einerseits in  $L_1$
+und andererseits im Komplement von $L_2$ liegt.  Nach dem letzten Satz wissen wir, dass mit
+$L_2$ auch das Komplement $\Sigma^* \backslash L_2$ regulär ist.  Da der Durchschnitt
+zweier regulärer Sprachen wieder regulär ist, ist damit auch $L_1 \backslash L_2$ regulär.
+\qed
+\vspace*{0.3cm}
+
+Insgesamt haben wir jetzt gezeigt, dass reguläre Sprachen unter den Boole'schen
+Mengen-Operationen abgeschlossen sind.
+
+\exerciseEng
+Assume $\Sigma$ to be some alphabet.  For a string $s=c_1 c_2 \cdots c_{n-1} c_n \in \Sigma^*$ the \emph{reversal}
+of $s$ is written $s^R$ and it is defined as
+\\[0.2cm]
+\hspace*{1.3cm}
+$s^R := c_n c_{n-1} \cdots c_2 c_1$.
+\\[0.2cm]
+For example, if $s = \mathtt{abc}$, then $s^R = \mathtt{cba}$. The reversal $L^R$ of a language $L \subseteq \Sigma^*$ is defined as
+\\[0.2cm]
+\hspace*{1.3cm}
+$L^R := \{ s^R \mid s \in L \}$.
+\\[0.2cm]
+Assume now that the language $L \subseteq \Sigma^*$ is regular.  Prove that then $L^R$ is a regular
+language, too. \eox
+
+\section{Erkennung leerer Sprachen \label{section:leer}}
+In diesem Abschnitt untersuchen wir für einen gegeben deterministischen endlichen Automaten
+\\[0.2cm]
+\hspace*{1.3cm}
+$A = \langle Q, \Sigma, \delta, q_0, F \rangle$
+\\[0.2cm]
+die Frage, ob die von $A$ erkannte Sprache leer ist, ob also $L(A) = \{\}$ gilt.  Dazu fassen wir den
+endlichen Automaten als einen Graphen auf: Die
+Knoten dieses Graphen sind die Zustände von $A$ und zwischen zwei Zuständen $q_1$ und
+$q_2$ gibt es genau dann eine Kante, die $q_1$ mit $q_2$ verbindet, wenn es einen
+Buchstaben $c \in \Sigma$ gibt, so dass $\delta(q_1, c) = q_2$ gilt.  Die Sprache $L(A)$
+ist genau dann leer, wenn es in diesem Graphen keinen Pfad gibt, der von dem Start-Zustand
+$q_0$ ausgeht und in einem akzeptierenden Zustand endet, wenn also die akzeptierenden
+Zustände von dem Start-Zustand aus nicht erreichbar sind.
+
+Daher berechnen wir zur Beantwortung der Frage, ob $L(A)$ leer ist,
+die Menge $R$ der von dem Start-Zustand $q_0$ erreichbaren Zustände.  Diese Berechnung
+kann am einfachsten iterativ erfolgen:
+\begin{enumerate}
+\item $q_0 \in R$.
+\item $p_1 \in R \wedge \bigl(\exists c \in \Sigma: \delta(p_1,c) = p_2\bigr) \;\Rightarrow\; p_2 \in R$.
+
+      Dieser Schritt wird solange wiederholt, bis wir der Menge $R$ keine neuen Zustände
+      mehr hinzufügen können.
+\end{enumerate}
+Die Sprache $L(A)$ ist genau dann leer, wenn keiner der akzeptierenden Zustände erreichbar
+ist, mit anderen Worten haben wir
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(A) = \{\} \;\Leftrightarrow\; R \cap F = \{\}$.
+\\[0.2cm]
+Damit haben wir einen Algorithmus zur Beantwortung der Frage $L(A) = \{\}$:
+Wir bilden die Menge alle vom Start-Zustand $q_0$ erreichbaren Zustände und überprüfen
+dann, ob diese Menge einen akzeptierenden Zustand enthält.
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Bemerkung}:  Ist die reguläre Sprache $L$ nicht durch einen endlichen Automaten $A$,
+sondern durch einen regulären Ausdruck $r$ gegeben, so läßt sich durch einen einfachen
+rekursiven Algorithmus, der dem Aufbau des regulären Ausdrucks folgt, entscheiden, ob
+$L(r)$ leer ist.
+\begin{enumerate}
+\item $L(\emptyset) = \{\}$.
+\item $L(\varepsilon) \not= \{\}$.
+\item $L(c) \not= \{\}$ \quad für alle $c \in \Sigma$.
+\item $L(r_1 \cdot r_2) = \{\} \;\Leftrightarrow\; L(r_1) = \{\} \vee L(r_2) = \{\}$.
+\item $L(r_1 + r_2) = \{\} \;\Leftrightarrow\; L(r_1) = \{\} \wedge L(r_2) = \{\}$.
+\item $L(r^*) \not= \{\}$.
+\end{enumerate}
+
+
+\section{Äquivalenz regulärer Ausdrücke}
+Bei der Diskussion der algebraischen Vereinfachung regulärer Ausdrücke im Kapitel
+\ref{chapter:regular-expressions} hatten wir 
+zwei reguläre Ausdrücke $r_1$ und $r_2$ als äquivalent bezeichnet
+(geschrieben $r_1 \doteq r_2$), wenn die durch $r_1$ und $r_2$ spezifizierten Sprachen
+identisch sind:
+\\[0.2cm]
+\hspace*{1.3cm}
+$r_1 \doteq r_2 \stackrel{\mbox{\scriptsize def}}{\Longleftrightarrow} L(r_1) = L(r_2)$. 
+\\[0.2cm]
+Wir werden in diesem Abschnitt eine Verfahren vorstellen, mit dem wir für zwei reguläre
+Ausdrücke $r_1$ und $r_2$ entscheiden können, ob $r_1 \doteq r_2$ gilt. 
+
+\begin{Satz}
+  Es seien $r_1$ und $r_2$ zwei reguläre Ausdrücke.  Dann ist die Frage, ob $r_1 \doteq r_2$
+  gilt, ob also die von den beiden   Ausdrücken spezifizierte Sprachen gleich sind und damit
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $L(r_1) = L(r_2)$
+  \\[0.2cm]
+  gilt, entscheidbar.
+\end{Satz}
+
+\proof
+Wir geben einen Algorithmus an, der die Frage, ob $L(r_1) = L(r_2)$ gilt, beantwortet.
+Zunächst bemerken wir, dass die Sprachen $L(r_1)$ und $L(r_2)$ genau dann gleich sind,
+wenn die Mengen-Differenzen $L(r_2) \backslash L(r_1)$ und $L(r_1) \backslash L(r_2)$
+beide verschwinden, denn es gilt:
+\begin{eqnarray*}
+                  L(r_1) = L(r_2) 
+&\Leftrightarrow& L(r_1) \subseteq L(r_2)         \;\wedge\; L(r_2) \subseteq L(r_1)          \\
+&\Leftrightarrow& L(r_1) \backslash L(r_2) = \{\} \;\wedge\; L(r_2) \backslash L(r_1) = \{\}  
+\end{eqnarray*}
+Seien nun $A_1$ und $A_2$ endliche Automaten mit
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(A_1) = L(r_1)$ \quad und \quad $L(A_2) = L(r_2)$.
+\\[0.2cm]
+Im letzten Kapitel haben wir gesehen, wie wir solche Automaten konstruieren können.
+Nach dem Korollar \ref{kor:mengendif} sind die Sprachen $L(r_1) \backslash L(r_2)$ und
+$L(r_2) \backslash L(r_1)$ regulär und wir haben gesehen, wie wir endliche Automaten $A_{12}$ und
+$A_{21}$ so konstruieren können,  dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(r_1) \backslash L(r_2) = L(A_{12})$ \quad und \quad
+$L(r_2) \backslash L(r_1) = L(A_{21})$ 
+\\[0.2cm]
+gilt.  Damit gilt nun
+\\[0.2cm]
+\hspace*{1.3cm}
+$r_1 \doteq r_2 \;\Leftrightarrow\; L(A_{12}) = \{\} \wedge  L(A_{21}) = \{\}$
+\\[0.2cm]                            
+und diese Frage ist nach Abschnitt \ref{section:leer} entscheidbar.
+\qed
+
+\section{Implementation of the Equivalence Check in \textsc{SetlX}}
+Figure \ref{fig:equivalence.stlx} on page \pageref{fig:equivalence.stlx} shows how to
+implement the algorithm sketched in the previous section.  The details are discussed
+below.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    regExpEquiv := procedure(r1, r2, sigma) {
+        fsm1      := regexp2DFA(r1, sigma);
+        fsm2      := regexp2DFA(r2, sigma);    
+        r1MinusR2 := fsmComplement(fsm1, fsm2);
+        r2MinusR1 := fsmComplement(fsm2, fsm1);
+        return isEmpty(r1MinusR2) && isEmpty(r2MinusR1);
+    };
+    regexp2DFA := procedure(r, sigma) {
+        converter := regexp2NFA(sigma);
+        nfa       := converter.toNFA(r);    
+        return nfa2dfa(nfa);    
+    };
+    fsmComplement := procedure(f1, f2) {
+        [states1, sigma, delta1, q1, a1] := f1;
+        [states2,     _, delta2, q2, a2] := f2;
+        states := states1 >< states2;
+        delta  := procedure(q, c) {
+                      [q1, q2] := q;
+                      return [delta1(q1, c), delta2(q2, c)];
+                  };
+        return [states, sigma, delta, [q1, q2], a1 >< (states2 - a2)];
+    };
+    isEmpty := procedure(fsm) {
+        [states, sigma, delta, q0, accepting] := fsm;
+        reachable := fixpoint({q0}, q |-> { delta(q, c) : c in sigma });
+        return reachable * accepting == {};
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{An algorithm to compare regular expressions.}
+\label{fig:equivalence.stlx}
+\end{figure}
+
+
+\begin{enumerate}
+\item The function \texttt{regExpEquiv} is called with three arguments: 
+      \begin{enumerate}
+      \item \texttt{r1} and \texttt{r2} are regular expressions that have to be
+            compared.  These regular expressions are represented as terms in the same way
+            as in Figure \ref{fig:regexp-2-nfa.stlx:toNFA} in the definition of the
+            function \texttt{regexp2NFA}.
+      \item \texttt{sigma} is the alphabet.
+      \end{enumerate}
+      The implementation of \texttt{regExpEquiv} is straightforward:
+      \begin{enumerate}
+      \item \texttt{r1} and \texttt{r2} are converted into deterministic finite state
+            machines \texttt{fsm1} and \texttt{fsm2}, respectively.
+      \item Next, we construct the finite state machines \texttt{r1MinusR2} and
+            \texttt{r2MinusR1}.
+            
+            \texttt{r1MinusR2} accepts all strings that are accepted by \texttt{fsm1} but
+            are rejected by \texttt{fsm2},  while
+            \texttt{r2MinusR1} accepts all strings that are accepted by \texttt{fsm2} but
+            are rejected by \texttt{fsm1}.  Therefore
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $L(\mathtt{r1MinusR2}) = L(r_1) \backslash L(r_2)$ \quad and \quad
+            $L(\mathtt{r1MinusR2}) = L(r_1) \backslash L(r_2)$.
+      \item The regular expressions \texttt{r1} and \texttt{r2} are equivalent iff
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $L(r_1) \subseteq L(r_2)$ \quad and \quad $L(r_2) \subseteq L(r_1)$
+            \\[0.2cm]
+            holds.  This is the case if and only if
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $L(r_1) \backslash L(r_2) = \{\}$ \quad and \quad
+            $L(r_2) \backslash L(r_1) = \{\}$
+            \\[0.2cm]
+            and these conditions are checked using the function \texttt{isEmpty}.
+      \end{enumerate}
+\item The function \texttt{regexp2DFA} takes a regular expression $r$ together
+      with an alphabet \texttt{sigma} and constructs a deterministic finite state machine
+      that accepts the language described by $r$.  This is done by first converting
+      $r$ into a non-deterministic finite state machine \texttt{nfa} via the function
+      \texttt{regexp2NFA}.  The non-deterministic finite state machine \texttt{nfa} is then
+      converted into a deterministic finite state machine with the help of the function
+      \texttt{nfa2dfa}. 
+
+      The function \texttt{regexp2NFA} has already been shown in
+      Figure \ref{fig:regexp-2-nfa.stlx:toNFA} on page
+      \pageref{fig:regexp-2-nfa.stlx:toNFA}, while the function \texttt{nfa2dfa}
+      is shown in Figure \ref{fig:nfa2dfa.stlx} on page \pageref{fig:nfa2dfa.stlx}.
+\item The function \texttt{fsmComplement} has two arguments $f_1$ and $f_2$.  These
+      arguments are deterministic finite state machines.  The function returns a new
+      finite state machine $F$ that accepts the language
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(f_1) \backslash L(f_2)$.
+      \\[0.2cm]
+      The finite state machine $F$ simulates the two finite state machines $f_1$ and $f_2$
+      in parallel.  Therefore, the states of $F$ are pairs of the form $\pair(p_1, p_2)$
+      where $p_1$ is a state of $f_1$ while $p_2$ is a state of $f_2$.  The transition
+      function $\delta$ of $F$ is a composition of the transition function $\delta_1$ of
+      $f_1$  and $\delta_2$ of $f_2$ that is defined as follows:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta\bigr(\pair(q_1, q_2), c\bigr) := \bigl\langle \delta_1(q_1,c),\, \delta_2(q_2,c)\bigr\rangle$.
+      \\[0.2cm]
+      A state $\pair(p_1, p_2)$ is an accepting state of $F$ iff $p_1$ is an accepting state of $f_1$ but
+      $p_2$ is not an accepting state of $f_2$.
+\item The input of the function \texttt{isEmpty} is a deterministic finite state machine
+      \texttt{fsm}.  The function checks whether the language accepted by \texttt{fsm} is
+      the empty set.  To this end, it computes the set of all states that are reachable
+      from the start state.  If any of these states is accepting, then the language
+      of \texttt{fsm} is not empty.  The computation of the reachable states is done via a fixpoint
+      iteration.  The function \texttt{fixpoint} that is used here has already been discussed in
+      Figure \ref{fig:nfa2dfa.stlx} on page \pageref{fig:nfa2dfa.stlx}.
+\end{enumerate}
+\pagebreak
+
+\section{Grenzen regulärer Sprachen}
+Wir haben im letzten Kapitel bereits das Theorem von Nerode kennengelernt und konnten mit
+Hilfe dieses Theorems zeigen, dass bestimmte Sprachen nicht regulär sind.  Wir werden nun
+ein weiteres Theorem kennenlernen, das ebenfalls genutzt werden kann um nachzuweisen, dass eine
+gegebene Sprache nicht regulär ist. 
+
+\begin{Theorem}[Pumping-Lemma]
+  Es sei $L$ eine reguläre Sprache.  Dann gibt es eine natürliche Zahl $n \in \mathbb{N}$,
+  so dass sich alle Strings $s \in L$, deren Länge größer oder gleich $n$ ist, so in drei
+  Teile $u$, $v$ und $w$ aufspalten lassen, dass die folgenden 
+  Bedingungen gelten:
+  \begin{enumerate}
+  \item $s= uvw$
+  \item $v \not= \varepsilon$,
+  \item $|uv| \leq n$,
+  \item $\forall h \in \mathbb{N}: uv^hw \in L$.
+  \end{enumerate}
+  Das Pumping-Lemma für eine reguläre Sprache $L$ kann in einer einzigen Formel zusammen gefaßt
+  werden: 
+  \\[0.2cm]
+  \hspace*{0.1cm}
+  $\exists n \in \mathbb{N}: \forall s \in L : \Bigl(|s| \geq n \rightarrow \exists u,v,w\in \Sigma^* :
+   s = uvw \wedge v \not= \varepsilon \wedge |uv| \leq n \wedge 
+    \forall h \in \mathbb{N}: uv^h w \in L
+   \Bigr)
+  $.
+\end{Theorem}
+
+\proof
+Da $L$ eine reguläre Sprache ist, gibt es einen deterministischen endliche Automaten
+\\[0.2cm]
+\hspace*{1.3cm}
+$A = \langle Q, \Sigma, \delta, q_0, F \rangle$,
+\\[0.2cm]
+so dass $L = L(A)$ ist.  Die Zahl $n$, deren Existenz in dem Lemma behauptet wird, definieren wir
+als die Zahl der Zustände dieses Automaten: 
+\\[0.2cm]
+\hspace*{1.3cm}
+$n := \textsl{card}(Q)$.
+\\[0.2cm]
+Es sei nun ein Wort $s \in L$ gegeben, das aus mindestens $n$ Buchstaben besteht.
+Konkret gelte
+\\[0.2cm]
+\hspace*{1.3cm}
+$s = c_1 c_2 \cdots c_m$ \quad mit $m \geq n$,
+\\[0.2cm]
+wobei $c_1$, $\cdots$, $c_m$ die einzelnen Buchstaben sind.
+Wir betrachten die Berechnung, die der Automat $A$ bei der Eingabe $s$ durchführt.  Diese Berechnung hat
+die Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_0 \stackrel{c_1}{\mapsto} q_1 \stackrel{c_2}{\mapsto} q_2 \stackrel{c_3}{\mapsto} \cdots \stackrel{c_m}{\mapsto} q_m$
+\\[0.2cm]
+und da $s \in L$ ist, gilt $q_m \in F$.
+Die Länge $m$ des Wortes $s$ hat nach Voraussetzung mindestens den Wert $n$.  Daher können in der Liste
+\\[0.2cm]
+\hspace*{1.3cm}
+$[q_0,q_1,q_2,\cdots, q_m]$
+\\[0.2cm]
+nicht alle $q_i$ verschieden sein, denn es gibt ja insgesamt nur $n$ verschiedene Zustände.
+Wegen
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{card}\bigl(\{0,1,\cdots,n\}\bigr) = n+1$
+\\[0.2cm]
+wissen wir, dass schon in der Liste
+\\[0.2cm]
+\hspace*{1.3cm}
+$[q_0,q_1,q_2,\cdots, q_{n}]$
+\\[0.2cm]
+mindestens ein Zustand zweimal (oder öfter) auftreten muss.  Bezeichnen wir den Index des ersten
+Auftretens mit $k$ und den Index des zweiten Auftretens mit $l$, so haben wir also 
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_k = q_l \wedge k < l \wedge l \leq n$.
+\\[0.2cm]
+Dann können wir den String $s$ wie folgt in die Strings $u$, $v$ und $w$ zerlegen:
+\\[0.2cm]
+\hspace*{1.3cm}
+$u := c_1 \cdots c_k$, \quad $v := c_{k+1} \cdots c_l$ \quad und \quad $w := c_{l+1} \cdots c_{m}$
+\\[0.2cm]
+Aus $k < l$ folgt nun $v \not= \varepsilon$ und aus $l \leq n$ folgt $|uv| \leq n$.
+Weiter wissen wir das Folgende:
+\begin{enumerate}
+\item Beim Lesen von $u$ geht der Automat vom Zustand $q_0$ in den Zustand $q_k$ über, es gilt
+      \begin{equation}
+        \label{eq:pumping1}
+        q_0 \stackrel{u}{\mapsto} q_k.    
+      \end{equation}
+\item Beim Lesen von $v$ geht der Automat vom Zustand $q_k$ in den Zustand $q_l$ über.  Da aber 
+      $q_l = q_k$ ist, gilt also
+      \begin{equation}
+        \label{eq:pumping2}
+      q_k \stackrel{v}{\mapsto} q_k.        
+      \end{equation}
+\item Beim Lesen von $w$ geht der Automat vom Zustand $q_l = q_k$   in den akzeptierenden Zustand
+      $q_m$ über:
+      \begin{equation}
+        \label{eq:pumping3}
+        q_k \stackrel{w}{\mapsto} q_m.        
+      \end{equation}
+\end{enumerate}
+Aus $q_k \stackrel{v}{\mapsto} q_k$ folgt
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_k \stackrel{v}{\mapsto} q_k \stackrel{v}{\mapsto} q_k$, \quad also \quad $q_k \stackrel{v^2}{\mapsto} q_k$
+\\[0.2cm]
+Da wir dieses Spiel beliebig of wiederholen können, haben wir für alle $h \in \mathbb{N}$
+\begin{equation}
+  \label{eq:pumping4}
+  q_k \stackrel{v^h}{\mapsto} q_k  
+\end{equation}
+Aus den Gleichungen (\ref{eq:pumping1}), (\ref{eq:pumping3}) und \ref{eq:pumping4})  folgt nun
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_0 \stackrel{uv^hw}{\mapsto} q_m$
+\\[0.2cm]
+und da $q_m$ ein akzeptierender Zustand ist, haben wir damit $uv^hw \in L$ gezeigt. \qed
+\vspace*{0.3cm}
+
+
+\begin{Satz}
+  Das Alphabet $\Sigma$ sei durch $\Sigma = \{ \quoted{(}, \quoted{)} \}$ definiert, es enthält
+  also die beiden Klammer-Symbole ``\texttt{(}'' und ``\texttt{)}''.  Die Sprache $L$ sei die Menge
+  aller Strings, die aus $k$ öffnenden runden Klammern gefolgt von $k$ schließenden runden Klammern
+  besteht:
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $L = \bigl\{ \mathtt{(}^k\mathtt{)}^k \mid k \in \mathbb{N} \bigr\}$
+  \\[0.2cm]
+  Dann ist die Sprache $L$ nicht regulär.
+\end{Satz}
+
+\proof
+Wir führen den Beweis indirekt und nehmen an, dass $L$ regulär ist.  Nach dem Pumping-Lemma gibt es
+dann eine feste Zahl $n$, so dass sich alle Strings $s \in L$, für die $|s| \geq n$ gilt, so in drei Teile
+$u$, $v$ und $w$ aufspalten lassen, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$s = uvw$, \quad $|uv| \leq n$, \quad $v \not= \varepsilon$, 
+\quad und \quad $\forall h \in \mathbb{N}: uv^h w \in L$
+\\[0.2cm]
+gilt.  Mit Hilfe der durch das Pumping-Lemma gegebenen festen Zahl $n$ definieren wir den String $s$ als
+\\[0.2cm]
+\hspace*{1.3cm}
+$s := \mathtt{(}^{n} \mathtt{)}^{n}$.
+\\[0.2cm]
+Offenbar gilt $|s| = 2 \cdot n \geq n$.  Wir finden also jetzt drei Strings $u$, $v$ und $w$,
+für die gilt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathtt{(}^{n}\mathtt{)}^{n} = uvw$, \quad $|uv| \leq n$, \quad $v \not= \varepsilon$, 
+\quad und \quad $\forall h \in \mathbb{N}: uv^h w \in L$.
+\\[0.2cm]
+Wegen $|uv| \leq n$ und $v \not= \varepsilon$ wissen wir, dass der String $v$ aus einer positiven
+Zahl öffnender runder Klammern bestehen muss:
+\\[0.2cm]
+\hspace*{1.3cm}
+$v = \mathtt{(}^k$ \quad für ein $k \in \mathbb{N}$ mit $k> 0$.
+\\[0.2cm]
+Setzen wir in der Formel $\forall h \in \mathbb{N}: uv^h w \in L$ für $h$ den Wert $0$ ein,
+so sehen wir, dass 
+\begin{equation}
+  \label{eq:pumping5}
+ uw \in L 
+\end{equation}
+gilt.  Um den Beweis besser formalisieren zu können, führen wir eine Funktion
+\[ \textsl{count}: \Sigma^* \times \Sigma \rightarrow \mathbb{N} \]
+ein.  Für einen String $t$ und einen Buchstaben $c$ soll $\textsl{count}(t,c)$ zählen, wie
+oft der Buchstabe $c$ in dem String $t$ vorkommt.  Für die Sprache $L$ gilt offenbar
+\[ t \in L \Rightarrow \textsl{count}(t,\squoted{(}) = \textsl{count}(t, \squoted{)}). \]
+Einerseits haben wir nun
+\[  
+\begin{array}{lcl}
+\textsl{count}(uw,\squoted{(}) & = & \textsl{count}(uvw,\squoted{(}) - \textsl{count}(v,\squoted{(}) \\
+ & = & \textsl{count}(s,\squoted{(}) - \textsl{count}(v,\squoted{(}) \\
+ & = & \textsl{count}(\mathtt{(}^n\mathtt{)}^n,\squoted{(}) - \textsl{count}(\mathtt{(}^k,\squoted{(}) \\
+ & = & n - k  \\
+ & < & n   \\
+\end{array}
+\]
+Andererseits gilt 
+\[  
+\begin{array}{lcl}
+\textsl{count}(uw,\squoted{)}) & = & \textsl{count}(uvw,\squoted{)}) - \textsl{count}(v,\squoted{)}) \\
+                               & = & \textsl{count}(s,\squoted{)}) - \textsl{count}(v,\squoted{)}) \\
+ & = & \textsl{count}(\mathtt{(}^n\mathtt{)}^n,\squoted{)}) - \textsl{count}(\mathtt{(}^k,\squoted{)}) \\
+                               & = & n  \\
+\end{array}
+\]
+Insgesamt sehen wir
+\[ \textsl{count}(uw,\squoted{(}) < \textsl{count}(uw,\squoted{)}) \]
+und damit kann der String $uw$ im Widerspruch zum Pumping-Lemma nicht in der Sprache $L$
+liegen, denn alle Wörter der Sprache $L$ enthalten gleich viele öffnende wie geschlossene
+Klammern.   Dieser Widerspruch zum Pumping-Lemma zeigt, dass die Sprache $L$ nicht 
+regulär sein kann. 
+\qed
+
+\remark
+Der letzte Satz zeigt uns, dass wir mit Hilfe von regulären Ausdrücken noch nicht einmal Klammern
+zählen können.  Der Begriff der regulären Ausdrücke ist damit offensichtlich zu schwach um die
+Syntax gängiger  Programmier-Sprache adäquat zu beschreiben.  Im nächsten Kapitel werden wir 
+das Konzept der kontextfreien Grammatik kennen lernen, das wesentlichen mächtiger als das
+Konzept der regulären Sprachen ist.   Mit diesem Konzept wird es dann möglich sein, die
+Syntax der gängigen Programmier-Sprachen zu beschreiben.
+
+\exercise
+Die Sprache $L_{\mathrm{square}}$ beinhaltet alle Wörter der Form $\mathtt{a}^n$ für die $n$ eine
+Quadrat-Zahl ist, es gilt also
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_{\mathrm{square}} = \bigl\{ a^{m} \mid \exists k \in \mathbb{N}: m = k^2 \bigr\}$
+\\[0.2cm]
+Zeigen Sie mit Hilfe des Pumping-Lemmas, dass die Sprache $L_{\mathrm{square}}$ keine reguläre Sprache ist.
+\vspace*{0.1cm}
+
+\noindent
+\textbf{Hinweis}:  Nutzen Sie aus, dass der Abstand zwischen den Quadrat-Zahlen beliebig groß wird.
+
+\solution
+Wir führen den Beweis indirekt und nehmen an, dass $L_{\mathrm{square}}$ regulär
+wäre.  Nach dem Pumping-Lemma gibt es dann eine positive natürliche Zahl $n$ (dies war die Anzahl
+der Zustände des deterministischen Automaten, der die Sprache erkennt), so dass sich jeder String
+$s \in L_{\mathrm{square}}$ mit $|s| \geq n$ in drei Teilstrings $u$, $v$ und $w$ aufspalten läßt, so dass gilt:
+\begin{enumerate}
+\item $s = uvw$,
+\item $|uv| \leq n$,
+\item $v \not= \varepsilon$,
+\item $\forall h \in \mathbb{N}: uv^hw \in L_{\mathrm{square}}$. 
+\end{enumerate} 
+Wir betrachten nun den String $s = a^{n^2}$.  Für die Länge dieses Strings gilt offenbar
+\[ |s| = \big| a^{n^2} \big| = n^2 \geq n. \]
+Also gibt es eine Aufspaltung von $s$ der Form $s = uvw$ mit den oben angegebenen Eigenschaften.
+Da $a$ der einzige Buchstabe ist, der in $s$ vorkommt, können in $u$, $v$ und $w$ auch keine anderen
+Buchstaben vorkommen und es muss natürliche Zahlen $x$, $y$ und $z$ geben, so dass 
+\[ u = a^x,\; b = a^y\; \mbox{und}\; c = a^z \]
+gilt.  Wir untersuchen, welche Konzequenzen sich daraus für die Zahlen $x$, $y$ und $z$ ergeben.
+\begin{enumerate}
+\item Die Zerlegung $s = uvw$ schreibt sich als $a^{n^2} = a^xa^ya^z$ und daraus folgt
+      \begin{equation}
+        \label{eq:e1}
+         n^2 = x + y + z.     
+      \end{equation}
+\item Die Ungleichung $|uv| \leq n$ ist jetzt äquivalent zu $x +y \leq n$, woraus 
+      \begin{equation}
+        \label{eq:e2}
+        y \leq n
+      \end{equation}
+      folgt.
+\item Die Bedingung $v \not= \varepsilon$ liefert
+      \begin{equation}
+        \label{eq:e3}
+        y > 0.
+      \end{equation}
+\item Aus der Formel $\forall h \in \mathbb{N}: uv^hw \in L_{\mathrm{square}}$ folgt
+      \begin{equation}
+        \label{eq:e4}
+        \forall h \in \mathbb{N}: a^xa^{y\cdot h}a^z \in L_{\mathrm{square}}. 
+      \end{equation}
+\end{enumerate}
+Die letzte Gleichung muss insbesondere auch für den Wert $h=2$ gelten:
+\[ a^xa^{y\cdot 2}a^z \in L_{\mathrm{square}}.  \]
+Nach Definition der Sprache $L_{\mathrm{square}}$ gibt es dann eine natürliche Zahl
+$k$, so dass gilt
+\begin{equation}
+  \label{eq:e5}
+  x + 2\cdot y + z = k^2
+\end{equation}
+Addieren wir in Gleichung (\ref{eq:e1}) auf beiden Seiten $y$, so erhalten wir insgesamt
+\[ n^2 + y = x + 2\cdot y + z = k^2. \]
+Wegen $y > 0$ folgt daraus 
+\begin{equation}
+  \label{eq:e6}
+  n < k.    
+\end{equation}
+Andererseits haben wir
+\[ 
+\begin{array}[t]{lcll}
+ k^2  & =    & x + 2 \cdot y + z       & \mbox{nach Gleichung (\ref{eq:e5}})   \\
+      & =    & x + y + z + y           & \mbox{elementare Umformung}           \\
+      & \leq & x + y + z + n           & \mbox{nach Ungleichung (\ref{eq:e2}}) \\
+      & =    & n^2 + n                 & \mbox{nach Gleichung (\ref{eq:e1}})   \\
+      & <    & n^2 + 2 \cdot n + 1     & \mbox{da $n+1 > 0$}                   \\ 
+      & =    & (n + 1)^2               & \mbox{elementare Umformung}           \\ 
+\end{array}
+\]
+Damit haben wir insgesamt  $k^2 < (n+1)^2$ gezeigt und das impliziert
+\begin{equation}
+  \label{eq:e7}
+  k < n+1.
+\end{equation}
+Zusammen mit Ungleichung (\ref{eq:e6}) liefert Ungleichung (\ref{eq:e7}) nun die Ungleichungs-Kette
+\[ n < k < n + 1. \]
+Da andererseits $k$ eine natürliche Zahl sein muss und $n$ ebenfalls eine natürliche Zahl ist,
+haben wir jetzt einen Widerspruch, denn zwischen $n$ und $n+1$ gibt es keine natürliche Zahl.
+\qed
+
+\renewcommand{\labelenumi}{(\alph{enumi})}
+
+\exerciseEng
+The language $L$ is defined as
+\\[0.2cm]
+\hspace*{1.3cm}
+$L := \{ \mathtt{a}^m \mathtt{b}^n \mathtt{c}^n \mid m,n \in \mathbb{N} \} \cup 
+      \{ \mathtt{b}^m \mathtt{c}^n \mid m,n \in \mathbb{N} \} 
+$.
+\begin{enumerate}
+\item Prove that $L$ is not regular.
+\item Prove that $L$ satisfies the pumping lemma.  \eox
+\end{enumerate}
+
+\renewcommand{\labelenumi}{\arabic{enumi}.}
+
+\exercise
+Es sei $\Sigma = \{\mathtt{a},\mathtt{b}\}$.  
+Zeigen Sie, dass die Sprache 
+\\[0.2cm]
+\hspace*{1.3cm}
+$L = \bigl\{ a^p \mid \mbox{$p$ is a prime number} \bigr\}$
+\\[0.2cm]
+ nicht regulär ist.
+\vspace{0.3cm}
+
+\noindent
+\textbf{Beweis}:
+Wir führen den Beweis indirekt und nehmen an, $L$ wäre regulär.  Nach
+dem Pumping-Lemma gibt es dann eine Zahl $n$, so dass es für alle Strings $s \in L$, 
+deren Länge größer-gleich $n$ ist, eine Zerlegung
+\\[0.2cm]
+\hspace*{1.3cm}
+$s = uvw$
+\\[0.2cm]
+mit den folgenden drei Eigenschaften gibt:
+\begin{enumerate}
+\item $v \not= \varepsilon$, 
+\item $|uv| \leq n$ \quad und
+\item $\forall h \in \mathbb{N}: u v^h w \in L$.
+\end{enumerate}
+Wir wählen nun eine Primzahl $p$, die größer-gleich  $n + 2$ ist und setzen $s = \mathtt{a}^p$.
+Dann gilt $|s| = p \geq n$ und die Voraussetzung des Pumping-Lemmas ist erfüllt.
+Wir finden also eine Zerlegung von $\mathtt{a}^p$ der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathtt{a}^p = uvw$ 
+\\[0.2cm]
+mit den oben angegebenen Eigenschaften.
+Aufgrund der Gleichung $s = uvw$ können die Teilstrings $u$, $v$ und $w$ nur aus dem
+Buchstaben ``\texttt{a}'' bestehen.  Also gibt es natürliche Zahlen $x$, $y$, und
+$z$ so dass gilt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$u = \mathtt{a}^x$, \quad $v = \mathtt{a}^y$ \quad und \quad $w = \mathtt{a}^z$.
+\\[0.2cm]
+Für  $x$, $y$ und $z$ gilt dann Folgendes:
+\begin{enumerate}
+\item $x + y + z = p$,
+\item $y \not= 0$,
+\item $x + y \leq n$,
+\item $\forall h \in \mathbb{N}: x + h \cdot y + z \in \mathbb{P}$.
+\end{enumerate}
+Setzen wir in der letzten Gleichung für $h$ den Wert $(x + z)$ ein, so erhalten wir
+\\[0.2cm]
+\hspace*{1.3cm}
+$x + (x + z)\cdot y + z \in P$.
+\\[0.2cm]
+Wegen $x + (x + z)\cdot y + z = (x + z) \cdot (1 + y)$ hätten wir dann
+\\[0.2cm]
+\hspace*{1.3cm}
+$(x + z) \cdot (1 + y) \in \mathbb{P}$.
+\\[0.2cm]
+Dass kann aber nicht sein, denn wegen $y > 0$ ist der Faktor $1 + y$ von 1
+verschieden und wegen $x + y \leq n$ und $x + y + z = p$ und $p \geq n + 2$ wissen wir, dass
+$z \geq 2$ ist, so dass auch der Faktor $(x + z)$ von 1 verschieden ist.  Damit kann das Produkt
+$(x + z) \cdot (1 + y)$ aber keine Primzahl mehr sein und wir haben einen Widerspruch zu der
+Annahme, dass $L$ regulär ist. \qed
+
+
+
+
+
+\paragraph{Historical Remark}
+The pumping lemma is a special case of a general theorem that has been proved by Bar-Hillel, Perles and
+Shamir in 1961 \cite{barhillel:1961}.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages.tex"
+%%% End: 

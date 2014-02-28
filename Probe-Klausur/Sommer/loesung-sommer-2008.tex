@@ -1,0 +1,322 @@
+\documentclass{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{german}
+\usepackage{a4wide}
+\usepackage{epsfig}
+\usepackage{fleqn}
+
+
+\newcounter{aufgabe}
+
+\renewcommand{\labelenumi}{(\alph{enumi})}
+\newcommand{\qed}{\hspace*{\fill} $\Box$}
+
+\newcommand{\exercise}{\vspace*{0.1cm}
+\stepcounter{aufgabe}
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Aufgabe \arabic{aufgabe}}: }
+
+\newcommand{\solution}{
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Lösung}: }
+
+\begin{document}
+
+
+\noindent
+{\large  Lösungen zu den Aufgaben zur Klausurvorbereitung ``{\sl Compilerbau}''}
+\vspace{0.5cm}
+
+\noindent
+\textbf{Hinweis}: Bei der Klausur müssen alle Aufgabenbläter mit abgegeben werden, sonst
+ist die Klausur ungültig!
+\vspace{0.5cm}
+
+\exercise
+Die Grammatik $G = \langle \{ S \}, \{ \mathtt{+}, \mathtt{*}, \mathtt{a} \}, R, S \rangle$
+habe  die folgenden Regeln:
+\[ S \rightarrow S\, S\, \mathtt{+} \mid S\, S\, \mathtt{*} \mid \mathtt{a}. \]
+\begin{enumerate}
+\item Berechnen Sie die Menge der SLR-Zustände für diese Grammatik.
+\item Berechnen Sie die Funktionen $\textsl{action}()$ und $\textsl{goto}()$ für diese Grammatik.
+\end{enumerate}
+
+\exercise
+Geben Sie ein \textsl{JFlex}-Datei an, mit deren Hilfe Sie alle Hexadezimal-Zahlen, die in
+einer Datei vorkommen, aufaddieren können.  Die Hexadezimal-Zahlen sollen dabei in der Form
+\[ \mathtt{0xAB123} \]
+dargestellt werden.
+
+\exercise
+Geben Sie die \textsc{Cup}-Spezifikation eines Parsers an, der Boole'sche Ausdrücke
+auswertet.  Die Boole'schen Ausdrücke sollen mit Hilfe der Operatoren ``\texttt{\&}''
+(logisches und), ``\texttt{|}'' (logisches oder) und ``\texttt{!}'' (logisches nicht) aus
+den Terminalen ``\texttt{true}'' und ``\texttt{false}'' aufgebaut sein. 
+\pagebreak
+
+\exercise
+Der Typ $\texttt{list}(T)$ sei wie folgt definiert:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{type list(X) := nil + cons(X, list(X));}
+\\[0.2cm]
+Die Funktion \texttt{addLast} habe die folgende Signatur:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{signature addLast: list(T) * T -> list(T);}
+\\[0.2cm]
+und die Variablen \texttt{x} und \texttt{z} haben den Typ \texttt{int}.
+\begin{enumerate}
+\item Berechnen Sie 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{typeEqs}\bigl(\texttt{addLast(cons(x, nil), z): list(int)}\bigr)$.
+\item Lösen Sie die in Teil (a) berechneten Typ-Gleichungen.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Wir berechnen zunächst die Typ-Gleichungen nach der im Skript angegebenen Definition.
+      \[
+      \begin{array}[t]{cl}
+           & \textsl{typeEqs}(\texttt{addLast(cons(x, nil), z): list(int)}) \\[0.2cm]
+         = &       \{ \mathtt{list}(T) = \mathtt{list(int)} \} 
+              \cup \textsl{typeEqs}(cons(x, nil), \mathtt{list}(T))
+              \cup \textsl{typeEqs}(z: \mathtt{int})                     \\[0.2cm]
+         = &       \{ \mathtt{list}(T) = \mathtt{list(int)} \} 
+              \cup \{ \texttt{list}(S) = \mathtt{list}(T) \}\; \cup \\
+           &       \textsl{typeEqs}(x, S)
+              \cup \textsl{typeEqs}(\mathtt{nil}, \mathtt{list}(S))
+              \cup \textsl{typeEqs}(z, \mathtt{int})                  \\[0.2cm]
+         = &       \{ \mathtt{list}(T) = \mathtt{list(int)},\; 
+                      \texttt{list}(S) = \mathtt{list}(T),\;           \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = \mathtt{int} \}
+
+      \end{array}
+      \]
+\item Wir lösen die oben berechneten Typ-Gleichungen nach dem im Skript angegebenen Verfahren.
+      \\[0.2cm]
+      \hspace*{-0.3cm}  
+      $\begin{array}[t]{cl}
+           &  \bigl\langle \{  \mathtt{list}(T) = \mathtt{list(int)},\; 
+                      \texttt{list}(S) = \mathtt{list}(T),\;           \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = \mathtt{int} \},\; [] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ T = \mathtt{int},\; 
+                      \texttt{list}(S) = \mathtt{list}(T),\;           \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = \mathtt{int} \},\; [] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ 
+                      \texttt{list}(S) = \mathtt{list}(\mathtt{int}),\;           
+                      \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = \mathtt{int} \},\; [ T \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ 
+                      S = \mathtt{int},\;           
+                      \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = \mathtt{int} \},\; [ T \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      \mathtt{int} = \mathtt{int},\;
+                      \mathtt{list}(R) = \mathtt{list}(\mathtt{int}),\;
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      \mathtt{list}(R) = \mathtt{list}(\mathtt{int}),\;
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      R = \mathtt{int},\;
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int},\; R \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int},\; R \mapsto \mathtt{int}] \bigr\rangle
+         \end{array}
+      $
+      \\[0.2cm]
+      Damit ist die Substitution 
+      $[ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int},\; R \mapsto \mathtt{int}]$ eine 
+      Lösung der Typ-Gleichungen und wir können folgern, dass der Term tatsächlich den angegebenen Typ
+      hat.
+      \qed
+\end{enumerate}
+
+\pagebreak
+\exercise
+Das Alphabet $\Sigma$ werde durch
+\[ \Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \} \]
+definiert und auf $\Sigma^*$ werden nachfolgend verschiedene Sprachen definiert, für die Sie jeweils 
+angeben sollen, ob es sich um eine kontextfreie Sprache handelt oder nicht.  Falls es sich
+um eine kontextfreie Sprache handelt, müssen Sie eine Grammatik angeben, die diese Sprache
+erzeugt und diese Behauptung beweisen.
+Andernfalls sollen Sie mit Hilfe des Pumping-Lemmas nachweisen, dass
+die Sprache nicht kontextfrei ist.
+\begin{enumerate}
+\item $L_1 = \{ \mathtt{a}^m \mathtt{b}^n \mathtt{c}^{m+n} \mid m,n \in \mathbb{N} \}$.
+\item $L_2 = \{ \mathtt{a}^m \mathtt{b}^n \mathtt{c}^{m * n} \mid m,n \in \mathbb{N} \}$.  
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Die Sprache $L_1$ ist eine kontextfreie Sprache, denn Sie wird von der folgenden
+      Grammatik erzeugt:
+      \begin{eqnarray*}
+        S & \rightarrow & \texttt{a} S \texttt{c} \\
+          & \mid        & B                       \\[0.2cm]
+        B & \rightarrow & \texttt{b} B \texttt{c} \\
+          & \mid        & \varepsilon 
+      \end{eqnarray*}
+      Wir zeigen zunächst durch Induktion über $n$, dass aus
+      \[ B \Rightarrow^n w \]
+      folgt, dass $w$ die Form $w = \texttt{b}^{n-1} \texttt{c}^{n-1}$ haben muss.
+      \begin{enumerate}
+      \item[I.A.:] $n=1$.  Wir haben 
+                   \[ B \Rightarrow^1 \varepsilon \]
+                   und daraus folgt $w = \varepsilon$.  Andererseits haben wir 
+                   \[ \texttt{b}^{n-1} \texttt{c}^{n-1} = \texttt{b}^{1-1} \texttt{c}^{1-1} = 
+                      \texttt{b}^{0} \texttt{c}^{0} = \varepsilon \varepsilon = \varepsilon.
+                   \]   
+      \item[I.S.:] $n \mapsto n + 1$.  Nun hat die Ableitung von $w$ die Form
+                   \[ B \Rightarrow \texttt{b} B \texttt{c} \Rightarrow^n \texttt{b} v \texttt{c}. \]
+                   Einerseits zeigt dies, dass
+                   \[ w = \texttt{b} v \texttt{c} \]
+                   ist, andererseits, sehen wir, dass 
+                   \[ B \Rightarrow^n v \]
+                   gelten muss und daraus folgt nach Induktions-Voraussetzung 
+                   \[ v = \texttt{b}^{n-1} \texttt{c}^{n-1} \]
+                   Damit haben wir insgesamt
+                   \[ w = \texttt{b} \texttt{b}^{n-1} \texttt{c}^{n-1} \texttt{c} = 
+                          \texttt{b}^{n} \texttt{c}^{n}
+                   \]
+                   und damit ist gezeigt, dass
+                   \[ L(B) \subseteq \{ \texttt{b}^{n} \texttt{c}^{n} \mid n \in \mathbb{N} \} \]
+                   gilt.
+      \end{enumerate}
+      Wir zeigen nun durch Induktion nach der Länge der Herleitung, dass aus
+      \[ S \Rightarrow^* w \]
+      folgt, dass $w \in L_1$ ist.
+      \begin{enumerate}
+      \item[1. Fall:]  Es gilt
+            \[ S \Rightarrow B \Rightarrow^* w. \]
+            Nach dem eben Bewiesenen gibt es dann ein $n \in \mathbb{N}$, so dass 
+            \[ w = \texttt{b}^{n} \texttt{c}^{n} \]
+            gilt und damit haben wir trivialerweise
+            \[ w = \texttt{a}^{0}\texttt{b}^{n} \texttt{c}^{0+n}, \]
+            was $w \in L_1$ impliziert.
+      \item[2. Fall:]  Es gilt
+            \[ S \Rightarrow \texttt{a} S \texttt{c} \Rightarrow^* \texttt{a} v \texttt{c}. \] 
+            dann haben wir einerseits
+            \[ w =  \texttt{a} v \texttt{c} \]
+            und andererseits gibt es nach Induktions-Voraussetzung $n,m \in \mathbb{N}$, so dass
+            \[ v =  \texttt{a}^m \texttt{b}^{n} \texttt{c}^{m+n} \]
+            gilt.  Daraus folgt aber sofort
+            \[ w =  \texttt{a}^{m+1} \texttt{b}^{n} \texttt{c}^{m+n+1} \] 
+            und folglich gilt auch in diesem Fall $w \in L_1$.
+      \end{enumerate}
+      Zum Schluss muss noch gezeigt werden, dass alle Wörter aus 
+      $L_1$ tatsächlich von der oben angegebenen Grammatik erzeugt werden.  Das ist aber offensichtlich,
+      denn das Wort $\texttt{a}^{m} \texttt{b}^{n} \texttt{c}^{m+n}$ läßt sich dadurch erzeugen,
+      dass zunächst $m$ mal die Regel $S \rightarrow \texttt{a} S \texttt{c}$ verwendet wird.
+      Darauf folgt eine Anwendung der Regel $S \rightarrow B$ und
+      anschließend folgen $n$ Anwendungen der Regel $B \rightarrow \texttt{b} B \texttt{c}$ 
+      und ganz zum Schluss wird noch die Regel $B \rightarrow \varepsilon$ angewendet. 
+      \[
+      \begin{array}[t]{lcl}
+        S & \Rightarrow & \texttt{a} S \texttt{c} \Rightarrow \cdots \Rightarrow \texttt{a}^m S \texttt{c}^m \\
+          & \Rightarrow & \texttt{a}^m B \texttt{c}^m \\
+          & \Rightarrow & \texttt{a}^m \texttt{b} B \texttt{c} \texttt{c}^m
+            \Rightarrow \cdots
+            \Rightarrow \texttt{a}^m \texttt{b}^n B \texttt{c}^n \texttt{c}^m \\
+          & \Rightarrow & \texttt{a}^m \texttt{b}^n \varepsilon \texttt{c}^n \texttt{c}^m
+                          = \texttt{a}^m \texttt{b}^n \texttt{c}^{m+n} 
+      \end{array}
+      \]
+      \qed
+\item Die Sprache $L_2$ ist nicht kontextfrei.  Wir führen den Beweis indirekt und nehmen an, dass
+      $L_2$ kontextfrei wäre.  Nach dem Pumping-Lemma existiert dann eine natürliche Zahl $n$, so dass
+      für alle $s \in L$, für die $|s| \geq n$ ist, eine Zerlegung $s = uvwxyz$ existiert, für die
+      außerdem folgendes gilt:
+      \begin{enumerate}
+      \item $|vwx| \leq n$,
+      \item $vx \not= \varepsilon$,
+      \item $uv^kwx^ky \in L$ für alle $k \in \mathbb{N}$.
+      \end{enumerate}
+      Wir können o.B.d.A. fordern, dass $n \geq 1$ gilt.
+      Wir betrachten nun den String
+      \[ s = \texttt{a}^{2\cdot n} \texttt{b}^{2\cdot n} \texttt{c}^{4\cdot n^2}. \]
+      Offenbar gilt $s \in L_2$ und wegen $|s| = 2 \cdot n + 2 \cdot n + 4 \cdot n^2 > n$ erfüllt $s$ die
+      Voraussetzung des Pumping-Lemmas.  Wir finden also eine Zerlegung
+      \[ s = u v w x y \]
+      mit den oben angegebenen Eigenschaften.  Wegen $|vwx| \leq n$ und 
+      $| \texttt{b}^{2\cdot n} | = 2\cdot n > n$ kann der Teilstring $vwx$ den String $\texttt{b}^{2\cdot n}$ 
+      nicht vollständig überdecken.  Daher muss einer der beiden folgenden Fälle vorliegen:
+      \[ vwx \leq \texttt{a}^{2\cdot n}\texttt{b}^{2\cdot n} \quad \mbox{oder} \quad
+         vwx \leq \texttt{b}^{2\cdot n}\texttt{c}^{4\cdot n^2}.
+      \]
+      Wir betrachten die beiden Fälle getrennt.
+      \begin{enumerate}
+      \item $vwx \leq \texttt{a}^{2\cdot n}\texttt{b}^{2\cdot n}$
+
+            In diesem Fall enthält der String $vwx$ den Buchstaben $\texttt{c}$ nicht.
+            Nach dem Pumping-Lemma gilt $uwy \in L$. Daher haben wir einerseits
+            \[ \textsl{count}(uwy, \texttt{c}) =  \textsl{count}(uvwxy, \texttt{c}) = 4 \cdot n^2, \]
+            Andererseits folgt aus $vx \not= \varepsilon$, dass 
+            \[ 
+            \begin{array}[t]{ll}
+               \textsl{count}(uwy, \texttt{a}) < \textsl{count}(uvwxy, \texttt{a}) = 2 \cdot n &
+               \quad \mbox{oder} \\
+               \textsl{count}(uwy, \texttt{b}) < \textsl{count}(uvwxy, \texttt{b}) = 2 \cdot n
+            \end{array}
+            \]
+            gilt.  Dann gilt auf jeden Fall
+            \[ \textsl{count}(uwy, \texttt{a}) \cdot \textsl{count}(uwy, \texttt{b}) < 
+               (2 \cdot n) \cdot (2 \cdot n) = 4\cdot n^2 = \textsl{count}(uwy, \texttt{c})
+            \]
+            und daraus würde im Widerspruch zum Pumping-Lemma $uwy \not\in L_2$ folgen.
+      \item $vwx \leq \texttt{b}^{2\cdot n}\texttt{c}^{4\cdot n^2}$.
+          
+            In diesem Fall enthält der String $vwx$ den Buchstaben $\mathtt{a}$ nicht.
+            Wir können annehmen, dass der String $vwx$ den Buchstaben $\mathtt{c}$ enthält, denn
+            andernfalls würde $vwx \leq \texttt{a}^{2\cdot n}\texttt{b}^{2\cdot n}$ gelten und den Fall
+            haben wir oben schon behandelt.  Da einerseits $|vy| \leq n$ und andererseits $|vx| > 0$ gilt,
+            haben wir insgesamt die Ungleichungs-Kette
+            \[ 4\cdot n^2 - n \leq \textsl{count}(uwy,\texttt{c}) < 4\cdot n^2. \]
+            Außerdem gilt $\textsl{count}(uwy,\texttt{a}) = \textsl{count}(s,\texttt{a}) = 2\cdot n$,
+            denn $vx$ besteht ja nur aus den Buchstaben \texttt{b} und \texttt{c}.
+            Wegen $\textsl{count}(uwy,\texttt{c}) < 4\cdot n^2$ muss dann
+            \[ \textsl{count}(uwy,\texttt{b}) < 2\cdot n \]
+            gelten, denn sonst hätte das Produkt 
+            \[ \textsl{count}(uwy, \texttt{a}) \cdot \textsl{count}(uwy, \texttt{b}) \]
+            ja den Wert $4\cdot n^2$
+            und  $uwy$ würde nicht in der Sprache $L_2$ liegen.  Also haben wir
+            folgende Ungleichungs-Kette:
+            \[ 
+            \begin{array}[t]{lcl}
+              \textsl{count}(uwy, \texttt{a}) \cdot \textsl{count}(uwy, \texttt{b}) 
+              & \leq & (2\cdot n) \cdot (2\cdot n - 1) \\
+              & =    & 4 \cdot n^2 - 2 \cdot n \\
+              & <    & 4 \cdot n^2 - n \\
+              & \leq & \textsl{count}(uwy, \texttt{c}).
+            \end{array}
+            \]
+            Daraus folgt aber im Widerspruch zum Pumping-Lemma, dass der String $uwy$ nicht in der
+            Sprache $L_2$ enthalten ist. \qed
+      \end{enumerate}
+\end{enumerate}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

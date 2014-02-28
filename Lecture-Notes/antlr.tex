@@ -1,0 +1,717 @@
+\chapter[ANTLR]{ANTLR --- \emph{Another Tool for Language Recognition}}
+Es gibt eine Reihe von Werkzeugen, die in der Lage sind, einen Top-Down-Parser automatisch
+zu erzeugen.  Das Werkzeug, das in meinen Augen am besten ausgereift ist, ist
+\textsc{Antlr} \cite{parr:2012,parr:2013}.  Der Name steht für 
+\emph{\underline{an}other \underline{t}ool for \underline{l}anguage \underline{r}ecognition}\footnote{
+Der Name \textsc{Antlr} kann außerdem auch als Abkürzung für \underline{ant}i \underline{LR} verstanden
+werden. Hier steht ``LR'' für \emph{LR-Parser}.  Dies ist eine Klasse von Parsern, die nicht \emph{top-down} 
+sondern statt dessen \emph{bottom-up} arbeiten.  Wir werden diese Klasse von Parsern später noch ausführlich 
+diskutieren.
+}.
+Sie finden dieses Werkzeug im Internet unter der folgenden Adresse 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://www.antlr.org}{\texttt{http://www.antlr.org}}.
+\\[0.2cm]
+In dieser Vorlesung werden wir die Version 4.1 verwenden.
+Zunächst führen wir \textsc{Antlr} an Hand verschiedener Beispiele ein, durch die wir die 
+wichtigsten Eigenschaften des Werkzeugs demonstrieren können.  In späteren Kapiteln werden wir
+die Theorie von Top-Down-Parsern untersuchen.
+\textsc{Antlr} unterstützt die Verwendung von \textsc{Ebnf}-Grammatiken.  
+
+
+\section{Ein Parser für arithmetische Ausdrücke}
+Wir beginnen mit einem Parser für arithmetische Ausdrücke, die entsprechend der in
+Abbildung \ref{fig:Expr} auf Seite \pageref{fig:Expr} gezeigten Grammatik aufgebaut sind.
+Diese Grammatik lässt sich nun mit Hilfe von \textsc{Antlr} wie in Abbildung
+\ref{fig:Expr.g4} gezeigt implementieren.  Wir diskutieren diese Umsetzung Zeile für Zeile.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    grammar Expr;
+    
+    start   : expr
+            ;
+    
+    expr    : expr ('+'|'-') product 
+            | product        
+            ;
+    
+    product : product ('*'|'/') factor 
+            | factor
+            ;
+    
+    factor  : '(' expr ')'
+            | NUMBER
+            ;
+    
+    NUMBER: '0'|[1-9][0-9]*;
+    WS    : [ \v\t\n\r] -> skip;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsc{Antlr}-Spezifikation eines Parsers für arithmetische Ausdrücke.}
+\label{fig:Expr.g4}
+\end{figure}
+
+
+\begin{enumerate}
+\item In Zeile 1 spezifizieren wir mit dem Schlüsselwort \texttt{grammar} den Namen der Grammatik.
+      In unserem Fall hat die Grammatik also den Namen \texttt{Expr}.  Der Name  der Datei, in dem
+      die Grammatik abgespeichert ist, wird aus dem Namen der Grammatik durch Anhängen der Endung ``\texttt{.g4}''
+      gebildet, daher muss die gezeigte Grammatik in einer Datei mit dem Namen ``\texttt{Expr.g4}''
+      abgespeichert werden.      
+\item Zeile 3 enthält die Grammatik-Regel für die syntaktische Variable
+      \textsl{start}.  Die dort gezeigte Grammatik-Regel entspricht mathematisch der Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{start} \rightarrow \textsl{expr}$.
+      \\[0.2cm]
+      Beachten Sie, dass linke und rechte Seite einer Grammatik-Regel durch einen Doppelpunkt
+      getrennt werden.
+      Jede Grammatik-Regel wird durch ein Semikolon ``\texttt{;}'' beendet.
+\item Zeile 6 enthält die Grammatik-Regel für die syntaktische Variable
+      \textsl{expr}.  Zu beachten ist hier, dass die Terminale ``\texttt{+}'' und
+      ``\texttt{-}'' bei \textsc{Antlr} in einfache Anführungszeichen gesetzt werden
+      müssen.  Zusätzlich sehen wir, dass die
+      verschiedenen Grammatikregeln, welche die selbe syntaktische
+      Variable definieren, durch das Zeichen ``\texttt{|}'' von einander getrennt werden.
+\item Entsprechend enthalten die Zeilen 10 und 14 die Grammatik-Regeln für die syntaktischen
+      Variablen \textsl{product} und \textsl{factor}.  
+
+\item Bei \textsc{Antlr} werden die grammatikalische Struktur und die lexikalische
+      Struktur der Eingabe in der selben Datei definiert.  Um syntaktische Variablen und
+      Terminale von einander unterscheiden zu können, wird vereinbart, dass Terminale mit
+      einem Großbuchstaben beginnen,\footnote
+      {Es ist Konvention, aber nicht vorgeschrieben, dass die 
+      Namen von Terminalen nur aus Großbuchstaben bestehen.}
+      während syntaktische Variablen immer mit einem kleinen
+      Buchstaben beginnen.  
+      Daher wissen wir, dass der String ``\texttt{NUMBER}'' in Zeile 8
+      ein Terminal bezeichnet.
+\item In Zeile 18 wird die lexikalische Struktur der mit \texttt{NUMBER} bezeichneten
+      Terminale durch einen regulären Ausdruck definiert.  Der reguläre Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{'0'|[1-9][0-9]*;}
+      \\[0.2cm]
+      steht hier für eine Folge aus Ziffern.  Diese Folge von Ziffern kann nur dann mit der Ziffer
+      ``\texttt{0}'' beginnen, wenn auf die ``\texttt{0}'' keine weitere Ziffer mehr folgt.
+
+      Notice that we have to enclose the first occurrence of ``\texttt{0}'' in single quotes.
+      On the other hand, we must not put the digits occurring in the square brackets ``\texttt{[}'' 
+      and ``\texttt{]}'' in quotes, since these occur inside a range and characters inside a range
+      must never be quoted.
+\item Zeile 19 definiert schließlich das Token \texttt{WS}, wobei der Name als Abkürzung
+      für \emph{white space} zu verstehen ist.  Hier werden Leerzeichen, Tabulatoren,
+      Zeilenumbrüche und Wagenrückläufe erkannt.  Nach der lexikalischen Spezifikation
+      von \texttt{WS} folgt in geschweiften Klammern noch eine semantische Aktion.
+      Die spezielle Aktion ``\texttt{skip}'', die hier ausgeführt wird, wirft das erkannte
+      Token einfach weg, ohne es an den Parser weiterzureichen.
+\end{enumerate}
+Zusammenfassend enthalten die Zeilen 3 -- 16 also die Definition der grammatikalischen
+Struktur, während die Zeilen 18 und 19 die lexikalische Struktur definieren.
+
+Um aus der in Abbildung \ref{fig:Expr.g4} gezeigten Grammatik einen Parser erzeugen zu
+können,  übersetzen wir diese Datei mit dem folgenden Befehl:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{java -jar /usr/local/lib/antlr-4.1-complete.jar Expr.g4}
+\\[0.2cm]
+Das setzt natürlich voraus, dass die angegebene Datei \texttt{antlr-4.1-complete.jar} auch
+tatsächlich in dem Verzeichnis \texttt{/usr/local/lib/} zu finden ist.
+\textsc{Antlr} erzeugt die folgenden Dateien:
+\begin{enumerate}
+\item \texttt{ExprParser.java}
+
+      Hier handelt es sich um den eigentlichen Parser.
+\item \texttt{ExprLexer.java}
+
+      Hier ist der Scanner implementiert.
+\item Zusätzlich werden noch die Dateien \texttt{ExprListener.java},
+      \texttt{ExprBaseListener.java}, \texttt{Expr.tokens} sowie \texttt{ExprLexer.tokens} erzeugt,
+      auf die wir aber nicht weiter eingehen.
+  
+\end{enumerate}
+
+Um den erzeugten Parser aufrufen zu können, benötigen wir noch ein Treiber-Programm.
+Abbildung \ref{fig:ParseExpr.java} zeigt ein solches Programm.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    import org.antlr.v4.runtime.*;
+    import org.antlr.v4.runtime.tree.*;
+    
+    public class ParseExpr {
+    
+        public static void main(String[] args) throws Exception {
+            ANTLRInputStream  input  = new ANTLRInputStream(System.in);
+            ExprLexer         lexer  = new ExprLexer(input);
+            CommonTokenStream ts     = new CommonTokenStream(lexer);
+            ExprParser        parser = new ExprParser(ts);
+            ParseTree         tree   = parser.start();
+            System.out.println(tree.toStringTree(parser)); 
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Treiber-Programm für den von \textsc{Antlr} erzeugten Parser.}
+\label{fig:ParseExpr.java}
+\end{figure}
+
+\begin{enumerate}
+\item In den Zeilen 1 und 2 importieren wir die \textsc{Antlr}-Runtime-Pakete.
+      Dort sind u.a.~die Klassen  \texttt{ANTLRInputStream} und \texttt{CommonTokenStream}, 
+      auf deren Verwendung wir angewiesen sind, definiert.
+\item In Zeile 7 wandeln wir die Standard-Eingabe in einen \texttt{ANTLRInputStream} um,
+      der dann in Zeile 8 dazu benutzt werden kann, einen Scanner zu erzeugen. 
+\item Mit Hilfe des  Scanners erzeugen wir in Zeile 9 einen TokenStream und aus diesem können wir 
+      in Zeile 10 einen Parser erzeugen.
+\item Der Aufruf des Parsers erfolgt in Zeile 11, indem wir den Namen der syntaktischen Variable,
+      die wir parsen möchten, als Methode verwenden.
+\item Schließlich geben wir den erzeugten Baum noch als Text aus.
+\end{enumerate}
+Übersetzen wir dieses Programm, so können wir den Parser durch den Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{echo  \symbol{34}1 + 2 * 3 - 4\symbol{34} | java -cp /usr/local/lib/antlr-4.1-complete.jar ParseExpr}
+\\[0.2cm]
+testen.  Wir erhalten die Ausgabe
+\\[0.2cm]
+\hspace*{0.3cm}
+\texttt{(start (expr (expr (product (factor 1))) + (product (product (factor 2)) * (factor 3))))}.
+\\[0.2cm]
+Geben wir statt dessen den Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{echo \symbol{34}1 + 2 * 3 - 4\symbol{34} | java org.antlr.v4.runtime.misc.TestRig Expr start -gui}
+\\[0.2cm]
+ein, so erhalten wir, vorausgesetzt dass die Variable \texttt{CLASSPATH} richtig gesetzt ist,
+den in Abbildung \ref{fig:expr.eps} gezeigten Syntax-Baum.  Falls wir den Alias \texttt{grun} in der
+Datei ``\texttt{.bashrc}'' als
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{alias grun='java org.antlr.v4.runtime.misc.TestRig'}
+\\[0.2cm]
+definiert haben, so können wir den Syntax-Baum auch einfacher mit Hilfe des Befehls
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{echo \symbol{34}1 + 2 * 3 - 4\symbol{34} | grun Expr start -gui}
+\\[0.2cm]
+anzeigen lassen.  Zum Aufruf von \textsc{Antlr} bietet such der Alias
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{alias antlr4='java -jar /usr/local/lib/antlr-4.1-complete.jar'}
+\\[0.2cm]
+an, denn damit können wir \textsc{Antlr}  dann über den Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{antlr4 Expr.g4}
+\\[0.2cm]
+aufrufen.
+
+\begin{figure}[!ht]
+  \centering
+      \epsfig{file=Abbildungen/expr.eps, scale=0.7}
+   \caption{Syntax-Baum, der beim Parsen des Strings ``\texttt{1+2*3}'' erzeugt wird.}
+  \label{fig:expr.eps}
+\end{figure}
+
+
+
+\section{Ein Parser zur Auswertung arithmetischer Ausdrücke}
+Das letzte Beispiel ist noch nicht sehr spektakulär, weil die vom Parser erkannten
+Ausdrücke nicht ausgewertet werden.  Wir präsentieren jetzt ein komplexeres Beispiel, bei
+dem arithmetische Ausdrücke ausgewertet und die erhaltenen Ergebnisse in Variablen
+gespeichert werden können.  Wir gehen dabei in zwei Schritten vor und präsentieren
+zunächst eine reine Grammatik in \textsc{Antlr}-Notation.  Anschließend erweitern wir diese
+mit Aktionen, in denen die Ausdrücke ausgewertet werden können.
+Abbildung \ref{fig:Program.g4} zeigt diese Grammatik.  Gegenüber der vorher gezeigten
+Grammatik für arithmetische Ausdrücke gibt es die folgenden Änderungen:
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    grammar Program;
+    
+    program : stmnt+ ;
+    
+    stmnt   : ID ':=' expr ';'
+            | expr ';'
+            ;    
+    
+    expr    : product (('+'|'-') product)* ;
+    
+    product : factor (('*'|'/') factor)* ;
+    
+    factor  : '(' expr ')'
+            | ID
+            | INT
+            ;
+    
+    ID : [a-zA-Z][a-zA-Z0-9]*;
+    INT: '0'|[1-9][0-9]*;
+    WS : [ \v\t\n\r] -> skip; 
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine Grammatik für die Auswertung von Ausdrücken.}
+\label{fig:Program.g4}
+\end{figure}
+
+
+\begin{enumerate}
+\item Das Start-Symbol ist jetzt \texttt{program}.  Es steht für eine Liste
+      von Zuweisungen der folgenden Form:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{var} \;\mathtt{:=}\; \textsl{expr}\mathtt{;}$
+      \\[0.2cm]
+      Hier ist \texttt{var} der Name einer Variablen und \textsl{expr} ist ein
+      arithmetischer Ausdruck.
+\item \texttt{stmnt} bezeichnet eine Zuweisung oder einen einzelnen Ausdruck.
+\item Wir haben die Regeln für die syntaktischen Variablen \textsl{expr} und \textsl{product}
+      vereinfacht.  Ein arithmetischer Ausdruck ist nichts anderes als eine Folge von Produkten,
+      wobei die einzelnen Produkte durch die Operatoren ``\texttt{+}'' oder ``\texttt{-}'' getrennt
+      werden.  Da \textsc{Antlr} \textsc{Ebnf}-Grammatiken unterstützt, können wir für \textsl{expr}
+      daher die Grammatik-Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{expr : product (('+'|'-') product)* ;}
+      \\[0.2cm]
+      verwenden.  Die Grammatik-Regel für \textsl{product} folgt in ähnlicher Weise aus der
+      Feststellung,  dass ein Produkt eine Folge von Faktoren ist, wobei die einzelnen Faktoren
+      durch die Operatoren ``\texttt{*}'' und ``\texttt{/}'' getrennt werden.
+\item Das Terminal \texttt{ID} bezeichnet den Namen einer Variablen.  Ein solcher Name
+      besteht aus einer beliebigen Folge von Buchstaben und Ziffern, die mit einem Buchstaben 
+      beginnen muss.
+\end{enumerate}
+Mit diesem Parser können wir jetzt zum Beispiel die folgende Eingabe parsen:
+\begin{verbatim}
+    x = 2 * 3; y = 4 * 5; z = x * x + y * y; 
+    z / 3;
+\end{verbatim}
+Wir wollen nun einen ganz einfachen Interpreter entwickeln, der eine Folge von solchen
+Zuweisungen auswertet und die bei der Auswertung berechneten Zwischen-Ergebnisse
+in Variablen abspeichert, auf die in folgenden Ausdrücken Bezug genommen werden kann.
+Weiterhin soll jeder Ausdruck, der keiner Variablen zugewiesen wird, ausgewertet und
+ausgegeben werden.  Abbildung \ref{fig:Program.g4-2} zeigt die Realisierung eines solchen
+Interpreters mit \textsc{Antlr}.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.3cm,
+                ]
+    grammar Program;
+     
+    @header {
+        import java.util.TreeMap;
+    }
+    
+    @members {
+        TreeMap<String, Integer> varTable = new TreeMap<String, Integer>();
+    }
+    
+    program : stmnt+ ;
+    
+    stmnt : ID ':=' expr ';' { varTable.put($ID.text, $expr.result); }
+          |         expr ';' { System.out.println($expr.result);     }
+          ;    
+    
+    expr returns [int result]
+        : p = product { $result = $p.result; }
+          (   ('+' q = product) { $result += $q.result; }
+            | ('-' q = product) { $result -= $q.result; }
+          )*
+        ;
+    
+    product returns [int result]
+        : f = factor { $result = $f.result; }
+          (
+              ('*' g = factor) { $result *= $g.result; }
+            | ('/' g = factor) { $result /= $g.result; }
+          )* 
+        ;
+    
+    factor returns [int result]
+        : '(' expr ')' { $result = $expr.result;           }
+        | ID           { $result = varTable.get($ID.text); }
+        | INT          { $result = new Integer($INT.text); }
+        ;
+    
+    ID : [a-zA-Z][a-zA-Z0-9]*;
+    INT: '0'|[1-9][0-9]*;
+    WS : [ \v\t\n\r] -> skip; 
+\end{Verbatim} 
+%\$
+\vspace*{-0.3cm}
+\caption{Ein Interpreter zur Auswertung von Ausdrücken.}
+\label{fig:Program.g4-2}
+\end{figure}
+
+\begin{enumerate}
+\item Da wir die Werte der einzelnen Variablen in einer Tabelle abspeichern müssen,
+      importieren wir in den Zeilen 3 -- 5 die Klasse \texttt{java.util.TreeMap}, denn
+      diese Klasse implementiert Tabellen effizient als binäre Bäume.
+
+      Allgemein setzt \textsc{Antlr} all den Code, der durch das Schlüsselwort
+      ``\texttt{@header}'' spezifiert wird, an den Anfang der erstellten Parser-Datei.
+\item In den Zeilen 7 -- 9 definieren wir zusätzliche Member-Variablen für die erzeugte
+      Klasse \texttt{ProgramParser}.  In unserem Fall definieren wir hier die Tabelle, die
+      später die Werte der Variablen enthält, als Abbildung, die Strings ganze Zahlen zuordnet.
+
+      Allgemein setzt \textsc{Antlr} all den Code, der durch das Schlüsselwort
+      ``\texttt{@members}'' spezifiert wird, an den Anfang der erstellten Parser-Klasse.
+      Dieses Feature kann sowohl zur Definition von zusätzlichen Klassen-Variablen als auch
+      von Methoden verwendet werden.
+      
+      Wir reichern nun die Grammatik-Regeln mit Aktionen an, die durchgeführt werden, wenn
+      der Parser die entsprechende Grammatik-Regel anwendet.  Die Aktionen werden von der
+      eigentlichen Grammatik-Regel, für die sie angewendet werden sollen, dadurch
+      abgesetzt, dass sie in den geschweiften Klammern ``\texttt{\{}'' und ``\texttt{\}}''
+      eingefaßt werden.
+\item Wird vom Parser in Zeile 13 eine Zuweisung der Form $\textsl{var} \;\mathtt{:=}\; \textsl{expr}$
+      erkannt,  
+      so soll der Wert des Ausdrucks \textsl{expr} berechnet und das Ergebnis in der
+      Tabelle \texttt{varTable} unter dem Namen \textsl{var} eingetragen werden.
+      In der Grammatik-Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \textsl{stmnt} $\rightarrow$ \texttt{ID} ':=' \textsl{expr} ';'
+      \\[0.2cm]
+      haben wir einerseits das Token \texttt{ID}, auf dessen Namen wir mit \texttt{\symbol{36}ID.text}
+      zugreifen können, andererseits haben wir die syntaktische Variable \textsl{expr}.
+      Wir werden später dieser syntaktischen Variable die \textsl{Java}-Variable
+      \texttt{result} als Ergebnis-Variable zuordnen, die den zugehörigen Wert enthält.  
+      Dann können wir mit
+      \texttt{\symbol{36}expr.result} auf diesen Wert zugreifen.
+
+      In Zeile 14 haben wir einen einzelnen arithmetischen Ausdruck, den wir auswerten und ausgeben.
+\item in Zeile 17 definieren wir mit der Zeile
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{expr returns [int result]}
+      \\[0.2cm]
+      dass die Methode, die eine \textsl{expr} parst, als Ergebnis ein \texttt{int} zurück
+      gibt und dass dieses in der Variable mit dem Namen \texttt{result} abgespeichert wird.
+\item In der Grammatik-Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{expr : product (('+'|'-') product)* ;}
+      \\[0.2cm]
+      taucht die syntaktische Variable \textsl{product} zweimal auf. Deswegen wäre ein
+      Notation der Form 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{36}product.result} 
+      \\[0.2cm]
+      nicht eindeutig. Daher haben wir in Zeile 18 -- 20 den verschiedenen Auftreten dieser syntaktische
+      Variablen die Namen $p$ und $q$ zugeordnet, auf die wir dann in den Aktionen
+      zugreifen können.  In den Aktionen muss diesen Variablen allerdings ein Dollar-Zeichen
+      vorgestellt werden.
+
+      Die Aktionen selber bestehen nun darin, dass wir der Variablen \texttt{result}
+      das Ergebnis der jeweiligen Berechnung zuweisen.
+\item In den Zeilen 34 und 35 greifen wir auf die Strings, die den Token
+      \texttt{ID} und \texttt{INT} entsprechen, mit Hilfe der für Token vordefinierten
+      Variable \texttt{text} zurück.
+\end{enumerate}
+
+\section{Erzeugung abstrakter Syntax-Bäume}
+Bei der Auswertung arithmetischer Ausdrücke im letzten Abschnitt hatten wir Glück
+und konnten das Ergebnis eines Ausdrucks unmittelbar mit Hilfe von semantischen Aktionen
+berechnen.  Bei komplexeren Problemen ist es in der Regel erforderlich, zunächst einen
+abstrakten Syntax-Baum zu erzeugen.  Die eigentliche Berechnung findet dann erst nach dem
+Parsen auf dem Syntax-Baum statt.  Wir wollen dieses Verfahren an einem Beispiel
+demonstrieren.  Bei dem Beispiel geht es wieder um die symbolische Differentiation
+arithmetischer Ausdrücke.  Ist beispielsweise der arithmetische Ausdruck 
+\[ x \cdot \ln(x) \]
+gegeben, so findet sich für die Ableitung dieses Ausdrucks nach der Variable $x$ mit Hilfe
+der Produkt-Regel das
+Ergebnis 
+\[ 1 \cdot \ln(x) + x \cdot \frac{1}{x}. \]  
+Da die arithmetischen Ausdrücke nun
+zusätzlich zu den Operatoren, welche die vier Grundrechenarten beschreiben, auch noch 
+Funktionszeichen für die Exponential-Funktion und den natürlichen Logarithmus enthalten
+sollen, müssen wir die Grammatik aus dem letzten Abschnitt erweitern.
+Abbildung \ref{fig:Expr-exp-ln} zeigt die entsprechend erweiterte EBNF-Grammatik.
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+
+  \begin{eqnarray*}
+  \textsl{Expr}   & \rightarrow & \;\textsl{Product}\;\;((\quoted{+}|\quoted{-})  \;\; \textsl{Product})* \\[0.2cm]
+  \textsl{Product} & \rightarrow & \;\textsl{Factor}\;\;\;\;((\quoted{*}|\quoted{/}) \;\; \textsl{Factor})* \\[0.2cm]
+  \textsl{Factor} & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)}              \\
+                  & \mid        & \quoted{exp} \quoted{(} \textsl{Expr} \quoted{)} \\
+                  & \mid        & \quoted{log} \quoted{(} \textsl{Expr} \quoted{)} \\
+                  & \mid        & \;\textsc{Variable}                              \\
+                  & \mid        & \;\textsc{Number} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}}}
+  \end{center}
+  \caption{EBNF-Grammatik für arithmetische Ausdrücke mit Exponential-Funktion und Logarithmus.}
+  \label{fig:Expr-exp-ln}
+\end{figure}
+
+\subsection{Implementierung des Parsers}
+Abbildung \ref{fig:grammatik.g} zeigt die \textsc{Antlr}-Implementierung der Grammatik
+aus Abbildung \ref{fig:Expr-exp-ln}.  
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    grammar Expr;
+    
+    expr returns [Expr result]
+        : p = product { $result = $p.result; }
+          (   ('+' q = product) { $result = new Sum(       $result, $q.result); }
+            | ('-' q = product) { $result = new Difference($result, $q.result); }
+          )*
+        ;
+    
+    product returns [Expr result]
+        : f = factor { $result = $f.result; }
+          (
+              ('*' g = factor) { $result = new Product( $result, $g.result); }
+            | ('/' g = factor) { $result = new Quotient($result, $g.result); }
+          )* 
+        ;
+    
+    factor returns [Expr result]
+        : '(' expr ')'       { $result = $expr.result;                  }
+        | 'exp' '(' expr ')' { $result = new Exponential($expr.result); }
+        | 'log' '(' expr ')' { $result = new Logarithm(  $expr.result); }
+        | VAR                { $result = new Variable($VAR.text);       }
+        | NUM                { $result = new Number($NUM.text);         }
+        ;
+    
+    VAR : [a-zA-Z][a-zA-Z0-9]*;
+    NUM : '0'|[1-9][0-9]*;
+    WS  : [ \v\t\n\r] -> skip; 
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die \textsc{Antlr}-Spezifikation der Grammatik.}
+\label{fig:grammatik.g}
+\end{figure}
+
+\begin{enumerate}
+\item In Zeile 3 deklarieren wir durch ``\texttt{returns [Expr result]}'',
+      dass beim Erkennen einer \textsl{expr} nun ein Objekt der Klasse \texttt{Expr}
+      zurück gegeben werden soll und dass dieses Objekt über den Namen
+      \texttt{result} angesprochen werden kann.  Die Klasse \texttt{Expr} ist hier eine abstrakte
+      Klasse, von der wir die Klassen
+      \begin{enumerate}
+      \item \texttt{Sum} (zur Darstellung von Termen der Form $s + t$),
+      \item \texttt{Difference} (zur Darstellung von Termen der Form $s - t$),
+      \item \texttt{Product} (zur Darstellung von Termen der Form $s * t$),
+      \item \texttt{Quotient} (zur Darstellung von Termen der Form $s / t$),
+      \item \texttt{Exponential} (zur Darstellung von Termen der Form $\textsl{exp}(s)$),
+      \item \texttt{Logarithm} (zur Darstellung von Termen der Form $\textsl{ln}(s)$),
+      \item \texttt{Number} (zur Darstellung von Zahlen) und
+      \item \texttt{Variable} (zur Darstellung von Variablen)
+      \end{enumerate}
+      ableiten.  Die Klasse \texttt{Expr} besitzt nur die abstrakte Methode 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{public abstract Expr diff(String x);}
+      \\[0.2cm]
+      die dazu benutzt wird, einen arithmetischen Ausdruck nach einer gegebenen Variablen
+      abzuleiten.  Die von \texttt{Expr} abgeleiteten Klassen sind alle nach dem gleichen Muster
+      aufgebaut.  Beispielhaft zeigt Abbildung \ref{fig:Product.java} auf Seite \pageref{fig:Product.java}
+        die Implementierung der Klasse 
+      \texttt{Product}.
+      \begin{enumerate}
+      \item Die Klasse beinhaltet die beiden Member-Variablen \texttt{mLhs} und \texttt{mRhs}.
+            Ein Objekt der Klasse \texttt{Product} wird als das Produkt
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\mathtt{mLhs} * \mathtt{mRhs}$
+            \\[0.2cm]
+            interpretiert.
+      \item Zusätzlich gibt es eine Implementierung der Methode \texttt{diff}, in der die
+            Produkt-Regel umgesetzt wird.
+      \item Zur Ausgabe ist weiterhin eine \texttt{toString}-Methode vorhanden.
+      \end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public class Product extends Expr {
+        private Expr mLhs;
+        private Expr mRhs;
+    
+        public Product(Expr lhs, Expr rhs) {
+            mLhs = lhs;
+            mRhs = rhs;
+        }
+        public Expr diff(String x) {
+            return new Sum(new Product(mLhs.diff(x), mRhs), new Product(mLhs, mRhs.diff(x)));
+        }
+        public String toString() {
+            return mLhs.toString() + " * " + mRhs.toString();
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Klasse \texttt{Product} zur Darstellung von Produkten.}
+\label{fig:Product.java}
+\end{figure}
+
+      
+      
+\item In Zeile 4 haben wir zunächst ein Produkt erkannt, dass wir unter der Variable
+      $p$ abspeichern.  Anschließend weisen wir der Variable \texttt{result} dieses
+      Produkt zu.  Falls nun später noch ein ``\texttt{+}''-- oder ``\texttt{-}''
+      Zeichen gefolgt von einem weiteren Ausdruck gelesen wird, so bauen wir aus dem neu
+      gelesenen Ausdruck und dem alten Wert von \texttt{result} den neuen Wert von
+      \texttt{result}.  Dies kann mehrmals passieren, da dieser Teil der Grammatik-Regel
+      in $( \cdots )*$ eingeschlossen ist.
+      
+      Beispielsweise wird ein Ausdruck der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $p_1 + p_2 + p_3$
+      \\[0.2cm]
+      übersetzt in ein Java-Objekt der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{new\ Sum}(\texttt{new\ Sum}(p_1, p_2), p_3))$.       
+\item Die weiteren Grammatik-Regeln erzeugen in analoger Weise \textsl{Java}-Objekte.
+\end{enumerate}
+
+Zum Abschluß zeigt Abbildung \ref{fig:Differentiate.java} noch die Einbindung des Parsers.
+Gegenüber dem in Abbildung \ref{fig:ParseExpr.java} gezeigten Treiber gibt es nur einen
+wesentlichen Unterschied: In Zeile 20 wird nun ein Objekt der Klasse \texttt{Expr} erzeugt.
+Beachten Sie, dass der Aufruf
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{parser.expr()}
+\\[0.2cm]
+zunächst ein Objekt der Klasse \texttt{ExprParser.ExprContext} erzeugt.  Bei dieser Klasse handelt
+es sich um eine innere Klasse der Klasse \texttt{ExprParser}.  Die innere Klasse
+\texttt{ExprContext} enthält nun eine Member-Variable mit dem Namen \texttt{result}, in der die
+eigentliche \texttt{Expr} gespeichert ist.  
+Für dieses Objekt rufen wir dann in Zeile 21 die Methode $\textsl{diff}()$ auf, welche die
+symbolische Ableitung berechnet.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    import org.antlr.v4.runtime.*;
+    import java.io.FileInputStream;
+    import java.io.InputStream;
+    
+    public class Differentiate {
+    
+        public static void main(String[] args) throws Exception {
+            String inputFile = null; 
+            if (args.length > 0) { 
+    	    inputFile = args[0];
+    	}
+            InputStream is = System.in;
+            if (inputFile != null) {
+    	    is = new FileInputStream(inputFile);
+    	}
+            ANTLRInputStream  input  = new ANTLRInputStream(is);
+            ExprLexer         lexer  = new ExprLexer(input);
+            CommonTokenStream ts     = new CommonTokenStream(lexer);
+            ExprParser        parser = new ExprParser(ts);
+            Expr expr = parser.expr().result;
+            Expr diff = expr.diff("x");
+            System.out.println("d (" + expr + ")/dx = " + diff);
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Ein Treiber für den Parser.}
+\label{fig:Differentiate.java}
+\end{figure}
+\pagebreak
+
+
+\exercise
+Auf meiner Webseite finden Sie unter
+\\[0.2cm]
+\hspace*{-0.3cm}
+\href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/Grammar2HTML/c-grammar.g}{
+\texttt{http://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/Formal-Languages/Exercises/Grammar2HTML/c-grammar.g}}
+\\[0.2cm]
+eine Grammatik für die Sprache \texttt{C}.
+\begin{enumerate}
+\item[(a)] Entwickeln Sie eine Grammatik, mit der Sie die Syntax der dort angegebenen
+           Regeln beschreiben können.
+\item[(b)] Entwickeln Sie mit Hilfe von \textsc{Antlr} ein Programm, dass die angegebene
+           Grammatik liest und als \textsc{Html}-Datei ausgibt.  
+
+           Zur Darstellung der Grammatik-Regeln finden Sie in dem Verzeichnis
+           \\[0.2cm]
+           \hspace*{-0.3cm}
+           \href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/Grammar2HTML/}{
+           \texttt{http://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/Formal-Languages/Exercises/Grammar2HTML/}}
+           \\[0.2cm]
+           verschiedene Klassen, deren \texttt{toString}-Methode \texttt{Html}-Ausgabe erzeugt.
+\end{enumerate}
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 

@@ -1,0 +1,65 @@
+Tokens:    [$, 'a', 'b']
+
+Variables: [S, s, u, v]
+
+Grammar: 
+S -> s $
+s -> 
+s -> u 'a'
+s -> v 'b'
+u -> s 'b'
+v -> s 'a'
+
+
+s is nullable
+Follow(  S) = []
+Follow(  s) = [$, 'a', 'b']
+Follow(  u) = ['a']
+Follow(  v) = ['b']
+s0 = { S -> <*> s $,
+       s -> <*>,
+       s -> <*> u 'a',
+       s -> <*> v 'b',
+       u -> <*> s 'b',
+       v -> <*> s 'a'
+     }
+
+s1 = { S -> s <*> $,
+       u -> s <*> 'b',
+       v -> s <*> 'a'
+     }
+
+s2 = { s -> u <*> 'a' }
+
+s3 = { s -> u 'a' <*> }
+
+s4 = { s -> v <*> 'b' }
+
+s5 = { s -> v 'b' <*> }
+
+s6 = { u -> s 'b' <*> }
+
+s7 = { v -> s 'a' <*> }
+
+Action Table:
+action(s0, $) = <reduce, s -> >
+action(s0, 'a') = <reduce, s -> >
+action(s0, 'b') = <reduce, s -> >
+action(s1, $) = <accept>
+action(s1, 'a') = <shift, s7>
+action(s1, 'b') = <shift, s6>
+action(s2, 'a') = <shift, s3>
+action(s3, $) = <reduce, s -> u 'a'>
+action(s3, 'a') = <reduce, s -> u 'a'>
+action(s3, 'b') = <reduce, s -> u 'a'>
+action(s4, 'b') = <shift, s5>
+action(s5, $) = <reduce, s -> v 'b'>
+action(s5, 'a') = <reduce, s -> v 'b'>
+action(s5, 'b') = <reduce, s -> v 'b'>
+action(s6, 'a') = <reduce, u -> s 'b'>
+action(s7, 'b') = <reduce, v -> s 'a'>
+
+Goto Table:
+goto(s0, s) = s1
+goto(s0, u) = s2
+goto(s0, v) = s4

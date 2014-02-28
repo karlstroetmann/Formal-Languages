@@ -1,0 +1,1655 @@
+\chapter{Der Parser-Generator \textsl{JavaCup} \label{chapter:cup}}
+LALR-Parser erlauben es, auch links-rekursive Grammatiken in natürlicher Weise
+zu parsen.  Da die meisten von Ihnen in der Praxis vermutlich mit \textsl{Java} arbeiten, 
+möchte ich Ihnen in diesem Kapitel einen LALR-Parser-Generator vorstellen, den Sie
+benutzen können, wenn Sie in \textsl{Java} programmieren.  Daher gebe ich Ihnen nun eine
+kurze Einführung in die Verwendung des Parser-Generators \textsc{Cup} zusammen mit \textsl{JFlex}. 
+
+
+Der Parser-Generator \textsc{Cup} \cite{hudson:1999}, der gelegentlich auch als \textsl{JavaCup}
+bezeichnet wird, ist ein LALR-Parser-Generator für
+\textsl{Java}.  Wir werden die Version 0.11a verwenden.  Sie finden diese Version im Netz unter 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://www2.cs.tum.edu/projects/cup/java-cup-11a.jar}{\texttt{http://www2.cs.tum.edu/projects/cup/java-cup-11a.jar}}
+\\[0.2cm]
+Um einen mit \textsl{Cup} erzeugten Parser übersetzen zu können, benötigen Sie zusätzlich noch
+die folgende Datei:
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://www2.cs.tum.edu/projects/cup/java-cup-11a-runtime.jar}{\texttt{http://www2.cs.tum.edu/projects/cup/java-cup-11a-runtime.jar}}
+\\[0.2cm]
+Eine \textsl{Cup}-Spezifikation besteht aus fünf Teilen.
+\begin{enumerate}
+\item Der erste Teil ist optional und enthält gegebenenfalls eine Paket-Deklaration.  
+\item Der zweite Teil enthält die benötigten Import-Deklarationen.
+\item Der dritte Teil deklariert die verwendeten Symbole.  Hier werden also die Terminale
+      und die syntaktischen Variablen spezifiziert.
+\item Der vierte Teil ist wieder optional und spezifiziert  die Präzedenzen von Operator-Symbolen.
+\item Der fünfte Teil enthält die Grammatik-Regeln.
+\end{enumerate}
+Abbildung \ref{fig:calc.cup} auf Seite \pageref{fig:calc.cup} zeigt eine \textsl{Cup}-Spezifikation,
+mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
+\textsl{Cup}-Spezifikation sind die Schlüsselwörter unterstrichen.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\}
+                ]
+    import java_cup.runtime.*;
+    
+    \underline{terminal}            SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD;
+    \underline{terminal}            LPAREN, RPAREN;
+    \underline{terminal} Integer    NUMBER;
+    
+    \underline{nonterminal}         expr_list, expr_part;
+    \underline{nonterminal} Integer expr, prod, fact;
+    
+    expr_list ::= expr_list expr_part 
+               |  expr_part
+               ;
+    
+    expr_part ::= expr:e \{: System.out.println("result = " + e); :\} SEMI 
+               ;
+    
+    expr ::= expr:e PLUS  prod:p \{: RESULT = e + p; :\} 
+          |  expr:e MINUS prod:p \{: RESULT = e - p; :\} 
+          |  prod:p              \{: RESULT = p;     :\}
+          ;
+    
+    prod ::= prod:p TIMES  fact:f \{: RESULT = p * f; :\}
+          |  prod:p DIVIDE fact:f \{: RESULT = p / f; :\} 
+          |  prod:p MOD    fact:f \{: RESULT = p % f; :\} 
+          |  fact:f               \{: RESULT = f;     :\}
+          ;
+    
+    fact ::= LPAREN expr:e RPAREN \{: RESULT = e;   :\} 
+          |  MINUS  fact:e        \{: RESULT = - e; :\} 
+          |  NUMBER:n             \{: RESULT = n;   :\} 
+          ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsc{Cup}-Spezifikation eines Parsers für arithmetische Ausdrücke}
+\label{fig:calc.cup}
+\end{figure}
+
+\begin{enumerate}
+\item Die gezeigte \textsc{Cup}-Spezifikation enthält keine Paket-Deklarationen.
+\item Die Spezifikation beginnt in Zeile 1 mit dem Import der Klassen von
+      \texttt{java\_cup.runtime}.  Dieses Paket muss immer importiert werden, denn dort wird
+      beispielsweise die Klasse \texttt{Symbol} 
+      definiert, die wir auch später noch in dem in Abbildung \ref{fig:calc.jflex} gezeigten Scanner
+      verwenden werden.
+
+      Würden noch weitere Pakete benötigt, so könnten diese hier ebenfalls importiert werden.
+\item In den Zeilen 3 bis 5 werden die Terminale deklariert.  Es gibt zwei Arten von Terminalen:
+      \begin{enumerate}
+      \item Terminale, die keinen zusätzlichen Wert haben.  Hierbei handelt es sich 
+            um die Operator-Symbole, die beiden Klammer-Symbole und das Semikolon.  Die Syntax zur
+            Deklaration solcher Terminale ist 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{terminal} $t_1$, $\cdots$, $t_n$;
+            \\[0.2cm]
+            Durch diese Deklaration werden die Symbole $t_1$, $\cdots$, $t_n$ als Terminale
+            deklariert.
+      \item Terminale mit einem zusätzlichen Wert.  In diesem Fall muss zusätzlich der Typ
+            dieses zusätzlichen Werts deklariert werden.  Die Syntax ist in diesem Fall
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{terminal} \textsl{type} $t_1$, $\cdots$, $t_n$;
+            \\[0.2cm]
+            Hierbei spezifiziert \textsl{type} den Typ, der den Terminalen $t_1$, $\cdots$, $t_n$
+            zugeordnet wird.
+            
+            Bei der Spezifikation eines Typs ist es wichtig zu beachten, dass zwischen dem Typ und
+            dem ersten Terminal kein Komma steht, denn sonst würde der Typ ebenfalls als Terminal
+            interpretiert.  
+            
+            In Zeile 5 spezifizieren wir beispielsweise, dass das Terminal \texttt{NUMBER} einen
+            Wert vom Typ \texttt{Integer} hat.  Damit das funktioniert, muss der Scanner jedesmal,
+            wenn er ein Terminal \texttt{NUMBER} an den Parser zurück geben soll, ein Objekt der
+            Klasse  \texttt{Symbol} erzeugen, dass die entsprechende Zahl als Wert beinhaltet.
+            In dem auf Seite \pageref{fig:calc.jflex}
+            in Abbildung \ref{fig:calc.jflex} gezeigten Scanner geschieht dies beispielsweise
+            in Zeile 31 dadurch, dass mit Hilfe der Methode $\texttt{symbol}()$ der Konstruktor der
+            Klasse \texttt{Symbol} aufgerufen wird, dem als zusätzliches Argument der Wert der Zahl
+            übergeben wird.
+      \end{enumerate}
+\item In den Zeilen 7 und 8 werden die syntaktischen Variablen, die wir auch als Nicht-Terminale
+      bezeichnen, deklariert.  Die Syntax ist die selbe wie bei der Deklaration der Terminale, nur
+      dass wir jetzt das Schlüsselwort ``\texttt{nonterminal}'' an Stelle von ``\texttt{terminal}''
+      verwenden.  Auch hier gibt es wieder zwei Fälle:  Den in Zeile 7 deklarierten Nicht-Terminalen
+      \texttt{expr\_list} und \texttt{expr\_part} wird kein Wert zugeordnet, während wir dem
+      Nicht-Terminal \textsl{expr} einen Wert vom Typ \texttt{Integer} zuordnen, der sich aus der
+      Auswertung des entsprechenden arithmetischen Ausdrucks ergibt.
+\item Der letzte Teil einer \textsc{Cup}-Grammatik-Spezifikation enthält die Grammatik-Regeln. 
+      Die allgemeine Form einer \textsc{Cup}-Grammatik-Regel ist
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \textsl{var} \qote{::=} \textsl{body}$_1$ \qote{\{:} \textsl{action}$_1$ \qote{:\}} \\[0.1cm]
+      \hspace*{2.05cm} \qote{|} \ \ \textsl{body}$_2$ \qote{\{:} \textsl{action}$_2$ \qote{:\}} \\[0.1cm]
+      \hspace*{2.25cm} $\vdots$ \ \ \\[0.1cm]
+      \hspace*{2.05cm} \qote{|} \ \ \textsl{body}$_n$ \qote{\{:} \textsl{action}$_n$ \qote{:\}}  \\[0.1cm]
+      \hspace*{2.05cm} \qote{;} \\[0.1cm]
+      Dabei gilt
+      \begin{enumerate}
+      \item \textsl{var} ist die syntaktische Variable, die von dieser Regel erzeugt wird.
+      \item \textsl{body}$_i$ ist der Rumpf der $i$-ten Grammatik-Regel, der aus einer
+            Liste von Terminalen und syntaktischen Variablen besteht.
+      \item \textsl{action}$_i$ ist eine durch Semikolons getrennte Folge von \textsl{Java}-Anweisungen,
+            die ausgeführt werden, falls der Stack des Shift-Reduce-Parsers, der die
+            Symbole enthält, mit der zugehörigen Regel reduziert wird.
+      \end{enumerate}
+      Bei der Spezifikation einer Grammatik-Regel mit \textsc{Cup} weicht die Syntax von der
+      Syntax, die in \textsc{Antlr} verwendet wird, an mehreren Stellen ab: 
+      \begin{enumerate}
+      \item Statt eines einfachen Doppelpunkts ``\texttt{:}'' wird die Zeichenreihe ``\texttt{::=}''
+            verwendet, um die zu definierende Variable vom Rumpf der Grammatik-Regel zu trennen.
+      \item Die Kommandos werden bei \textsc{Cup} in den Zeichenreihen ``\texttt{\{:}'' und
+            ``\texttt{:\}}'' eingeschlossen, während bei \textsc{Antlr} die geschweiften Klammern
+            ``\texttt{\{}'' und ``\texttt{\}}'' ausgereicht haben.
+      \item Um auf die Werte, die einem Terminal oder einer syntaktischen Variablen zugeordnet sind,
+            zuzugreifen, hatten wir bei \textsc{Antlr} Zuweisungen  verwendet.
+            Stattdessen müssen wir nun jedem Symbol, 
+            dessen Wert wir verwenden wollen, eine eigene Variable zuordnen, deren Namen wir
+            getrennt von einem Doppelpunkt hinter das Symbol schreiben.  Um der durch die
+            Grammatik-Regel definierten syntaktischen Variablen einen Wert zuzuweisen, verwenden wir
+            das Schlüsselwort ``\texttt{RESULT}''.  Betrachten wir als Beispiel die Regel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{expr ::= expr:e PLUS prod:p \{: RESULT = e + p; :\};}
+            \\[0.2cm]
+            Mit \texttt{expr:e} sucht der Parser nach einem arithmetischen Ausdruck, dessen Wert in
+            der Variablen \texttt{e} gespeichert wird.  Anschließend wird ein Plus-Zeichen gelesen
+            und darauf folgt wieder ein Produkt, dessen Wert jetzt in \texttt{p}
+            gespeichert wird.  Der Wert des insgesamt gelesenen Ausdrucks wird dann durch die Zuweisung
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{RESULT = e + p;}
+            \\[0.2cm]
+            berechnet und der linken Seite der Grammatik-Regel zugewiesen.
+      \item Ein weiterer Unterschied zwischen \textsc{Cup} und \textsc{Antlr} besteht darin,
+            dass Nicht-Terminale nicht mehr durch den ihnen zugeordneten String repräsentiert werden
+            können.  Daher können wir den String ``\texttt{PLUS}'' nicht durch den String
+            ``\texttt{'+'}'' ersetzen.  
+            An dieser Stelle sind \textsc{Cup}-Grammatiken leider
+            nicht ganz so gut lesbar wie \textsc{Antlr}-Grammatiken.
+            Der Grund dafür ist, dass bei  \textsc{Cup} zum Scannen ein separates
+            Werkzeug, nämlich \textsl{JFlex}, zum Scannen verwendet wird.  Demgegenüber
+            wird bei \textsc{Antlr} der Scanner zusammen mit dem Parser in der selben
+            Datei spezifiziert und das Werkzeug \textsc{Antlr} erzeugt aus dieser Datei
+            sowohl einen Parser als auch einen Scanner.
+      \end{enumerate}
+\end{enumerate}
+Um aus der in Abbildung \ref{fig:calc.cup} gezeigten \textsc{Cup}-Spezifikation einen Parser zu
+erzeugen, müssen wir diese zunächst mit dem Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{java java\_cup.Main calc.cup}
+\\[0.2cm]
+übersetzen.  Damit dies funktioniert müssen Sie die Variable \texttt{CLASSPATH} so setzen, dass die
+Klasse \texttt{java\_cup.Main} gefunden
+werden kann.  Eine Möglichkeit, den Aufruf zu vereinfachen, besteht unter Unix darin, dass Sie sich
+eine Datei \texttt{cup} mit folgendem Inhalt irgendwo in Ihrem Pfad ablegen:
+\begin{verbatim}
+    #!/bin/bash 
+    CLASSPATH=/usr/local/lib/java-cup-11a.jar
+    java -cp $CLASSPATH java_cup.Main $@
+\end{verbatim}
+In dieser Datei müssen Sie die Variable \texttt{CLASSPATH} natürlich so anpassen, dass die
+Datei 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{java-cup-11a.jar}
+\\[0.2cm]
+gefunden werden kann.  Danach können Sie \textsl{JavaCup} einfacher mit dem Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\textsl{cup calc.cup}
+\\[0.2cm]
+aufrufen.  Dieser Befehl erzeugt verschiedene \textsl{Java}-Dateien.
+\begin{enumerate}
+\item Die Datei \texttt{parser.java} enthält die Klasse \texttt{parser}, die den eigentlichen
+      Parser enthält.  Wenn Sie diese Klassse später übersetzen wollen, müssen Sie dafür
+      sorgen, dass die Datei \texttt{java-cup-11a-runtime.jar} im \texttt{CLASSPATH} liegt.
+\item Die Datei \texttt{sym.java} enthält die Klasse \texttt{sym}, welche die verschiedenen
+      Symbole als statische Konstanten einer Klasse \texttt{sym} definiert.  
+      Diese Konstanten werden später im von \textsl{JFlex} erzeugten Scanner verwendet. Abbildung
+      \ref{fig:sym.java} auf Seite \pageref{fig:sym.java} zeigt diese Klasse.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    public class sym {
+      public static final int MINUS  = 4;
+      public static final int DIVIDE = 6;
+      public static final int UMINUS = 8;
+      public static final int NUMBER = 11;
+      public static final int MOD    = 7;
+      public static final int SEMI   = 2;
+      public static final int EOF    = 0;
+      public static final int PLUS   = 3;
+      public static final int error  = 1;
+      public static final int RPAREN = 10;
+      public static final int TIMES  = 5;
+      public static final int LPAREN = 9;
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Klasse \texttt{sym}.}
+\label{fig:sym.java}
+\end{figure}
+
+\noindent
+Neben dem Parser wird noch ein Scanner benötigt.  Diesen werden wir im nächsten Abschnitt präsentieren.
+Um mit dem Parser arbeiten zu können, brauchen wir eine Klasse, die eine Methode
+$\texttt{main}()$ enthält.  Abbildung \ref{fig:Calculator.java} auf Seite
+\pageref{fig:Calculator.java} zeigt eine solche Klasse.  Wir
+erzeugen dort in Zeile 4 einen Parser, indem wir den Konstruktor der Klasse \texttt{parser} mit
+einem Scanner als Argument initialsieren.  Die per Default von \textsl{JFlex} erzeugte Scanner-Klasse hat den
+Namen \texttt{Yylex} und bekommt als Argument entweder ein Objekt vom Typ \texttt{java.io.Reader}
+oder ein Objekt vom Typ \texttt{java.io.InputStream}.  Der Parser wird dann durch Aufruf der Methode
+$\textsl{parse}()$ gestartet, wobei eventuelle Ausnahmen noch abgefangen werden müssen.
+Falls mit dem Start-Symbol der Grammatik ein Wert assoziert ist, so wird dieser Wert von
+der Methode $\textsl{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der Wert
+\texttt{null} zurück gegeben.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    public class Calculator {
+        public static void main(String[] args) {
+            try { 
+                parser p = new parser(new Yylex(System.in)); 
+                p.parse(); 
+            } catch (Exception e) {}
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Klasse \texttt{Calculator}.}
+\label{fig:Calculator.java}
+\end{figure}
+
+\subsection{Generierung eines \textsc{Cup}-Scanner mit Hilfe von \textsl{Flex}}
+Wir zeigen in diesem Abschnitt, wie wir mit Hilfe von \textsl{JFlex} einen Scanner
+für den im letzten Abschnitt erzeugten Parser erstellen können.
+Der Scanner, den wir benötigen, muss in der Lage sein, Zahlen und arithmetische
+Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite 
+\pageref{fig:calc.jflex} zeigt einen solchen Scanner, den wir jetzt im Detail diskutieren.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    import java_cup.runtime.*;
+          
+    %%
+       
+    %char
+    %line
+    %column
+    %cup
+       
+    %{   
+        private Symbol symbol(int type) {
+            return new Symbol(type, yychar, yychar + yylength());
+        }
+        
+        private Symbol symbol(int type, Object value) {
+            return new Symbol(type, yychar, yychar + yylength(), value);
+        }
+    %}
+       
+    %%
+       
+    ";"           { return symbol( sym.SEMI   ); } 
+    "+"           { return symbol( sym.PLUS   ); }
+    "-"           { return symbol( sym.MINUS  ); }
+    "*"           { return symbol( sym.TIMES  ); }
+    "/"           { return symbol( sym.DIVIDE ); }
+    "%"           { return symbol( sym.MOD    ); }
+    "("           { return symbol( sym.LPAREN ); }
+    ")"           { return symbol( sym.RPAREN ); }
+    
+    0|[1-9][0-9]* { return symbol(sym.NUMBER, new Integer(yytext())); }
+    
+    [ \t\v\n\r]   { /* skip white space */ }   
+    
+    [^]           { throw new Error("Illegal character '" + yytext() + 
+                                    "' at line " + yyline + 
+                                    ", column "  + yycolumn); }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Ein Scanner für arithmetische Ausdrücke}
+\label{fig:calc.jflex}
+\end{figure}
+
+\begin{enumerate}
+\item In Zeile 1 importieren wir alle Klassen des Paketes \texttt{java\_cup.runtime}.
+      Dieses Paket enthält insbesondere die Definition der Klasse \texttt{Symbol}, mit der 
+      in einem \textsc{Cup}-Parser Terminale und Nicht-Terminale beschrieben werden.
+      Daher muss dieses Paket bei jedem Scanner importiert werden, der an einen von
+      \textsc{Cup} erzeugten Parser angeschlossen werden soll.
+\item In den Zeilen 5 bis 7 spezifizieren wir, dass der Scanner die Anzahl der insgesamt
+      gelesenen Zeichen, die Anzahl der gelesenen Zeilen und die Anzahl der in der aktuellen Zeile
+      gelesenen Zeichen automatisch berechnen soll.  Dadurch können wir später im Parser
+      Syntax-Fehler präzise lokalisieren.
+\item Zeile 8 spezifiziert mit dem Schlüsselwort ``\texttt{\%cup}'', 
+      dass der Scanner an einen \textsc{Cup}-Parser angeschlossen  werden soll.
+\item In den Zeilen 11 bis 17 definieren wir zwei Hilfs-Methoden, die Objekte vom Typ 
+      \texttt{Symbol} erzeugen.  Der Scanner muss Objekte von diesem Typ an den Parser zurück
+      liefern.  Die in dem Paket \texttt{java\_cup.runtime} definierte Klasse \texttt{Symbol} stellt
+      verschiedene Konstruktoren für diese Klasse zur Verfügung.  Wir stellen die wichtigsten 
+      Konstruktoren vor.
+      \begin{enumerate}
+      \item \texttt{public Symbol(int \textsl{symbolID});}
+
+            Dieser Konstruktor bekommt als Argument eine natürliche Zahl, die festlegt,
+            welche Art von Symbol 
+            definiert werden soll.  Diese Zahl bezeichnen wir als \emph{Symbol-Nummer}.
+            Jedes Terminal und jede syntaktische Variable entspricht genau Symbol-Nummer. 
+            Die Kodierung der Symbol-Nummern wird von dem Parser-Generator \textsc{Cup} 
+            in der Klasse \texttt{sym} festgelegt.  Abbildung \ref{fig:sym.java}
+            auf Seite \pageref{fig:sym.java} zeigt diese von \textsc{Cup} erzeugte Klasse.
+      \item \texttt{public Symbol(int \textsl{symbolID}, Object \textsl{value});}
+
+            Dieser Konstruktor bekommt zusätzlich zur Symbol-Nummer einen \emph{Wert}, der im Symbol
+            abgespeichert wird. Dieser Wert hat den Typ \texttt{Object}, wodurch der Typ so
+            allgemein wie möglich ist.  Dieser
+            Konstruktor wird benutzt, wenn Terminale, die einen Wert haben, wie beispielsweise
+            Zahlen, vom Scanner an den Parser zurück gegeben werden sollen.
+      \item \texttt{public Symbol(int \textsl{symbolID}, int \textsl{start}, int \textsl{end})}
+
+            Dieser Konstruktor hat zusätzlich zur Symbol-Nummer die Argumente \texttt{start}  und
+            \texttt{stop}, die den Anfang und das Ende des erkannten Terminals festlegen.  Die Variable
+            \texttt{start} gibt die Position des ersten Zeichens im Text an, während \texttt{end}
+            die Position des letzten Zeichens des Tokens angibt.  Diese Information ist nützlich,
+            um später im Parser Syntax-Fehler besser lokalisieren zu können.
+      \item \texttt{public Symbol(int \textsl{symbolID}, int  \textsl{start}, int \textsl{end},
+                    Objekt \textsl{value})}
+
+            Dieser Konstruktor erhält zusätzlich zur Symbol-Nummer und Position des gelesenen Tokens noch
+            den Wert, den dieses Token hat.
+      \end{enumerate}
+      Bei der Implementierung der Hilfs-Methoden $\texttt{symbol}()$ verwenden wir die Funktion
+      $\texttt{yylength}()$.  Diese Funktion gibt die Länge des Strings zurück, der dem zuletzt
+      erkannten Tokens entspricht.
+\item In den Zeilen 22 bis 29 erkennen wir die arithmetischen Operatoren und die Klammer-Symbole.
+      Wir verwenden dabei die in der Klasse \texttt{sym} definierten Konstanten.
+\item In Zeile 31 erkennen wir mit dem regulären Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche
+      Zahl.  Diese verwandeln wir durch Aufruf des Konstruktors
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{new Integer(yytext())}
+      \\[0.2cm]
+      in ein Objekt vom Typ \texttt{Integer}, wobei der Text, der der Zahl entspricht, von der
+      Funktion $\texttt{yytext}()$ geliefert wird.  Anschließend geben wir ein Symbol zurück,
+      in dem dieses Objekt als zugehöriger Wert abgespeichert wird.
+\item In Zeile 33 überlesen wir Leerzeichen, Tabulatoren und Zeilen-Umbrüche.
+      Das Überlesen geschieht dadurch, dass wir in diesem Fall kein Symbol an den Parser zurück
+      geben, denn die semantische Aktion enthält keinen \texttt{return}-Befehl.
+\item Falls ein beliebiges anderes Zeichen gelesen wird, geben wir mit der Regel, die in Zeile 35 
+      beginnt, eine Fehlermeldung aus.  Dabei greifen wir auf die Variablen 
+      \texttt{yyline} und \texttt{yycolumn} zurück, damit der Fehler lokalisiert werden kann.
+\end{enumerate}
+\textsl{JFlex} erzeugt den Scanner in der Klasse \texttt{Yylex}.  Wir hatten in Abbildung
+\ref{fig:Calculator.java} gesehen, wie diese Klasse an den Parser angebunden wird.
+
+
+
+\section{Shift-Reduce und Reduce-Reduce-Konflikte}
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\}
+                ]
+    import java_cup.runtime.*;
+    
+    terminal           PLUS, MINUS, TIMES, DIVIDE, MOD;
+    terminal           UMINUS, LPAREN, RPAREN;
+    terminal Integer   NUMBER;
+    
+    nonterminal Integer expr;
+    
+    expr ::= expr PLUS   expr
+          |  expr MINUS  expr
+          |  expr TIMES  expr
+          |  expr DIVIDE expr
+          |  expr MOD    expr
+          |  NUMBER               
+          |  MINUS expr
+          |  LPAREN expr RPAREN   
+          ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\textsc{Cup}-Spezifikation eines Parsers für arithmetische Ausdrücke}
+\label{fig:calc-ambiguous.cup}
+\end{figure}
+
+Wir betrachten nun ein weiteres Beispiel.  Abbildung \ref{fig:calc-ambiguous.cup} zeigt eine Grammatik, die
+offenbar mehrdeutig ist. 
+  Mit dieser Grammatik ist beispielsweise nicht klar, ob der String
+\\[0.2cm]
+\hspace*{1.3cm} 
+\texttt{1 + 2 * 3} \quad als \quad  ``\texttt{(1 + 2) * 3}'' \quad oder als \quad ``\texttt{1 + (2 * 3)}''
+\\[0.2cm]
+gelesen werden soll.   Wir hatten im letzten Kapitel schon gesehen, dass es in einer mehrdeutigen Grammatik
+immer Shift-Reduce- oder Reduce-Reduce-Konflikte geben muss.
+Wenn wir versuchen, diese Grammatik mit \textsc{Cup} zu übersetzen und wenn wir dabei zusätzlich die Option 
+``\texttt{-dump}'' angeben, erhalten wir eine große Zahl von Shift-Reduce-Konflikten angezeigt.
+Beispielsweise erhalten wir die folgende Fehlermeldung:
+\begin{verbatim}
+    Warning : *** Shift/Reduce conflict found in state #12
+      between expr ::= expr TIMES expr (*) 
+      and     expr ::= expr (*) PLUS expr 
+      under symbol PLUS
+      Resolved in favor of shifting.
+\end{verbatim}
+Statt des Zeichens ``$\bullet$'' benutzt \textsc{Cup} den String
+``\texttt{(*)}'' zur Darstellung der Position in einer markierten Regel.
+Die obige Fehlermeldung zeigt uns an, dass es zwischen der markierten Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$R_1 \;:=\; 
+\Bigl(\textsl{expr} \rightarrow \textsl{expr} \quoted{*} \textsl{expr}\;\bullet\Bigr)$
+\\[0.2cm]
+und der markierten Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$R_2 \; := \; 
+\Bigl(\textsl{expr} \rightarrow \textsl{expr} \bullet \quoted{+} \textsl{expr}\Bigr)$
+\\[0.2cm]
+einen Shift-Reduce-Konflikt gibt:  Die beiden markierten  Regeln $R_1$ und $R_2$
+sind Elemente eines Zustands, der von \textsc{Cup} intern mit der Nummer 12 versehen
+worden ist.  Die Menge aller Zustände kann über die Option ``\texttt{-dump}'' mit
+ausgegeben werden.   Dazu wird \textsc{Cup} in der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{cup -dump calc.cup}
+\\[0.2cm]
+aufgerufen.  Der Zustand mit der Nummer 12 wird dann wie folgt ausgegeben:
+\begin{verbatim}
+  lalr_state [12]: {
+    [expr ::= expr (*) MOD expr ,    {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
+    [expr ::= expr (*) MINUS expr ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
+    [expr ::= expr (*) DIVIDE expr , {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
+    [expr ::= expr TIMES expr (*) ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
+    [expr ::= expr (*) TIMES expr ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
+    [expr ::= expr (*) PLUS expr ,   {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
+  }
+\end{verbatim}
+Damit können wir jetzt den
+Shift-Reduce-Konflikt interpretieren: Im Zustand 12 ist der Parser entweder dabei, die
+Eingabe mit der Regel 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{expr} \rightarrow \textsl{expr} \quoted{*} \textsl{expr}$
+\\[0.2cm]
+zu reduzieren, oder der Parser ist gerade dabei, die rechte Seite der Regel 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{expr}$
+\\[0.2cm]
+zu erkennen, wobei er bereits eine \textsl{expr} erkannt hat und nun als nächstes das
+Token ``\texttt{+}'' erwartet wird.  Da das Token ``\texttt{+}'' auch in der Follow-Menge der
+Regel $R_1$ liegen kann, ist an dieser Stelle unklar, ob das Token ``\texttt{+}'' auf den
+Stack geschoben werden soll, oder ob stattdessen mit der Regel $R_1$ reduziert werden
+muss.  Bei einem Shift-Reduce-Konflikt entscheidet sich der von \textsc{Cup} erzeugte
+Parser immer dafür, das Token auf den Stack zu schieben.
+
+
+\section{Operator-Präzendenzen}
+Es ist mit   \textsc{Cup} möglich, Shift-Reduce-Konflikte durch die Angabe von \emph{Operator-Präzedenzen}
+aufzulösen.  Abbildung \ref{fig:calc-precedence.cup} zeigt die Spezifikation einer Grammatik zur
+Erkennung arithmetischer Ausdrücke, die aus Zahlen und den binären Operatoren ``\texttt{+}'',
+``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'' und ``\texttt{\^}'' aufgebaut sind.   Mit Hilfe der
+Schlüsselwörter ``\texttt{\%left}'' und ``\texttt{\%right}'' 
+haben wir festgelegt, dass die Operatoren ``\texttt{+}'',
+``\texttt{-}'', ``\texttt{*}'' und ``\texttt{/}'' \emph{links-assoziativ} sind, ein Ausdruck der Form
+\[ 3 - 2 - 1 \quad \mbox{wird also als} \quad (3 - 2) - 1 \quad \mbox{und nicht als} \quad 3 - (2-1) \]
+gelesen.  Demgegenüber ist der Operator ``\texttt{\^}'', der in der \textsc{Cup}-Grammatik
+mit ``\texttt{POW}'' bezeichnet wir und die Potenzbildung bezeichnet,
+\emph{rechts-assoziativ}, der Ausdruck 
+\[ 4 \texttt{\symbol{94}} 3 \texttt{\symbol{94}} 2 \quad \mbox{wird also als} \quad 4^{\mbox{(}3^2\mbox{)}} \quad 
+   \mbox{und nicht als} \quad \bigl(4^3\bigr)^2
+\]
+interpretiert.   Die Reihenfolge, in der die Assoziativität der Operatoren spezifiziert werden, legt die
+\emph{Präzedenzen}, die auch als \emph{Bindungsstärken} bezeichnet werden, fest.  Dabei ist die
+Bindungsstärke umso größer, je später der Operator spezifiziert wird.  In unserem konkreten Beispiel bindet
+der Exponentiations-Operator ``\texttt{\^}'' also am stärksten, während die Operatoren ``\texttt{+}'' und
+``\texttt{-}'' am schwächsten binden.  Bei der in Abbildung \ref{fig:calc-precedence.cup} gezeigten Grammatik
+ordnet \textsc{Cup} den Operatoren die Bindungsstärke nach der folgenden Tabelle zu:
+
+\begin{center}
+\begin{tabular}[t]{|c|c|c|}
+\hline
+Operator       & Bindungsstärke & Assoziativität \\
+\hline
+\hline
+``\texttt{+}''  & 1             &  links         \\
+\hline
+``\texttt{-}''  & 1             &  links         \\
+\hline
+``\texttt{*}''  & 2             &  links         \\
+\hline
+``\texttt{/}''  & 2             &  links         \\
+\hline
+``\texttt{\^}'' & 3             &  rechts        \\
+\hline
+\end{tabular}
+\end{center}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    import java_cup.runtime.*;
+    
+    terminal         SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD, POW;
+    terminal         UMINUS, LPAREN, RPAREN;
+    terminal Double  NUMBER;
+    
+    nonterminal        expr_list, expr_part;
+    nonterminal Double expr;
+    
+    precedence left   PLUS, MINUS;
+    precedence left   TIMES, DIVIDE, MOD;
+    precedence right  UMINUS, POW;
+    
+    expr_list ::= expr_list expr_part 
+               |  expr_part
+               ;
+    
+    expr_part ::= expr:e {: System.out.println("result = " + e); :} SEMI 
+               ;
+    
+    expr ::= expr:e1 PLUS   expr:e2 {: RESULT = e1 + e2; :} 
+          |  expr:e1 MINUS  expr:e2 {: RESULT = e1 - e2; :} 
+          |  expr:e1 TIMES  expr:e2 {: RESULT = e1 * e2; :}
+          |  expr:e1 DIVIDE expr:e2 {: RESULT = e1 / e2; :} 
+          |  expr:e1 MOD    expr:e2 {: RESULT = e1 % e2; :} 
+          |  expr:e1 POW    expr:e2 {: RESULT = Math.pow(e1, e2); :} 
+          |  NUMBER:n               {: RESULT = n;       :} 
+          |  MINUS expr:e           {: RESULT = - e;     :} %prec UMINUS
+          |  LPAREN expr:e RPAREN   {: RESULT = e;       :} 
+          ;
+\end{Verbatim}
+%$
+\vspace*{-0.3cm}
+\caption{Auflösung der Shift-Reduce-Konflikte durch Operator-Präzedenzen.}
+\label{fig:calc-precedence.cup}
+\end{figure}
+
+Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift-Reduce-Konflikte aufzulösen.
+\textsc{Cup} geht folgendermaßen vor:
+\begin{enumerate}
+\item Zunächst wird jeder Grammatik-Regel eine \emph{Präzedenz} zugeordnet.
+      Die Präzedenz ist dabei die Bindungsstärke des letzten in der Regel auftretenden Operators.
+      Für den Fall, dass eine Regel mehrere Operatoren enthält, für die eine Bindungsstärke spezifiziert
+      wurde, wird zur Festlegung der Bindungsstärke also der Operator herangezogen, der in
+      der Regel am weitesten 
+      rechts steht.  In unserem Beispiel haben die einzelnen Regeln damit die folgenden Präzedenzen:
+      \begin{center}
+        \begin{tabular}[t]{|l|c|}
+          \hline
+          Regel                          & Präzedenz  \\
+          \hline
+          \hline
+          $E \rightarrow E \quoted{+} E$ & 1          \\
+          \hline
+          $E \rightarrow E \quoted{-} E$ & 1          \\
+          \hline
+          $E \rightarrow E \quoted{*} E$ & 2          \\
+          \hline
+          $E \rightarrow E \quoted{/} E$ & 2          \\
+          \hline
+          $E \rightarrow E \quoted{\symbol{94}} E$ & 3 \\
+          \hline
+          $E \rightarrow \quoted{(} E \quoted{)}$ & --- \\
+          \hline
+          $E \rightarrow N$ & --- \\
+          \hline
+        \end{tabular}
+      \end{center}
+      Für die Regeln, die keinen Operator enthalten, für den eine Bindungsstärke spezifiziert ist,
+      bleibt die Präzedenz unspezifiziert.
+\item Ist nun $s$ ein Zustand, in dem zwei Regeln $r_1$ und $r_2$ der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $r_1 = (A \rightarrow \alpha \bullet o \;\beta:L_1)$ \quad und \quad
+      $r_2 = (B \rightarrow \gamma \bullet : L_2)$ \quad mit \quad $o \in L_2$
+      \\[0.2cm]
+      vorkommen, so gibt es bei der Berechnung von 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{action}(s, o)$
+      \\[0.2cm]
+      zunächst einen Shift-Reduce-Konflikt.  Ist nun $o$ ein Operator, für den eine Präzedenz $p(o)$
+      festgelegt worden ist und hat außerdem die Regel $r_2$, mit der reduziert werden würde, die Präzedenz
+      $p(r_2)$ so wird der Shift-Reduce-Konflikt in Abhängigkeit von der relativen Größe 
+      dieser beiden Zahlen aufgelöst.  Hier werden fünf Fälle unterschieden:
+      \begin{enumerate}
+      \item $p(o) > p(B \rightarrow \gamma)$: 
+            In diesem Fall bindet der Operator $o$ stärker.  Daher wird das Token $o$  
+            in diesem Fall auf den Stack geschoben:
+            \hspace*{1.3cm}
+            \\[0.2cm]
+            $\textsl{action}(s,o) = \langle \texttt{shift}, \textsl{goto}(s,o) \rangle$.
+            \\[0.2cm]
+            Dass diese Regel sinnvoll ist, sehen wir, wenn wir beispielsweise den Eingabe-String
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{1+2*3}$
+            \\[0.2cm]
+            mit den Grammatik-Regeln 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $E \rightarrow E \quoted{+} E \mid E \quoted{*} E \mid \textsc{Number}$
+            \\[0.2cm]
+            parsen.  Betrachten wir die Situation, bei der der Teilstring ``\texttt{1+2}''
+            bereits gelesen wurde und nun als nächstes das Token ``\texttt{*}''
+            verarbeitet werden soll.  Der LALR-Parser ist dann in dem folgenden Zustand:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $ 
+            \begin{array}[t]{llcll}
+            \bigl\{ 
+            & E & \rightarrow & E \bullet \squoted{*} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & \\
+            & E & \rightarrow & E \bullet \squoted{+} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & \\
+            & E & \rightarrow & E \squoted{+} E \;\bullet: \{\symbol{36}, \squoted{*}, \squoted{+} \}
+            & \bigr\}.
+            \end{array}
+            $
+            \\[0.2cm]
+            Wenn in diesem Zustand als nächstes Zeichen ein ``\texttt{*}'' gelesen wird, so darf der
+            bisher gelesene String ``\texttt{1+2}'' nicht mit der Regel 
+            $E \rightarrow E \squoted{+} E$ reduziert werden, denn wir wollen die 2 ja zunächst mit 3 
+            multiplizieren.  Statt dessen muss das Zeichen 
+            ``\texttt{*}'' auf den Stack geschoben werden.
+      \item $p(o) < p(B \rightarrow \gamma)$: 
+            Jetzt bindet der Operator, der in der Regel $r_2$ auftritt, stärker als der
+            Operator $o$.  Daher wird in diesem Fall zunächst mit der Regel $r_2$ reduziert, wir haben 
+            also 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{action}(s,o) = \langle \texttt{reduce}, r_2 \rangle$.
+            \\[0.2cm]
+            Dass diese Regel sinnvoll ist, sehen wir, wenn wir beispielsweise den Eingabe-String
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{1*2+3}$
+            \\[0.2cm]
+            mit den Grammatik-Regeln 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $E \rightarrow E \quoted{+} E \mid E \quoted{*} E \mid \textsc{Number}$
+            \\[0.2cm]
+            parsen.  Betrachten wir die Situation, bei der der Teilstring ``\texttt{1*2}''
+            bereits gelesen wurde und nun als nächstes das Token ``\texttt{+}''
+            verarbeitet werden soll.  Der LALR-Parser ist dann in dem folgenden Zustand:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $ 
+            \begin{array}[t]{llcll}
+         \bigl\{ 
+            & E & \rightarrow & E \bullet \squoted{*} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & \\
+            & E & \rightarrow & E \bullet \squoted{+} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & \\
+            & E & \rightarrow & E \squoted{*} E \;\bullet: \{\symbol{36}, \squoted{*}, \squoted{+} \}
+            & \bigr\}.
+            \end{array}
+            $
+            \\[0.2cm]
+            Wenn in diesem Zustand als nächstes Zeichen ein ``\texttt{+}'' gelesen wird, so soll
+            der bisher gelesene String ``\texttt{1*2}''  mit der Regel 
+            $E \rightarrow E \squoted{*} E$ reduziert werden, denn wir wollen die 1 ja zunächst mit 2 
+            multiplizieren.  
+      \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ ist links-assoziativ:
+            Dann wird zunächst mit der Regel $r_2$ reduziert, wir haben
+            also 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{action}(s,o) = \langle \texttt{reduce}, r_2 \rangle$.
+            \\[0.2cm]
+            Dass diese Regel sinnvoll ist, sehen wir, wenn wir beispielsweise den Eingabe-String
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{1*2*3}$
+            \\[0.2cm]
+            mit den Grammatik-Regeln 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $E \rightarrow E \quoted{+} E \mid E \quoted{*} E \mid \textsc{Number}$
+            \\[0.2cm]
+            parsen.  Betrachten wir die Situation, bei der der Teilstring ``\texttt{1*2}''
+            bereits gelesen wurde und nun als nächstes das Token ``\texttt{*}''
+            verarbeitet werden soll.  Der LALR-Parser ist dann in dem folgenden Zustand:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $ 
+            \begin{array}[t]{llcll}
+         \bigl\{ 
+            & E & \rightarrow & E \bullet \squoted{*} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & \\
+            & E & \rightarrow & E \bullet \squoted{+} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & \\
+            & E & \rightarrow & E \squoted{*} E \;\bullet: \{\symbol{36}, \squoted{*}, \squoted{+} \}
+            & \bigr\}.
+            \end{array}
+            $
+            \\[0.2cm]
+            Wenn in diesem Zustand als nächstes Zeichen ein ``\texttt{*}'' gelesen wird, so soll
+            der bisher gelesene String ``\texttt{1*2}'' mit der Regel 
+            $E \rightarrow E \squoted{*} E$ reduziert werden, denn wir wollen die 1 ja zunächst mit 2 
+            multiplizieren.  
+      \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ ist rechts--assoziativ:
+            In diesem Fall wird $o$ auf den
+            Stack geschoben:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{action}(s,o) = \langle \texttt{shift}, \textsl{goto}(s,o) \rangle$.
+            \\[0.2cm]
+            Wenn wir diesen Fall verstehen wollen, reicht es aus, den String
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{2\symbol{94}3\symbol{94}4}$
+            \\[0.2cm]
+            mit den Grammatik-Regeln
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $E \rightarrow E \texttt{\symbol{94}} E  \mid \textsc{Number}$
+            \\[0.2cm]
+            zu parsen und die Situation zu betrachten, bei der der Teilstring
+            ``\texttt{1\symbol{94}2}'' bereits verarbeitet wurde und als nächstes Zeichen nun
+            der Operator ``\texttt{\symbol{94}}'' gelesen wird.
+      \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ hat keine Assoziativität:
+            In diesem Fall liegt ein Syntax-Fehler vor:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{action}(s,o) = \textsl{error}$.
+            \\[0.2cm]
+            Diesen Fall verstehen Sie, wenn Sie versuchen, einen String der Form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{1 < 1 < 1}
+            \\[0.2cm]
+            mit den Grammatik-Regeln
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $E \rightarrow E \quoted{<} E \mid E \quoted{+} E \mid \textsc{Number}$
+            \\[0.2cm]
+            %$
+            zu parsen.  In dem Moment, in dem Sie den Teilstring ``\texttt{1 < 1}'' gelesen haben
+            und nun das nächste Token das Zeichen ``\texttt{<}'' ist, erkennen Sie, 
+            dass es ein Problem gibt.  
+
+            \remark
+            Beachten Sie, dass auch in diesem Fall der Shift-Reduce-Konflikt aufgelöst
+            wird, denn den Syntax-Fehler erhalten Sie erst beim Parsen,  während die
+            Erstellung des Parsers selber fehlerfrei (sprich: ohne verbleibende Konflikte)
+            verläuft.
+
+            Um in \textsc{Cup} einen Operator $o$ als nicht-assoziativ zu deklarieren, 
+            schreiben Sie:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{precedence nonassoc $o$}
+      \end{enumerate}
+      In den Fällen, in denen ein Shift-Reduce-Konflikt nicht mit den oben angegebenen Regeln aufgelöst
+      werden kann, wird eine Warnung ausgegeben.  In diesem Fall wird der Konflikt dann dadurch aufgelöst, 
+      dass das betreffende Token auf den Stack geschoben wird.
+\end{enumerate}
+Die von \textsc{Cup} mit der Option ``\texttt{-dump}'' erzeugte Ausgabe zeigt im Detail, wie die
+Shift-Reduce-Konflikt Konflikte aufgelöst worden sind.  Wir betrachten exemplarisch zwei Zustände in dieser
+Datei.
+\begin{enumerate}
+\item Der Zustand Nummer 14 hat die in Abbildung \ref{fig:state14} gezeigte Form.
+      Hier gibt es unter anderem einen Shift-Reduce-Konflikt zwischen den beiden markierten Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $E \rightarrow E \bullet \quoted{+} E$ \quad und \quad
+      $E \rightarrow E \quoted{*} E \bullet$, 
+      \\[0.2cm]
+      denn die erste Regel verlangt nach einem Shift, während die zweite Regel eine Reduktion fordert.
+      Da die Regel $E \rightarrow E \quoted{*} E$ die selbe Präzedenz wie der Operator ``\texttt{*}''
+      und dieser eine höhere Präzedenz als $\quoted{+}$ hat, wird beispielsweise beim Lesen des Zeichens
+      ``\texttt{+}'' mit der Regel $E \rightarrow E \quoted{*} E$ reduziert.
+      Wird hingegen das Zeichen ``\texttt{\^}'' gelesen, so wird dieses geshiftet, denn
+      dieses Zeichen hat eine höhere Priorität als die Regel
+       $E \rightarrow E \quoted{*} E$.
+    \begin{figure}[!ht]
+    \centering
+    \begin{Verbatim}[ frame         = lines, 
+                      framesep      = 0.3cm, 
+                      labelposition = bottomline,
+                      numbers       = left,
+                      numbersep     = -0.2cm,
+                      xleftmargin   = 0.8cm,
+                      xrightmargin  = 0.8cm,
+                    ]
+    lalr_state [14]: {
+      [expr ::= expr (*) PLUS expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr TIMES expr (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) POW expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) TIMES expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) MOD expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) MINUS expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) DIVIDE expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+    }
+
+    From state #14
+     [term 2:REDUCE(with prod 7)] [term 3:REDUCE(with prod 7)]
+     [term 4:REDUCE(with prod 7)] [term 5:REDUCE(with prod 7)]
+     [term 6:REDUCE(with prod 7)] [term 7:REDUCE(with prod 7)]
+     [term 8:SHIFT(to state 9)] [term 11:REDUCE(with prod 7)]    
+    \end{Verbatim} 
+    %$
+    \vspace*{-0.3cm}
+    \caption{Der Zustand Nummer 14.}
+    \label{fig:state14}
+  \end{figure}
+      Weiterhin gibt es einen Shift-Reduce-Konflikt zwischen den beiden markierten Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $E \rightarrow E \bullet \quoted{*} E$ \quad und \quad
+      $E \rightarrow E \quoted{*} E \bullet$.
+      \\[0.2cm]
+      Hier haben beide Regeln die gleiche Präzedenz.  Daher entscheidet die  Assoziativität.
+      Da der Operator ``\texttt{*}'' links-assoziativ ist, wird mit der Regel
+      $E \rightarrow E \quoted{*} E$ reduziert, falls das nächste Zeichen ein Multiplikations-Operator
+      ``\texttt{*}'' ist.
+\item Der Zustand Nummer 18 hat die in Abbildung \ref{fig:state18} gezeigte Form.
+      Zunächst gibt es hier einen Shift-Reduce-Konflikt zwischen den Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $E \rightarrow E \bullet \quoted{\symbol{94}} E$ \quad und \quad
+      $E \rightarrow E \quoted{\symbol{94}} E  \bullet$,
+      \\[0.2cm]
+      wenn das nächste Token der Operator ``\texttt{\symbol{94}}'' ist.  Da der Operator 
+      die selbe Präzedenz 
+      hat wie die Regel, entscheidet die Assoziativität.  Nun ist der Operator
+      ``\texttt{\symbol{94}}'' rechts-assoziativ, daher wird in diesem Fall geshiftet.
+
+    \begin{figure}[!ht]
+    \centering
+    \begin{Verbatim}[ frame         = lines, 
+                      framesep      = 0.3cm, 
+                      labelposition = bottomline,
+                      numbers       = left,
+                      numbersep     = -0.2cm,
+                      xleftmargin   = 0.8cm,
+                      xrightmargin  = 0.8cm,
+                    ]
+    lalr_state [18]: {
+      [expr ::= expr POW expr (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) PLUS expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) POW expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) TIMES expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) MOD expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) MINUS expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+      [expr ::= expr (*) DIVIDE expr , {SEMI PLUS MINUS TIMES DIVIDE MOD POW RPAREN }]
+    }
+
+    From state #18
+     [term 2:REDUCE(with prod 10)] [term 3:REDUCE(with prod 10)]
+     [term 4:REDUCE(with prod 10)] [term 5:REDUCE(with prod 10)]
+     [term 6:REDUCE(with prod 10)] [term 7:REDUCE(with prod 10)]
+     [term 8:SHIFT(to state 9)] [term 11:REDUCE(with prod 10)]
+    \end{Verbatim} 
+    %$
+    \vspace*{-0.3cm}
+    \caption{Der Zustand Nummer 18.}
+    \label{fig:state18}
+  \end{figure}
+
+      Hier gibt es noch viele andere Shift-Reduce-Konflikte, die aber alle die selbe Struktur haben.
+      Exemplarisch betrachten wir den Shift-Reduce-Konflikt zwischen den Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $E \rightarrow E \bullet \quoted{+} E$ \quad und \quad
+      $E \rightarrow E \quoted{\symbol{94}} E  \bullet$,
+      \\[0.2cm]
+      der auftritt, wenn das nächste Token ein ``\texttt{+}'' ist.  Da die Regel 
+      $E \rightarrow E \quoted{\symbol{94}} E$ die Präzedenz 3 hat, die größer ist als die Präzedenz 1 des
+      Operators ``\texttt{+}'' wird dieser Konflikt dadurch aufgelöst, dass mit der Regel 
+      $E \rightarrow E \quoted{\symbol{94}} E$ reduziert wird. 
+\end{enumerate}    
+
+\exercise
+Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
+\textsc{Cup}-Grammatik zu lesen und zusätzlich die folgenden Anforderungen erfüllt:
+\begin{enumerate}
+\item Die Grammatik soll intern in Form eines abstrakten Syntax-Baums abgespeichert werden.  
+%\item Die zur Darstellung des Syntax-Baums benötigten Klassen sollen mit Hilfe des
+%      Klassen-Generators \textsc{Ep} erzeugt werden.
+\item Die Grammatik soll in lesbarer Form ausgegeben werden.  Dabei sollen die
+      semantischen Aktionen unterdrückt werden.
+\item Testen Sie Ihr Programm, indem Sie es sowohl auf sich selbst als auch auf die im Unterricht
+      vorgestellte Grammatik für arithmetische Ausdrücke anwenden.
+\end{enumerate}
+
+
+\subsection{Das \emph{Dangling-Else}-Problem}
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
+    terminal NUMBER, ID;
+    
+    nonterminal stmnt, stmntList, expr;
+    
+    stmnt ::= IF LPAREN expr RPAREN stmnt
+           |  IF LPAREN expr RPAREN stmnt ELSE stmnt
+           |  WHILE LPAREN expr RPAREN stmnt
+           |  LBRACE stmntList RBRACE
+           |  ID ASSIGN expr SEMI
+           ;
+      
+    stmntList ::= stmntList stmnt
+               |  /* epsilon */
+               ;
+    
+    expr ::= NUMBER
+           ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Fragment einer Grammatik für die Sprache \texttt{C}}
+\label{fig:dangling-else.y}
+\end{figure}
+
+\noindent
+Bei der syntaktischen Beschreibung von Befehlen der Sprache \texttt{C} 
+tritt bei der Behandlung
+von \emph{if-then-else} Konstrukten ein Shift-Reduce-Konflikt auf, den wir jetzt analysieren wollen.
+Abbildung \ref{fig:dangling-else.y} zeigt eine Grammatik, die einen Teil der Syntax von Befehlen der
+Sprache \texttt{C} beschreibt.  Um uns auf das wesentliche konzentrieren zu können, sind dort die Ausdrücke
+einfach nur Zahlen.  Das Token ``\texttt{ID}'' steht
+für eine Variable, die Grammatik beschreibt also Befehle, die aus Zuweisungen, \emph{If-Abfragen},
+\emph{If-Else-Abfragen} und \emph{While-Schleifen} aufgebaut sind.  Übersetzen wir diese Grammatik mit
+\textsc{Cup}, so erhalten wir den in Abbildung \ref{fig:dangling-else.output} ausschnittsweise gezeigten
+Shift-Reduce-Konflikt. 
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    Warning : *** Shift/Reduce conflict found in state #10
+      between stmnt ::= IF LPAREN expr RPAREN stmnt (*) 
+      and     stmnt ::= IF LPAREN expr RPAREN stmnt (*) ELSE stmnt 
+      under symbol ELSE
+      Resolved in favor of shifting.
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Ein Shift-Reduce-Konflikt.}
+\label{fig:dangling-else.output}
+\end{figure}
+%$
+
+Der Konflikt entsteht bei der Berechnung von $\textsl{action}(\texttt{state \#10}, \texttt{else})$ zwischen den
+beiden markierten Regeln
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{Statement} \rightarrow \quoted{if} \quoted{(} \texttt{EXPR} \quoted{)} \textsl{Statement}\;\; \bullet$ 
+\quad und
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{Statement} \rightarrow 
+\quoted{if} \quoted{(} \texttt{EXPR} \quoted{)} \textsl{Statement} \;\bullet \quoted{else} \textsl{Statement}$.
+\\[0.2cm]
+Die erste Regel verlangt nach einer Reduktion, die zweite Regel sagt, dass das Token 
+\texttt{else} geshiftet werden soll.  Das dem Konflikt zu Grunde liegende Problem ist, dass die in Abbildung
+\ref{fig:dangling-else.y} gezeigte Grammatik mehrdeutig ist, denn ein \textsl{Statement} der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{if (a = b) if (c = d) s = t; else u = v;}
+\\[0.2cm]
+kann auf die folgenden beiden Arten gelesen werden:
+\begin{enumerate}
+\item Die erste (und nach der Spezifikation der Sprache \texttt{C} auch korrekte) Interpretation 
+      besteht darin, dass wir den Befehl wie folgt klammern:
+      \begin{verbatim}
+      if (a = b) {
+          if (c = d) {
+              s = t; 
+          } else {
+              u = v;
+          }
+      }
+      \end{verbatim}
+      \vspace*{-0.7cm}
+\item Die zweite Interpretation, die nach der in Abbildung
+      \ref{fig:dangling-else.y} gezeigten Grammatik ebenfalls zulässig wäre,
+      würde den Befehl in der folgenden Form interpretieren:
+      \begin{verbatim}
+      if (a = b) {
+          if (c = d) {
+              s = t; 
+          }
+      } else {
+          u = v;
+      }
+      \end{verbatim}
+      \vspace*{-0.5cm}
+
+      Diese Interpretation entspricht nicht der Spezifikation der Sprache \texttt{C}.
+\end{enumerate}
+Es gibt drei Möglichkeiten, das Problem zu lösen.
+\begin{enumerate}
+\item Tritt ein Shift-Reduce-Konflikt auf, der nicht durch Operator-Präzedenzen gelöst wird,
+      so ist der Default, dass das nächste Token auf den Stack geschoben wird.  In dem konkreten
+      Fall ist dies genau das, was wir wollen, weil dadurch das \texttt{else} immer mit dem letzten
+      \texttt{if} assoziert wird.  Um die normalerweise bei Konfliken von \textsc{Cup}
+      ausgelöste Fehlermeldung zu unterdrücken, müssen wir \textsc{Cup} mit der Option
+      ``\texttt{-expect}'' wie folgt aufrufen:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{java java\_cup.Main -expect 1 -dump dangling.cup}
+      \\[0.2cm]
+      Die Zahl \texttt{1} gibt hier die Anzahl der Konflikte an, die wir erwarten.
+      So lange die spezifizierte Zahl mit der tatsächlich gefundenen Zahl an Konflikten übereinstimmt,
+      erzeugt \textsc{Cup} einen Parser.
+\item Die zweite Möglichkeit besteht darin, die Grammatik so umzuschreiben, dass die Mehrdeutigkeit
+      verschwindet.   Die grundsätzliche Idee ist hier, zwischen zwei Arten von Befehlen zu
+      unterscheiden.
+      \begin{enumerate}
+      \item Einerseits gibt es Befehle, bei denen jedem ``\texttt{if}'' auch ein ``\texttt{else}''
+            zugeordnet ist.  Zwischen einem ``\texttt{if}'' und einem ``\texttt{else}'' dürfen nur
+            solche Befehle auftreten.
+      \item Andererseits gibt es Befehle, bei denen dem letzten ``\texttt{if}'' kein
+            ``\texttt{else}'' zugeordnet ist.  solche Befehle dürfen nicht zwischen einem
+            ``\texttt{if}'' und einem ``\texttt{else}'' auftreten.
+      \end{enumerate}
+      Abbildung \ref{fig:dangling-else-correct.cup} zeigt die Umsetzung dieser Idee.
+      Die syntaktische Kategorie \textsl{MatchedStmnt} beschreibt dabei die Befehle, 
+      bei denen jedem ``\texttt{if}'' ein ``\texttt{else}'' zugeordnet ist, während die Kategorie 
+      \textsl{UnMatchedStmnt} die restlichen Befehle erfasst.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
+    terminal NUMBER, ID;
+    
+    nonterminal stmnt, matchedStmnt, unmatchedStmnt, stmntList, expr;
+    
+    stmnt ::= matchedStmnt
+           |  unmatchedStmnt
+           ;
+    
+    matchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt
+                  |  WHILE LPAREN expr RPAREN matchedStmnt
+                  |  LBRACE stmntList RBRACE
+                  |  ID ASSIGN expr SEMI
+                  ;
+    
+    unmatchedStmnt ::= IF LPAREN expr RPAREN stmnt
+                    |  IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt
+                    |  WHILE LPAREN expr RPAREN unmatchedStmnt
+                    ;
+          
+    stmntList ::= stmntList stmnt 
+               |  /* epsilon */
+               ;
+    
+    expr ::= NUMBER
+          ;
+    \end{Verbatim}
+    \vspace*{-0.3cm}
+    \caption{Eine eindeutige Grammatik für \texttt{C}-Befehle.}
+    \label{fig:dangling-else-correct.cup}
+\end{figure}
+
+      Aus theoretischer Sicht ist das Umschreiben der Grammatik der sauberste Weg.  
+      Aus diesem Grund haben die Entwickler der Sprache \textsl{Java} in der ersten Version der
+      Spezifikation dieser Sprache \cite{gosling:96} diesen Weg auch beschritten.  
+      Der Nachteil ist allerdings, dass bei diesem Vorgehen die Grammatik stark aufgebläht wird. 
+      Vermutlich aus diesem Grunde findet sich in den späteren Auflagen der Sprach-Spezifikation eine
+      Grammatik, bei der das \emph{Dangling-Else}-Problem wieder auftritt. 
+\item Die letzte Möglichkeit um das \emph{Dangling-Else}-Problem zu lösen, besteht darin, dass
+      wir ``\texttt{if}'' und ``\texttt{else}'' als Operatoren auffassen, denen wir eine Präzedenz
+      zuordenen.  Abbildung \ref{fig:dangling-else-precedence.cup} zeigt die Umsetzung dieser Idee.
+      \begin{enumerate}
+      \item Zunächst haben wir in den Zeilen 6 und 7 die Terminale \texttt{IF} und \texttt{ELSE} als
+            nicht-assoziative Operatoren deklariert, wobei \texttt{ELSE} die höhere Präzedenz
+            hat.  Dadurch erreichen wir, dass ein \texttt{ELSE} auf den Stack geschoben wird,
+            wenn der Parser in dem in Abbildung \ref{fig:dangling-else.output} gezeigten Zustand ist.
+      \item In Zeile 9 haben wir der Regel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \textsl{stmnt} \texttt{::=} \texttt{IF} \texttt{LPAREN} \textsl{expr} \texttt{RPAREN} \textsl{stmnt}
+            \\[0.2cm]      
+            explizit mit Hilfe der nachgestellten Option
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{37}prec IF}
+            \\[0.2cm]
+            die Präzedenz des Operators \texttt{IF} zugewiesen.  Dies ist notwendig, weil 
+            der letzte Operator, der in dieser Regel auftritt, die schließende runde Klammer
+            \texttt{RPAREN} ist, der wir keine Priorität zugewiesen haben.  Der Klammer eine Priorität
+            zuzuweisen wäre einerseits kontraintuitiv, andererseits problematisch, da die Klammer ja
+            auch noch an anderen Stellen verwendet werden kann.  Mit Hilfe der
+            \texttt{\symbol{37}prec}-Deklaration können wir einer Regel unmittelbar die Präzedenz
+            eines Operators zuweisen und so das Problem umgehen.
+
+            In dem vorliegenden Fall ist die Präzedenz des Operators \texttt{ELSE}
+            höher als die Präzedenz von \texttt{IF}, so dass der Shift-Reduce-Konflikt
+            dadurch aufgelöst wird, dass das Token \texttt{ELSE} auf den Stack
+            geschoben wird, wodurch eine \texttt{else}-Klausel tatsächlich mit der unmittelbar davor stehenden
+            \texttt{if}-Klausel verbunden wird, wie es die Definition der Sprache \texttt{C} fordert.
+      \end{enumerate}
+
+            \begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.3cm,
+                ]
+    terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
+    terminal NUMBER, ID;
+    
+    nonterminal stmnt, stmntList, expr;
+    
+    precedence nonassoc IF;
+    precedence nonassoc ELSE;
+    
+    stmnt ::= IF LPAREN expr RPAREN stmnt            %prec IF
+           |  IF LPAREN expr RPAREN stmnt ELSE stmnt
+           |  WHILE LPAREN expr RPAREN stmnt
+           |  LBRACE stmntList RBRACE
+           |  ID ASSIGN expr SEMI
+           ;
+      
+    stmntList ::= stmntList stmnt
+               |  /* epsilon */
+               ;
+    
+    expr ::= NUMBER
+          ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Auflösung des Shift-Reduce-Konflikts mit Hilfe von Operator-Präzedenzen.}
+\label{fig:dangling-else-precedence.cup}
+\end{figure}
+      
+\end{enumerate}
+ 
+Operator-Präzedenzen sind ein mächtiges Mittel um eine Grammatik zu strukturieren.  Sie
+sollten allerdings mit Vorsicht eingesetzt werden, denn Sprachen wie die
+Programmier-Sprache \texttt{C}, bei der es 15 verschiedene Operator-Präzendenzen gibt, überfordern
+die meisten Benutzer.
+
+\section{Auflösung von Reduce-Reduce-Konflikte}
+Im Gegensatz zu Shift-Reduce-Konflikten können Reduce-Reduce-Konflikte nicht durch Operator-Präzedenzen
+aufgelöst werden.  Wir diskutieren in diesem Abschnitt die Möglichkeiten, die wir haben um
+Reduce-Reduce-Konflikte aufzulösen.  Wir beginnen unsere Diskussion damit, dass wir die
+Reduce-Reduce-Konflikte in verschiedene Kategorien einteilen. 
+\begin{enumerate}
+\item \emph{Mehrdeutigkeits-Konflikte} sind Reduce-Reduce-Konflikte, die ihre Ursache in einer Mehrdeutigkeit
+      der zu Grunde liegenden Grammatik haben.  Solche Konflikte weisen damit auf ein tatsächliches
+      Problem der Grammatik hin und können nur dadurch gelöst werden, dass die Grammatik umgeschrieben
+      wird. 
+\item \emph{Look-Ahead-Konflikte} sind Reduce-Reduce-Konflikte, bei denen die Grammatik zwar eindeutig ist, 
+      ein Look-Ahead von einem Token aber nicht ausreichend ist um den Konflikt zu lösen.
+\item \emph{Mysteriöse Konflikte} entstehen erst beim Übergang von den LR-Zuständen zu den LALR-Zuständen 
+      durch das Zusammenfassen von Zuständen mit dem gleichen Kern.  Diese Konflikte haben ihre Ursache 
+      also in der Unzulänglichkeit des LALR-Parser-Generators.
+\end{enumerate}
+Wir betrachten die letzten beiden Fälle nun im Detail und zeigen Wege auf, wie die Konflikte gelöst
+werden können.
+
+\subsection{Mehrdeutigkeits-Konflikte}
+Abbildung \ref{fig:ambiguity-conflict.cup} zeigt die \textsl{Cup}-Spezifikation einer
+Grammatik, die offensichtlich mehrdeutig ist, denn das Token \textsc{Number} kann sowohl
+als ein \texttt{a} als auch als ein \texttt{b} geparst werden.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    terminal    NUMBER;
+    nonterminal s, a, b;
+    
+    s ::= a 
+       |  b
+       ;
+    a ::= NUMBER
+       ;
+    b ::= NUMBER
+       ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine mehrdeutige Grammatik.}
+\label{fig:ambiguity-conflict.cup}
+\end{figure}
+
+\noindent
+\textsl{Cup} liefert bei dieser Grammatik die folgende Fehlermeldung:
+\begin{verbatim}
+    Warning : *** Reduce/Reduce conflict found in state #4
+      between b ::= NUMBER (*) 
+      and     a ::= NUMBER (*) 
+      under symbols: {EOF}
+      Resolved in favor of the second production.
+\end{verbatim}
+Die einzige Möglichkeit diesen Konflikt aufzulösen besteht darin, die Grammatik so
+umzuschreiben, dass die Mehrdeutigkeit verschwindet.
+
+
+\subsection{Look-Ahead-Konflikte}
+Ein Look-Ahead-Konflikt liegt dann vor, wenn die Grammatik zwar eindeutig ist, aber ein Look-Ahead von einem
+Token nicht ausreicht um zu entscheiden,  mit welcher Regel reduziert werden soll.  Abbildung 
+\ref{fig:lr-conflict.g} zeigt eine Grammatik\footnote{ 
+Diese Grammatik habe ich im Netz auf der Seite von Pete Jinks unter der Adresse
+\\[0.1cm]
+\hspace*{1.3cm}
+\href{http://www.cs.man.ac.uk/~pjj/cs212/ho/node19.html}{\texttt{http://www.cs.man.ac.uk/\symbol{126}pjj/cs212/ho/node19.html}}
+\\[0.1cm]
+gefunden.},
+die zwar eindeutig ist, die aber keine LR-Grammatik ist.  
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    A : B 'u' 'v'
+      | C 'u' 'w'
+      ;
+    B : 'x'
+      ;    
+    C : 'x' 
+      ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine eindeutige Grammatik ohne die LR(1)-Eigenschaft.}
+\label{fig:lr-conflict.g}
+\end{figure}
+
+
+Berechnen wir die LR-Zustände dieser Grammatik,
+so finden wir unter anderem den folgenden Zustand:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\{ B \rightarrow \quoted{x} \bullet: \squoted{u},\; C \rightarrow \quoted{x} \bullet: \squoted{u} \}$
+\\[0.2cm]
+Da die Menge der Folge-Token für beide Regeln gleich sind, haben wir hier einen Reduce-Reduce-Konflikt.
+Dieser Konflikt hat seine Ursache darin, dass der Parser mit einem Look-Ahead von nur einem Token nicht
+entscheiden kann, ob ein $\quoted{x}$ als ein $B$ oder als ein $C$ zu interpretieren ist, denn dies
+entscheidet sich erst, wenn das auf $\quoted{u}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
+um ein $\quoted{v}$, so wird insgesamt die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow B \quoted{u} \quoted{v}$
+\\[0.2cm]
+verwendet werden und folglich ist das $\quoted{x}$ als ein $B$ zu interpretieren. Ist das zweite Token
+hinter dem $\quoted{x}$ hingegen ein  $\quoted{w}$, so ist die zu verwendende Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow C \quoted{u} \quoted{w}$
+\\[0.2cm]
+und folglich ist das $\quoted{x}$ als  $C$ zu lesen.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    A : B 'v'
+      | C 'w'
+      ;
+    B : 'x' 'u'
+      ;
+    C : 'x' 'u'
+      ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine zu der in Abbildung \ref{fig:lr-conflict.g}   äquivalente LR(1)-Grammatik.}
+\label{fig:lr-conflict-resolved.g}
+\end{figure}
+
+Das Problem bei dieser Grammatik ist, dass sie versucht, abhängig vom Kontext ein $\squoted{x}$ wahlweise
+als ein $B$ oder als ein $C$ zu interpretieren.  Es ist offensichtlich, wie das Problem gelöst werden
+kann:  Wenn der Kontext ``\texttt{u}'', der sowohl auf $B$ als auch auf $C$ folgt, mit in
+die Regeln für $B$ und $C$ aufgenommen wird, dann verschwindet der Konflikt.  Abbildung
+\ref{fig:lr-conflict-resolved.g} zeigt die modifizierte Grammatik.
+
+\subsection{Mysteriöse Reduce-Reduce-Konflikte}
+Wir sprechen dann von einem \emph{mysteriösen Reduce-Reduce-Konflikt}, wenn die gegebene Grammatik eine
+LR(1)-Grammatik ist, sich aber beim Übergang von LR-Zuständen zu LALR-Zuständen Reduce-Reduce-Konflikte
+ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik habe ich dem \textsl{Bison}-Handbuch
+entnommen. (\textsl{Bison} ist ein LALR-Parser-Generator für die Sprachen \texttt{C} und \texttt{C++}.)
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    terminal    ID, COMMA, COLON;
+    nonterminal def, param_spec, return_spec, type, name_list, name;
+    
+    def   
+        ::= param_spec return_spec COMMA
+         ;
+    param_spec
+        ::= type
+         |  name_list COLON type
+         ;    
+    return_spec
+        ::= type
+         |  name COLON type
+         ;
+    type  
+        ::= ID
+         ;    
+    name
+        ::= ID
+         ;
+    name_list
+        ::= name
+         |  name COMMA name_list
+         ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine \textsc{Cup}-Grammatik mit einem mysteriösen Reduce-Reduce-Konflikt.}
+\label{fig:mysterious.cup}
+\end{figure}
+\vspace*{0.3cm}
+
+Übersetzen wir diese Grammatik mit \textsc{Cup}, so erhalten wir unter anderem den folgenden Zustand:
+\begin{verbatim}
+    lalr_state [1]: {
+      [name ::= ID (*) , {COMMA COLON }]
+      [type ::= ID (*) , {ID COMMA }]
+    }
+\end{verbatim}
+Da in beiden Mengen von Folgetoken das Token \texttt{COMMA} auftritt, gibt es hier offensichtlich einen
+Reduce-Reduce-Konflikt.   Um diesen Konflikt besser zu verstehen, berechnen wir zunächst die Zustände
+eines kanonischen LR-Parsers für diese Grammatik.
+Wir erhalten dann eine Menge von Zuständen, von denen die für den späteren Konflikt ursächlichen 
+Zuständen in Abbildung \ref{fig:mysterious.txt} gezeigt sind.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    s0 = { S -> <*> def: [$],
+           def -> <*> param_spec return_spec ',': [$],
+           name -> <*> ID: [',', ':'],
+           name_list -> <*> name: [':'],
+           name_list -> <*> name ',' name_list: [':'],
+           param_spec -> <*> name_list ':' type: [ID],
+           param_spec -> <*> type: [ID],
+           type -> <*> ID: [ID]
+         }
+    s2 = { def -> param_spec <*> return_spec ',': [$],
+           name -> <*> ID: [':'],
+           return_spec -> <*> name ':' type: [','],
+           return_spec -> <*> type: [','],
+           type -> <*> ID: [',']
+         }
+    s7 = { name -> ID <*>: [',', ':'],
+           type -> ID <*>: [ID]
+         }
+    s8 = { name -> ID <*>: [':'],
+           type -> ID <*>: [',']
+         }
+
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{LR-Zustände der in Abbildung \ref{fig:mysterious.cup} gezeigten Grammatik.}
+\label{fig:mysterious.txt}
+\end{figure} %\$
+\pagebreak
+
+Analysieren wir die Zustände, so stellen wir fest, dass beim Übergang von LR-Zuständen zu den
+LALR-Zuständen die beiden Zustände $s_7$ und $s_8$ zu einem Zustand zusammengefasst werden, denn diese
+beiden Zustände haben den selben Kern.  Bei der Zusammenfassung entsteht der Zustand, der von
+\textsc{Cup} als ``\texttt{lalr\_state [1]}'' bezeichnet hat.  Die Zustände $s_7$ und $s_8$ selber haben
+noch keinen Konflikt, weil dort die Mengen der Folgetoken disjunkt sind.  Der Konflikt tritt erst durch
+die Vereinigung dieser beiden Mengen auf, denn dadurch ist das Token ``$\texttt{,}$'' als Folgetoken für
+beide in dem Zustand enthaltenen Regeln zulässig.   Um den Konflikt aufzulösen müssen wir verhindern, dass
+die beiden Zustände $s_7$ und $s_8$ zusammengefasst werden.  Dazu analysieren wir zunächst, wo diese
+Zustände herkommen.
+\begin{enumerate}
+\item Den Zustand $s_7$ erhalten wir, wenn wir im Zustand $s_2$ das Token \texttt{ID} lesen, denn
+      es gilt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_7 = \textsl{goto}(s_2, \mathtt{ID})$.
+\item Der Zustand $s_8$ entsteht, wenn das Token \texttt{ID} im Zustand $s_0$ gelesen wird, wir haben
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_8 = \textsl{goto}(s_0, \mathtt{ID})$.
+\end{enumerate}
+Die Idee zur Auflösung des Konflikts ist, dass wir den Zustand $s_2$ so ändern, dass die Kerne von
+$\textsl{goto}(s_2, \mathtt{ID})$ und $\textsl{goto}(s_0, \mathtt{ID})$ unterschiedlich werden.  
+Die erweiterten markierten Regeln in dem Zustand $s_2$, die letztlich für den Konflikt verantwortlich
+sind, sind die Grammatik-Regeln für die syntaktische Variable \textsl{return\_spec}.
+Wir ändern diese Regeln nun wie in Abbildung \ref{fig:myst-solved.g} ab, indem wir eine zusätzliche
+Grammatik-Regel 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{return\_spec} \rightarrow \mathtt{ID}\;\, \mathtt{BOGUS}$
+\\[0.2cm]
+einführen.  Wenn das Terminal \texttt{BOGUS} nie vom Scanner erzeugt werden kann, dann ändert sich durch
+die Hinzunahme dieser Regel die von der Grammatik erzeugte Sprache nicht.  Allerdings ändern sich nun die
+LR-Zustände.  Abbildung \ref{fig:myst-solved.txt} zeigt, wie sich die entsprechenden Zustände ändern.
+Insbesondere sehen wir, dass der Zustand $s_8$ nun eine weitere markierte Regel enthält, zu der es in dem
+Zustand $s_7$ kein äquivalent gibt.  Die Konsequenz ist, dass diese Zustände in einem
+LALR-Parser-Generator nicht mehr zusammengefasst werden.  Dadurch gibt es dann auch keinen Konflikt mehr.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    def : param_spec return_spec ','
+        ;    
+    param_spec
+        : type
+        |  name_list ':' type
+        ;
+    return_spec
+        : type
+        | name ':' type
+        | ID BOGUS      // this never happens
+        ;
+    type: ID
+        ;
+    name: ID
+        ;
+    name_list
+        : name
+        | name ',' name_list
+        ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Auflösung des mysteriösen Reduce-Reduce-Konflikts.}
+\label{fig:myst-solved.g}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    s0 = { S -> <*> def: [$],
+           def -> <*> param_spec return_spec ',': [$],
+           name -> <*> ID: [',', ':'],
+           name_list -> <*> name: [':'],
+           name_list -> <*> name ',' name_list: [':'],
+           param_spec -> <*> name_list ':' type: [ID],
+           param_spec -> <*> type: [ID],
+           type -> <*> ID: [ID]
+         }    
+    s2 = { def -> param_spec <*> return_spec ',': [$],
+           name -> <*> ID: [':'],
+           return_spec -> <*> ID BOGUS: [','],
+           return_spec -> <*> name ':' type: [','],
+           return_spec -> <*> type: [','],
+           type -> <*> ID: [',']
+         }
+    s7 = { name -> ID <*>: [',', ':'],
+           type -> ID <*>: [ID]
+         }    
+    s8 = { name -> ID <*>: [':'],
+           return_spec -> ID <*> BOGUS: [','],
+           type -> ID <*>: [',']
+         }
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Einige Zustände der in Abbildung \ref{fig:myst-solved.g} gezeigten Grammatik.}
+\label{fig:myst-solved.txt}
+\end{figure}
+\vspace*{\fill}
+
+\pagebreak
+\vspace*{\fill}
+
+\pagebreak
+
+\exercise
+Nachstehend sehen Sie Regeln für eine Grammatik, die Listen von Zahlen beschreibt:
+\begin{eqnarray*}
+  \textsl{List} & \rightarrow & \textsc{Number} \quoted{,} \textsl{List} \\
+                & \mid        & \textsc{Number}                         
+\end{eqnarray*}
+Diese Grammatik ist rechts-rekursiv.  Alternativ ist auch eine links-rekursive Grammatik möglich:
+\begin{eqnarray*}
+  \textsl{List} & \rightarrow & \textsl{List} \quoted{,} \textsc{Number} \\
+                & \mid        & \textsc{Number}                         
+\end{eqnarray*}
+Überlegen Sie, welche dieser beiden Grammatiken effizienter ist, wenn Sie aus diesen Regeln mit einem
+LALR-Parser-Generator einen Parser erzeugen wollen.  Berechnen Sie dazu für beide Fälle die Zustände
+und Aktionen und untersuchen Sie, wie eine Liste von natürlichen Zahlen der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$x_1$, $x_2$, $\cdots$, $x_{n-1}$, $x_n$
+\\[0.2cm]
+in den beiden Fällen geparst wird.  Geben Sie insbesondere an, wie der Stack des Shift-Reduce-Parsers
+aussieht, wenn die Teilliste 
+\\[0.2cm]
+\hspace*{1.3cm}
+$x_1$, $x_2$, $\cdots$, $x_{k-1}$, $x_k$ \quad mit $k \leq n$ 
+\\[0.2cm]
+gelesen worden ist.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 

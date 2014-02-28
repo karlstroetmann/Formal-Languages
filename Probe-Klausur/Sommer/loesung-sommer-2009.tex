@@ -1,0 +1,817 @@
+\documentclass{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{german}
+\usepackage{a4wide}
+\usepackage{epsfig}
+\usepackage{fleqn}
+
+\pagestyle{plain}
+
+\def\pair(#1,#2){\langle #1, #2 \rangle}
+
+\newcounter{aufgabe}
+
+\renewcommand{\labelenumi}{(\alph{enumi})}
+
+\newcommand{\exercise}{\vspace*{0.1cm}
+
+\stepcounter{aufgabe}
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Aufgabe \arabic{aufgabe}}: }
+
+\newcommand{\solution}{
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Lösung}: }
+\newcommand{\quoted}[1]{\;\mbox{``\texttt{#1}''}\;}
+
+
+\begin{document}
+
+
+\noindent
+{\large  Lösungen zu den Aufgaben zur Klausurvorbereitung}
+\vspace{0.5cm}
+
+\exercise
+Die Grammatik $G = \langle \{ S \}, \{ \quoted{+}, \quoted{-}, \quoted{a} \}, R, S \rangle$
+habe  die folgenden Regeln:
+\[ S \rightarrow S\, S\, \quoted{+} \mid S\, S\, \quoted{-} \mid \quoted{a}. \]
+\begin{enumerate}
+\item Berechnen Sie die Mengen $\textsl{First}(S)$ und $\textsl{Follow}(S)$.
+\item Berechnen Sie die Menge der SLR-Zustände für diese Grammatik.
+\item Berechnen Sie die Funktionen $\textsl{action}()$ und $\textsl{goto}()$ für diese Grammatik.
+\item Berechnen Sie die Menge der LR-Zustände für diese Grammatik.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Es gilt offenbar
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(S) = \{ a \}$ \quad und \quad
+      $\textsl{Follow}(S) = \{ \quoted{+}, \quoted{-}, \quoted{a}, \symbol{36} \}$.
+\item Wir erhalten die folgenden Zustände:
+      \begin{enumerate}
+      \item Wir definieren $s_0 = \textsl{closure}\bigl(\{\widehat{S} \rightarrow \star S\}\bigr)$ und 
+            finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_0 = \{\; \widehat{S} \rightarrow \star\; S,\;
+                      S \rightarrow \star \quoted{a},\; 
+                      S \rightarrow \star \; S\; S \quoted{+},\; 
+                      S \rightarrow \star \; S\; S \quoted{-}
+            \}$.
+      \item Wir definieren $s_1 = \textsl{goto}(s_0, S)$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl}
+            s_1 \;= & \{ & \widehat{S} \rightarrow S\; \star,             \\
+                    &    & S \rightarrow \star \quoted{a},                \\
+                    &    & S \rightarrow \star\; S\, S \quoted{+},        \\
+                    &    & S \rightarrow \star\; S\, S \quoted{-},        \\
+                    &    & S \rightarrow S \star S \quoted{+},            \\
+                    &    & S \rightarrow S \star S \quoted{-}\;           \\
+                    & \}.
+            \end{array}
+            $
+
+      \item Wir definieren $s_2 = \textsl{goto}(s_1, S)$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl}
+            s_2 \;= & \{ & S \rightarrow \star \quoted{a},          \\
+                    &    & S \rightarrow \star\; S\; S \quoted{+},  \\
+                    &    & S \rightarrow \star\; S\; S \quoted{-},  \\
+                    &    & S \rightarrow S \star S \quoted{+},    \\
+                    &    & S \rightarrow S \star S \quoted{-},    \\
+                    &    & S \rightarrow S\; S \star \quoted{+},  \\
+                    &    & S \rightarrow S\; S \star \quoted{-}   \\
+                    & \}.
+            \end{array}
+            $
+      \item Wir definieren $s_3 = \textsl{goto}(s_2, \quoted{a})$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_3 = \{ S \rightarrow \quoted{a} \star \}$.
+      \item Wir definieren $s_4 = \textsl{goto}(s_2, \quoted{+})$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_4 = \{ S \rightarrow S\, S \quoted{+} \star \}$.
+      \item Wir definieren $s_5 = \textsl{goto}(s_2, \quoted{-})$ und finden
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $s_5 = \{ S \rightarrow S \, S \quoted{-} \star \}$.
+      \end{enumerate}
+      \pagebreak
+
+\item Damit erhalten wir für die Funktion $\textsl{action}()$ die folgende Tabelle:
+      \begin{enumerate}
+      \item $\textsl{action}(s_0, \quoted{a}) = \pair(\texttt{shift}, s_3)$
+      \item $\textsl{action}(s_1, \quoted{\symbol{36}}) = \mathtt{accept}$
+      \item $\textsl{action}(s_1, \quoted{a}) = \pair(\texttt{shift}, s_3)$
+      \item $\textsl{action}(s_2, \quoted{+}) = \pair(\texttt{shift}, s_4)$
+      \item $\textsl{action}(s_2, \quoted{-}) = \pair(\texttt{shift}, s_5)$
+      \item $\textsl{action}(s_2, \quoted{a}) = \pair(\texttt{shift}, s_3)$
+      \item $\textsl{action}(s_3, \quoted{\symbol{36}}) = \pair(\texttt{reduce}, S \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_3, \quoted{+}) = \pair(\texttt{reduce}, S \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_3, \quoted{-}) = \pair(\texttt{reduce}, S \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_3, \quoted{a}) = \pair(\texttt{reduce}, S \rightarrow \quoted{a})$
+      \item $\textsl{action}(s_4, \quoted{\symbol{36}}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{+})$
+      \item $\textsl{action}(s_4, \quoted{+}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{+})$
+      \item $\textsl{action}(s_4, \quoted{-}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{+})$
+      \item $\textsl{action}(s_4, \quoted{a}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{+})$
+      \item $\textsl{action}(s_5, \quoted{\symbol{36}}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{-})$
+      \item $\textsl{action}(s_5, \quoted{+}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{-})$
+      \item $\textsl{action}(s_5, \quoted{-}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{-})$
+      \item $\textsl{action}(s_5, \quoted{a}) = \pair(\texttt{reduce}, S \rightarrow S\, S \quoted{-})$
+      \end{enumerate}
+      Für die Funktion $\textsl{goto}()$ finden wir:
+      \begin{enumerate}
+      \item $\textsl{goto}(s_0, S) = s_1$
+      \item $\textsl{goto}(s_1, S) = s_2$
+      \item $\textsl{goto}(s_2, S) = s_2$
+      \end{enumerate}
+\item Wir erhalten die folgenden Zustände:
+      \begin{enumerate}
+      \item Wir setzen wieder 
+            $s_0 = \textsl{closure}\Bigl(\bigl\{\widehat{S} \rightarrow \star S: \symbol{36}\bigr\}\Bigr)$ 
+            und erhalten diesmal
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl}  
+            s_0 \;= & \bigl\{ & \widehat{S} \rightarrow \star\; S: \quoted{\symbol{36}},                  \\
+                    &         & S \rightarrow \star \quoted{a}: \{\quoted{\symbol{36}}, \quoted{a}\},       \\
+                    &         & S \rightarrow \star\; S\; S \quoted{+}: \{\quoted{\symbol{36}}, \quoted{a}\}, \\
+                    &         & S \rightarrow \star\; S\; S \quoted{-}: \{\quoted{\symbol{36}}, \quoted{a}\}  \\
+                    & \bigr\}.
+            \end{array}
+            $
+      \item Wir definieren $s_1 = \textsl{goto}(s_0, S)$ und erhalten
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $
+            \begin{array}[t]{lcl} 
+         s_1 \; = & \bigl\{ & \widehat{S} \rightarrow S \star: \quoted{\symbol{36}},    \\
+                  &         & S \rightarrow \star \quoted{a}: \{\quoted{+}, \quoted{-}, \quoted{a}\},  \\
+                  &         & S \rightarrow \star\; S\; S \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow \star\; S\; S \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow S \star S \quoted{+}: \{\quoted{\symbol{36}}, \quoted{a}\},     \\
+                  &         & S \rightarrow S \star S \quoted{-}: \{\quoted{\symbol{36}}, \quoted{a}\}      \\
+                  & \bigr\}.
+            \end{array}
+            $
+       \item Wir definieren $s_2 = \textsl{goto}(s_1, S)$ und erhalten
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $
+             \begin{array}[t]{lcl} 
+          s_2 \;= & \bigl\{ & S \rightarrow \star \quoted{a}: \{\quoted{+}, \quoted{-}, \quoted{a}\},       \\
+                  &         & S \rightarrow \star\; S\; S \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow \star\; S\; S \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow S \star S \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & S \rightarrow S \star S \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & S \rightarrow S\; S \star \quoted{+}: \{\quoted{\symbol{36}}, \quoted{a}\},   \\
+                  &         & S \rightarrow S\; S \star \quoted{-}: \{\quoted{\symbol{36}}, \quoted{a}\}    \\
+                  & \bigr\}.
+             \end{array}
+             $
+       \item Wir definieren $s_3 = \textsl{goto}(s_2, S)$ und erhalten
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $
+             \begin{array}[t]{lcl} 
+          s_3 \;= & \bigl\{ & S \rightarrow \star \quoted{a}: \{\quoted{+}, \quoted{-}, \quoted{a}\},       \\
+                  &         & S \rightarrow \star\; S\; S \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow \star\; S\; S \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow S \star S \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & S \rightarrow S \star S \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\},   \\
+                  &         & S \rightarrow S\; S \star \quoted{+}: \{\quoted{+}, \quoted{-}, \quoted{a}\}, \\
+                  &         & S \rightarrow S\; S \star \quoted{-}: \{\quoted{+}, \quoted{-}, \quoted{a}\}  \\
+                  & \bigr\}.
+             \end{array}
+             $
+       \item Wir definieren $s_4 = \textsl{goto}(s_0, \quoted{a})$ und erhalten
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_4 = \{ S \rightarrow \quoted{a} \star: \{\quoted{\symbol{36}}, \quoted{a}\} \}$.
+       \item Wir definieren $s_5 = \textsl{goto}(s_2, \quoted{a})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_5 = \bigl\{ S \rightarrow \quoted{a} \star: \{\quoted{+}, \quoted{-}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_6 = \textsl{goto}(s_2, \quoted{+})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_6 = \bigl\{ S \rightarrow S\, S \quoted{+} \star: \{\quoted{\symbol{36}}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_7 = \textsl{goto}(s_3, \quoted{+})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_7 = \bigl\{ S \rightarrow S\, S \quoted{+} \star: \{\quoted{+}, \quoted{-}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_8 = \textsl{goto}(s_2, \quoted{-})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_8 = \bigl\{ S \rightarrow S\, S \quoted{-} \star: \{\quoted{\symbol{36}}, \quoted{a}\} \bigr\}$
+       \item Wir definieren $s_9 = \textsl{goto}(s_3, \quoted{-})$ und erhalten 
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $s_9 = \bigl\{ S \rightarrow S\, S \quoted{-} \star: \{\quoted{+}, \quoted{-}, \quoted{a}\} \bigr\}$
+       \end{enumerate}
+\end{enumerate}
+\pagebreak
+
+\exercise
+Die Grammatik $G = \langle \{ A, B \}, \{ \quoted{u}, \quoted{x}, \quoted{y}, \quoted{z} \}, R, A \rangle$
+habe  die folgenden Regeln:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{lcl}
+  A & \rightarrow & B \quoted{x} \\
+    & \mid        & \quoted{y} B \quoted{z} \\
+    & \mid        & \quoted{u} \quoted{z} \\
+    & \mid        & \quoted{y} \quoted{u} \quoted{x} \\[0.1cm]
+  B & \rightarrow &\quoted{u} 
+ \end{array}
+$
+\\[0.2cm]
+Bearbeiten Sie die folgenden Teilaufgaben:
+\begin{enumerate}
+\item Überprüfen Sie, ob die  diese Grammatik eine LL(1)-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\item Überprüfen Sie, ob die  diese Grammatik eine LL($*$)-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\item Überprüfen Sie, ob die  diese Grammatik eine SLR-Grammatik ist und begründen Sie
+      Ihre Antwort.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Die Grammatik ist keine $LL(1)$-Grammatik, denn zwischen den beiden Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \quoted{y} B \quoted{z}$ \quad und \quad
+      $A \rightarrow \quoted{y} \quoted{u} \quoted{x}$ 
+      \\[0.2cm]
+      gibt es einen Konflikt, wir haben
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\quoted{y} B \quoted{z}) = \{ \quoted{y} \}$ \quad und \quad
+      $\textsl{First}(\quoted{y} \quoted{u} \quoted{z}) = \{ \quoted{y} \}$ 
+      \\[0.2cm]
+      und damit folgt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\quoted{y} B \quoted{z}) \cap \textsl{First}(\quoted{y} \quoted{u} \quoted{z}) = 
+      \{ \quoted{y} \} \not= \{\}$.
+\item Um zu überprüfen, ob die Grammatik eine LL($*$)-Grammatik ist, annotieren wir die Regeln
+      wie im Skript beschrieben mit Zuständen und erhalten die folgenden annotierten Regeln:
+      \begin{enumerate}
+      \item $A \rightarrow _{\pair(0,1)} B _{\pair(1,1)} \quoted{x} _{\pair(2,1)}$
+      \item $A \rightarrow _{\pair(0,2)} \quoted{y} _{\pair(1,2)} B _{\pair(2,2)} \quoted{z} _{\pair(3,2)}$
+      \item $A \rightarrow _{\pair(0,3)} \quoted{u} _{\pair(1,3)} \quoted{z} _{\pair(2,3)}$
+      \item $A \rightarrow _{\pair(0,4)} \quoted{y} _{\pair(1,4)} \quoted{u} _{\pair(2,4)} \quoted{x} _{\pair(3,4)}$
+      \item $B \rightarrow _{\pair(5,0)} \quoted{u} _{\pair(6,0)}$ 
+      \end{enumerate}
+      Als Start-Zustand definieren wir den Zustand $\pair(0,0)$ und setzen
+      $\textsl{start}(B) = \pair(4,0)$ sowie $\textsl{end}(B) = \pair(7,0)$.  Die Zustands-Übergangs-Funktion des für
+      einen LL($*)$-Parser zu konstruierenden nicht-deterministischen Automaten ist dann
+      wie folgt gegeben:
+      \begin{enumerate}
+      \item Der Start-Zustand ist mit den Anfangs-Zuständen der einzelnen Regeln für $A$ verbunden,
+            wir haben also
+            \\[0.2cm]
+            \hspace*{1.3cm} $\delta(\pair(0,0), \varepsilon) = \pair(0,1)$, \quad
+                            $\delta(\pair(0,0), \varepsilon) = \pair(0,2)$, 
+            \\[0.2cm]
+            \hspace*{1.3cm} $\delta(\pair(0,0), \varepsilon) = \pair(0,3)$, \quad
+                            $\delta(\pair(0,0), \varepsilon) = \pair(0,4)$.
+      \item Aus der Regel $A \rightarrow B \quoted{x}$ erhalten wir die Übergänge
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\delta(\pair(0,1), \varepsilon) = \pair(4,0)$, \quad
+            $\delta(\pair(7,0), \varepsilon) = \pair(1,1)$, \quad
+            $\delta(\pair(1,1), \quoted{x}) = \pair(2,1)$.
+      \item Aus der Regel $A \rightarrow \quoted{y} B \quoted{z}$ erhalten wir die Übergänge
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\delta(\pair(0,2), \quoted{y}) = \pair(1,2)$, \quad
+            $\delta(\pair(1,2), \varepsilon) = \pair(4,0)$, \quad
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\delta(\pair(7,0), \varepsilon) = \pair(2,2)$, \quad
+            $\delta(\pair(2,2), \quoted{z}) = \pair(3,2)$.
+      \item Aus der Regel $A \rightarrow \quoted{u} \quoted{z}$ erhalten wir die Übergänge
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\delta(\pair(0,3), \quoted{u}) = \pair(1,3)$, \quad
+            $\delta(\pair(1,3), \quoted{z}) = \pair(2,3)$.
+      \item Aus der Regel $A \rightarrow \quoted{y} \quoted{u} \quoted{x}$ erhalten wir die Übergänge
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\delta(\pair(0,4), \quoted{y}) = \pair(1,4)$, \quad
+            $\delta(\pair(1,4), \quoted{u}) = \pair(2,4)$, \quad
+            $\delta(\pair(2,4), \quoted{x}) = \pair(3,4)$.
+      \item Aus der Regel $B \rightarrow \quoted{u}$ erhalten wir die Übergänge
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\delta(\pair(4,0), \varepsilon) = \pair(5,0)$, \quad
+            $\delta(\pair(5,0), \quoted{u})  = \pair(6,0)$, \quad
+            $\delta(\pair(6,0), \varepsilon) = \pair(7,0)$.
+      \item Die Menge der akzeptierenden Zustände ist durch die Endzustände der Regeln für
+            die Variable $A$ gegeben:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\bigl\{ \pair(2,1), \pair(3,2), \pair(2,3), \pair(3,4) \bigr\}$
+      \end{enumerate}
+      Wir beginnen nun damit, diesen nicht-deterministischen Automaten in einen deterministischen 
+      Automaten zu überführen.  Der Start-Zustand des deterministischen  Automaten ist dann
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $S_0 := 
+       \bigl\{ \pair(0,0), \pair(0,1), \pair(0,2), \pair(0,3), \pair(0,4), \pair(4,0), \pair(5,0) \bigr\}$.
+      \\[0.2cm]
+      Wir definieren
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $S_1 := \Delta(S_0, \quoted{u}) = 
+      \bigl\{ \pair(6,0), \pair(7,0), \pair(1,1), \pair(2,2), \pair(1,3) \bigr\}$.
+      \\[0.2cm]
+      Weiter definieren wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $S_2 := \Delta(S_1, \quoted{z}) = \bigl\{ \pair(3,2), \pair(2,3) \bigr\}$.
+      \\[0.2cm]
+      Diese Menge enthält zwei akzeptierende Zustände, ist aber nicht homogen, da diese
+      Zustände einen unterschiedlichen Index haben.  Folglich handelt es sich bei der obigen Grammatik
+      nicht um eine LL($*$)-Grammatik.
+
+      \textbf{Bemerkung}:
+      \textsc{Antlr} kann aus der obigen Grammatik trotzdem einen Parser erzeugen, weil \textsc{Antlr}
+      die Regel $B \rightarrow \quoted{u}$ expandiert und dann die folgende Grammatik analysiert:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\begin{array}[t]{lcl}
+        A & \rightarrow & \quoted{u} \quoted{x} \\
+          & \mid        & \quoted{y} \quoted{u} \quoted{z} \\
+          & \mid        & \quoted{u} \quoted{z} \\
+          & \mid        & \quoted{y} \quoted{u} \quoted{x} 
+        \end{array}
+       $
+       \\[0.2cm]
+       Die so umgeformte Grammatik ist eine LL($*$)-Grammatik.
+\item Die angegebene Grammatik ist keine SLR-Grammatik.  Um das zu sehen, erweitern wir die Grammatik
+      um die Regel $\widehat{S} \rightarrow A$ und berechnen den Zustand
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_0 = \textsl{closure}( \{ \widehat{S} \rightarrow A \})$.
+      \\[0.2cm]
+      Wir finden
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $
+      \begin{array}[t]{lcl}  
+       s_0 \;= & \{ & S \rightarrow \star\; A,                              \\
+               &    & A \rightarrow \star\; B \quoted{x},                   \\
+               &    & A \rightarrow \star \quoted{y} B \quoted{z},          \\
+               &    & A \rightarrow \star \quoted{u} \quoted{z},            \\
+               &    & A \rightarrow \star \quoted{y} \quoted{u} \quoted{x}, \\
+               &    & B \rightarrow \star \quoted{u}                        \\
+               & \}. 
+      \end{array}
+      $
+      \\[0.2cm]
+      Wir berechnen nun $\textsl{goto}(s_0, \quoted{u})$ und erhalten
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s_1 = \{ A \rightarrow \quoted{u} \star \quoted{z},\;
+                B \rightarrow \quoted{u} \star
+             \}
+      $.
+      \\[0.2cm]
+      Bei der Berechnung von $\textsl{action}(s_1, \quoted{z})$ tritt nun eine Shift-Reduce-Konflikt auf,
+      denn es gilt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{follow}(B) = \{ \quoted{x}, \quoted{z} \}$.
+
+      \noindent
+      \textbf{Bemerkung}:  Die in der Aufgabe angegebene Grammatik ist sowohl eine LR-Grammatik als
+      auch eine LALR-Grammatik.  Letzteres läßt sich mit \textsl{Bison} oder \textsl{JavaCup} nachweisen 
+      und Ersteres folgt aus der Tatsache, dass jede LALR-Grammatik auch eine LR-Grammatik ist.
+\end{enumerate}
+\pagebreak
+
+\exercise
+Wir definieren \emph{geschachtelte Listen} rekursiv als solche Listen, 
+deren Elemente natürliche Zahlen oder geschachtelte Listen sind.  Die Elemente in
+geschachtelten Listen sollen durch Kommata getrennt werden und die Listen selber sollen
+durch die eckigen Klammern ``\texttt{[}'' und ``\texttt{]}'' begrenzt sein.
+Beispiele für geschachtelte Listen sind also:
+\begin{enumerate}
+\item \texttt{[ 1, [ 1, [], [ 2, 3]], 7]}
+\item \texttt{[ [], [ [], [], [ 4], 5], []]}
+\end{enumerate}
+Lösen Sie die folgenden Teilaufgaben:
+\begin{enumerate}
+\item Geben Sie eine Grammatik für geschachtelte Listen an.
+\item Geben Sie die EP-Spezifikation von Klassen an, mit deren Hilfe sich
+      geschachtelte Listen repräsentieren lassen.
+\item Geben Sie einen \textsl{JavaCup}-Parser an, der eine geschachtelte Liste einliest
+      und einen abstrakten Syntax-Baum der Liste berechnet.
+
+      \textbf{Hinweis:} In der Klausur können Sie später davon ausgehen, dass ein geeigneter
+      \textsl{JFlex}-Scanner bereits gegeben ist, aber bei dieser Aufgabe sollen Sie den
+      Scanner ebenfalls erstellen, damit Sie Ihre Lösung auch testen können.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Die Grammatik 
+      $G = \langle \{S,L,N,E\}, \{ \quoted{[},\quoted{]}, \quoted{,}\textsc{Number} \}, R, S \rangle$, 
+      deren Regeln durch
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $
+      \begin{array}[t]{lcl}
+        S & \rightarrow & \quoted{[} L \quoted{]}         \\[0.2cm]
+        L & \rightarrow & N                               \\
+          & \mid        & \varepsilon                     \\[0.2cm]
+        N & \rightarrow & N \quoted{,} E                  \\
+          & \mid        & E                               \\[0.2cm]
+        E & \rightarrow & S                               \\
+          & \mid        & \textsc{Number}                 \\
+      \end{array}
+      $
+      \\[0.2cm]
+      gegeben sind, leistet das Gewünschte.  Hier steht $L$ für eine ungeklammerte Liste, 
+      deren Elemente durch Kommata
+      getrennt sind,  $N$ steht für eine ungeklammerte nicht-leere Liste, deren Elemente durch Kommata getrennt
+      sind und $E$ steht für ein Listen-Element, ist also entweder eine in eckigen Klammern
+      eingefasste Liste oder eine Zahl.
+\item Wir definieren eine abstrakte Klasse \texttt{Element}, die sowohl Listen als auch Zahlen
+      umfasst:
+      \begin{Verbatim}[ frame         = lines, 
+                        framesep      = 0.3cm, 
+                        labelposition = bottomline,
+                        numbers       = left,
+                        numbersep     = -0.2cm,
+                        xleftmargin   = 0.8cm,
+                        xrightmargin  = 0.8cm,
+                      ]
+      Element = MyList(List<Element> listExpr) 
+              + MyNumber(Integer number);
+      \end{Verbatim}
+      \pagebreak
+
+\item Die \textsl{JavaCup}-Spezifikation des Parsers hat die folgende Form:
+      \begin{Verbatim}[ frame         = lines, 
+                        framesep      = 0.3cm, 
+                        labelposition = bottomline,
+                        numbers       = left,
+                        numbersep     = -0.2cm,
+                        xleftmargin   = -0.3cm,
+                        xrightmargin  = 0.0cm,
+                      ]
+    import java_cup.runtime.*;
+    import java.util.*;
+    
+    terminal         OPEN, CLOSE, COMMA;
+    terminal Integer NUMBER;
+    
+    nonterminal Element       s;
+    nonterminal List<Element> l, n;
+    nonterminal Element       e;
+    
+    s ::= OPEN l:e CLOSE  
+          {: List<Listen> list = new LinkedList<Listen>();
+             RESULT = new MyList(e);
+          :};
+    
+    l ::= n:l                {: RESULT = l; :}
+       |  /* epsilon */      {: List<Element> l = new LinkedList<Element>(); 
+                                RESULT = l; 
+                             :}
+       ;
+    
+    n ::= n:l COMMA e:x      {: l.add(x); RESULT = l; :}
+       |  e:x                {: List<Element> l = new LinkedList<Element>(); 
+                                l.add(x);
+                                RESULT = l; 
+                             :}
+       ;
+    
+    e ::= s:x                {: RESULT = x;               :}
+       |  NUMBER:x           {: RESULT = new MyNumber(x); :}
+       ;
+      \end{Verbatim}
+      \pagebreak
+
+      Der dazugehörige Scanner ist wie folgt definiert:
+      \begin{Verbatim}[ frame         = lines, 
+                        framesep      = 0.3cm, 
+                        labelposition = bottomline,
+                        numbers       = left,
+                        numbersep     = -0.2cm,
+                        xleftmargin   = -0.3cm,
+                        xrightmargin  = 0.0cm,
+                ]
+    import java_cup.runtime.*;
+          
+    %%
+       
+    %char
+    %line
+    %column
+    %cup
+       
+    %{   
+        private Symbol symbol(int type) {
+            return new Symbol(type, yychar, yychar + yylength());
+        }
+        
+        private Symbol symbol(int type, Object value) {
+            return new Symbol(type, yychar, yychar + yylength(), value);
+        }
+    %}
+       
+    %%
+       
+    "["      { return symbol( sym.OPEN  ); }
+    "]"      { return symbol( sym.CLOSE ); }
+    ","      { return symbol( sym.COMMA ); }
+    
+    [0-9]+   { return symbol( sym.NUMBER, new Integer(yytext()) ); }
+    
+    [ \t\n]  { /* skip white space */ }   
+    
+    [^]      { throw new Error("Illegal character"); }
+       \end{Verbatim}
+
+\end{enumerate}
+\pagebreak
+
+
+\exercise
+Der Typ $\texttt{list}(T)$ sei wie folgt definiert:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{type list(X) := nil + cons(X, list(X));}
+\\[0.2cm]
+Die Funktion \texttt{addLast} habe die folgende Signatur:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{signature addLast: list(T) * T -> list(T);}
+\\[0.2cm]
+und die Variablen \texttt{x} und \texttt{z} haben den Typ \texttt{int}.
+\begin{enumerate}
+\item Berechnen Sie 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{typeEqs}\bigl(\texttt{addLast(cons(x, nil), z): list(int)}\bigr)$.
+\item Lösen Sie die in Teil (a) berechneten Typ-Gleichungen.
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Wir berechnen zunächst die Typ-Gleichungen nach der im Skript angegebenen Definition.
+      \[
+      \begin{array}[t]{cl}
+           & \textsl{typeEqs}(\texttt{addLast(cons(x, nil), z): list(int)}) \\[0.2cm]
+         = &       \{ \mathtt{list}(T) = \mathtt{list(int)} \} 
+              \cup \textsl{typeEqs}(cons(x, nil): \mathtt{list}(T))
+              \cup \textsl{typeEqs}(z: T)                     \\[0.2cm]
+         = &       \{ \mathtt{list}(T) = \mathtt{list(int)} \} 
+              \cup \{ \texttt{list}(S) = \mathtt{list}(T) \}\; \cup \\
+           &       \textsl{typeEqs}(x: S)
+              \cup \textsl{typeEqs}(\mathtt{nil}: \mathtt{list}(S))
+              \cup \textsl{typeEqs}(z: T)                  \\[0.2cm]
+         = &       \{ \mathtt{list}(T) = \mathtt{list(int)},\; 
+                      \texttt{list}(S) = \mathtt{list}(T),\;           \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = T \}
+
+      \end{array}
+      \]
+\item Wir lösen die oben berechneten Typ-Gleichungen nach dem im Skript angegebenen Verfahren.
+      \\[0.2cm]
+      \hspace*{-0.3cm}  
+      $\begin{array}[t]{cl}
+           &  \bigl\langle \{  \mathtt{list}(T) = \mathtt{list(int)},\; 
+                      \texttt{list}(S) = \mathtt{list}(T),\;           \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = T \},\; [] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ T = \mathtt{int},\; 
+                      \texttt{list}(S) = \mathtt{list}(T),\;           \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = T \},\; [] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ 
+                      \texttt{list}(S) = \mathtt{list}(\mathtt{int}),\;           
+                      \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = T \},\; [ T \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ 
+                      S = \mathtt{int},\;           
+                      \mathtt{int} = S,\;
+                      \mathtt{list}(R) = \mathtt{list}(S),\;
+                      \mathtt{int} = \mathtt{int} \},\; [ T \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      \mathtt{int} = \mathtt{int},\;
+                      \mathtt{list}(R) = \mathtt{list}(\mathtt{int}),\;
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      \mathtt{list}(R) = \mathtt{list}(\mathtt{int}),\;
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      R = \mathtt{int},\;
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{            
+                      \mathtt{int} = \mathtt{int} \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int},\; R \mapsto \mathtt{int}] \bigr\rangle \\[0.2cm]
+         \leadsto &  \bigl\langle \{ \},\; 
+                      [ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int},\; R \mapsto \mathtt{int}] \bigr\rangle
+         \end{array}
+      $
+      \\[0.2cm]
+      Damit ist die Substitution 
+      $[ T \mapsto \mathtt{int},\; S \mapsto \mathtt{int},\; R \mapsto \mathtt{int}]$ eine 
+      Lösung der Typ-Gleichungen und wir können folgern, dass der Term tatsächlich den angegebenen Typ
+      hat.
+\end{enumerate}
+\pagebreak
+
+\exercise
+Nehmen Sie an, dass die im Skript eingeführte Sprache \textsl{Integer}-\texttt{C} um eine 
+\texttt{do-while}-Schleife erweitert werden soll, deren Syntax durch die folgende Grammatik-Regel gegeben ist:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{statement} \rightarrow \quoted{do} \textsl{statement} \quoted{while}
+ \quoted{(} \textsl{boolExpr} \quoted{)}$.
+\\[0.2cm]
+Die Semantik dieses Konstruktes soll mit der Semantik des entsprechenden Konstruktes in
+der Sprache \texttt{C} übereinstimmen.
+\begin{enumerate}
+\item Geben Sie eine Gleichung an, die beschreibt, wie eine \texttt{do-while}-Schleife in
+      \textsl{Java-Byte-Code} übersetzt werden kann.
+\item Geben Sie die Methode $\textsl{compile}()$ an, die das entsprechende
+      Konstrukt übersetzt.  Gehen Sie dabei davon aus, dass Sie diese Methode innerhalb
+      einer Klasse \texttt{DoWhile} implementieren, wobei diese Klasse für \textsc{Ep}
+      wie folgt spezifiziert ist:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{Statement} \;=\; \cdots \;+\; \texttt{DoWhile}(\texttt{Statement}\; stmnt,\;
+      \mathtt{BoolExpr}\; cond)\; +\; \cdots; $      
+\end{enumerate}
+
+\solution
+\begin{enumerate}
+\item Die Übersetzung einer \texttt{do-while}-Schleife der Form
+      \[ \texttt{while}\;(\textsl{cond})\;\textsl{statement} \]
+      orientiert sich an der folgenden Spezifikation:
+      \[
+      \begin{array}[t]{lcl}
+        \textsl{compile}\bigl(\mathtt{do}\; \textsl{stmnt}\; \texttt{while}\; (\textsl{cond})\;\bigr) 
+        & = & 
+        [\;\textsl{loop}\texttt{:}\;]            \\
+        & + & \textsl{stmnt}.\textsl{compile}()    \\    
+        & + & \textsl{cond}.\textsl{compile}()         \\
+        & + & [\;\texttt{ifeq}\;\textsl{next}\;] \\
+        & + & [\;\texttt{goto}\;\textsl{loop}\;]    \\    
+        & + & [\;\textsl{next}\texttt{:}\;]         
+      \end{array}
+      \]
+\item Die Methode $\textsl{compile}()$ kann in der Klasse \texttt{DoWhile} wie folgt implementiert werden:
+      \begin{Verbatim}[ frame         = lines, 
+                        framesep      = 0.3cm, 
+                        labelposition = bottomline,
+                        numbers       = left,
+                        numbersep     = -0.2cm,
+                        xleftmargin   = 0.0cm,
+                        xrightmargin  = 1.1cm,
+                      ]
+      public List<AssemblerCmd> compile() {
+          List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+          LABEL        loopLabel = new LABEL();
+          LABEL        nextLabel = new LABEL();
+          AssemblerCmd ifeq      = new IFEQ(nextLabel.getLabel());
+          AssemblerCmd gotoLoop  = new GOTO(loopLabel.getLabel());
+          result.add(loopLabel);
+          result.addAll(mStmnt.compile());
+          result.addAll(mCond.compile());
+          result.add(ifeq);
+          result.add(gotoLoop);
+          result.add(nextLabel);
+          return result;
+        }
+      \end{Verbatim}
+\end{enumerate}
+
+\pagebreak
+
+\noindent
+\framebox{\epsfig{file=danger.eps,scale=0.05}}
+\exercise
+Zeigen Sie, dass die wie folgt definierte Menge $M$ 
+\\[0.2cm]
+\hspace*{1.3cm}
+$M := \{ x \in \mathbb{R} \mid 0 \leq x \leq 1 \}$
+\\[0.2cm] 
+nicht abzählbar ist.
+
+\noindent
+\textbf{Hinweis}: Nehmen Sie an, dass Sie eine Funktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$f: \mathbb{N} \rightarrow M$
+\\[0.2cm]
+gibt, so dass es für jedes $x \in M$ eine Zahl $n \in \mathbb{N}$ gibt, für die
+$x = f(n)$ ist.  Führen Sie diese Annahme zum Widerspruch, indem Sie eine Zahl 
+$\gamma \in M$ konstruieren, für die 
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(n) \not= \gamma$ \quad für alle $n \in \mathbb{N}$
+\\[0.2cm]
+gilt.  Zur Konstruktion von $\gamma$ ist es sinnvoll die Hilfsfunktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}: M \times \mathbb{N} \rightarrow \{ 0, 1, 2, 3, 4, 5, 6,7, 8, 9\}$
+\\[0.2cm]
+zu benutzen, die so definiert ist, dass
+$\textsl{digit}(x,k)$
+die $k$-te Ziffer der Zahl $x$ ist.  Beispielsweise gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}(0.125, 1) = 1$, \quad
+$\textsl{digit}(0.125, 2) = 2$, \quad
+$\textsl{digit}(0.125, 3) = 5$, \quad und 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}(0.125, k) = 0$, \quad für alle $k > 3$.
+
+\solution
+Wir definieren die Zahl $\gamma$ indem wir die einzelnen Ziffern von $\gamma$ durch
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{digit}(\gamma,n) = \bigl(\textsl{digit}\bigl(f(n),n\bigr) + 1\bigr) \;\mathtt{mod}\; 10$
+\\[0.2cm]
+definieren.  Den Widerspruch erhalten wir nun aus der Tasache, dass es eine Zahl $n_0 \in \mathbb{N}$ geben 
+muss, für die
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(n_0) = \gamma$
+\\[0.2cm]
+gilt.  Betrachten wir nun die $n_0$-te Ziffer von $\gamma$, so sehen wir
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{lcl}
+\textsl{digit}(f(n_0), n_0) & = & \textsl{digit}(\gamma, n_0)                          \\[0.2cm]
+                            & = & (\textsl{digit}(f(n_0),n_0) + 1) \;\mathtt{mod}\; 10. 
+\end{array}
+$
+\\[0.2cm]
+Da für jede Ziffer $x \not= (x + 1) \;\mathtt{mod}\; 10$ gilt, ist dies ein Widerspruch, der uns zeigt,
+dass die Menge $M$ nicht abzählbar ist.
+\vspace{0.3cm}
+
+\noindent
+\framebox{\epsfig{file=danger.eps,scale=0.05}}
+\exercise
+Aus wieviel Zeichen muss der kleinste Ausdruck $e$ mindestens bestehen, für den
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{ershov}(e) = 30$
+\\[0.2cm]
+gilt?
+
+\solution
+Wir bezeichnen die Anzahl der Zeichen, die der kleineste Ausdruck mit Ershov-Zahl $n$ haben muss,
+mit $a_n$.  Dann haben wir $a_1 = 1$ und 
+\\[0.2cm]
+\hspace*{1.3cm}
+$a_{n+1} = 2 * a_n + 1$
+\\[0.2cm]
+Diese Rekurrenz-Gleichung hat die Lösung $a_{n} = 2^n - 1$, was wir leicht durch Induktion nachweisen könnten.
+Setzen wir für $n$ den Wert $30$ ein, so sehen wir, dass der kleinste Ausdruck aus
+\\[0.2cm]
+\hspace*{1.3cm}
+$2^{30} - 1 = 1\,073\,741\,823$
+\\[0.2cm]
+Zeichen besteht.  Dieser Ausdruck hätte daher eine Größe von knapp einem Gigabyte und wir können
+schließen, dass in der Praxis 30 Register für die Auswertung von Ausdrücken ausreichen.
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

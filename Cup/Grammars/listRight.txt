@@ -1,0 +1,78 @@
+===== Terminals =====
+[0]EOF [1]error [2]NUMBER 
+
+===== Non terminals =====
+[0]list 
+
+===== Productions =====
+[0] list ::= NUMBER list 
+[1] $START ::= list EOF 
+[2] list ::= NUMBER 
+
+===== Viable Prefix Recognizer =====
+START lalr_state [0]: {
+  [list ::= (*) NUMBER , {EOF }]
+  [$START ::= (*) list EOF , {EOF }]
+  [list ::= (*) NUMBER list , {EOF }]
+}
+transition on list to state [2]
+transition on NUMBER to state [1]
+
+-------------------
+lalr_state [1]: {
+  [list ::= NUMBER (*) , {EOF }]
+  [list ::= (*) NUMBER , {EOF }]
+  [list ::= NUMBER (*) list , {EOF }]
+  [list ::= (*) NUMBER list , {EOF }]
+}
+transition on list to state [4]
+transition on NUMBER to state [1]
+
+-------------------
+lalr_state [2]: {
+  [$START ::= list (*) EOF , {EOF }]
+}
+transition on EOF to state [3]
+
+-------------------
+lalr_state [3]: {
+  [$START ::= list EOF (*) , {EOF }]
+}
+
+-------------------
+lalr_state [4]: {
+  [list ::= NUMBER list (*) , {EOF }]
+}
+
+-------------------
+-------- ACTION_TABLE --------
+From state #0
+ [term 2:SHIFT(to state 1)]
+From state #1
+ [term 0:REDUCE(with prod 2)] [term 2:SHIFT(to state 1)]
+From state #2
+ [term 0:SHIFT(to state 3)]
+From state #3
+ [term 0:REDUCE(with prod 1)]
+From state #4
+ [term 0:REDUCE(with prod 0)]
+------------------------------
+-------- REDUCE_TABLE --------
+From state #0
+ [non term 0->state 2]
+From state #1
+ [non term 0->state 4]
+From state #2
+From state #3
+From state #4
+-----------------------------
+------- CUP v0.11a beta 20060608 Parser Generation Summary -------
+  0 errors and 0 warnings
+  3 terminals, 1 non-terminal, and 3 productions declared, 
+  producing 5 unique parse states.
+  0 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  0 conflicts detected (0 expected).
+  Code written to "parser.java", and "sym.java".
+---------------------------------------------------- (v0.11a beta 20060608)

@@ -1,0 +1,69 @@
+class srParser(actionTable, gotoTable, stateTable) {
+    mActionTable := actionTable;
+    mGotoTable   := gotoTable;
+    mStateTable  := stateTable;
+
+    parseSR := procedure(tl) {
+        index   := 1;      // point to next token
+        symbols := [];     // stack of symbols
+        states  := ["s0"]; // stack of states, 0 is start state
+        while (true) {            
+            q := states[1];
+            t := tl[index];
+            print("states:  [ $join(states, \", \")$ ]");
+            print("symbols: $join(reverse(symbols), \" \")$ | $join(tl[index ..], \" \")$");
+            print("state:   { $join(mStateTable[q], \", \")$ }");
+            p := mActionTable[[q,t]];
+            match (p) {
+            case om: 
+                 print("action($q$, $t$) undefined.");
+                 print("Syntax error!\n");
+                 return false;
+            case Shift(s):
+                 print("shifting state $s$\n");
+                 symbols := [t] + symbols;
+                 states  := [s] + states;
+                 index   += 1;
+            case Rule(head, body):
+                 print("reducing with rule $head$ -> $join(body, \" \")$\n");
+                 n       := #body;
+                 symbols := symbols[n+1 ..];
+                 states  := states[ n+1 ..]; 
+                 symbols := [head] + symbols;
+                 state   := states[1];
+                 states  := [ mGotoTable[[state, head]] ] + states;
+            case Accept():
+                 print("accepting\n");
+                 return true;
+            } 
+        }
+    };
+}
+
+load("parse-table.stlx");
+
+myParse := procedure(s) {
+    parser := srParser(actionTable, gotoTable, stateTable);
+    tl := tokenizeString(s);
+    print("tokenlist: $tl$\n");
+    if (parser.parseSR(tl + ["EOF"])) {
+        print("Parse successful!");
+    } else {
+        print("Parse failed!");
+    }
+};
+
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/", "**"
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex '0|[1-9][0-9]*' as [ number   ]: tokenList += [ "int"    ];
+        regex '[-+*/()]'      as [ operator ]: tokenList += [ operator ];
+        regex '[ \t\v\n\r]+'                 : // skip
+    }
+    return tokenList;
+};
+
+myParse("1+2*3");

@@ -1,0 +1,194 @@
+load("grammar-parser.stlx");
+
+/* This object represents an earley item of the form
+   < variable -> alpha * beta, index >.
+*/
+class earleyItem(variable, alpha, beta, index) {
+    this.mVariable := variable;
+    this.mAlpha    := alpha;
+    this.mBeta     := beta;
+    this.mIndex    := index;
+
+    isComplete := procedure() {
+        return mBeta == [];
+    };
+    // check, whether the item following the dot is the same as the variable 
+    // given as argument.
+    sameVar := procedure(c) {
+        return #mBeta > 0 && mBeta[1] == Var(c);
+    };
+    // check, whether the item following the dot is the same as the character 
+    // given as argument.
+    myScan := procedure(t) {
+        return #mBeta > 0 && mBeta[1] == Token("\'$t$\'");
+    };
+    // Return the name of the variable following the dot.  If there is no variable 
+    // following the dot, return omega.
+    nextVar := procedure() {
+        if (#mBeta > 0) {
+            match (mBeta[1]) {
+                case Var(c): return c;
+            }
+        }
+    };
+    moveDot := procedure() {
+        return earleyItem(mVariable, mAlpha + [ mBeta[1]], mBeta[2..], mIndex);
+    };  
+    f_str := procedure() {
+        alphaStr := "";
+        for (x in mAlpha) {
+            match (x) {
+                case Var(v)   : alphaStr += " " + v;
+                case Token(t) : alphaStr += " " + t;
+            }
+        }
+        betaStr := "";
+        for (x in mBeta) {
+            match (x) {
+                case Var(v)   : betaStr += " " + v;
+                case Token(t) : betaStr += " " + t;
+            }
+        }
+        return "<" + mVariable + " ->" + alphaStr + " (*)" + betaStr + ", " + mIndex + ">";
+    };
+}
+
+class grammar(rules) {
+    this.mRules := rules;
+
+    startItem := procedure() {
+        return earleyItem("sHat", [], [ Var(startVar()) ], 0);
+    };
+    finishItem := procedure() {
+        return earleyItem("sHat", [ Var(startVar()) ], [], 0);
+    };
+    // first rule has to start with strt variable
+    startVar := procedure() {
+        return mRules[1][1];
+    };
+    f_str := procedure() {
+        result := "";
+        for ([head, body] in mRules) {
+            result += "$head$: $body$;\n";
+        }                  
+        return result;
+    };
+}
+
+// Given a grammar and a string to parse, this constructor applies
+// the algorithm of Early to parse the string with the given grammar.
+class earleyParser(gr, w) {
+    this.mGrammar   := gr; 
+    this.mString    := w;  
+    this.mStateList := [ {}: i in {1 .. #mString+1} ]; // Qi == mStateList[i+1]
+    print("Grammar:\n");
+    print(mGrammar);
+    print("Input: $mString$\n\n");
+    this.mStateList[1] := { mGrammar.startItem() };
+
+    // This method implements Earley's algorithm.  For all states Qi we 
+    // apply the completion operation followed by the prediction operation.
+    // This is done until no more no states are added to Qi.  The inner do-while
+    // loop is not necessary in the case that the grammar contains not epsilon 
+    // rules.  Finally, the scanning operation is applied to Qi.
+    earleyParse := procedure() {
+        // run Earley's algorithm
+        for (i in [0 .. #mString]) {
+            print("i = " + i + ":\n");
+            change := false;
+            do {
+                change := complete(i);
+                change := change || predict(i);
+            } while (change);
+            myScan(i);
+        }
+        // print states
+        for (i in [1 .. #mString + 1]) {
+            print("\nQ$i-1$:");
+            qi := mStateList[i];
+            for (item in qi) {
+                print(item);
+            }
+        }
+        if (mGrammar.finishItem() in mStateList[#mString+1]) {
+            print("Parsing successful!");
+        } else {
+            print("Parsing failed!");
+        }        
+    };
+    // Apply the completion operation on the state Qi.  The parameter i
+    // is the index of the state.
+    complete := procedure(i) {
+        change := false;
+        qi     := mStateList[i+1];
+        do {
+            added := false;
+            newQi := {};
+            for (item in qi | item.isComplete()) {
+                c  := item.mVariable;
+                j  := item.mIndex;
+                qj := mStateList[j+1];
+                for (cItem in qj | cItem.sameVar(c)) {
+                    moved := cItem.moveDot();
+                    newQi += { moved };
+                }
+            }
+            if (!(newQi <= qi)) {
+                change := added := true;
+                this.mStateList[i+1] += newQi;
+                qi := mStateList[i+1];
+                print("completion:");
+                print(newQi);
+            }
+        } while (added);
+        return change;
+    };
+    // Apply the prediction operation on the state Qi.  The parameter i
+    // is the index of the state.
+    predict := procedure(i) {
+        change := false;
+        qi     := mStateList[i+1];
+        do {
+            added := false;
+            newQi := {};
+            for (item in qi) {
+                c := item.nextVar();
+                if (c != om) {
+                    for (rule in mGrammar.mRules | c == rule[1]) {
+                        newQi += { earleyItem(c, [], rule[2], i) };
+                    }
+                }
+            }
+            if (!(newQi <= qi)) {
+                change := added := true;
+                this.mStateList[i+1] += newQi;
+                qi := mStateList[i+1];
+                print("prediction:");
+                print(newQi);
+            }
+        } while (added);
+        return change;
+    };    
+    // Apply the scanning operation on the state Qi.
+    myScan := procedure(i) {
+        qi := mStateList[i+1];
+        if (i < #mString) {
+            a := mString[i+1];
+            for (item in qi | item.myScan(a)) {
+                this.mStateList[i+2] += { item.moveDot() };
+                print("scanning:");
+                print(item.moveDot());
+            }
+        }
+    };
+}
+
+test := procedure(file, w) {
+    [rules, _, start] := readGrammar(file);
+    gr := grammar(rules);
+    ep := earleyParser(gr, w);
+    ep.earleyParse();
+};
+
+test("Examples/expr-slim.g", "1*2+3");
+

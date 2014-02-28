@@ -1,0 +1,114 @@
+class regexp2NFA(sigma) {
+    this.gStateCount := -1;
+    this.mSigma      := sigma;
+    
+    toNFA := procedure(r) {
+        match (r) {
+            case 0 : return genEmptyNFA();
+            case "": return genEpsilonNFA();
+            case c | isString(c) && #c == 1: 
+                 return genCharNFA(c);
+            case Cat(r1, r2): 
+                 return catenate(toNFA(r1), toNFA(r2));
+            case Or(r1, r2): 
+                 return disjunction(toNFA(r1), toNFA(r2));
+            case Star(r0): 
+                 return kleene(toNFA(r0));
+            default: abort("$r$ is not a suitable regular expression");
+        }
+    };    
+    genEmptyNFA := procedure() {
+        q0 := getNewState();
+        q1 := getNewState();
+        delta := [q, c] |-> {};
+        return [ {q0, q1}, mSigma, delta, q0, { q1 } ];
+    };
+    genEpsilonNFA := procedure() {
+        q0 := getNewState();
+        q1 := getNewState();
+        delta := procedure(q, c) { 
+                     if (q == q0 && c == "") { 
+                         return { q1 };
+                     } else { 
+                         return {};
+                     }
+                 };
+        return [ {q0, q1}, mSigma, delta, q0, { q1 } ];
+    };
+    genCharNFA := procedure(c) {
+        q0 := getNewState();
+        q1 := getNewState();
+        delta := procedure(q, d) { 
+                     if (q == q0 && d == c) { 
+                         return { q1 };
+                     } else { 
+                         return {};
+                     }
+                 };
+        return [ {q0, q1}, mSigma, delta, q0, { q1 } ];
+    };
+    catenate := procedure(f1, f2) {
+        [m1, _, delta1, q1, a1] := f1;
+        [m2, _, delta2, q3, a2] := f2;
+        q2 := arb(a1);
+        q4 := arb(a2);
+        delta := procedure(q, c) {
+                     if (q == q2 && c == "") {
+                         return { q3 };
+                     } else if (q in m1) {
+                         return delta1(q, c);
+                     } else if (q in m2) {
+                         return delta2(q, c);
+                     } else {
+                         return {};
+                     }
+                 };
+        return [ m1 + m2, mSigma, delta, q1, a2 ];
+    };
+    disjunction := procedure(f1, f2) {
+        [m1, _, delta1, q1, a1] := f1;
+        [m2, _, delta2, q2, a2] := f2;
+        q3 := arb(a1);
+        q4 := arb(a2);
+        q0 := getNewState(); 
+        q5 := getNewState(); 
+        delta := procedure(q, c) {
+                     if (q == q0 && c == "") {
+                         return { q1, q2 };
+                     } else if (q in { q3, q4 } && c == "") {
+                         return { q5 };
+                     } else if (q in m1) {
+                         return delta1(q, c);
+                     } else if (q in m2) {
+                         return delta2(q, c);
+                     } else {
+                         return {};
+                     } 
+                 };
+        return [ { q0, q5 } + m1 + m2, mSigma, delta, q0, { q5 } ];
+    };
+    kleene := procedure(f) {
+        [m, _, delta0, q1, a] := f;
+        q2 := arb(a);
+        q0 := getNewState(); 
+        q3 := getNewState(); 
+        delta := procedure(q, c) {
+                     if (q == q0 && c == "") {
+                         return { q1, q3 };
+                     } else if (q == q2 && c == "") {
+                         return { q1, q3 };
+                     } else if (q in m) {
+                         return delta0(q, c);
+                     } else {
+                         return {};
+                     } 
+                 };
+        return [ { q0, q3 } + m, mSigma, delta, q0, { q3 } ];
+    };
+    getNewState := procedure() {
+        this.gStateCount += 1;
+        return "q" + gStateCount;
+    };
+}
+
+

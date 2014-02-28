@@ -1,0 +1,124 @@
+// CUP specification for a simple expression evaluator (with actions)
+import java_cup.runtime.*;
+import java.util.*;
+
+/* Terminals (tokens returned by the scanner). */
+terminal           TYPE, SIGNATURE, LEFT_PAR, RIGHT_PAR;
+terminal           COMMA, COLON, SEMICOLON, ASSIGN, ARROW, PLUS, TIMES;
+terminal String    FUNCTION, PARAMETER;
+
+/* Non-terminals */
+nonterminal Program         program;
+nonterminal Term            term;
+nonterminal List<Term>      termList;
+nonterminal List<Parameter> varList;
+nonterminal Type            type;
+nonterminal List<Type>      typeList;
+nonterminal List<Type>      typeSum;
+nonterminal TypeDef         typeDef;
+nonterminal List<TypeDef>   typeDefList;
+nonterminal Signature       signature;
+nonterminal List<Signature> signatures;
+nonterminal List<Type>      argTypes;
+nonterminal TypedTerm       typedTerm;
+nonterminal List<TypedTerm> typedTerms;
+
+/* The grammar */
+program     ::= typeDefList:typDefs signatures:signList typedTerms:termList 
+                {: RESULT = new Program(typDefs, signList, termList); :}
+             ;
+
+typeDefList ::= typeDefList:l typeDef:t {: l.add(t); RESULT = l; :}
+             |  typeDef:t               
+                {: List<TypeDef> l = new LinkedList<TypeDef>(); 
+                   l.add(t); 
+                   RESULT = l; 
+                :}
+             ;
+
+typeDef     ::= TYPE FUNCTION:f ASSIGN typeSum:s SEMICOLON
+                {: RESULT = new SimpleTypeDef(f, s); :}
+             |  TYPE FUNCTION:f LEFT_PAR varList:a RIGHT_PAR ASSIGN typeSum:s SEMICOLON 
+                {: RESULT = new ParamTypeDef(f, a, s); :}
+             ;
+
+type        ::= FUNCTION:f LEFT_PAR typeList:t RIGHT_PAR {: RESULT = new CompositeType(f, t); :}
+             |  FUNCTION:f                               {: RESULT = new CompositeType(f);    :}
+             |  PARAMETER:v                              {: RESULT = new Parameter(v);        :}
+             ;
+
+typeList    ::= typeList:l COMMA type:t {: l.add(t); RESULT = l; :}
+             |  type:t                  
+                {: List<Type> l = new LinkedList<Type>(); 
+                   l.add(t); 
+                   RESULT = l; 
+                :}   
+             ;
+
+typeSum     ::= typeSum:l PLUS type:t {: l.add(t); RESULT = l; :}   
+             |  type:t 
+                {: 
+                   List<Type> l = new LinkedList<Type>(); 
+                   l.add(t);  
+                   RESULT = l; 
+                :}   
+             ;
+
+signature   ::= SIGNATURE FUNCTION:f COLON argTypes:a ARROW type:t SEMICOLON
+                {: RESULT = new Signature(f, a, t); :}
+             |  SIGNATURE FUNCTION:f COLON type:t SEMICOLON
+                {: List a = new LinkedList<Type>(); 
+                   RESULT = new Signature(f, a, t); 
+                :}
+             ;
+
+signatures  ::= signatures:l signature:s {: l.add(s); RESULT = l; :}
+             |  signature:s 
+                {: List<Signature> l = new LinkedList(); 
+                   l.add(s); 
+                   RESULT = l; 
+                :}
+             ;
+
+argTypes    ::= argTypes:l TIMES type:t {: l.add(t); RESULT = l; :}
+             |  type:t 
+                {: List<Type> l = new LinkedList(); 
+                   l.add(t); 
+                   RESULT = l; 
+                :}
+             ;
+
+varList     ::= varList:l COMMA PARAMETER:v {: l.add(new Parameter(v)); RESULT = l; :}
+             |  PARAMETER:v 
+                {: List<Parameter> l = new LinkedList(); 
+                   l.add(new Parameter(v)); 
+                   RESULT = l; 
+                :}
+             ;
+
+term        ::= FUNCTION:f LEFT_PAR termList:l RIGHT_PAR {: RESULT = new Term(f, l); :}
+             |  FUNCTION:f    
+                {: List<Term> l = new LinkedList<Term>(); 
+                   RESULT = new Term(f, l); 
+                :}
+             ;
+
+termList    ::= termList:l COMMA term:t {: l.add(t); RESULT = l; :}
+             |  term:t
+                {: List<Term> l = new LinkedList(); 
+                   l.add(t); 
+                   RESULT = l; 
+                :}
+             ;
+
+typedTerm   ::= term:t COLON type:s SEMICOLON {: RESULT = new TypedTerm(t, s); :};
+
+typedTerms  ::= typedTerms:l typedTerm:t {: l.add(t); RESULT = l; :}
+             |  typedTerm:t 
+                {: List<TypedTerm> l = new LinkedList<TypedTerm>(); 
+                   l.add(t); 
+                   RESULT = l; 
+                :}
+             ;
+
+

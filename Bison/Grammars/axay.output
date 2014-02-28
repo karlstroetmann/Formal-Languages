@@ -1,0 +1,116 @@
+Grammar
+
+    0 $accept: S $end
+
+    1 S: A x A y
+    2  | B y B x
+
+    3 A: /* empty */
+
+    4 B: /* empty */
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+x (258) 1 2
+y (259) 1 2
+
+
+Nonterminals, with rules where they appear
+
+$accept (5)
+    on left: 0
+S (6)
+    on left: 1 2, on right: 0
+A (7)
+    on left: 3, on right: 1
+B (8)
+    on left: 4, on right: 2
+
+
+state 0
+
+    0 $accept: . S $end
+
+    y         reduce using rule 4 (B)
+    $default  reduce using rule 3 (A)
+
+    S  go to state 1
+    A  go to state 2
+    B  go to state 3
+
+
+state 1
+
+    0 $accept: S . $end
+
+    $end  shift, and go to state 4
+
+
+state 2
+
+    1 S: A . x A y
+
+    x  shift, and go to state 5
+
+
+state 3
+
+    2 S: B . y B x
+
+    y  shift, and go to state 6
+
+
+state 4
+
+    0 $accept: S $end .
+
+    $default  accept
+
+
+state 5
+
+    1 S: A x . A y
+
+    $default  reduce using rule 3 (A)
+
+    A  go to state 7
+
+
+state 6
+
+    2 S: B y . B x
+
+    $default  reduce using rule 4 (B)
+
+    B  go to state 8
+
+
+state 7
+
+    1 S: A x A . y
+
+    y  shift, and go to state 9
+
+
+state 8
+
+    2 S: B y B . x
+
+    x  shift, and go to state 10
+
+
+state 9
+
+    1 S: A x A y .
+
+    $default  reduce using rule 1 (S)
+
+
+state 10
+
+    2 S: B y B x .
+
+    $default  reduce using rule 2 (S)

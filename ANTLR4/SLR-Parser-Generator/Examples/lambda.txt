@@ -1,0 +1,123 @@
+Tokens:    [$, '.', 'lambda', 'x']
+
+Variables: [S, expr, var]
+
+Grammar: 
+S -> expr $
+expr -> 'lambda' var '.' expr
+expr -> expr expr
+expr -> var
+var -> 'x'
+
+
+Follow(  S) = []
+Follow(  expr) = [$, 'lambda', 'x']
+Follow(  var) = [$, '.', 'lambda', 'x']
+s0 = { S -> <*> expr $,
+       expr -> <*> 'lambda' var '.' expr,
+       expr -> <*> expr expr,
+       expr -> <*> var,
+       var -> <*> 'x'
+     }
+
+s1 = { S -> expr <*> $,
+       expr -> <*> 'lambda' var '.' expr,
+       expr -> <*> expr expr,
+       expr -> <*> var,
+       expr -> expr <*> expr,
+       var -> <*> 'x'
+     }
+
+s2 = { expr -> <*> 'lambda' var '.' expr,
+       expr -> <*> expr expr,
+       expr -> <*> var,
+       expr -> 'lambda' var '.' <*> expr,
+       var -> <*> 'x'
+     }
+
+s3 = { expr -> <*> 'lambda' var '.' expr,
+       expr -> <*> expr expr,
+       expr -> <*> var,
+       expr -> 'lambda' var '.' expr <*>,
+       expr -> expr <*> expr,
+       var -> <*> 'x'
+     }
+
+s4 = { expr -> <*> 'lambda' var '.' expr,
+       expr -> <*> expr expr,
+       expr -> <*> var,
+       expr -> expr <*> expr,
+       expr -> expr expr <*>,
+       var -> <*> 'x'
+     }
+
+s5 = { expr -> 'lambda' <*> var '.' expr,
+       var -> <*> 'x'
+     }
+
+s6 = { expr -> 'lambda' var <*> '.' expr }
+
+s7 = { expr -> var <*> }
+
+s8 = { var -> 'x' <*> }
+
+Action Table:
+action(s0, 'lambda') = <shift, s5>
+action(s0, 'x') = <shift, s8>
+action(s1, $) = <accept>
+action(s1, 'lambda') = <shift, s5>
+action(s1, 'x') = <shift, s8>
+action(s2, 'lambda') = <shift, s5>
+action(s2, 'x') = <shift, s8>
+action(s3, $) = <reduce, expr -> 'lambda' var '.' expr>
+Conflict on action(expr -> 'lambda' var '.' expr <*>, 'lambda'):
+<shift, [expr -> 'lambda' <*> var '.' expr, var -> <*> 'x']>
+<reduce, expr -> 'lambda' var '.' expr>
+action(s3, 'lambda') = <shift, s5>
+Conflict on action(var -> <*> 'x', 'x'):
+<reduce, expr -> 'lambda' var '.' expr>
+<shift, [var -> 'x' <*>]>
+action(s3, 'x') = <reduce, expr -> 'lambda' var '.' expr>
+action(s4, $) = <reduce, expr -> expr expr>
+Conflict on action(expr -> expr expr <*>, 'lambda'):
+<shift, [expr -> 'lambda' <*> var '.' expr, var -> <*> 'x']>
+<reduce, expr -> expr expr>
+action(s4, 'lambda') = <shift, s5>
+Conflict on action(var -> <*> 'x', 'x'):
+<reduce, expr -> expr expr>
+<shift, [var -> 'x' <*>]>
+action(s4, 'x') = <reduce, expr -> expr expr>
+action(s5, 'x') = <shift, s8>
+action(s6, '.') = <shift, s2>
+action(s7, $) = <reduce, expr -> var>
+action(s7, 'lambda') = <reduce, expr -> var>
+action(s7, 'x') = <reduce, expr -> var>
+action(s8, $) = <reduce, var -> 'x'>
+action(s8, '.') = <reduce, var -> 'x'>
+action(s8, 'lambda') = <reduce, var -> 'x'>
+action(s8, 'x') = <reduce, var -> 'x'>
+
+Goto Table:
+goto(s0, expr) = s1
+goto(s0, var) = s7
+goto(s1, expr) = s4
+goto(s1, var) = s7
+goto(s2, expr) = s3
+goto(s2, var) = s7
+goto(s3, expr) = s4
+goto(s3, var) = s7
+goto(s4, expr) = s4
+goto(s4, var) = s7
+goto(s5, var) = s6
+Conflict on action(expr -> 'lambda' var '.' expr <*>, 'lambda'):
+<shift, [expr -> 'lambda' <*> var '.' expr, var -> <*> 'x']>
+<reduce, expr -> 'lambda' var '.' expr>
+Conflict on action(var -> <*> 'x', 'x'):
+<reduce, expr -> 'lambda' var '.' expr>
+<shift, [var -> 'x' <*>]>
+Conflict on action(expr -> expr expr <*>, 'lambda'):
+<shift, [expr -> 'lambda' <*> var '.' expr, var -> <*> 'x']>
+<reduce, expr -> expr expr>
+Conflict on action(var -> <*> 'x', 'x'):
+<reduce, expr -> expr expr>
+<shift, [var -> 'x' <*>]>

@@ -1,0 +1,616 @@
+\chapter{LR-Parser}
+Bei der Konstruktion eines Parsers gibt es generell zwei Möglichkeiten:  Wir können
+\emph{Top-Down} oder \emph{Bottom-Up} vorgehen.  Den Top-Down-Ansatz haben wir bereits
+ausführlich diskutiert.  In diesem Kapitel beleuchten wir nun den Bottom-Up-Ansatz.
+Dazu stellen wir im nächsten Abschnitt das allgemeine Konzept vor, das einem
+\textsl{Bottom-Up-Parser} zu Grunde liegt.  
+Im darauf folgenden Abschnitt zeigen wir, wie Bottom-Up-Parser implementiert werden können
+und stellen als eine Implementierungsmöglichkeit die \emph{Shift-Reduce-Parser} vor.
+Ein Shift-Reduce-Parser arbeitet mit Hilfe einer Tabelle, in der
+hinterlegt ist, wie der Parser in einem bestimmten Zustand die Eingaben verarbeiten muss.
+Die Theorie, wie eine solche Tabelle sinnvoll mit Informationen gefüllt werden kann,
+entwickeln wir dann in dem folgenden Abschnitt: Zunächst diskutieren wir die
+\emph{SLR-Parser} (\emph{simple LR-Parser}).  Dies ist die einfachste Klasse von Shift-Reduce-Parsern.
+Das Konzept der SLR-Parser ist leider für die Praxis nicht mächtig genug.  Daher verfeinern wir
+dieses Konzept und erhalten so die Klasse der
+\emph{kanonischen LR-Parser}.  Da die Tabellen für LR-Parser in der Praxis
+häufig groß werden, vereinfacht man diese Tabellen etwas und erhält dann das Konzept der
+\emph{LALR-Parser}, das von der Mächtigkeit zwischen dem Konzept der \emph{SLR-Parser} und dem
+Konzept der \emph{LR-Parser} liegt.  Im dem folgenden Kapitel werden wir dann den Parser-Generator
+\textsl{JavaCup} diskutieren, der ein LALR-Parser ist.
+
+\section{Bottom-Up-Parser}
+Die mit \textsl{Antlr} erstellten Parser sind sogenannte \emph{Top-Down-Parser}: Ausgehend von dem
+Start-Symbol der Grammatik wurde versucht, eine gegebene Eingabe durch Anwendung der verschiedenen
+Grammatik-Regeln zu parsen.  Die Parser, die wir nun entwickeln werden, sind
+\emph{Bottom-Up-Parser}.  Bei einem solchen Parser ist die Idee, dass wir von dem zu parsenden
+String ausgehen und dort Terminale an Hand der rechten Seiten der Grammatik-Regeln zusammen 
+fassen.  
+
+
+Wir versuchen den String ``\texttt{1 + 2 * 3}'' mit der Grammatik, die durch die
+Regeln 
+\[ 
+\begin{array}[t]{rcl}
+  E & \rightarrow & E \quoted{+} P \;|\; P  \\[0.1cm]
+  P & \rightarrow & P \quoted{*} F \;|\; F  \\[0.1cm]
+  F & \rightarrow & \squoted{1} \;|\; \squoted{2} \;|\; \squoted{3} 
+\end{array}
+\]
+gegeben ist,  zu parsen.  Dazu suchen wir in diesem String
+Teilstrings, die den rechten Seiten von Grammatikregeln entsprechen, wobei wir den String
+von links nach rechts durchsuchen.  Auf diese Art versuchen wir,
+einen Parse-Baum rückwärts von unten aufzubauen:
+\\[0.2cm]
+\hspace*{0.3cm} 
+$
+\begin{array}[t]{lcll}
+\texttt{1 + 2 * 3} & \Leftarrow & F \texttt{ + 2 * 3} 
+                                & (\mbox{Regel:\ }  F \rightarrow  \squoted{1}) \\
+                   & \Leftarrow & P \texttt{ + 2 * 3} 
+                                & (\mbox{Regel:\ } P \rightarrow F) \\
+                   & \Leftarrow & E \texttt{ + 2 * 3} 
+                                & (\mbox{Regel:\ }  E \rightarrow  P) \\
+                   & \Leftarrow & E \texttt{ + } F \texttt{ * 3} 
+                                & (\mbox{Regel:\ } F \rightarrow  \squoted{2}) \\
+                   & \Leftarrow & E \texttt{ + } P \texttt{ * 3} 
+                                & (\mbox{Regel:\ } P \rightarrow F) \\
+                   & \Leftarrow & E \texttt{ + } P \texttt{ * } F 
+                                & (\mbox{Regel:\ } F \rightarrow \squoted{3}) \\
+                   & \Leftarrow & E \texttt{ + } P & (\mbox{Regel:\ } P \rightarrow P \quoted{*} F) \\
+                   & \Leftarrow & E                & (\mbox{Regel:\ } E \rightarrow E \quoted{+} P) 
+\end{array}
+$
+\\[0.2cm]
+Im ersten Schritt haben wir beispielsweise die Grammatik-Regel $F \rightarrow \squoted{1}$
+benutzt, um den String ``\texttt{1}'' durch $F$ zu ersetzen und dabei dann den String 
+``F\texttt{ + 2 * 3}'' erhalten.  Im zweiten Schritt haben wir die Regel
+$P \rightarrow F$ benutzt, um $F$ durch $P$ zu
+ersetzen.  Auf diese Art und Weise haben wir am Ende den ursprünglichen String 
+``\texttt{1 + 2 * 3}'' auf E zurück geführt.  Wir können an dieser Stelle zwei
+Beobachtungen machen:
+\begin{enumerate}
+\item Wir ersetzen bei unserem Vorgehen immer den am weitesten links stehenden Teilstring,
+      der ersetzt werden kann, wenn wir den anfangs gegebenen String auf das Start-Symbol
+      der Grammatik zurück führen wollen.
+\item Schreiben wir die Ableitung, die wir rückwärts konstruiert haben, noch einmal
+      in der richtigen Reihenfolge hin, so erhalten wir:
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{lcl}
+E  & \Rightarrow & E \texttt{ + } P \\
+   & \Rightarrow & E \texttt{ + } P \texttt{ * } F \\
+   & \Rightarrow & E \texttt{ + } P \texttt{ * 3} \\
+   & \Rightarrow & E \texttt{ + } F \texttt{ * 3} \\
+   & \Rightarrow & E \texttt{ + 2 * 3} \\
+   & \Rightarrow & P \texttt{ + 2 * 3} \\
+   & \Rightarrow & F \texttt{ + 2 * 3} \\
+   & \Rightarrow & \texttt{1 + 2 * 3}
+\end{array}
+$
+\\[0.2cm]
+       Wir sehen hier, dass bei dieser Ableitung immer die am weitesten rechts stehende
+       syntaktische Variable ersetzt worden ist.  Eine derartige Ableitung wird als
+       \emph{Rechts-Ableitung} bezeichnet.   
+
+       Im Gegensatz dazu ist es bei den Ableitungen, die ein \emph{Top-Down-Parser}
+       erzeugt, genau umgekehrt:  Dort wird immer die am weitesten links stehende
+       syntaktische Variable ersetzt.  Die mit einem solchen Parser erzeugten Ableitungen
+       heißen daher \emph{Links-Ableitungen}.
+\end{enumerate}
+Die obigen beiden Beobachtungen sind der Grund, weshalb die Parser, die wir in diesem
+Kapitel diskutieren, als \emph{LR-Parser} bezeichnet werden.  Das \emph{L} steht für
+\emph{\underline{l}eft to right} und beschreibt die Vorgehensweise, dass der String immer
+von links nach rechts durchsucht wird, während das \emph{R} für 
+\emph{\underline{r}everse rightmost derivation} steht
+und ausdrückt, dass solche Parser eine Rechts-Ableitung rückwärts konstruieren.
+\vspace*{0.2cm}
+
+\noindent
+Bei der Implementierung eines LR-Parsers stellen sich zwei Fragen:
+\begin{enumerate}
+\item Welche Teilstrings ersetzen wir?
+\item Welche Regeln verwenden wir dabei?
+\end{enumerate}
+Die Beantwortung dieser Fragen ist im Allgemeinen nicht trivial.  Zwar gehen wir die Strings immer
+von links nach rechts durch, aber damit ist noch nicht unbeding klar, welchen Teilstring wir
+ersetzen, denn die potentiell zu ersetzenden Teilstrings können sich durchaus überlappen.
+Betrachten wir beispielsweise das Zwischenergebnis
+\\[0.2cm]
+\hspace*{1.3cm}
+$E \texttt{ + } P \texttt{ * 3}$,
+\\[0.2cm]
+das wir oben im fünften Schritt erhalten haben.
+Hier könnten wir den Teilstring ``P'' mit Hilfe der Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$E \rightarrow P$
+\\[0.2cm]
+durch ``E'' ersetzen.  Dann würden wir den String
+\\[0.2cm]
+\hspace*{1.3cm}
+$E \texttt{ + } E \texttt{ * 3}$
+\\[0.2cm]
+erhalten.  Die einzigen Reduktionen, die wir jetzt noch durchführen können, führen über die
+Zwischenergebnisse $E \texttt{ + } E \texttt{ * }  F$ und $E \texttt{ + } E \texttt{ * } P$
+zu dem String
+\\[0.2cm]
+\hspace*{1.3cm}
+$E \texttt{ + } E \texttt{ * }  E$,
+\\[0.2cm]
+der sich dann  aber mit der oben angegebenen Grammatik nicht mehr reduzieren läßt.  
+Die Antwort auf die oben Fragen, welchen Teilstring wir ersetzen und welche Regel wir
+verwenden, setzt einiges an Theorie voraus, die wir
+in den folgenden Abschnitten entwickeln werden.
+
+
+\section{Shift-Reduce-Parser}
+Wollen wir einen Bottom-Up-Parser implementieren, so müssen wir uns zunächst die Frage stellen,
+welche Datenstrukturen wir bei der Implementierung verwenden wollen.
+Wenn wir uns dabei für einen Stack entscheiden, dann sprechen wir von einem
+\emph{Shift-Reduce-Parser}.  Ist $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik, so
+wird ein Shift-Reduce-Parser $P$ durch ein 4-Tupel
+\\[0.2cm]
+\hspace*{1.3cm}
+$P = \langle Q, q_0, \textsl{action}, \textsl{goto} \rangle$
+\\[0.2cm]
+beschrieben.  Dabei gilt:
+\begin{enumerate}
+\item $Q$ ist die Menge der \emph{Zustände} des Shift-Reduce-Parsers.  
+
+      Zunächst werden wir die einzelnen Zustände rein abstrakt sehen.  Später, wenn wir
+      die Theorie der SLR-Parser diskutieren, werden wir sehen, dass ein Zustand
+      die Information speichert, welche Variable der Parser gerade zu erkennen versucht
+      und welcher Teil der rechten Seite einer Regel bereits erkannt worden ist.
+\item $q_0 \in Q$ ist der Start-Zustand.
+\item $\textsl{action}$ ist eine Funktion, die als Argumente einen Zustand $q \in Q$
+      und ein Terminal $t \in T$ erhält.  Das Ergebnis ist ein Element der Menge
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Action} :=
+       \bigl\{ \pair(\texttt{shift}, q)  \mid q \in Q \bigr\}               \cup 
+       \bigl\{ \pair(\texttt{reduce}, r) \mid r \in R \bigr\} \cup 
+       \bigl\{ \texttt{accept} \bigr\}                        \cup
+       \bigl\{ \texttt{error}  \bigr\}                         $,
+      \\[0.2cm]
+      wobei \texttt{shift}, \texttt{reduce}, \texttt{accept} und \texttt{error} hier einfach als
+      Strings interpretiert werden, mit denen die verschiedenen Arten von Ergebnissen der Funktion
+      $\textsl{action}()$ unterschieden werden können.  
+      Zusammenfassend haben wir also:
+      \\[0.2cm]
+      \hspace*{0.3cm}
+      $\textsl{action}: Q \times T \rightarrow \textsl{Action}$.
+\item \textsl{goto} ist eine Funktion, die jedem Zustand $q \in Q$ und jeder syntaktischen Variablen
+      $v \in V$ einen neuen Zustand aus $Q$ zuordnet:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{goto}: Q \times V \rightarrow Q$.
+\end{enumerate}
+Ein Shift-Reduce-Parser arbeitet nun mit den folgenden Daten-Strukturen.
+\begin{enumerate}
+\item Einem Stack \textsl{states}, auf dem Zustände aus der Menge $Q$ abgelegt werden:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{states} \in \textsl{Stack}\langle Q \rangle$.
+\item Einem Stack \textsl{symbols}, auf dem Grammatik-Symbole, also Terminale und Variablen-Symbole
+      abgelegt werden: 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{symbols} \in \textsl{Stack}\langle T \cup V \rangle$.
+\end{enumerate}
+Zur Vereinfachung der folgenden Überlegungen nehmen wir an, dass die Menge $T$ der Terminale das
+spezielle Symbol ``\textsc{Eof}'' enthält und dass dieses Symbol das Ende des zu parsenden
+Strings spezifiziert aber sonst in dem String nicht auftritt.  
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    class srParser(actionTable, gotoTable, stateTable) {
+        mActionTable := actionTable;
+        mGotoTable   := gotoTable;
+    
+        parseSR := procedure(tl) {
+            index   := 1;      // point to next token
+            symbols := [];     // stack of symbols
+            states  := ["s0"]; // stack of states, 0 is start state
+            while (true) {            
+                q := states[1];
+                t := tl[index];
+                p := mActionTable[[q,t]];
+                match (p) {
+                case om: 
+                     return false;
+                case Shift(s):
+                     symbols := [t] + symbols;
+                     states  := [s] + states;
+                     index   += 1;
+                case Rule(head, body):
+                     n       := #body;
+                     symbols := symbols[n+1 ..];
+                     states  := states[ n+1 ..]; 
+                     symbols := [head] + symbols;
+                     state   := states[1];
+                     states  := [ mGotoTable[[state, head]] ] + states;
+                case Accept():
+                     return true;
+                } 
+            }
+        };
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Implementation of a shift-reduce parser in \textsc{SetlX}}
+\label{fig:shift-reduce-parser.stlx}
+\end{figure}
+
+Figure \ref{fig:shift-reduce-parser.stlx} on page \pageref{fig:shift-reduce-parser.stlx}
+shows the implementation of the \textsc{SetlX} class \texttt{srParser} that implements
+shift-reduce-parsing via its method \textsl{parseSR}.  
+This method assumes that the function \textsl{action} is coded
+as a binary relation that is stored in the member variable \texttt{mActionTable}.
+The function \textsl{goto} is also represented as a binary relation.  It is stored in the
+member variable \texttt{mGotoTable}.  The method \textsl{parseSR} is called with one
+argument \textsl{tl}.  This is the list of tokens that have to be parsed.  The last
+element of this list is the special token ``\textsc{Eof}'' denoting the end of file.  The invocation 
+$\textsl{parseSR}(\textsl{tl})$ returns \texttt{true} if the token list \textsl{tl} can be
+parsed successfully and \texttt{false} otherwise.  The implementation of \textsl{parseSR} works as follows:
+\begin{enumerate}
+\item The variable \textsl{index} points to the next token in the token list that is to be
+      read.  Therefore, this variable is initialized to 1.
+\item The variable \textsl{symbols} stores the stack of symbols.  The top of this stack is
+      at the beginning of this list.  Initially, the stack of symbols is empty.
+\item The variable \textsl{states} is the stack of states.  The start state is assumed to
+      be the state ``\texttt{s0}''.  Therefore this stack is initialized to contain
+      only this state.
+\item The main loop of the parser 
+      \begin{itemize}
+      \item sets the variable $q$ to the current state,
+      \item initializes $t$ to the next token, and then
+      \item sets $p$ by looking up the appropriate action in the action table.
+            Therefore $p$ is equal to $\textsl{action}(q, t)$.
+      \end{itemize}
+      What happens then depends on this value of $\textsl{action}(q, t)$.
+      \begin{enumerate}
+      \item $\textsl{action}(q,t)$ is undefined.
+
+            If $\textsl{action}(q,t)$ is undefined, the parser has found an error
+            and returns \texttt{false}.
+      \item $\textsl{action}(q,t) = \pair(\texttt{shift}, s)$.
+        
+            This action is represented in \textsc{SetlX} as the term \texttt{Shift($s$)}.
+            In this case, the token $t$ is pushed onto the symbol stack in line 18,
+            while the state $s$ is pushed onto the stack of states.  Furthermore,
+            the variable \textsl{index} is incremented to point to the next unread token.            
+      \item $\textsl{action}(q,t) = \pair(\texttt{reduce}, A \rightarrow X_1 \cdots X_n)$.
+
+            This action is represented as the \textsc{SetlX} term $\texttt{Rule}(A, [X_1, \cdots,X_n])$.
+            In this case, we use the grammar rule
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $r = (A \rightarrow X_1 \cdots X_n)$
+            \\[0.2cm]
+            to reduce the symbol stack.  The \textsc{SetlX} variable \textsl{head} represents the left
+            hand side $A$ of this rule, while the list $[X_1, \cdots,X_n]$ is represented
+            by the \textsc{SetlX} variable \textsl{body}.
+
+            In this case we know that the symbols $X_1$, $\cdots$, $X_n$ are on top of the
+            symbol stack.  As we are going to reduce the symbol stack with the rule $r$,
+            we remove these $n$ symbols from the symbol stack and replace them with the
+            variable $A$.
+            
+            Furthermore, we have to remove $n$ states from the stack of states.
+            After that, we set \textsl{state} to the state that is then on top of the
+            stack of states.  Next, the new state  $\textsl{goto}(\textsl{state}, A)$ is put on top of
+            the stack of states in line 27.
+      \item $\textsl{action}(q,t) = \texttt{accept}$.
+
+            In this case parsing is successful and therefore the function returns \texttt{true}.
+      \end{enumerate}
+\end{enumerate}
+In order to make the function \textsl{parseSR} work we have to provide an implementation
+of the functions $\textsl{action}$ and $\textsl{goto}$.
+The tables  \ref{tab:action} and \ref{tab:goto} show these functions for the grammar given
+in Figure \ref{fig:Expr.grammar}.  For this grammar, there are 16 different states, which have
+have baptized as $s_0$, $s_1$, $\cdots$, $s_{15}$.  The tables use two different abbreviations:
+\begin{enumerate}
+\item \shft{i} is short for $\pair(\texttt{shift}, s_i)$.
+\item \rdc{i} is short for  $\pair(\texttt{reduce}, r_i)$, where $r_i$ denothes the
+      grammar rule number $i$.  Here, we have numbered the rules as follows:
+      \begin{enumerate}
+      \item $r_1 = (\textsl{Expr} \rightarrow \textsl{Expr} \quoted{+} \textsl{Product})$
+      \item $r_2 = (\textsl{Expr} \rightarrow \textsl{Expr} \quoted{-} \textsl{Product})$
+      \item $r_3 = (\textsl{Expr} \rightarrow \textsl{Product})$
+      \item $r_4 = (\textsl{Product} \rightarrow \textsl{Product} \quoted{*} \textsl{Factor})$
+      \item $r_5 = (\textsl{Product} \rightarrow \textsl{Product} \quoted{/} \textsl{Factor})$
+      \item $r_6 = (\textsl{Product} \rightarrow \textsl{Factor})$
+      \item $r_7 = (\textsl{Factor} \rightarrow  \quoted{(} \textsl{Expr} \quoted{)})$
+      \item $r_8 = (\textsl{Factor} \rightarrow  \textsc{Number})$
+      \end{enumerate}
+\end{enumerate}
+The corresponding grammar is shown in Figure \ref{fig:Expr.grammar}.  The coding of the
+functions \textsl{action} and \textsl{goto} is shown in the Figures
+\ref{fig:parse-table.stlx:action1},
+\ref{fig:parse-table.stlx:action2}, and \ref{fig:parse-table.stlx:goto} on the following pages.
+
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{8cm}
+  \begin{eqnarray*}
+  \textsl{Expr}    & \rightarrow & \;\textsl{Expr} \quoted{+} \textsl{Product}  \\
+                   & \mid        & \;\textsl{Expr} \quoted{-} \textsl{Product}  \\
+                   & \mid        & \;\textsl{Product}                           \\[0.2cm]
+  \textsl{Product} & \rightarrow & \;\textsl{Product} \quoted{*} \textsl{Factor}\\
+                   & \mid        & \;\textsl{Product} \quoted{/} \textsl{Factor}\\
+                   & \mid        & \;\textsl{Factor}                            \\[0.2cm]
+  \textsl{Factor}  & \rightarrow &   \quoted{(} \textsl{Expr} \quoted{)}        \\
+                   & \mid        & \;\textsc{Number} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}}}
+  \end{center}
+  \caption{A grammar for arithmetical expressions.}
+  \label{fig:Expr.grammar}
+\end{figure}
+
+\begin{table}[!ht]
+  \centering
+\framebox{
+\begin{tabular}{|r|l|l|l|l|l|l|l|l|}
+\hline
+ State & \texttt{EOF} & \texttt{+} & \texttt{-} & \texttt{*} & \texttt{/} & \texttt{(} & \texttt{)} & \textsc{Number} \\
+\hline
+\hline
+$s_{0}$ &              &            &            &            &            & \shft{5}   &            & \shft{2} \\
+\hline
+$s_{1}$ & \rdc{6}      & \rdc{6}    & \rdc{6}    & \rdc{6}    & \rdc{6}    &            & \rdc{6}    &          \\
+\hline
+$s_{2}$ & \rdc{8}      & \rdc{8}    & \rdc{8}    & \rdc{8}    & \rdc{8}    & \rdc{8}    & \rdc{8}    &          \\
+\hline
+$s_{3}$ & \rdc{3}      & \rdc{3}    & \rdc{3}    & \shft{12}  & \shft{11}  &            & \rdc{3}    &          \\
+\hline
+$s_{4}$ & \accept      & \shft{8}   & \shft{9}   &            &            &            &            &          \\
+\hline
+$s_{5}$ &              &            &            &            &            & \shft{5}   &            & \shft{2} \\
+\hline
+$s_{6}$ &              & \shft{8}   & \shft{9}   &            &            &            & \shft{7}   &          \\
+\hline
+$s_{7}$ & \rdc{7}      & \rdc{7}    & \rdc{7}    & \rdc{7}    & \rdc{7}    &            & \rdc{7}    &          \\
+\hline
+$s_{8}$ &              &            &            &            &            & \shft{5}   &            & \shft{2} \\
+\hline
+$s_{9}$ &              &            &            &            &            & \shft{5}   &            & \shft{2} \\
+\hline
+$s_{10}$ & \rdc{2}     & \rdc{2}    & \rdc{2}    & \shft{12}  & \shft{11}  &            & \rdc{2}    &          \\
+\hline
+$s_{11}$ &             &            &            &            &            & \shft{5}   &            & \shft{2} \\
+\hline
+$s_{12}$ &             &            &            &            &            & \shft{5}   &            & \shft{2} \\
+\hline
+$s_{13}$ & \rdc{4}     & \rdc{4}    & \rdc{4}    & \rdc{4}    & \rdc{4}    &            & \rdc{4}    &          \\
+\hline
+$s_{14}$ & \rdc{5}     & \rdc{5}    & \rdc{5}    & \rdc{5}    & \rdc{5}    &            & \rdc{5}    &          \\
+\hline
+$s_{15}$ & \rdc{1}     & \rdc{1}    & \rdc{1}    & \shft{12}  & \shft{11}  &            & \rdc{1}    &          \\
+\hline
+  \end{tabular}}
+  \caption{The function $\textsl{action}()$.}
+  \label{tab:action}
+\end{table}
+
+\begin{table}[!ht]
+  \centering
+\framebox{
+\begin{tabular}{|r|r|r|r|}
+\hline
+State   & \textsl{Expr} & \textsl{Product} & \textsl{Factor} \\
+\hline
+\hline
+$s_{0}$ & $s_{4}$       & $s_{3}$          & $s_{1}$         \\
+\hline
+$s_{1}$ &               &                  &                 \\
+\hline
+$s_{2}$ &               &                  &                 \\
+\hline
+$s_{3}$ &               &                  &                 \\
+\hline
+$s_{4}$ &               &                  &                 \\
+\hline
+$s_{5}$ & $s_{6}$       & $s_{3}$          & $s_{1}$         \\
+\hline
+$s_{6}$ &               &                  &                 \\
+\hline
+$s_{7}$ &               &                  &                 \\
+\hline
+$s_{8}$ &               & $s_{15}$         & $s_{1}$         \\
+\hline
+$s_{9}$ &               & $s_{10}$         & $s_{1}$         \\
+\hline
+$s_{10}$ &              &                  &                 \\
+\hline
+$s_{11}$ &              &                  & $s_{14}$        \\
+\hline
+$s_{12}$ &              &                  & $s_{13}$        \\
+\hline
+$s_{13}$ &              &                  &                 \\
+\hline
+$s_{14}$ &              &                  &                 \\
+\hline
+$s_{15}$ &              &                  &                 \\
+\hline
+  \end{tabular}}
+  \caption{The function $\textsl{goto}()$.}
+  \label{tab:goto}
+\end{table}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    actionTable := {};
+    
+    r1 := Rule("E", ["E", "+", "P"]);      r4 := Rule("P", ["P", "*", "F"]);
+    r2 := Rule("E", ["E", "-", "P"]);      r5 := Rule("P", ["P", "/", "F"]);
+    r3 := Rule("E", ["P"]);                r6 := Rule("P", ["F"]);          
+      
+    r7 := Rule("F", ["(", "E", ")"]);
+    r8 := Rule("F", ["int"]);
+    
+    actionTable[["s0", "("  ]] := Shift("s5");
+    actionTable[["s0", "int"]] := Shift("s2");
+    
+    actionTable[["s1", "EOF"]] := r6;    actionTable[["s2", "EOF"]] := r8;
+    actionTable[["s1", "+"  ]] := r6;    actionTable[["s2", "+"  ]] := r8;
+    actionTable[["s1", "-"  ]] := r6;    actionTable[["s2", "-"  ]] := r8;
+    actionTable[["s1", "*"  ]] := r6;    actionTable[["s2", "*"  ]] := r8;
+    actionTable[["s1", "/"  ]] := r6;    actionTable[["s2", "/"  ]] := r8;
+    actionTable[["s1", ")"  ]] := r6;    actionTable[["s2", "("  ]] := r8;
+                                         actionTable[["s2", ")"  ]] := r8;
+
+    actionTable[["s3", "EOF"]] := r3;
+    actionTable[["s3", "+"  ]] := r3;
+    actionTable[["s3", "-"  ]] := r3;
+    actionTable[["s3", "*"  ]] := Shift("s12");
+    actionTable[["s3", "/"  ]] := Shift("s11");
+    actionTable[["s3", ")"  ]] := r3;
+    
+    actionTable[["s4", "EOF"]] := Accept();
+    actionTable[["s4", "+"  ]] := Shift("s8");
+    actionTable[["s4", "-"  ]] := Shift("s9");
+    
+    actionTable[["s5", "("  ]] := Shift("s5");
+    actionTable[["s5", "int"]] := Shift("s2");
+    
+    actionTable[["s6", "+"  ]] := Shift("s8");
+    actionTable[["s6", "-"  ]] := Shift("s9");
+    actionTable[["s6", ")"  ]] := Shift("s7");
+    
+    actionTable[["s7", "EOF"]] := r7;
+    actionTable[["s7", "+"  ]] := r7;
+    actionTable[["s7", "-"  ]] := r7;
+    actionTable[["s7", "*"  ]] := r7;
+    actionTable[["s7", "/"  ]] := r7;
+    actionTable[["s7", ")"  ]] := r7;   
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Action table coded in \textsc{SetlX}, first part.}
+\label{fig:parse-table.stlx:action1}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    actionTable[["s8", "("  ]] := Shift("s5");
+    actionTable[["s8", "int"]] := Shift("s2");
+    
+    actionTable[["s9", "("  ]] := Shift("s5");
+    actionTable[["s9", "int"]] := Shift("s2");
+    
+    actionTable[["s10", "EOF"]] := r2;
+    actionTable[["s10", "+" ]] := r2;
+    actionTable[["s10", "-" ]] := r2;
+    actionTable[["s10", "*" ]] := Shift("s12");
+    actionTable[["s10", "/" ]] := Shift("s11");
+    actionTable[["s10", ")" ]] := r2;
+    
+    actionTable[["s11", "("  ]] := Shift("s5");
+    actionTable[["s11", "int"]] := Shift("s2");
+    
+    actionTable[["s12", "("  ]] := Shift("s5");
+    actionTable[["s12", "int"]] := Shift("s2");
+    
+    actionTable[["s13", "EOF"]] := r4;
+    actionTable[["s13", "+"  ]] := r4;
+    actionTable[["s13", "-"  ]] := r4;
+    actionTable[["s13", "*"  ]] := r4;
+    actionTable[["s13", "/"  ]] := r4;
+    actionTable[["s13", ")"  ]] := r4;
+    
+    actionTable[["s14", "EOF"]] := r5;
+    actionTable[["s14", "+"  ]] := r5;
+    actionTable[["s14", "-"  ]] := r5;
+    actionTable[["s14", "*"  ]] := r5;
+    actionTable[["s14", "/"  ]] := r5;
+    actionTable[["s14", ")"  ]] := r5;
+    
+    actionTable[["s15", "EOF"]] := r1;
+    actionTable[["s15", "+"  ]] := r1;
+    actionTable[["s15", "-"  ]] := r1;
+    actionTable[["s15", "*"  ]] := Shift("s12");
+    actionTable[["s15", "/"  ]] := Shift("s11");
+    actionTable[["s15", ")"  ]] := r1;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Action table coded in \textsc{SetlX}, second part.}
+\label{fig:parse-table.stlx:action2}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    gotoTable   := {};
+
+    gotoTable[["s0", "E"]] := "s4";
+    gotoTable[["s0", "P"]] := "s3";
+    gotoTable[["s0", "F"]] := "s1";
+    
+    gotoTable[["s5", "E"]] := "s6";
+    gotoTable[["s5", "P"]] := "s3";
+    gotoTable[["s5", "F"]] := "s1";
+    
+    gotoTable[["s8", "P"]] := "s15";
+    gotoTable[["s8", "F"]] := "s1";
+    
+    gotoTable[["s9", "P"]] := "s10";
+    gotoTable[["s9", "F"]] := "s1";
+    
+    gotoTable[["s11", "F"]] := "s14";
+    gotoTable[["s12", "F"]] := "s13";
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Goto table coded in \textsc{SetlX}.}
+\label{fig:parse-table.stlx:goto}
+\end{figure}
+
+
+ 
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 

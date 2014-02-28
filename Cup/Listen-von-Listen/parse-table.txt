@@ -1,0 +1,161 @@
+===== Terminals =====
+[0]EOF [1]error [2]OPEN [3]CLOSE [4]COMMA 
+[5]NUMBER 
+
+===== Non terminals =====
+[0]s [1]l [2]n [3]e 
+
+===== Productions =====
+[0] s ::= OPEN l CLOSE 
+[1] $START ::= s EOF 
+[2] l ::= n 
+[3] l ::= 
+[4] n ::= n COMMA e 
+[5] n ::= e 
+[6] e ::= s 
+[7] e ::= NUMBER 
+
+===== Viable Prefix Recognizer =====
+START lalr_state [0]: {
+  [$START ::= (*) s EOF , {EOF }]
+  [s ::= (*) OPEN l CLOSE , {EOF }]
+}
+transition on OPEN to state [2]
+transition on s to state [1]
+
+-------------------
+lalr_state [1]: {
+  [$START ::= s (*) EOF , {EOF }]
+}
+transition on EOF to state [11]
+
+-------------------
+lalr_state [2]: {
+  [n ::= (*) e , {CLOSE COMMA }]
+  [l ::= (*) n , {CLOSE }]
+  [e ::= (*) NUMBER , {CLOSE COMMA }]
+  [n ::= (*) n COMMA e , {CLOSE COMMA }]
+  [e ::= (*) s , {CLOSE COMMA }]
+  [l ::= (*) , {CLOSE }]
+  [s ::= OPEN (*) l CLOSE , {EOF CLOSE COMMA }]
+  [s ::= (*) OPEN l CLOSE , {CLOSE COMMA }]
+}
+transition on n to state [7]
+transition on e to state [6]
+transition on OPEN to state [2]
+transition on NUMBER to state [5]
+transition on s to state [4]
+transition on l to state [3]
+
+-------------------
+lalr_state [3]: {
+  [s ::= OPEN l (*) CLOSE , {EOF CLOSE COMMA }]
+}
+transition on CLOSE to state [10]
+
+-------------------
+lalr_state [4]: {
+  [e ::= s (*) , {CLOSE COMMA }]
+}
+
+-------------------
+lalr_state [5]: {
+  [e ::= NUMBER (*) , {CLOSE COMMA }]
+}
+
+-------------------
+lalr_state [6]: {
+  [n ::= e (*) , {CLOSE COMMA }]
+}
+
+-------------------
+lalr_state [7]: {
+  [l ::= n (*) , {CLOSE }]
+  [n ::= n (*) COMMA e , {CLOSE COMMA }]
+}
+transition on COMMA to state [8]
+
+-------------------
+lalr_state [8]: {
+  [n ::= n COMMA (*) e , {CLOSE COMMA }]
+  [e ::= (*) NUMBER , {CLOSE COMMA }]
+  [e ::= (*) s , {CLOSE COMMA }]
+  [s ::= (*) OPEN l CLOSE , {CLOSE COMMA }]
+}
+transition on e to state [9]
+transition on OPEN to state [2]
+transition on NUMBER to state [5]
+transition on s to state [4]
+
+-------------------
+lalr_state [9]: {
+  [n ::= n COMMA e (*) , {CLOSE COMMA }]
+}
+
+-------------------
+lalr_state [10]: {
+  [s ::= OPEN l CLOSE (*) , {EOF CLOSE COMMA }]
+}
+
+-------------------
+lalr_state [11]: {
+  [$START ::= s EOF (*) , {EOF }]
+}
+
+-------------------
+-------- ACTION_TABLE --------
+From state #0
+ [term 2:SHIFT(to state 2)]
+From state #1
+ [term 0:SHIFT(to state 11)]
+From state #2
+ [term 2:SHIFT(to state 2)] [term 3:REDUCE(with prod 3)]
+ [term 5:SHIFT(to state 5)]
+From state #3
+ [term 3:SHIFT(to state 10)]
+From state #4
+ [term 3:REDUCE(with prod 6)] [term 4:REDUCE(with prod 6)]
+From state #5
+ [term 3:REDUCE(with prod 7)] [term 4:REDUCE(with prod 7)]
+From state #6
+ [term 3:REDUCE(with prod 5)] [term 4:REDUCE(with prod 5)]
+From state #7
+ [term 3:REDUCE(with prod 2)] [term 4:SHIFT(to state 8)]
+From state #8
+ [term 2:SHIFT(to state 2)] [term 5:SHIFT(to state 5)]
+From state #9
+ [term 3:REDUCE(with prod 4)] [term 4:REDUCE(with prod 4)]
+From state #10
+ [term 0:REDUCE(with prod 0)] [term 3:REDUCE(with prod 0)]
+ [term 4:REDUCE(with prod 0)]
+From state #11
+ [term 0:REDUCE(with prod 1)]
+------------------------------
+-------- REDUCE_TABLE --------
+From state #0
+ [non term 0->state 1]
+From state #1
+From state #2
+ [non term 0->state 4] [non term 1->state 3] [non term 2->state 7]
+ [non term 3->state 6]
+From state #3
+From state #4
+From state #5
+From state #6
+From state #7
+From state #8
+ [non term 0->state 4] [non term 3->state 9]
+From state #9
+From state #10
+From state #11
+-----------------------------
+------- CUP v0.11a beta 20060608 Parser Generation Summary -------
+  0 errors and 0 warnings
+  6 terminals, 4 non-terminals, and 8 productions declared, 
+  producing 12 unique parse states.
+  0 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  0 conflicts detected (0 expected).
+  Code written to "parser.java", and "sym.java".
+---------------------------------------------------- (v0.11a beta 20060608)

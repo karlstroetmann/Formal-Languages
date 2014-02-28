@@ -1,0 +1,61 @@
+// The parser implemented in the function parseExpr parses an arithmetic 
+// expression according to the following EBNF grammar.
+//
+//   Expr    -> Product (("+" | "-") Product)*
+//   Product -> Factor  (("*" | "/") Factor)*
+//   Factor  -> "(" Expr ")" | NUMBER
+myParse := procedure(s) {
+     tl := tokenizeString(s);
+     [result, rl] := parseExpr(tl);
+     assert(rl == [], "Parse Error: could not parse $tl$");
+     return result;
+};
+// This procedure takes a token list tl and tries to interpret this list
+// as an arithmetic expression.
+parseExpr := procedure(tl) {
+    [result, rl] := parseProduct(tl);
+    while (#rl > 1 && rl[1] in ["+", "-"]) {
+        op := rl[1];
+        [arg, rl] := parseProduct(rl[2..]);
+        match (op) {
+            case "+": result += arg;
+            case "-": result -= arg;
+        } 
+    }
+    return [result, rl];
+};
+parseProduct := procedure(tl) {
+    [result, rl] := parseFactor(tl);
+    while (#rl > 1 && rl[1] in ["*", "/"]) {
+        op := rl[1];
+        [arg, rl] := parseFactor(rl[2..]);
+        match (op) {
+            case "*": result *= arg;
+            case "/": result /= arg;
+        } 
+    }
+    return [result, rl];
+};
+parseFactor := procedure(tl) {
+    match (tl) {
+        case ["(" | rl] : [expr, ql] := parseExpr(rl);
+                          assert(ql[1] == ")", "Parse Error");
+                          return [expr, ql[2..]];
+        default : assert(isNumber(tl[1]), "Parse Error");
+                  return [tl[1], tl[2..]];
+    }
+};
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/", "**"
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex '0|[1-9][0-9]*' as [ number   ]: tokenList += [ int(number) ];
+        regex '[-+*/()]'      as [ operator ]: tokenList += [ operator    ];
+        regex '[ \t\v\n]+'                   : // skip
+    }
+    return tokenList;
+};
+
+print(myParse("1+2*(3-2)+5"));

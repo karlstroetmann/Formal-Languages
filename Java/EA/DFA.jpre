@@ -1,0 +1,112 @@
+#define Alphabet      Set<Character>
+#define State         Integer
+#define StateSet      Set<State>
+#define StateChar     Pair<State, Character>
+#define TransitionMap Map<StateChar, State>
+
+import java.util.*;
+
+// This class represents deterministic finite automata.
+public class DFA {
+    private Alphabet      mSigma;     // alphabet
+    private State         mStart;     // start state
+    private StateSet      mStates;    // set of all states
+    private StateSet      mAccepting; // accepting states
+    private TransitionMap mDelta;     // transition function
+    
+    public DFA(State start, TransitionMap delta, StateSet accepting) {
+        mStart     = start;
+        mDelta     = delta;
+        mAccepting = accepting;
+        mStates    = new TreeSet<State>();
+        // collect all states
+        mStates.add(start);
+        for (State s: mAccepting) {
+            mStates.add(s);
+        }
+        for (StateChar arg: mDelta.keySet()) {
+            mStates.add(arg.mA);
+            mStates.add(mDelta.get(arg));
+        }
+		// collect alphabet
+		mSigma = new TreeSet<Character>();
+		for (StateChar arg: mDelta.keySet()) {
+			mSigma.add(arg.mB);
+		}
+    }    
+    // read string s and return true if s is accepted
+    public Boolean consume(String s) {
+        State last = consume(mStart, s);
+        if (last == null) {
+            return false;
+        }
+        return mAccepting.contains(last);
+    }
+    public State    getStart()     { return mStart;     }
+    public StateSet getAccepting() { return mAccepting; }
+
+    void addTransition(State from, Character c, State to) {
+        StateChar p = new StateChar(from, c);
+        mDelta.put(p, to);
+    }
+	
+	// check, whether the accpted langauge is empty
+	boolean isEmpty() {
+		StateSet reachable = new TreeSet<State>();
+		StateSet newStates = new TreeSet<State>();
+		newStates.add(mStart);
+		while (!newStates.isEmpty()) {
+			reachable.addAll(newStates);
+			StateSet nextNew = new TreeSet<State>();
+			for (State s: newStates) {
+				if (mAccepting.contains(s)) {
+					return false;
+				}
+				for (Character c: mSigma) {
+					StateChar sc = new StateChar(s, c);
+					State     ns = mDelta.get(sc);
+					if (!reachable.contains(ns)) {
+						nextNew.add(ns);
+					}
+				}
+			}
+			newStates = nextNew;
+		}
+		return true;
+	}
+
+    // Read the string s starting from state.  Return the state reached
+    // after s has been consumed or null if the fsm dies.
+    State consume(State state, String s) {
+        if (s.length() == 0) { // empty string
+            return state;
+        }
+        Character firstChar  = s.charAt(0);
+        String    restString = s.substring(1);
+        StateChar pair       = new StateChar(state, firstChar);
+        State     newState   = mDelta.get(pair);
+        if (newState == null) {
+            return null;
+        }
+        return consume(newState, restString);
+    }
+
+    public static void main(String[] args) {
+        State    start     = 0;
+        StateSet accepting = new TreeSet<State>();
+        accepting.add(start);
+        TransitionMap delta = new TreeMap<StateChar, State>();
+        DFA           fsm   = new DFA(start, delta, accepting);
+        fsm.addTransition(0, 'a', 1);
+        fsm.addTransition(1, 'a', 0);
+        fsm.addTransition(1, 'b', 2);
+        fsm.addTransition(2, 'b', 1);
+        fsm.addTransition(2, 'a', 3);
+        fsm.addTransition(3, 'a', 2);
+        fsm.addTransition(0, 'b', 3);
+        fsm.addTransition(3, 'b', 0);
+        System.out.println(fsm.consume("abbaab"));
+        System.out.println(fsm.consume("abbaabab"));
+        System.out.println(fsm.isEmpty());
+    }
+}

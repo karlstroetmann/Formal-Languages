@@ -1,0 +1,136 @@
+Tokens:    [$, ',', ':', ID]
+
+Variables: [S, def, name, name_list, param_spec, return_spec, type]
+
+Grammar: 
+S -> def
+def -> param_spec return_spec ','
+name -> ID
+name_list -> name
+name_list -> name ',' name_list
+param_spec -> name_list ':' type
+param_spec -> type
+return_spec -> name ':' type
+return_spec -> type
+type -> ID
+
+
+s0 = { S -> <*> def: [$],
+       def -> <*> param_spec return_spec ',': [$],
+       name -> <*> ID: [',', ':'],
+       name_list -> <*> name: [':'],
+       name_list -> <*> name ',' name_list: [':'],
+       param_spec -> <*> name_list ':' type: [ID],
+       param_spec -> <*> type: [ID],
+       type -> <*> ID: [ID]
+     }
+
+s1 = { S -> def <*>: [$] }
+
+s2 = { def -> param_spec <*> return_spec ',': [$],
+       name -> <*> ID: [':'],
+       return_spec -> <*> name ':' type: [','],
+       return_spec -> <*> type: [','],
+       type -> <*> ID: [',']
+     }
+
+s3 = { def -> param_spec return_spec <*> ',': [$] }
+
+s4 = { def -> param_spec return_spec ',' <*>: [$] }
+
+s5 = { name -> <*> ID: [',', ':'],
+       name_list -> <*> name: [':'],
+       name_list -> <*> name ',' name_list: [':'],
+       name_list -> name ',' <*> name_list: [':']
+     }
+
+s6 = { name -> ID <*>: [',', ':'] }
+
+s7 = { name -> ID <*>: [',', ':'],
+       type -> ID <*>: [ID]
+     }
+
+s8 = { name -> ID <*>: [':'],
+       type -> ID <*>: [',']
+     }
+
+s9 = { name_list -> name <*>: [':'],
+       name_list -> name <*> ',' name_list: [':']
+     }
+
+s10 = { name_list -> name ',' name_list <*>: [':'] }
+
+s11 = { param_spec -> name_list <*> ':' type: [ID] }
+
+s12 = { param_spec -> name_list ':' <*> type: [ID],
+        type -> <*> ID: [ID]
+      }
+
+s13 = { param_spec -> name_list ':' type <*>: [ID] }
+
+s14 = { param_spec -> type <*>: [ID] }
+
+s15 = { return_spec -> name <*> ':' type: [','] }
+
+s16 = { return_spec -> name ':' <*> type: [','],
+        type -> <*> ID: [',']
+      }
+
+s17 = { return_spec -> name ':' type <*>: [','] }
+
+s18 = { return_spec -> type <*>: [','] }
+
+s19 = { type -> ID <*>: [','] }
+
+s20 = { type -> ID <*>: [ID] }
+
+Action Table:
+action(s0, ID) = <shift, s7>
+action(s1, $) = <accept>
+action(s2, ID) = <shift, s8>
+action(s3, ',') = <shift, s4>
+action(s4, $) = <reduce, def -> param_spec return_spec ','>
+action(s5, ID) = <shift, s6>
+action(s6, ',') = <reduce, name -> ID>
+action(s6, ':') = <reduce, name -> ID>
+action(s7, ',') = <reduce, name -> ID>
+action(s7, ':') = <reduce, name -> ID>
+action(s7, ID) = <reduce, type -> ID>
+action(s8, ',') = <reduce, type -> ID>
+action(s8, ':') = <reduce, name -> ID>
+action(s9, ',') = <shift, s5>
+action(s9, ':') = <reduce, name_list -> name>
+action(s10, ':') = <reduce, name_list -> name ',' name_list>
+action(s11, ':') = <shift, s12>
+action(s12, ID) = <shift, s20>
+action(s13, ID) = <reduce, param_spec -> name_list ':' type>
+action(s14, ID) = <reduce, param_spec -> type>
+action(s15, ':') = <shift, s16>
+action(s16, ID) = <shift, s19>
+action(s17, ',') = <reduce, return_spec -> name ':' type>
+action(s18, ',') = <reduce, return_spec -> type>
+action(s19, ',') = <reduce, type -> ID>
+action(s20, ID) = <reduce, type -> ID>
+
+Goto Table:
+goto(s0, def) = s1
+goto(s0, name) = s9
+goto(s0, name_list) = s11
+goto(s0, param_spec) = s2
+goto(s0, type) = s14
+goto(s0, ID) = s7
+goto(s2, name) = s15
+goto(s2, return_spec) = s3
+goto(s2, type) = s18
+goto(s2, ID) = s8
+goto(s3, ',') = s4
+goto(s5, name) = s9
+goto(s5, name_list) = s10
+goto(s5, ID) = s6
+goto(s9, ',') = s5
+goto(s11, ':') = s12
+goto(s12, type) = s13
+goto(s12, ID) = s20
+goto(s15, ':') = s16
+goto(s16, type) = s17
+goto(s16, ID) = s19

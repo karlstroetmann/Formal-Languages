@@ -1,0 +1,235 @@
+Tokens:    [$, '(', ')', '*', '+', '-', '/', NUMBER]
+
+Variables: [S, expr, factor, product]
+
+Grammar: 
+S -> expr
+expr -> expr '+' product
+expr -> expr '-' product
+factor -> '(' expr ')'
+factor -> NUMBER
+product -> product '*' factor
+product -> product '/' factor
+
+
+s0 = { S -> <*> expr: [$],
+       expr -> <*> expr '+' product: [$, '+', '-'],
+       expr -> <*> expr '-' product: [$, '+', '-']
+     }
+
+s1 = { S -> expr <*>: [$],
+       expr -> expr <*> '+' product: [$, '+', '-'],
+       expr -> expr <*> '-' product: [$, '+', '-']
+     }
+
+s2 = { expr -> <*> expr '+' product: [')', '+', '-'],
+       expr -> <*> expr '-' product: [')', '+', '-'],
+       factor -> '(' <*> expr ')': [$, '*', '+', '-', '/']
+     }
+
+s3 = { expr -> <*> expr '+' product: [')', '+', '-'],
+       expr -> <*> expr '-' product: [')', '+', '-'],
+       factor -> '(' <*> expr ')': [')', '*', '+', '-', '/']
+     }
+
+s4 = { expr -> expr <*> '+' product: [')', '+', '-'],
+       expr -> expr <*> '-' product: [')', '+', '-'],
+       factor -> '(' expr <*> ')': [$, '*', '+', '-', '/']
+     }
+
+s5 = { expr -> expr <*> '+' product: [')', '+', '-'],
+       expr -> expr <*> '-' product: [')', '+', '-'],
+       factor -> '(' expr <*> ')': [')', '*', '+', '-', '/']
+     }
+
+s6 = { expr -> expr '+' <*> product: [$, '+', '-'],
+       product -> <*> product '*' factor: [$, '*', '+', '-', '/'],
+       product -> <*> product '/' factor: [$, '*', '+', '-', '/']
+     }
+
+s7 = { expr -> expr '+' <*> product: [')', '+', '-'],
+       product -> <*> product '*' factor: [')', '*', '+', '-', '/'],
+       product -> <*> product '/' factor: [')', '*', '+', '-', '/']
+     }
+
+s8 = { expr -> expr '+' product <*>: [$, '+', '-'],
+       product -> product <*> '*' factor: [$, '*', '+', '-', '/'],
+       product -> product <*> '/' factor: [$, '*', '+', '-', '/']
+     }
+
+s9 = { expr -> expr '+' product <*>: [')', '+', '-'],
+       product -> product <*> '*' factor: [')', '*', '+', '-', '/'],
+       product -> product <*> '/' factor: [')', '*', '+', '-', '/']
+     }
+
+s10 = { expr -> expr '-' <*> product: [$, '+', '-'],
+        product -> <*> product '*' factor: [$, '*', '+', '-', '/'],
+        product -> <*> product '/' factor: [$, '*', '+', '-', '/']
+      }
+
+s11 = { expr -> expr '-' <*> product: [')', '+', '-'],
+        product -> <*> product '*' factor: [')', '*', '+', '-', '/'],
+        product -> <*> product '/' factor: [')', '*', '+', '-', '/']
+      }
+
+s12 = { expr -> expr '-' product <*>: [$, '+', '-'],
+        product -> product <*> '*' factor: [$, '*', '+', '-', '/'],
+        product -> product <*> '/' factor: [$, '*', '+', '-', '/']
+      }
+
+s13 = { expr -> expr '-' product <*>: [')', '+', '-'],
+        product -> product <*> '*' factor: [')', '*', '+', '-', '/'],
+        product -> product <*> '/' factor: [')', '*', '+', '-', '/']
+      }
+
+s14 = { factor -> <*> '(' expr ')': [$, '*', '+', '-', '/'],
+        factor -> <*> NUMBER: [$, '*', '+', '-', '/'],
+        product -> product '*' <*> factor: [$, '*', '+', '-', '/']
+      }
+
+s15 = { factor -> <*> '(' expr ')': [$, '*', '+', '-', '/'],
+        factor -> <*> NUMBER: [$, '*', '+', '-', '/'],
+        product -> product '/' <*> factor: [$, '*', '+', '-', '/']
+      }
+
+s16 = { factor -> <*> '(' expr ')': [')', '*', '+', '-', '/'],
+        factor -> <*> NUMBER: [')', '*', '+', '-', '/'],
+        product -> product '*' <*> factor: [')', '*', '+', '-', '/']
+      }
+
+s17 = { factor -> <*> '(' expr ')': [')', '*', '+', '-', '/'],
+        factor -> <*> NUMBER: [')', '*', '+', '-', '/'],
+        product -> product '/' <*> factor: [')', '*', '+', '-', '/']
+      }
+
+s18 = { factor -> '(' expr ')' <*>: [$, '*', '+', '-', '/'] }
+
+s19 = { factor -> '(' expr ')' <*>: [')', '*', '+', '-', '/'] }
+
+s20 = { factor -> NUMBER <*>: [$, '*', '+', '-', '/'] }
+
+s21 = { factor -> NUMBER <*>: [')', '*', '+', '-', '/'] }
+
+s22 = { product -> product '*' factor <*>: [$, '*', '+', '-', '/'] }
+
+s23 = { product -> product '*' factor <*>: [')', '*', '+', '-', '/'] }
+
+s24 = { product -> product '/' factor <*>: [$, '*', '+', '-', '/'] }
+
+s25 = { product -> product '/' factor <*>: [')', '*', '+', '-', '/'] }
+
+Action Table:
+action(s1, $) = <accept>
+action(s1, '+') = <shift, s6>
+action(s1, '-') = <shift, s10>
+action(s4, ')') = <shift, s18>
+action(s4, '+') = <shift, s7>
+action(s4, '-') = <shift, s11>
+action(s5, ')') = <shift, s19>
+action(s5, '+') = <shift, s7>
+action(s5, '-') = <shift, s11>
+action(s8, $) = <reduce, expr -> expr '+' product>
+action(s8, '*') = <shift, s14>
+action(s8, '+') = <reduce, expr -> expr '+' product>
+action(s8, '-') = <reduce, expr -> expr '+' product>
+action(s8, '/') = <shift, s15>
+action(s9, ')') = <reduce, expr -> expr '+' product>
+action(s9, '*') = <shift, s16>
+action(s9, '+') = <reduce, expr -> expr '+' product>
+action(s9, '-') = <reduce, expr -> expr '+' product>
+action(s9, '/') = <shift, s17>
+action(s12, $) = <reduce, expr -> expr '-' product>
+action(s12, '*') = <shift, s14>
+action(s12, '+') = <reduce, expr -> expr '-' product>
+action(s12, '-') = <reduce, expr -> expr '-' product>
+action(s12, '/') = <shift, s15>
+action(s13, ')') = <reduce, expr -> expr '-' product>
+action(s13, '*') = <shift, s16>
+action(s13, '+') = <reduce, expr -> expr '-' product>
+action(s13, '-') = <reduce, expr -> expr '-' product>
+action(s13, '/') = <shift, s17>
+action(s14, '(') = <shift, s2>
+action(s14, NUMBER) = <shift, s20>
+action(s15, '(') = <shift, s2>
+action(s15, NUMBER) = <shift, s20>
+action(s16, '(') = <shift, s3>
+action(s16, NUMBER) = <shift, s21>
+action(s17, '(') = <shift, s3>
+action(s17, NUMBER) = <shift, s21>
+action(s18, $) = <reduce, factor -> '(' expr ')'>
+action(s18, '*') = <reduce, factor -> '(' expr ')'>
+action(s18, '+') = <reduce, factor -> '(' expr ')'>
+action(s18, '-') = <reduce, factor -> '(' expr ')'>
+action(s18, '/') = <reduce, factor -> '(' expr ')'>
+action(s19, ')') = <reduce, factor -> '(' expr ')'>
+action(s19, '*') = <reduce, factor -> '(' expr ')'>
+action(s19, '+') = <reduce, factor -> '(' expr ')'>
+action(s19, '-') = <reduce, factor -> '(' expr ')'>
+action(s19, '/') = <reduce, factor -> '(' expr ')'>
+action(s20, $) = <reduce, factor -> NUMBER>
+action(s20, '*') = <reduce, factor -> NUMBER>
+action(s20, '+') = <reduce, factor -> NUMBER>
+action(s20, '-') = <reduce, factor -> NUMBER>
+action(s20, '/') = <reduce, factor -> NUMBER>
+action(s21, ')') = <reduce, factor -> NUMBER>
+action(s21, '*') = <reduce, factor -> NUMBER>
+action(s21, '+') = <reduce, factor -> NUMBER>
+action(s21, '-') = <reduce, factor -> NUMBER>
+action(s21, '/') = <reduce, factor -> NUMBER>
+action(s22, $) = <reduce, product -> product '*' factor>
+action(s22, '*') = <reduce, product -> product '*' factor>
+action(s22, '+') = <reduce, product -> product '*' factor>
+action(s22, '-') = <reduce, product -> product '*' factor>
+action(s22, '/') = <reduce, product -> product '*' factor>
+action(s23, ')') = <reduce, product -> product '*' factor>
+action(s23, '*') = <reduce, product -> product '*' factor>
+action(s23, '+') = <reduce, product -> product '*' factor>
+action(s23, '-') = <reduce, product -> product '*' factor>
+action(s23, '/') = <reduce, product -> product '*' factor>
+action(s24, $) = <reduce, product -> product '/' factor>
+action(s24, '*') = <reduce, product -> product '/' factor>
+action(s24, '+') = <reduce, product -> product '/' factor>
+action(s24, '-') = <reduce, product -> product '/' factor>
+action(s24, '/') = <reduce, product -> product '/' factor>
+action(s25, ')') = <reduce, product -> product '/' factor>
+action(s25, '*') = <reduce, product -> product '/' factor>
+action(s25, '+') = <reduce, product -> product '/' factor>
+action(s25, '-') = <reduce, product -> product '/' factor>
+action(s25, '/') = <reduce, product -> product '/' factor>
+
+Goto Table:
+goto(s0, expr) = s1
+goto(s1, '+') = s6
+goto(s1, '-') = s10
+goto(s2, expr) = s4
+goto(s3, expr) = s5
+goto(s4, ')') = s18
+goto(s4, '+') = s7
+goto(s4, '-') = s11
+goto(s5, ')') = s19
+goto(s5, '+') = s7
+goto(s5, '-') = s11
+goto(s6, product) = s8
+goto(s7, product) = s9
+goto(s8, '*') = s14
+goto(s8, '/') = s15
+goto(s9, '*') = s16
+goto(s9, '/') = s17
+goto(s10, product) = s12
+goto(s11, product) = s13
+goto(s12, '*') = s14
+goto(s12, '/') = s15
+goto(s13, '*') = s16
+goto(s13, '/') = s17
+goto(s14, factor) = s22
+goto(s14, '(') = s2
+goto(s14, NUMBER) = s20
+goto(s15, factor) = s24
+goto(s15, '(') = s2
+goto(s15, NUMBER) = s20
+goto(s16, factor) = s23
+goto(s16, '(') = s3
+goto(s16, NUMBER) = s21
+goto(s17, factor) = s25
+goto(s17, '(') = s3
+goto(s17, NUMBER) = s21

@@ -1,0 +1,43 @@
+PARSER_BEGIN(IfThenElseParser)
+
+public class IfThenElseParser {
+    public static void main(String[] args) throws ParseException {
+        IfThenElseParser parser = new IfThenElseParser(System.in);
+        parser.statement();
+    }
+}
+
+PARSER_END(IfThenElseParser)
+
+// statement : matchedStmnt
+//           | unmatchedStmnt
+//           ;
+void statement() : {} {
+     matched()
+   | unmatched()
+}
+
+// matched : assignment
+//         | "if" "(" boolExpr ")" matched "else" matched
+//         | "while" "(" boolExpr ")" matched
+//         ;
+void matched() : {} {
+     assignment()
+   | "if" "(" boolExpr() ")" matched() "else" matched()
+   | "while" "(" boolExpr() ")" matched()
+}
+
+// unmatched : "if" "(" boolExpr ")" matched "else" unmatched
+//           | "if" "(" boolExpr ")" statement
+//           | "while" "(" boolExpr ")" unmatched
+//           ;
+void unmatched() : {} {
+     "if" "(" boolExpr() ")" matched() "else" unmatched()
+   | "if" "(" boolExpr() ")" statement()
+   | "while" "(" boolExpr() ")" unmatched()
+}
+
+void assignment() : {} { "assign" }
+void boolExpr()   : {} { "bool"   }
+
+SKIP : { " " | "\t" | "\n" | "\r" }

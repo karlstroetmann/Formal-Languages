@@ -1,0 +1,85 @@
+// A finite automaton is represented by a list of the form
+//   [q0, states, delta, final]
+// where
+//   q0     is the start state,
+//   states is the set of all states
+//   delta  is the transition function, and
+//   final  is the set of accepting states.
+
+// This function computes the state that is reached when the finite automaton 
+// reads the string s when it is in state q.  All we need from fa is really the
+// transition function delta, therefore the finite automaton is not explicitely
+// given as a parameter.
+//    q:     current state
+//    s:     string
+//    delta: transition function
+deltaStar := procedure(q, s, delta) { 
+    match (s) {
+        case []   : return q;
+        case [c|r]: return deltaStar(delta(q,c), r, delta);
+    }
+};
+
+// This function tests whether the finite automaton fa accepts the string s.
+accepts := procedure(s, fa) {
+    [q0, _, delta, final] := fa;
+    return deltaStar(q0, s, delta) in final;
+};
+
+// This function computes the complement of a given finite state automaton.
+complement := procedure(fa) {
+    [q0, states, delta, final] := fa;
+    return [q0, states, delta, states - final];
+};
+
+var delta1, delta2;
+
+// This function computes the product of two given finite state automatons.
+product := procedure(fa1, fa2) {
+    [q1, s1, delta1, f1] := fa1;
+    [q2, s2, delta2, f2] := fa2;
+    s := { [a, b] : a in s1, b in s2 };
+    f := { [a, b] : a in f1, b in f2 };
+    delta := [s, c] |-> [delta1(s[1], c), delta2(s[2], c)];
+    return [ [q0, q1], s, delta, f];
+};
+
+// The code below is only used to test our implementation of finite state machines
+
+// Transition function of a finite state automaton that recognizes whether
+// a binary string is divisable by three.
+deltaMod3 := procedure(q, c) {
+    match ([q, c]) {
+        case [0, "0"]: return 1;
+        case [0, "1"]: return 2;
+        case [1, "0"]: return 1;
+        case [1, "1"]: return 2;
+        case [2, "0"]: return 3;
+        case [2, "1"]: return 1;
+        case [3, "0"]: return 2;
+        case [3, "1"]: return 3;
+     }
+};
+
+testMod3 := procedure(n) {
+    print("Testing automaton to recognize binary numbers divisable by 3:");
+    mod3Recognizer := [0, {0..3}, deltaMod3, {1}];
+    mod3Cmplmnt    := complement(mod3Recognizer);
+    prod           := product(mod3Recognizer, mod3Cmplmnt);
+    for (m in pow({1..n})) {
+        s := "";
+        for (i in [1..n]) {
+            if (i in m) {
+                s += "1";
+            } else {
+                s += "0";
+            }
+        }
+        print("testing $s$ % 3 == 0: $accepts(s, mod3Recognizer)$");
+        print("testing $s$ % 3 != 0: $accepts(s, mod3Cmplmnt)   $");
+        print("testing product:       $accepts(s, prod)          $");
+    }
+};
+
+testMod3(4);
+    

@@ -1,0 +1,99 @@
+Tokens:    [$, '!', '&', '|', IDENTIFIER]
+
+Variables: [S, conjunction, disjunction, literal]
+
+Grammar: 
+S -> conjunction $
+conjunction -> conjunction '&' disjunction
+conjunction -> disjunction
+disjunction -> disjunction '|' literal
+disjunction -> literal
+literal -> '!' IDENTIFIER
+literal -> IDENTIFIER
+
+
+Follow(  S) = []
+Follow(  conjunction) = [$, '&']
+Follow(  disjunction) = [$, '&', '|']
+Follow(  literal) = [$, '&', '|']
+
+
+s0 = { S -> <*> conjunction $,
+       conjunction -> <*> conjunction '&' disjunction,
+       conjunction -> <*> disjunction,
+       disjunction -> <*> disjunction '|' literal,
+       disjunction -> <*> literal,
+       literal -> <*> '!' IDENTIFIER,
+       literal -> <*> IDENTIFIER
+     }
+
+s1 = { S -> conjunction <*> $,
+       conjunction -> conjunction <*> '&' disjunction
+     }
+
+s2 = { conjunction -> conjunction '&' <*> disjunction,
+       disjunction -> <*> disjunction '|' literal,
+       disjunction -> <*> literal,
+       literal -> <*> '!' IDENTIFIER,
+       literal -> <*> IDENTIFIER
+     }
+
+s3 = { conjunction -> conjunction '&' disjunction <*>,
+       disjunction -> disjunction <*> '|' literal
+     }
+
+s4 = { conjunction -> disjunction <*>,
+       disjunction -> disjunction <*> '|' literal
+     }
+
+s5 = { disjunction -> disjunction '|' <*> literal,
+       literal -> <*> '!' IDENTIFIER,
+       literal -> <*> IDENTIFIER
+     }
+
+s6 = { disjunction -> disjunction '|' literal <*> }
+
+s7 = { disjunction -> literal <*> }
+
+s8 = { literal -> '!' <*> IDENTIFIER }
+
+s9 = { literal -> '!' IDENTIFIER <*> }
+
+s10 = { literal -> IDENTIFIER <*> }
+
+Action Table:
+action(s0, '!') = <shift, s8>
+action(s0, IDENTIFIER) = <shift, s10>
+action(s1, $) = <accept>
+action(s1, '&') = <shift, s2>
+action(s2, '!') = <shift, s8>
+action(s2, IDENTIFIER) = <shift, s10>
+action(s3, $) = <reduce, conjunction -> conjunction '&' disjunction>
+action(s3, '&') = <reduce, conjunction -> conjunction '&' disjunction>
+action(s3, '|') = <shift, s5>
+action(s4, $) = <reduce, conjunction -> disjunction>
+action(s4, '&') = <reduce, conjunction -> disjunction>
+action(s4, '|') = <shift, s5>
+action(s5, '!') = <shift, s8>
+action(s5, IDENTIFIER) = <shift, s10>
+action(s6, $) = <reduce, disjunction -> disjunction '|' literal>
+action(s6, '&') = <reduce, disjunction -> disjunction '|' literal>
+action(s6, '|') = <reduce, disjunction -> disjunction '|' literal>
+action(s7, $) = <reduce, disjunction -> literal>
+action(s7, '&') = <reduce, disjunction -> literal>
+action(s7, '|') = <reduce, disjunction -> literal>
+action(s8, IDENTIFIER) = <shift, s9>
+action(s9, $) = <reduce, literal -> '!' IDENTIFIER>
+action(s9, '&') = <reduce, literal -> '!' IDENTIFIER>
+action(s9, '|') = <reduce, literal -> '!' IDENTIFIER>
+action(s10, $) = <reduce, literal -> IDENTIFIER>
+action(s10, '&') = <reduce, literal -> IDENTIFIER>
+action(s10, '|') = <reduce, literal -> IDENTIFIER>
+
+Goto Table:
+goto(s0, conjunction) = s1
+goto(s0, disjunction) = s4
+goto(s0, literal) = s7
+goto(s2, disjunction) = s3
+goto(s2, literal) = s7
+goto(s5, literal) = s6
