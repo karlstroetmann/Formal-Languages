@@ -1,0 +1,1040 @@
+\chapter{Keller-Automaten}
+In diesem Kapitel stellen wir die \emph{Keller-Automaten} (engl.~\emph{push-down automata})
+vor.  Wir werden sehen, dass dieses Automaten-Modell zu dem Konzept der kontextfreien Sprachen
+äquivalent ist:  Eine Sprache $L$ ist genau dann kontextfrei, wenn es einen
+nicht-deterministischen Keller-Automaten gibt, der die Sprache $L$ erkennt.  Insofern verhalten
+sich Keller-Automaten zu den kontextfreien Sprachen genauso, wie sich die endlichen Automaten
+zu den regulären Sprachen verhalten.  Im Vergleich zur Theorie der endlichen Automaten hat die
+Theorie der Keller-Automaten allerdings einen Schönheitsfehler:  Während die deterministischen
+endlichen Automaten zu den nicht-deterministischen endlichen Automaten äquivalent sind, sind
+die nicht-deterministischen Keller-Automaten mächtiger als die deterministischen
+Keller-Automaten, denn es gibt kontextfreie Sprachen, die sich zwar mit einem
+nicht-deterministischen Keller-Automaten erkennen lassen, für die es aber keinen
+deterministischen Keller-Automaten gibt, der diese Sprache erkennt.  Allerdings werden wir
+sehen, dass die meisten für die Praxis interessanten kontextfreien Sprachen bereits von
+deterministischen Keller-Automaten erkannt werden.
+    
+\section{Definition eines Keller-Automaten}
+Im Allgemeinen werden Keller-Automaten als endliche Automaten definiert, die zusätzlich mit
+einem Kellerspeicher (engl.~\emph{stack}) ausgestattet sind, auf dem Werte abgelegt werden können.  Der
+Zustand eines Automaten setzt sich dann aus zwei Komponenten zusammen:
+\begin{enumerate}
+\item Dem Inhalt des Kellerspeichers und
+\item dem Zustand des zugrunde liegenden endlichen Automaten.
+\end{enumerate}
+Es zeigt sich aber, dass der Kellerspeicher als Gedächtnis bereits ausreichend ist, eine weitere
+Komponente wird nicht benötigt.  Wir werden uns in unseren Betrachtungen zunächst auf diese Art von
+Keller-Automaten beschränken.
+
+\begin{Definition}[Keller-Automat]
+  Ein \emph{Keller-Automat} $A$ ist ein 4-Tupel
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $A = \langle \Sigma, \Gamma, \delta, S_0 \rangle$,
+  \\[0.2cm]
+  wobei die Komponenten die folgende Bedeutung haben:
+  \begin{enumerate}
+  \item $\Sigma$ ist das \emph{Eingabe-Alphabet}, der Keller-Automat verarbeitet also Wörter aus
+        $\Sigma^*$.
+  \item $\Gamma$ ist das \emph{Keller-Alphabet}.
+
+        In der Praxis ist $\Gamma$ häufig eine Obermenge von $\Sigma$.
+  \item $\delta$ ist die \emph{Übergangs-Funktion}.  
+        Als Argument bekommt diese Funktion entweder einen Buchstaben
+        aus dem Eingabe-Alphabet $\Sigma$ und einen Buchstaben aus dem Keller-Alphabet
+        $\Gamma$, oder das Zeichen $\varepsilon$ und einen Buchstaben aus $\Gamma$.
+        Als Ausgabe liefert diese Funktion eine Menge von Strings aus dem Keller-Alphabet,
+        es gilt also
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $\delta: (\Sigma \cup \{ \varepsilon \}) \times \Gamma \rightarrow \textsl{Pow}\bigl(\Gamma^*\bigr)$.
+        \\[0.2cm]
+        Hier bezeichnet $\textsl{Pow}(\Gamma^*)$ die Potenz-Menge von $\Gamma^*$, also die
+        Menge aller Teilmengen von $\Gamma^*$ und $\Gamma^*$ bezeichnet die Menge der
+        Wörter über $\Gamma$.
+  \item $S_0$ ist das Start-Symbol, das ein Element des Keller-Alphabets $\Gamma$ ist:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $S_0 \in \Gamma$.
+        \\[0.2cm]
+        Zu Beginn der Rechnung eines Keller-Automaten liegt im Kellerspeicher des
+        Keller-Automaten genau dieses Start-Symbol und sonst nichts.  \qed
+  \end{enumerate}
+\end{Definition}
+
+Wie funktioniert nun ein Keller-Automat?  Ein Wort $w \in \Sigma^*$ wird von dem
+Keller-Automaten wie folgt verarbeitet. 
+\begin{enumerate}
+\item Zunächst wird in dem leeren Kellerspeicher das Start-Symbol $S_0$ abgelegt.
+\item Anschließend wird das Wort Buchstabe für Buchstabe gelesen, wobei sich der 
+      Kellerspeicher des Automaten wie folgt verändern kann:
+      \begin{enumerate}
+      \item Ist $C$ der Buchstabe, der im Kellerspeicher (also auf dem Stack) ganz oben liegt, 
+            und gilt $\alpha \in \delta(\varepsilon, C)$, dann wird der Buchstabe $C$ 
+            aus dem Kellerspeicher entfernt und die Buchstaben aus $\alpha$ werden so eingekellert
+            dass der erste Buchstabe aus $\alpha$  oben auf dem Stack liegt.
+            Da $\alpha$ auch das leere Wort sein kann, kann der Stack dabei auch schrumpfen.
+
+            In diesem Fall wird kein Buchstabe des Wortes $w$ gelesen.
+      \item Ist $C$ der Buchstabe, der im Kellerspeicher (also auf dem Stack) ganz oben liegt, ist
+            $b$ der nächste zu lesende Buchstabe aus dem Wort $w$ und gilt
+            $\alpha \in \delta(b, C)$, dann wird der Buchstabe $b$ gelesen, der Buchstabe
+            $C$ wird aus dem Kellerspeicher entfernt und anschließend werden die Buchstaben aus
+            $\alpha$ eingekellert. 
+      \end{enumerate}
+      Keller-Automaten sind nicht-deterministisch, denn beispielsweise kann für       
+      $\alpha_1 \not= \alpha_2$ sowohl 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\alpha_1 \in \delta(b,C)$, \quad als auch \quad $\alpha_2 \in \delta(b,C)$ gelten,
+      \\[0.2cm]
+      und dann hat der Automat die Wahl, ob er $\alpha_1$ oder $\alpha_2$ einkellert.
+      Genauso kann es sein, dass gleichzeitig
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\alpha_1 \in \delta(\varepsilon,C)$ \quad und \quad $\alpha_2 \in \delta(b,C)$
+      \\[0.2cm]
+      gilt.  In diesem Fall hat der Automat die Möglichkeit, entweder das Zeichen
+      $C$ im Kellerspeicher durch das Wort $\alpha_1$ zu ersetzen, ohne dabei einen Buchstaben zu lesen, oder
+      der Automat kann den Buchstaben $b$ lesen und das Zeichen $C$ durch das Wort $\alpha_2$
+      ersetzen.
+\item Sind alle Buchstaben des Wortes $w$ gelesen, und ist gleichzeitig der Kellerspeicher geleert worden,
+      dann akzeptiert der Keller-Automat das Wort $w$.
+\end{enumerate}
+Formal definieren wir die \emph{Konfiguration} eines Keller-Automaten $A = \langle \Sigma, \Gamma, \delta, S_0 \rangle$,
+als ein Paar
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle v, \alpha \rangle \in \Sigma^* \times \Gamma^*$,
+\\[0.2cm]
+dass aus einem Wort $v$ des Eingabe-Alphabets und einem weiteren Wort
+$\alpha$  des Keller-Alphabets besteht.  Die Idee ist, dass $v$ den Teil des Eingabewortes
+darstellt, der noch nicht gelesen wurde, während $\alpha$ den Zustand des Kellerspeicher  beschreibt. 
+Wir definieren nun für zwei Konfigurationen $\pair(u,\alpha)$ und $\pair(v,\beta)$ des
+Keller-Automaten $A$ eine
+Relation 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(u,\alpha) \vdash_A \pair(v,\beta)$
+\\[0.2cm]
+durch die folgenden beiden Klauseln:
+\begin{enumerate}
+\item $\alpha \in \delta(\varepsilon, C) \;\rightarrow\; \pair(w, C\beta) \vdash_A \pair(w,\alpha \beta)$.
+
+      Hier hat der Keller-Automat $A$ einen $\varepsilon$-Übergang,
+      bei dem das Stack-Symbol $C$ durch den String $\alpha$ ersetzt wird.
+      Das Wort $w$ bleibt in diesem Fall unverändert.
+      
+\item $\alpha \in \delta(b, C) \;\rightarrow\; \pair(bu, C\beta) \vdash_A \pair(u,\alpha \beta)$.
+
+      In diesem Fall hat der Keller-Automat $A$ für den Buchstaben $b$ und das
+      Stack-Symbol einen Übergang, bei dem $b$ gelesen und das Stack-Symbol $C$ durch
+      den String $\alpha$ ersetzt wird. 
+\end{enumerate}
+Wir bezeichnen den transitiven und reflexiven Abschluss der Relation $\vdash_A$ mit
+$\vdash_A^*$.  Bei Diskussionen, in denen klar ist, um welchen Keller-Automaten $A$ es
+sich handelt, lassen wir den Index $A$ auch weg und schreiben einfach $\vdash^*$ an Stelle
+von $\vdash_A^*$.  Damit sind wir nun in der Lage, die von einem Keller-Automaten 
+\\[0.2cm]
+\hspace*{1.3cm}
+$A = \langle \Sigma, \Gamma, \delta, S_0 \rangle$
+\\[0.2cm]
+akzeptierte Sprache $L(A)$ zu definieren:
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(A) := \bigl\{ w \in \Sigma^* \mid \pair(w,S_0) \vdash_A^* \pair(\varepsilon, []) \bigr\}$,
+\\[0.2cm]
+wobei wir hier mit $[]$ den leeren Kellerspeicher bezeichnen.  Ein Wort $w$ wird also genau dann
+von dem Keller-Automaten $A$ akzeptiert,  wenn der Keller-Automat beim Lesen dieses Wortes
+seinen Kellerspeicher leeren kann.
+
+\example
+Wir definieren den Keller-Automat $A = \langle \Sigma, \Gamma, \delta, S \rangle$ wie
+folgt:
+\begin{enumerate}
+\item $\Sigma := \{ \texttt{a}, \texttt{b} \}$.
+\item $\Gamma := \{ \texttt{a}, \texttt{b}, S \}$.
+\item $\delta(\varepsilon, \texttt{a}) := \{ \}$, \quad 
+      $\delta(\varepsilon, \texttt{b}) := \{ \}$, \quad
+      $\delta(\varepsilon, S) := \{ \texttt{a}S\texttt{a}, \texttt{b}S\texttt{b}, \texttt{a}, \texttt{b}, \varepsilon \}$,
+
+      $\delta(\texttt{a}, \texttt{a}) := \{ \varepsilon \}$, \quad
+      $\delta(\texttt{a}, \texttt{b}) := \{ \}$, \quad
+      $\delta(\texttt{a}, S) := \{ \}$, 
+
+      $\delta(\texttt{b}, \texttt{a}) := \{ \}$, \quad
+      $\delta(\texttt{b}, \texttt{b}) := \{ \varepsilon \}$, \quad
+      $\delta(\texttt{b}, S) := \{ \}$.
+
+      Beachten Sie, dass es einen subtilen Unterschied zwischen den Fällen
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta(\texttt{a}, \texttt{a}) := \{ \varepsilon \}$ \quad und \quad
+      $\delta(\texttt{a}, \texttt{b}) := \{ \}$
+      \\[0.2cm]
+      gibt:  Falls der nächste Buchstaben des zu verarbeitenden Wortes ein ``\texttt{a}''
+      ist und falls außerdem ein ``\texttt{a}'' oben auf 
+      dem Stack liegt, dann wird das ``\texttt{a}'' aus dem Wort gelesen und 
+      das ``\texttt{a}'' auf dem Stack wird durch das leere Wort $\varepsilon$ ersetzt 
+      und damit entfernt. 
+      
+      Ist hingegen  der nächste Buchstaben des zu verarbeitenden Wortes ein ``\texttt{a}''
+      und liegt  ein ``\texttt{b}'' oben auf dem Stack, so gibt es für den Automaten
+      keinen Übergang und damit kann der Buchstabe ``\texttt{a}'' nicht gelesen werden.
+      In diesem Fall sagen wir auch, dass der Automat \emph{stirbt}.
+\item Das Start-Symbol ist $S$.
+\end{enumerate}
+Ist $w$ ein Wort, so bezeichnen wir mit $w^r$ das
+Wort, das aus $w$ entsteht, wenn wir $w$ von hinten lesen.  Der erste Buchstabe von $w$
+ist also der letzte Buchstabe von $w^r$, der zweite Buchstabe von $w$ ist der vorletzte
+Buchstabe von $w^r$ und allgemein gilt für ein Wort der Länge $n$
+\\[0.2cm]
+\hspace*{1.3cm}
+$|w| = n \;\rightarrow\; \forall i \in \{1,\cdots,n\}:w^r[i] = w[n + 1 - i]$. 
+\\[0.2cm]
+Hier bezeichnet $|w|$ die Länge des Wortes und $w[i]$ bezeichnet den $i$-ten Buchstaben.
+Wörter, für die $w^r = w$ gilt, werden als \emph{Palindrome} bezeichnet.
+Ein einfaches Beispiel ist das Wort 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{aabaa}.
+\\[0.2cm]
+Wir behaupten, dass der oben definierte Automat $A$ genau die Palindrome erkennt, es gilt also
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(A) = \{ w \in \Sigma^* \mid w = w^r \}$
+\\[0.2cm]
+Wir zeigen, wie der Automat das Wort 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{aabaa}
+\\[0.2cm]
+verarbeitet.
+\begin{enumerate}
+\item Der Automat startet mit der Konfiguration
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\texttt{aabaa},S)$ 
+\item Da das oberste Symbol auf dem Stack ein $S$ ist, kann der Automat die Tatsache, dass
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{a}S\texttt{a} \in \delta(\varepsilon,S)$
+      \\[0.2cm]
+      ausnutzen und einen $\varepsilon$-Übergang durchführen.  Dabei wird dann die
+      folgende Konfiguration erreicht:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\texttt{aabaa},\texttt{a}S\texttt{a})$
+\item Jetzt ist der erste Buchstabe des zu lesenden Wortes ein \texttt{a} und gleichzeitig
+      liegt ein \texttt{a} auf dem Stack.  Also verwenden wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\varepsilon \in \delta(\texttt{a}, \texttt{a})$
+      \\[0.2cm]
+      und entfernen damit sowohl das erste ``\texttt{a}'' aus dem zu lesenden Wort als
+      auch das ``\texttt{a}'' auf dem Stack und erhalten die Konfiguration
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\texttt{abaa}, S\texttt{a})$.
+\item Wir benutzen wieder $\texttt{a}S\texttt{a} \in \delta(\varepsilon,S)$ und erhalten
+      die Konfiguration
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\texttt{abaa}, \texttt{a}S\texttt{aa})$.
+\item Nun verwenden wir $\varepsilon \in \delta(\texttt{a}, \texttt{a})$ und erhalten
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\texttt{baa}, S\texttt{aa})$.
+\item Diesmal benutzen wir $\texttt{b} \in \delta(\varepsilon,S)$ und erhalten
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\texttt{baa}, \texttt{baa})$.
+\item Jetzt verwenden wir einmal $\varepsilon \in \delta(\texttt{b}, \texttt{b})$ und zweimal
+      $\varepsilon \in \delta(\texttt{a}, \texttt{a})$ und haben dann die Konfiguration
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(\varepsilon, [])$.
+      \\[0.2cm]
+      Damit ist  gezeigt, dass $\texttt{aabaa} \in L(A)$ gilt. \qed
+\end{enumerate}
+
+\section{Von  kontextfreien Sprachen zu Keller-Automaten}
+Die Menge $L_P(\Sigma)$ der Palindrome über einem Alphabet $\Sigma$
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_P(\Sigma) := \bigl\{ w \in \Sigma^* \mid w^r = w \bigr\}$
+\\[0.2cm]
+kann auch durch eine kontextfreie Grammatik beschrieben werden.  Definieren wir die
+kontextfreie Grammatik $G$ durch
+\\[0.2cm]
+\hspace*{1.3cm}
+$G = \langle \bigl\{S\}, \{ \texttt{a},\texttt{b}\}, R, S\bigr\rangle$,
+\\[0.2cm]
+wobei die Regeln durch
+\\[0.2cm]
+\hspace*{1.3cm}
+$S \rightarrow \texttt{a}S\texttt{a} \mid \texttt{b}S\texttt{b} \mid \texttt{a} \mid \texttt{b} \mid \varepsilon$,
+\\[0.2cm]
+so kann gezeigt werden, dass gilt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(G) = L_P(\{\texttt{a},\texttt{b}\})$.
+\\[0.2cm]
+Vergleichen wir die Definition der Grammatik mit der Definition des Keller-Automaten aus
+dem letzten Abschnitt, so erkennen wir ein Muster, dass wir jetzt allgemein formulieren.
+
+\begin{Definition}[$A(G)$]
+  Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik.  Dann definieren
+  wir den \emph{von $G$ erzeugten Keller-Automaten $A(G)$} wie folgt:
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $A(G) = \langle T, V \cup T, \delta, S \rangle$,
+  \\[0.2cm]
+  wobei die Übergangs-Funktion $\delta$ durch die folgenden Klauseln definiert wird.
+  \begin{enumerate}
+  \item Für jede Regel $A \rightarrow \beta$ aus der Grammatik $G$ gilt $\beta \in \delta(\varepsilon, A)$,
+        denn wir definieren
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $\delta(\varepsilon, A) := \bigl\{ \beta \mid (A \rightarrow \beta) \in R \bigr\}$
+        \quad für alle $A \in V$.
+  \item Für jeden Buchstaben $b \in T$ gilt $\varepsilon \in \delta(b,b)$, denn wir definieren
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $\delta(b,c) := \left\{
+        \begin{array}{ll}
+          \{ \varepsilon \} & \mbox{falls $b = c$;} \\
+          \{\}              & \mbox{sonst.}
+        \end{array}\right.
+        $
+        \qed
+  \item In allen anderen Fällen liefert die Funktion $\delta$ als Ergebnis die leere Menge.
+        \begin{enumerate}
+        \item $\forall b \in T: \delta(\varepsilon, b) = \{\}$,
+        \item $\forall b \in T, A \in V: \delta(b, A) = \{\}$.
+        \end{enumerate}
+  \end{enumerate}
+\end{Definition}
+
+\remark
+Der im letzten Abschnitt angegebene Automat $A$ ist genau der von der oben angegebenen
+Grammatik $G$ erzeugte Automat $A(G)$.
+\vspace*{0.3cm}
+
+Um zeigen zu können, dass der Automat $A(G)$ genau die Sprache akzeptiert, die von der
+Grammatik $G$ beschrieben wird, benötigen wir den Begriff der
+\emph{Links-Ableitung} :  Informal ist das ein Ableitungsschritt, bei dem die
+linkeste Variable durch eine Regel ersetzt wird.  Formal definieren wir diesen Begriff wie
+folgt:  
+\begin{enumerate}
+\item Es sei $G = \langle T, V, R, S \rangle$ eine kontextfreie Grammatik. Weiter sei 
+\item $A \in V$ eine syntaktische Variable,
+\item $u A \beta \in (V \cup T)^*$ sei ein String aus Variablen und Terminalen mit $u \in
+  T^*$ \ und 
+\item $(A \rightarrow \gamma) \in R$ sei eine Regel der Grammatik $G$.
+\end{enumerate}
+Dann schreiben wir \\[0.2cm]
+\hspace*{1.3cm}
+$u A \beta \lmderiv u \gamma\beta$. 
+\\[0.2cm]
+und  sagen, dass das Wort $u\gamma\beta$ durch einen Schritt
+einer \emph{Links-Ableitung} aus dem Wort $uA\beta$ hervorgegangen ist.
+Der entscheidende Unterschied gegenüber einem normalen Ableitungs-Schritt ist der, dass
+alle Zeichen, die links von der ersetzten Variablen $A$ stehen, Terminale sein müssen: 
+$u \in T^*$.  Ist allgemein $w$ ein Wort einer Sprache $L(G)$ und ist $S$ das
+Start-Symbol, dann erhalten wir eine \emph{Links-Ableitung} von $w$, wenn wir eine
+Ableitung wählen, bei der in jedem Schritt die linkeste Variable durch die rechte Seite
+einer Grammatik-Regel ersetzt wird.
+
+\example
+Eine Grammatik 
+$G = \langle \{ E, P, F\}, \{ \squoted{+}, \squoted{*}, \squoted{1}, \squoted{2}, \squoted{3} \}, R, E \rangle$ 
+für arithmetische Ausdrücke habe die folgenden Regeln $R$:
+\\[0.2cm]
+\hspace*{1.3cm}
+$E \rightarrow E \quoted{+} P \;|\; P$, \quad
+$P \rightarrow P \quoted{*} F \;|\; F$, \quad
+$F \rightarrow \quoted{1} \;|\; \quoted{2} \;|\; \quoted{3}$.
+\\[0.2cm]
+Der String ``\texttt{1+2*3}'' hat dann die folgende Links-Ableitung:
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{lcl}
+  E & \lmderiv & E \quoted{+} P \\[0.3cm]
+    & \lmderiv & P \quoted{+} P \\[0.3cm]
+    & \lmderiv & F \quoted{+} P \\[0.3cm]
+    & \lmderiv & \quoted{1} \quoted{+} P \\[0.3cm]
+    & \lmderiv & \quoted{1} \quoted{+} P \quoted{*} F \\[0.3cm]
+    & \lmderiv & \quoted{1} \quoted{+} F \quoted{*} F \\[0.3cm]
+    & \lmderiv & \quoted{1} \quoted{+} \quoted{2} \quoted{*} F \\[0.3cm]
+    & \lmderiv & \quoted{1} \quoted{+} \quoted{2} \quoted{*} \quoted{3} 
+\end{array}
+$
+\\[0.2cm]
+Die folgende Ableitung ist hingegen keine Links-Ableitung, denn im zweiten Schritt wird
+zum Beispiel nicht die linkeste Variable $E$ sondern statt dessen die Variable $P$ ersetzt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{lcl}
+  E & \Rightarrow & E \quoted{+} P \\[0.3cm]
+    & \Rightarrow & E \quoted{+} P \quoted{*} F \\[0.3cm]
+    & \Rightarrow & P \quoted{+} P \quoted{*} F \\[0.3cm]
+    & \Rightarrow & P \quoted{+} P \quoted{*} \quoted{3} \\[0.3cm]
+    & \Rightarrow & F \quoted{+} P \quoted{*} \quoted{3} \\[0.3cm]
+    & \Rightarrow & \quoted{1} \quoted{+} P \quoted{*} \quoted{3} \\[0.3cm]
+    & \Rightarrow & \quoted{1} \quoted{+} F \quoted{*} \quoted{3} \\[0.3cm]
+    & \Rightarrow & \quoted{1} \quoted{+} \quoted{2} \quoted{*} \quoted{3}  \\[0.3cm]
+\end{array}
+$
+
+\remark
+Falls wir ein Wort $w$ aus dem Start-Symbol $S$ einer Grammatik $G = \langle V, T, R, S \rangle$ ableiten
+können, so können wir die Ableitungs-Schritte immer so umsortieren, dass wir hinterher eine Links-Ableitung 
+haben. Daher gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(G) = \{ w \in T^* \mid S \;
+           \raisebox{-2.3mm}{$\stackrel{\mbox{\large$\Rightarrow$}}{\mbox{\scriptsize l}}^*$}\; w \}$.
+
+\begin{Satz}
+  Ist $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik, so gilt
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $L\bigl(A(G)\bigr) = L(G)$,
+  \\[0.2cm]
+  der von $G$ erzeugte Automat erkennt also genau die Sprache, die durch $G$ beschrieben wird.
+\end{Satz}
+
+\noindent
+\textbf{Beweis}:  \ Wir zeigen zunächst, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(G) \subseteq L\bigl(A(G)\bigr)$
+\\[0.2cm]
+gilt.  Wir nehmen also an, dass $w \in L(G)$ ist und müssen zeigen, dass der Automat $A(G)$
+das Wort $w$ akzeptiert.  Wir nehmen nun eine Ableitung des Wortes $w$, bei der immer die 
+linkeste Variable ersetzt wird.  Eine solche Ableitung hat die Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$S = u_1A_1\beta_1 \lmderiv u_2A_2\beta_2 \lmderiv \cdots \lmderiv u_nA_n\beta_n \lmderiv w$,
+\\[0.2cm]
+wobei gilt
+\begin{enumerate}
+\item $u_1 = \varepsilon$, $A_1 = S$, $\beta_1 = \varepsilon$.
+\item $u_i \in T^*$ \quad für alle $i=1,\cdots,n$
+
+      links von den syntaktischen Variablen $A_i$ stehen also nur Terminale.
+\item $A_i \in V$ \quad für alle $i=1,\cdots,n$,
+
+      $A_i$ ist also die syntaktische Variable in dem String $u_iA_i\beta_i$, die am
+      weitesten links steht. 
+\end{enumerate}
+Wir zeigen nun durch Induktion über $i$, dass es für alle $i=1,\cdots,n$  Strings $v_i \in T^*$ 
+gibt, so dass 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(w,S) \vdash^* \pair(v_i, A_i\beta_i)$ und $u_iv_i = w$
+\\[0.2cm]
+gilt, der String $v_i$ ist also der Rest, der von dem String $w$ übrig bleibt, wenn das Präfix
+$u_i$ entfernt wird.
+\begin{enumerate}
+\item[I.A.] $i=1$: Die Start-Konfiguration ist 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,S) = \pair(w,u_1A_1\beta_1)$
+            \\[0.2cm]
+            und damit muss gelten
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $u_1 = \varepsilon$, \quad $A_1 = S$, \quad und \quad $\beta_1 = \varepsilon$.  
+            \\[0.2cm]
+            Also setzen wir $v_1 := w$ und haben trivialerweise
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,S) \vdash^* \pair(w,S) = \pair(v_1,u_1A_1\beta_1)$ \quad und $u_1v_1 = w$.
+\item[I.S.] $i \mapsto i + 1$: 
+            Nach Induktions-Voraussetzung wissen wir, dass
+            \begin{equation}
+              \label{eq:e1}
+            \pair(w, S) \vdash^* \pair(v_i,A_i\beta_i) \quad \mbox{und} \quad u_iv_i = w
+            \end{equation}
+            gilt.  Wegen
+            \begin{equation}
+              \label{eq:e2}
+            u_iA_i\beta_i \lmderiv u_{i+1}A_{i+1}\beta_{i+1} \quad \mbox{und}\quad u_i \in T^*
+            \end{equation}
+            muss es eine Regel 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(A_i \rightarrow \gamma_i) \in R$
+            \\[0.2cm]
+            geben, so dass bei dem Ableitungs-Schritt $A_i$ durch $\gamma_i$ ersetzt
+            worden ist.  Damit gilt also
+            \begin{equation}
+              \label{eq:e3}
+            u_{i+1}A_{i+1}\beta_{i+1} = u_i\gamma_i\beta_i.              
+            \end{equation}
+            Wegen (\ref{eq:e2}) muss $u_i$ ein Präfix von $u_{i+1}$ sein.  Also gibt es einen
+            String $t_{i+1}\in T^*$, so dass
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $u_i\, t_{i+1} = u_{i+1}$
+            \\[0.2cm]
+            gilt.  Schneiden wir in Gleichung (\ref{eq:e3}) auf beiden Seiten den Präfix
+            $u_i$ ab, so erhalten wir
+            \begin{equation}
+              \label{eq:e4}
+              \gamma_i \beta_i = t_{i+1} A_{i+1}\beta_{i+1}.
+            \end{equation}
+            Aufgrund der Linksableitung
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $S \lmderiv\!\!^* u_{i+1}A_{i+1}\beta_{i+1} \lmderiv\!\!^* w$,
+            \\[0.2cm] 
+            muss $u_{i+1}$ ein Präfix von $w$ sein und daher gibt es genau ein $v_{i+1} \in T^*$, so dass
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $u_{i+1} v_{i+1} = w$ 
+            \\[0.2cm]
+            gilt.  Setzen wir hier einerseits $u_{i+1} = u_i t_{i+1}$ und andererseits $w = u_iv_i$ ein, so
+            finden wir 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $u_i t_{i+1} v_{i+1} = u_i v_i$.
+            \\[0.2cm]
+            Schneiden wir auf beiden Seiten dieser Gleichung $u_i$ ab, so folgt
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $t_{i+1} v_{i+1} = v_i$.
+            \\[0.2cm]
+            Nach Konstruktion des Keller-Automaten $A(G)$ folgt aus $(A_i \rightarrow \gamma_i) \in R$
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\gamma_i \in \delta(\varepsilon, A_i)$
+            \\[0.2cm]
+            und nach Definition eines Keller-Automaten gilt
+            \begin{equation}
+              \label{eq:e5}
+              \pair(v_i,A_i \beta_i) \vdash \pair(v_i,\gamma_i \beta_i).
+            \end{equation}
+            Wir haben oben gesehen, dass
+            $v_i = t_{i+1}v_{i+1}$ gilt und Gleichung (\ref{eq:e4}) zeigt $\gamma_i \beta_i = t_{i+1}A_{i+1}\beta_{i+1}$.
+            Also können wir  (\ref{eq:e5}) auch als
+            \begin{equation}
+              \label{eq:e6}
+              \pair(v_i,A_i \beta_i) \vdash \pair(t_{i+1}v_{i+1},t_{i+1}A_{i+1} \beta_{i+1})
+            \end{equation}
+            schreiben.  Nun gilt nach Kunstruktion von $A(G)$ für alle Buchstaben
+            $b \in T$
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\varepsilon \in \delta(b,b)$.
+            \\[0.2cm]
+            Damit haben wir
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(t_{i+1}v_{i+1},t_{i+1}A_{i+1} \beta_{i+1}) \vdash^* \pair(v_{i+1},A_{i+1} \beta_{i+1})$
+            \\[0.2cm]
+            und zusammen mit (\ref{eq:e1}) und \ref{eq:e6}) folgt daraus
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,S) \vdash^* \pair(v_{i+1},A_{i+1} \beta_{i+1})$,
+            \\[0.2cm]
+            was für den Induktions-Schritt zu zeigen war und die Induktion ist abgeschlossen.
+\end{enumerate}
+Setzen wir oben $i=n$, so haben wir gezeigt, dass
+\begin{equation}
+  \label{eq:e7}
+  \pair(w,S) \vdash^* \pair(v_n, A_n\beta_n) \quad \mbox{und} \quad u_nv_n = w
+\end{equation}
+gilt und wissen außerdem, dass 
+\\[0.2cm]
+\hspace*{1.3cm}
+$u_n A_n \beta_n \lmderiv w$
+\\[0.2cm]
+gilt. Also gibt es eine Regel $A_n \rightarrow \gamma_n$ in $R$ und es muss
+\\[0.2cm]
+\hspace*{1.3cm}
+$u_n \gamma_n \beta_n = w$
+\\[0.2cm]
+gelten.  Daraus folgt aber wegen $u_n v_n = w$
+\\[0.2cm]
+\hspace*{1.3cm}
+$\gamma_n \beta_n = v_n$.
+\\[0.2cm]
+Nach Konstruktion von $A(G)$ gilt $\gamma_n \in \delta(\varepsilon, A_n)$ und wir
+haben
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(v_n, A_n\beta_n) \vdash \pair(v_n, \gamma_n \beta_n) = \pair(v_n, v_n)$.
+\\[0.2cm]
+Da nach Kunstruktion von $A(G)$ für alle Buchstaben
+$b \in T$ gilt $\varepsilon \in \delta(b,b)$,  haben wir
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(v_n, v_n) \vdash^* \pair(\varepsilon, [])$
+\\[0.2cm]
+und damit ist insgesamt
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(w,S) \vdash^* \pair(\varepsilon, [])$
+\\[0.2cm]
+gezeigt und wir sehen, dass $w \in L\bigl(A(G)\bigr)$ gilt.
+\vspace*{0.3cm}
+
+Um den Beweis abzuschließen, zeigen wir nun die umgekehrte Richtung und weisen 
+\\[0.2cm]
+\hspace*{1.3cm}
+$L\bigl(A(G)\bigr) \subseteq L(G)$
+\\[0.2cm]
+nach.  Wir nehmen also an, dass $w \in L\bigl(A(G)\bigr)$ gilt und weisen nach, dass
+daraus $w \in L(G)$ folgt.
+Erinnern wir uns an die Definition der von einem Keller-Automaten akzeptierten
+Sprache, sowie an die Definition von $L(G)$, so sagt die Voraussetzung $w \in
+L\bigl(A(G)\bigr)$ dass aus
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(w,S) \vdash^* \pair(\varepsilon,[])$ \quad die Konklusion \quad $S \Rightarrow^* w$
+\\[0.2cm]
+folgt.  Wir müssen also die Beziehung
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(w,S) \vdash^* \pair(\varepsilon,[]) \;\rightarrow\; S \Rightarrow^* w$
+\\[0.2cm]
+nachweisen.  Um diese Behauptung zeigen zu können, verallgemeinern wir sie:  Wir werden
+für jede syntaktische Variable $X$ und jedes Wort $w \in T^*$ zeigen, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(w,X) \vdash^* \pair(\varepsilon,[]) \;\rightarrow\; X \Rightarrow^* w$
+\\[0.2cm]
+gilt.  Der Beweis dieser Behauptung erfolgt durch Induktion über die Anzahl $n$ der
+Berechnungs-Schritte des Keller-Automaten $A(G)$.
+\begin{enumerate}
+\item[I.A.] $n=1$: $X$ kann sowohl eine syntaktische Variable als auch ein Terminal sein.
+            Wir behandeln diese beiden Fälle getrennt:
+            \begin{enumerate}
+            \item $X \in V$, also ist $X$ eine syntaktische Variable.
+
+                  Die Zustands-Übergänge des Keller-Automaten $A(G)$, bei denen ein Buchstabe
+                  des Wortes gelesen wird, setzen alle voraus, dass auf dem Stack 
+                  der selbe Buchstabe liegt.
+                  Falls der Keller-Automaten nur einen Schritt braucht, um von der
+                  Konfiguration $\pair(w,X)$ zur Konfiguration $\pair(\varepsilon,[])$,
+                  so kann also kein Buchstabe gelesen worden sein.
+                  Daher muss $w = \varepsilon$ gelten und andererseits muss
+                  die Grammatik $G$ eine Regel der Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \rightarrow \varepsilon$
+                  \\[0.2cm]
+                  enthalten.  Daraus folgt dann aber sofort
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \Rightarrow \varepsilon$
+                  \\[0.2cm]
+                  und wegen $w= \varepsilon$ ist das die Behauptung.
+            \item $X \in T$, also ist $X$ ein Terminal.
+
+                  Nach Konstruktion des Keller-Automaten $A(G)$ folgt aus
+                  der Voraussetzung
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(w,X) \rightarrow \pair(\varepsilon,[])$,
+                  \\[0.2cm]
+                  dass das Wort $w$ nur aus dem Buchstaben $X$ besteht: $w = X$.  Dann
+                  gilt trivialerweise
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \Rightarrow^* w$.
+            \end{enumerate}
+\item[I.S.] $1,\cdots, n \mapsto n+1$:  Da nun bei der Rechnung 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,X) \vdash^* \pair(\varepsilon,[])$
+            \\[0.2cm]
+            mehr als ein Schritt durchgeführt wird, kann $X$ nur eine syntaktische Variable sein.            
+            Wir nehmen also an, dass der Automat die Rechnung
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,X) \vdash^* \pair(\varepsilon,[])$
+            \\[0.2cm]
+            in $n+1$ Schritten durchführt.  Da $X$ eine Variable ist,
+            muss der erste Schritt der Rechnung des Keller-Automaten $A(G)$ die Form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,X) \vdash \pair(w,\gamma)$
+            \\[0.2cm]
+            haben, wobei $X \rightarrow \gamma$ eine Regel der Grammatik sein muss.  Wir
+            zerlegen die rechte Seite $\gamma$ dieser Regel in ihre Buchstaben und schreiben
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\gamma = y_1 y_2 \cdots y_k$, \quad mit $y_i \in T \cup V$.
+            \\[0.2cm]
+            Da insgesamt 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,X) \vdash^* \pair(\varepsilon, [])$ 
+            \\[0.2cm]
+            gilt, wissen wir 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,y_1 y_2 \cdots y_k) \vdash^* \pair(\varepsilon, [])$,
+            \\[0.2cm]
+            wobei der Keller-Automat insgesamt $n$ Schritte durchführt.  Offenbar entfernt
+            der Keller-Automat $A(G)$ nacheinander die Zeichen $y_1 y_2 \cdots y_k$ vom
+            Stack und liest dabei das Wort $w$.  Damit können wir die Rechnung des
+            Keller-Automaten wie folgt aufspalten:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(w,y_1 y_2 \cdots y_k) \vdash^* \pair(w_2,y_2 \cdots y_k) \vdash^*
+            \cdots \vdash^* \pair(w_i, y_i \cdots y_k) \vdash^* \cdots \vdash^* \pair(\varepsilon, [])$,
+            \\[0.2cm]
+            Dabei bezeichnet $w_i$ den Teil des Wortes $w$, der noch nicht gelesen ist,
+            wenn die Zeichen $y_1 \cdots y_{i-1}$ vom Stack entfernt worden sind.
+            Offenbar können wir 
+            das Wort $w$ so in Teilstrings $x_1 \cdots x_k$ zerlegen, dass $x_i$ der
+            Teilstring von $w$ ist, der von dem Automaten gelesen wird, um das Zeichen
+            $y_i$ vom Stack zu entfernen, es gilt also
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $w = x_1 x_2 \cdots x_k$ \quad und \quad $w_i = x_i x_{i+1} \cdots x_k$.
+            \\[0.2cm]
+            Daraus folgt aber, dass das Lesen von $x_i$ das Symbol $y_i$ vom Stack
+            entfernt:
+            \begin{equation}
+              \label{eq:e8}
+              \pair(\underbrace{x_i x_{i+1} \cdots x_k}_{w_i}, y_i y_{i+1} \cdots y_{k})
+              \vdash^* \pair(\underbrace{x_{i+1} \cdots x_k}_{w_{i+1}}, y_{i+1} \cdots y_{k})
+            \end{equation}
+            Da der Keller-Automat immer nur das oberste Zeichen auf dem Stack anschauen
+            kann, können die Zeichen $y_{i+1} \cdots y_{k}$ bei dieser Rechnung keine
+            Rolle spielen, und genauso spielt auch der Teil des Strings, der bei dieser
+            Rechnung nicht gelesen wird, keine Rolle.  Damit folgt aus (\ref{eq:e8}), dass 
+            \begin{equation}
+              \label{eq:e9}
+              \pair(x_i, y_i) \vdash^* \pair(\varepsilon, [])                          
+            \end{equation}
+            gilt und für diese Rechnung benötigt der Keller-Automat genausoviele
+            Berechnungs-Schritte wie in (\ref{eq:e8}) und das sind höchstens $n$ Schritte.
+            Damit können wir auf (\ref{eq:e9}) die Induktions-Voraussetzung anwenden und es gilt
+            \begin{equation}
+              \label{eq:e10}
+              y_i \Rightarrow^* x_i
+            \end{equation}
+            Damit haben wir insgesamt folgende Ableitung von $w$:
+            \begin{eqnarray*}            
+            X & \Rightarrow\;\; & \gamma = y_1 y_2 \cdots y_k               \\
+              & \Rightarrow^* & x_1 y_2 \cdots y_k                        \\
+              &               & \vdots                                    \\
+              & \Rightarrow^* & x_1 \cdots x_i y_{i+1} y_{i+1} \cdots y_k \\
+              & \Rightarrow^* & x_1 \cdots x_i x_{i+1} y_{i+2} \cdots y_k \\
+              &               & \vdots                                    \\
+              & \Rightarrow^* & x_1 \cdots x_k = w  
+            \end{eqnarray*}
+            und haben damit die Induktion und den Beweis abgeschlossen. \qed
+\end{enumerate}
+
+\exercise
+Die Grammatik $G$ sei wie folgt gegeben:
+\\[0.2cm]
+\hspace*{1.3cm}
+$G = \langle \{S,A\}, \{ \texttt{x}, \texttt{y}\}, R, S \rangle$,
+\\[0.2cm]
+wobei die Regeln $R$ wie folgt gegeben sind:
+\begin{eqnarray*}
+  S & \rightarrow & \texttt{x}S\texttt{y} \mid A \\
+  A & \rightarrow & \texttt{y}A\texttt{x} \mid S \mid \varepsilon
+\end{eqnarray*}
+Konstruieren Sie einen Keller-Automaten, der die Sprache $L(G)$ akzeptiert.
+\pagebreak
+
+\section{Von Keller-Automaten zu kontextfreien Sprachen}
+Nach dem letzten Abschnitt wissen wir, dass das Konzept der Keller-Automaten mindestens so
+mächtig ist, wie das Konzept der kontextfreien Sprachen.
+Wir zeigen in diesem Abschnitt die umgekehrte Richtung und weisen nach, dass alle
+Sprachen, die von Keller-Automaten erkannt werden können, auch durch eine Grammatik
+beschrieben werden können.
+
+\begin{Satz} \label{satz:keller2grammar}
+  Es sei $A = \langle \Sigma, \Gamma, \delta, S \rangle$ ein Keller-Automat.  Wir nehmen
+  ohne Beschränkung der Allgemeinheit an, dass die Mengen $\Sigma$ und $\Gamma$ disjunkt
+  sind.  Dies können wir immer erreichen, indem wir die Symbole aus $\Gamma$ umbenennen.
+  Dann konstruieren wir eine Grammatik 
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $G(A) := \langle \Gamma, \Sigma, R, S \rangle$,
+  \\[0.2cm]
+  indem wir die Menge $R$ der Regeln wie folgt definieren:
+  \begin{enumerate}
+  \item Ist $b \in \Sigma$, $X \in \Gamma$ und gilt $\gamma \in \delta(b,X)$,
+        dann enthält $R$ die Regel
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $X \rightarrow b\gamma$.
+  \item Ist $X \in \Gamma$ und gilt $\gamma \in \delta(\varepsilon, X)$,
+        dann enthält $R$ die Regel 
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $X \rightarrow \gamma$.
+  \end{enumerate}
+  Insgesamt setzen wir also
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $R := \bigl\{ X \rightarrow b\gamma \mid b\in\Sigma \wedge X\in\Gamma \wedge \gamma \in \delta(b,X) \bigr\} \cup 
+        \bigl\{ X \rightarrow \gamma \mid X\in\Gamma \wedge \gamma \in \delta(\varepsilon,X) \bigr\}$.
+  \\[0.2cm]
+  Dann gilt 
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $L\bigl(G(A)\bigr) = L(A)$.
+\end{Satz}
+
+\noindent
+\textbf{Beweis}:
+Wir zerlegen den Beweis in zwei Teile und zeigen zunächst, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$L\bigl(G(A)\bigr) \subseteq L(A)$
+\\[0.2cm]
+gilt.  Diese Behauptung ist äquivalent zu
+\\[0.2cm]
+\hspace*{1.3cm}
+$S \Rightarrow^* w \;\rightarrow\; \pair(w,S) \vdash^* \pair(\varepsilon, [])$
+\\[0.2cm]
+Wir zeigen eine etwas allgemeinere Behauptung.  Wir zeigen durch Induktion nach $n$, dass
+für alle $X \in \Gamma$ und $w \in \Sigma^*$ folgendes gilt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$X \Rightarrow^n w \;\rightarrow\; \pair(w,X) \vdash^* \pair(\varepsilon, [])$
+\\[0.2cm]
+Hier drückt die Notation $X \Rightarrow^n w$ aus, dass das Wort $w$ aus der Variablen $X$ 
+in $n$ Schritten abgeleitet werden kann.  
+\begin{enumerate}
+\item[I.A.] $n = 1$.  Dann gibt es in der Grammatik $G(A)$ eine Regel der Form 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $X \rightarrow w$
+            \\[0.2cm]
+            Es gibt zwei Möglichkeiten, wie diese Regel entstanden sein kann.
+            \begin{enumerate}
+            \item $w = b \gamma$ mit $b \in \Sigma$ und $\gamma \in \delta(b,X)$.
+
+                  Einerseits gilt $w \in \Sigma^*$, andererseits folgt aus $\gamma \in \delta(b,X)$,
+                  dass $\gamma \in \Gamma^*$ gelten muss.  Da $\gamma$ ein Suffix von $w$ ist, gilt
+                  auch $\gamma \in \Sigma^*$, also insgesamt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\gamma \in \Sigma^* \cap \Gamma^*$.
+                  \\[0.2cm]
+                  Nun haben wir aber vorausgesetzt, dass das Eingabe-Alphabet $\Sigma$ und das
+                  Stack-Alphabet $\Gamma$ disjunkt sind.  Damit ist die obige Gleichung nur möglich,
+                  falls
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\gamma = \varepsilon$
+                  \\[0.2cm]
+                  gilt.  Also haben wir insgesamt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $w = b \in \Sigma$ \quad und \quad $\varepsilon \in \delta(b,X)$.
+                  \\[0.2cm]
+                  Daraus folgt aber sofort
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(b, X) \vdash \pair(\varepsilon, [])$.
+            \item $w = \gamma$ und $\gamma \in \delta(\varepsilon, X)$.
+
+                  Einerseits gilt dann $w \in \Sigma^*$, andererseits folgt aus 
+                  $\gamma \in \delta(\varepsilon,X)$, dass $\gamma \in \Gamma^*$ gelten muss und genau wie im 
+                  ersten Fall können wir daraus auf \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\gamma = \varepsilon$
+                  \\[0.2cm]
+                  schließen. Daraus folgt dann
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(\varepsilon, X) \vdash \pair(\varepsilon, [])$.
+            \end{enumerate}
+\item[I.S.] $n \mapsto n+1$.  Wieder gibt es zwei Möglichkeiten für die erste verwendete Regel.
+
+            \begin{enumerate}
+            \item Die erste bei der Ableitung $X \Rightarrow^{n+1} w$ verwendete Regel hat die Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm} $X \rightarrow b\gamma$ \quad mit $b \in \Sigma$ und $\gamma \in \delta(b,X)$.
+                  \\[0.2cm]
+                  Insgesamt haben wir dann
+                  \\[0.2cm]
+                  \hspace*{1.3cm} $X \Rightarrow b \gamma \Rightarrow^n w$, \quad also $w = bv$ mit $\gamma
+                  \Rightarrow^n v$.
+                  \\[0.2cm]
+                  Dann haben $\gamma$ und $v$ die Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm} $\gamma = Y_1 \cdots Y_k$, \quad $v = u_1 \cdots u_k$ \quad und \quad $Y_i
+                  \Rightarrow^* u_i$ \quad für alle $i=1,\cdots,k$.
+                  \\[0.2cm]
+                  Auf $Y_i \Rightarrow^* u_i$ können wir die Induktions-Voraussetzung anwenden und sehen, dass
+                  \\[0.2cm]
+                  \hspace*{1.3cm} 
+                  $\pair(u_i, Y_i) \vdash^* \pair(\varepsilon, [])$ \quad für alle $i=1,\cdots,k$
+                  \\[0.2cm]
+                  gilt. Setzen wir diese Rechnungen zusammen, so haben wir
+                  \\[0.2cm]
+                  \hspace*{1.3cm} 
+                  $\pair(u_1 \cdots u_k, Y_1 \cdots Y_k) \vdash^* \pair(\varepsilon, [])$, \quad also 
+                  \quad $\pair(v,\gamma) \vdash^* \pair(\varepsilon, [])$.
+                  \\[0.2cm]
+                  Damit finden wir insgesamt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(w,X) = \pair(bv,X) \vdash \pair(v,\gamma) \vdash^* \pair(\varepsilon, [])$
+                  \\[0.2cm]
+                  und das war die Behauptung.
+            \item Die erste bei der Ableitung $X \Rightarrow^{n+1} w$ verwendete Regel hat die Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm} $X \rightarrow \gamma$ \quad mit $\gamma \in \delta(\varepsilon,X)$.
+                  \\[0.2cm]
+                  Insgesamt haben wir dann
+                  \\[0.2cm]
+                  \hspace*{1.3cm} $X \Rightarrow \gamma \Rightarrow^n w$.
+                  \\[0.2cm]
+                  Dann haben $\gamma$ und $w$ die Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm} $\gamma = Y_1 \cdots Y_k$, \quad $w = u_1 \cdots u_k$ \quad und
+                  \quad $Y_i \Rightarrow^* u_i$ \quad für alle $i=1,\cdots,k$.
+                  \\[0.2cm]
+                  Die Ableitung $Y_i \Rightarrow^* u_i$ kann höchstens aus $n$ Schritten bestehen
+                  und daher können wir die Induktions-Voraussetzung anwenden und sehen, dass
+                  \\[0.2cm]
+                  \hspace*{1.3cm} 
+                  $\pair(u_i, Y_i) \vdash^* \pair(\varepsilon, [])$ \quad für alle $i=1,\cdots,k$
+                  \\[0.2cm]
+                  gilt. Setzen wir diese Rechnungen zusammen, so haben wir
+                  \\[0.2cm]
+                  \hspace*{1.3cm} 
+                  $\pair(u_1 \cdots u_k, Y_1 \cdots Y_k) \vdash^* \pair(\varepsilon, [])$, \quad also 
+                  \quad $\pair(w,\gamma) \vdash^* \pair(\varepsilon, [])$.
+                  \\[0.2cm]
+                  Damit finden wir insgesamt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(w,X) \vdash \pair(w,\gamma) \vdash^* \pair(\varepsilon, [])$
+                  \\[0.2cm]
+                  und wieder ist die Behauptung gezeigt.
+            \end{enumerate}
+            Damit ist der Induktions-Beweis abgeschlossen.
+\end{enumerate}
+Um den Beweis abzuschließen, zeigen wir nun, dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(A) \subseteq L\bigl(G(A)\bigr)$
+\\[0.2cm]
+gilt.  Dazu zeigen wir, dass für alle $X \in \Gamma$ folgendes gilt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(w,X) \vdash^n \pair(\varepsilon, []) \;\rightarrow\; X \Rightarrow^n w$.
+\\[0.2cm]
+Diesen Beweis führen wir durch Induktion nach $n$.
+\begin{enumerate}
+\item[I.A.] $n = 1$.  Dann ist $w$ entweder das leere Wort oder $w$ besteht aus einem einzigen Buchstaben 
+            $b \in \Sigma$.  Wir untersuchen die beiden Fälle getrennt.
+            \begin{enumerate}
+            \item $w = b \in \Sigma$.  Dann gilt $\varepsilon \in \delta(b,X)$.
+                  Nach Konstruktion der Grammatik $G(A)$ gibt es eine Regel
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \rightarrow b \varepsilon$ \quad also \quad $X \rightarrow b$.
+                  \\[0.2cm]
+                  Daraus folgt sofort $X \Rightarrow b = w$.
+            \item $w = \varepsilon$.  Dann gilt $\varepsilon \in \delta(\varepsilon,X)$.
+                  Nach Konstruktion der Grammatik $G(A)$ gibt es dann eine Regel
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \rightarrow \varepsilon$.
+                  \\[0.2cm]
+                  Daraus folgt sofort $X \Rightarrow \varepsilon = w$.
+            \end{enumerate}
+\item[I.S.] $n \mapsto n+1$.  Wieder gibt es zwei Fälle, die wir getrennt betrachten.
+            \begin{enumerate}
+            \item Die Rechnung $\pair(w,X) \vdash^n \pair(\varepsilon, [])$
+                  fängt mit dem Übergang $\gamma \in \delta(b,X)$ an. Dann
+                  muss $w = bv$ gelten und wir haben
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(w, X) = \pair(bv, X) \vdash \pair(v, \gamma) \vdash^n \pair(\varepsilon, [])$.
+                  \\[0.2cm]
+                  Dann hat $\gamma$ die Form $\gamma = Y_1 \cdots Y_k$, $v$ läßt sich zerlegen
+                  als $v = u_1 \cdots u_k$ und es ist $u_i$ gerade der Teil des Wortes $v$, der
+                  gelesen wird, um die Variable $Y_i$ vom Stack zu entfernen, es gilt also
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(u_i, Y_i) \vdash^* \pair(\varepsilon, [])$.
+                  \\[0.2cm]
+                  Diese Rechnung kann höchstens $n$ Schritte benötigen.  Also haben wir
+                  nach Induktions-Voraussetzung
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $Y_i \Rightarrow^* u_i$ \quad für alle $i = 1, \cdots, k$.
+                  \\[0.2cm]
+                  Wegen $\gamma \in \delta(b,X)$ enthält die Grammatik $G(A)$ die Regel $X \rightarrow b \gamma$ und
+                  damit haben wir insgesamt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \Rightarrow b \gamma = bY_1 \cdots Y_k \Rightarrow^* b u_1 \cdots u_k = bv = w$.
+            \item Die Rechnung $\pair(w,X) \vdash^n \pair(\varepsilon, [])$
+                  fängt mit dem Übergang $\gamma \in \delta(\varepsilon,X)$ an. Dann
+                  haben wir
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(w, X) \vdash \pair(w, \gamma) \vdash^n \pair(\varepsilon, [])$.
+                  \\[0.2cm]
+                  Dann hat $\gamma$ die Form $\gamma = Y_1 \cdots Y_k$, $w$ läßt sich zerlegen
+                  als $w = u_1 \cdots u_k$ und es ist $u_i$ gerade der Teil des Wortes $w$, der
+                  gelesen wird, um die Variable $Y_i$ vom Stack zu entfernen, es gilt also
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(u_i, Y_i) \vdash^* \pair(\varepsilon, [])$.
+                  \\[0.2cm]
+                  Diese Rechnung kann höchstens $n$ Schritte benötigen.  Also haben wir
+                  nach Induktions-Voraussetzung wieder
+                  $Y_i \Rightarrow^* u_i$  für alle $i = 1, \cdots, k$.
+                  Wegen $\gamma \in \delta(\varepsilon,X)$ enthält die Grammatik $G(A)$ die Regel 
+                  $X \rightarrow \gamma$ und 
+                  damit haben wir insgesamt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $X \Rightarrow \gamma = Y_1 \cdots Y_k \Rightarrow^* u_1 \cdots u_k = w$. \qed
+            \end{enumerate}
+\end{enumerate}
+
+\exercise
+Der Keller-Automat $A$ sei wie folgt definiert:
+\\[0.2cm]
+\hspace*{1.3cm}
+$A = \langle \Sigma, \Gamma, \delta, S \rangle$ 
+\\[0.2cm] 
+Dabei gelte:
+\begin{enumerate}
+\item $\Sigma := \{ \texttt{a}, \texttt{b} \}$.
+\item $\Gamma := \{ A, B, S \}$.
+\item $\delta(\varepsilon, A) := \{ \}$, \quad 
+      $\delta(\varepsilon, B) := \{ \}$, \quad
+      $\delta(\varepsilon, S) := \{ ASA, BSB, A, B, \varepsilon \}$,
+
+      $\delta(\texttt{a}, A) := \{ \varepsilon \}$, \quad
+      $\delta(\texttt{a}, B) := \{ \}$, \quad
+      $\delta(\texttt{a}, S) := \{ \}$, 
+
+      $\delta(\texttt{b}, A) := \{ \}$, \quad
+      $\delta(\texttt{b}, B) := \{ \varepsilon \}$, \quad
+      $\delta(\texttt{b}, S) := \{ \}$.
+\end{enumerate}
+Verwenden Sie das im Beweis von Satz \ref{satz:keller2grammar} verwendete Verfahren um eine
+Grammatik zu konstruieren, die die selbe Sprache beschreibt, die von dem Automaten $A(G)$ akzeptiert
+wird.  
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formale-sprachen"
+%%% End: 

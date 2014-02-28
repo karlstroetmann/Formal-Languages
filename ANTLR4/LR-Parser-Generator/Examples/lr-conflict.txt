@@ -1,0 +1,51 @@
+Tokens:    [$, 'u', 'v', 'w', 'x']
+
+Variables: [S, a, b, c]
+
+Grammar: 
+S -> a
+a -> b 'u' 'v'
+a -> b 'u' 'w'
+b -> 'x'
+c -> 'x'
+
+
+s0 = { S -> <*> a: [$],
+       a -> <*> b 'u' 'v': [$],
+       a -> <*> b 'u' 'w': [$],
+       b -> <*> 'x': ['u']
+     }
+
+s1 = { S -> a <*>: [$] }
+
+s2 = { a -> b <*> 'u' 'v': [$],
+       a -> b <*> 'u' 'w': [$]
+     }
+
+s3 = { a -> b 'u' <*> 'v': [$],
+       a -> b 'u' <*> 'w': [$]
+     }
+
+s4 = { a -> b 'u' 'v' <*>: [$] }
+
+s5 = { a -> b 'u' 'w' <*>: [$] }
+
+s6 = { b -> 'x' <*>: ['u'] }
+
+Action Table:
+action(s0, 'x') = <shift, s6>
+action(s1, $) = <accept>
+action(s2, 'u') = <shift, s3>
+action(s3, 'v') = <shift, s4>
+action(s3, 'w') = <shift, s5>
+action(s4, $) = <reduce, a -> b 'u' 'v'>
+action(s5, $) = <reduce, a -> b 'u' 'w'>
+action(s6, 'u') = <reduce, b -> 'x'>
+
+Goto Table:
+goto(s0, a) = s1
+goto(s0, b) = s2
+goto(s0, 'x') = s6
+goto(s2, 'u') = s3
+goto(s3, 'v') = s4
+goto(s3, 'w') = s5

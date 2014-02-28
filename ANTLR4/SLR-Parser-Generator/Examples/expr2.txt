@@ -1,0 +1,131 @@
+Tokens:    [$, '(', ')', '*', '+', '-', '/', NUMBER]
+
+Variables: [S, expr, factor, product]
+
+Grammar: 
+S -> expr $
+expr -> expr '+' product
+expr -> expr '-' product
+factor -> '(' expr ')'
+factor -> NUMBER
+product -> product '*' factor
+product -> product '/' factor
+
+
+Follow(  S) = []
+Follow(  expr) = [$, ')', '+', '-']
+Follow(  factor) = [$, ')', '*', '+', '-', '/']
+Follow(  product) = [$, ')', '*', '+', '-', '/']
+s0 = { S -> <*> expr $,
+       expr -> <*> expr '+' product,
+       expr -> <*> expr '-' product
+     }
+
+s1 = { S -> expr <*> $,
+       expr -> expr <*> '+' product,
+       expr -> expr <*> '-' product
+     }
+
+s2 = { expr -> <*> expr '+' product,
+       expr -> <*> expr '-' product,
+       factor -> '(' <*> expr ')'
+     }
+
+s3 = { expr -> expr <*> '+' product,
+       expr -> expr <*> '-' product,
+       factor -> '(' expr <*> ')'
+     }
+
+s4 = { expr -> expr '+' <*> product,
+       product -> <*> product '*' factor,
+       product -> <*> product '/' factor
+     }
+
+s5 = { expr -> expr '+' product <*>,
+       product -> product <*> '*' factor,
+       product -> product <*> '/' factor
+     }
+
+s6 = { expr -> expr '-' <*> product,
+       product -> <*> product '*' factor,
+       product -> <*> product '/' factor
+     }
+
+s7 = { expr -> expr '-' product <*>,
+       product -> product <*> '*' factor,
+       product -> product <*> '/' factor
+     }
+
+s8 = { factor -> <*> '(' expr ')',
+       factor -> <*> NUMBER,
+       product -> product '*' <*> factor
+     }
+
+s9 = { factor -> <*> '(' expr ')',
+       factor -> <*> NUMBER,
+       product -> product '/' <*> factor
+     }
+
+s10 = { factor -> '(' expr ')' <*> }
+
+s11 = { factor -> NUMBER <*> }
+
+s12 = { product -> product '*' factor <*> }
+
+s13 = { product -> product '/' factor <*> }
+
+Action Table:
+action(s1, $) = <accept>
+action(s1, '+') = <shift, s4>
+action(s1, '-') = <shift, s6>
+action(s3, ')') = <shift, s10>
+action(s3, '+') = <shift, s4>
+action(s3, '-') = <shift, s6>
+action(s5, $) = <reduce, expr -> expr '+' product>
+action(s5, ')') = <reduce, expr -> expr '+' product>
+action(s5, '*') = <shift, s8>
+action(s5, '+') = <reduce, expr -> expr '+' product>
+action(s5, '-') = <reduce, expr -> expr '+' product>
+action(s5, '/') = <shift, s9>
+action(s7, $) = <reduce, expr -> expr '-' product>
+action(s7, ')') = <reduce, expr -> expr '-' product>
+action(s7, '*') = <shift, s8>
+action(s7, '+') = <reduce, expr -> expr '-' product>
+action(s7, '-') = <reduce, expr -> expr '-' product>
+action(s7, '/') = <shift, s9>
+action(s8, '(') = <shift, s2>
+action(s8, NUMBER) = <shift, s11>
+action(s9, '(') = <shift, s2>
+action(s9, NUMBER) = <shift, s11>
+action(s10, $) = <reduce, factor -> '(' expr ')'>
+action(s10, ')') = <reduce, factor -> '(' expr ')'>
+action(s10, '*') = <reduce, factor -> '(' expr ')'>
+action(s10, '+') = <reduce, factor -> '(' expr ')'>
+action(s10, '-') = <reduce, factor -> '(' expr ')'>
+action(s10, '/') = <reduce, factor -> '(' expr ')'>
+action(s11, $) = <reduce, factor -> NUMBER>
+action(s11, ')') = <reduce, factor -> NUMBER>
+action(s11, '*') = <reduce, factor -> NUMBER>
+action(s11, '+') = <reduce, factor -> NUMBER>
+action(s11, '-') = <reduce, factor -> NUMBER>
+action(s11, '/') = <reduce, factor -> NUMBER>
+action(s12, $) = <reduce, product -> product '*' factor>
+action(s12, ')') = <reduce, product -> product '*' factor>
+action(s12, '*') = <reduce, product -> product '*' factor>
+action(s12, '+') = <reduce, product -> product '*' factor>
+action(s12, '-') = <reduce, product -> product '*' factor>
+action(s12, '/') = <reduce, product -> product '*' factor>
+action(s13, $) = <reduce, product -> product '/' factor>
+action(s13, ')') = <reduce, product -> product '/' factor>
+action(s13, '*') = <reduce, product -> product '/' factor>
+action(s13, '+') = <reduce, product -> product '/' factor>
+action(s13, '-') = <reduce, product -> product '/' factor>
+action(s13, '/') = <reduce, product -> product '/' factor>
+
+Goto Table:
+goto(s0, expr) = s1
+goto(s2, expr) = s3
+goto(s4, product) = s5
+goto(s6, product) = s7
+goto(s8, factor) = s12
+goto(s9, factor) = s13

@@ -1,0 +1,32 @@
+options 
+{
+	DEBUG_TOKEN_MANAGER = true;
+}
+
+
+PARSER_BEGIN(DeComment)
+
+public class DeComment {
+    public static void main(String args[]) throws ParseException {
+        SimpleCharStream      stream  = new SimpleCharStream(System.in);
+        DeCommentTokenManager manager = new DeCommentTokenManager(stream);
+        Token t;
+        do {
+            t = manager.getNextToken();
+        } while (t.kind != 0); // end of file gives t.kind = 0 
+    }
+}
+
+PARSER_END(DeComment)
+
+<DEFAULT>
+TOKEN: {
+    <START: "/*"> { /* change state here */  } : ML_COMMENT
+|   <CHAR:  ~[]>  { System.out.print(image); } : DEFAULT
+}
+
+<ML_COMMENT> 
+TOKEN: {
+    <STOP: "*/"> {} : DEFAULT
+|   <EAT:  ~[]>  {} : ML_COMMENT
+}

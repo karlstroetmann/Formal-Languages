@@ -1,0 +1,31 @@
+import java_cup.runtime.*;
+import java.util.*;
+
+terminal         OPEN, CLOSE, COMMA;
+terminal Integer NUMBER;
+
+nonterminal Element       s;
+nonterminal List<Element> l, n;
+nonterminal Element       e;
+
+
+s ::= OPEN l:e CLOSE     {: RESULT = new MyList(e); :};
+
+l ::= n:l                {: RESULT = l; :}
+   |  /* epsilon */      {: List<Element> l = new LinkedList<Element>(); 
+                            RESULT = l; 
+                         :}
+   ;
+
+n ::= n:l COMMA e:x      {: l.add(x); RESULT = l; :}
+   |  e:x                {: List<Element> l = new LinkedList<Element>(); 
+                            l.add(x);
+                            RESULT = l; 
+                         :}
+   ;
+
+e ::= s:x                {: RESULT = x;               :}
+   |  NUMBER:x           {: RESULT = new MyNumber(x); :}
+   ;
+
+

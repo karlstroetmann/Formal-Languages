@@ -1,0 +1,165 @@
+// The parser implemented in the function parseExpr parses an arithmetic 
+// expression according to the following EBNF grammar.
+//
+//   ArithExpr -> Product (("+" | "-") Product)*
+//   Product   -> Factor  (("*" | "/") Factor)*
+//   Factor    -> Base ("**" Factor)?
+//   Base      -> "(" ArithExpr ")" 
+//             |  "exp" "(" ArithExpr ")"
+//             |  "ln"  "(" ArithExpr ")"
+//             |  NUMBER
+//             |  VARIABLE
+parseAndDiff := procedure(s, v) {
+     tl := tokenizeString(s);
+     [result, rl] := parseArithExpr(tl);
+     print(canonical(result));
+     assert(rl == [], "Parse Error: could not parse $tl$, rest: $rl$");
+     return diff(result, v);
+};
+// This procedure takes a token list tl and tries to interpret this list
+// as an arithmetic expression.
+parseArithExpr := procedure(tl) {
+    [result, rl] := parseProduct(tl);
+    while (#rl > 1 && rl[1] in ["+", "-"]) {
+        op := rl[1];
+        [arg, rl] := parseProduct(rl[2..]);
+        match (op) {
+            case "+": result := result + arg;
+            case "-": result := result - arg;
+        } 
+    }
+    return [result, rl];
+};
+parseProduct := procedure(tl) {
+    [result, rl] := parseFactor(tl);
+    while (#rl > 1 && rl[1] in ["*", "/"]) {
+        op := rl[1];
+        [arg, rl] := parseFactor(rl[2..]);
+        match (op) {
+            case "*": result := result * arg;
+            case "/": result := result / arg;
+        } 
+    }
+    return [result, rl];
+};
+parseFactor := procedure(tl) {
+    [atom, rl] := parseBase(tl);
+    match (rl) {
+        case [ "**" | ql ]: [factor, rl] := parseFactor(ql);
+                            return [atom ** factor, rl];
+        default:            return [atom, rl];
+    }
+};
+parseBase := procedure(tl) {
+    match (tl) {
+        case [ "exp", "(" | rl ]: [expr, ql] := parseArithExpr(rl);
+                                  assert(ql[1] == ")", "Parse Error");
+                                  return [ Exp(expr), ql[2..]];
+        case [ "ln", "(" | rl ]:  [expr, ql] := parseArithExpr(rl);
+                                  assert(ql[1] == ")", "Parse Error");
+                                  return [ Ln(expr), ql[2..]];
+        case ["(" | rl ]:         [expr, ql] := parseArithExpr(rl);
+                                  assert(ql[1] == ")", "Parse Error");
+                                  return [expr, ql[2..]];
+        case [ Number(n) | rl ]:  return [Number(n), rl];
+        case [ Var(v) | rl ]:     return [Var(v), rl];
+        default:                  abort("parse error in parseBase($tl$)");
+    }
+};
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/", "**"
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex 'exp' as [ operator ]: 
+              tokenList += [ operator ];
+        regex 'ln' as [ operator ]: 
+              tokenList += [ operator ];
+        regex '\*\*' as [ operator ]: 
+              tokenList += [ operator ];
+        regex '[-+*/()]' as [ operator ]: 
+              tokenList += [ operator ];
+        regex '[a-z][a-z0-9_]*' as [ variable ]: 
+              tokenList += [ Var(variable)    ];
+        regex '0|[1-9][0-9]*' as [ number ]: 
+              tokenList += [ Number(int(number)) ];
+        regex '[ \t\v\n]+': // skip
+    }
+    return tokenList;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//           code for differentiation                                         //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+// differentiate the term t with respect to the variable x
+diff := procedure(t, x) {
+    match (t) {
+        case t1 + t2 :
+             return diff(t1, x) + diff(t2, x);
+        case t1 - t2 :
+             return diff(t1, x) - diff(t2, x);
+        case t1 * t2 :
+             return diff(t1, x) * t2 + t1 * diff(t2, x);
+        case t1 / t2 :
+             return ( diff(t1, x) * t2 - t1 * diff(t2, x) ) / (t2 * t2);
+        case f ** Number(n): 
+            return Number(n) * diff(f, x) * f ** Number(n-1);
+        case f ** g :
+             return diff( Exp(g * Ln(f)), x);
+        case Ln(a) :
+             return diff(a, x) / a;
+        case Exp(a) : 
+             return diff(a, x) * Exp(a);
+        case Var(x) : // x is defined above as second argument to diff
+             return 1;
+        case Var(y) : // y is undefined, therefore matches any other variable
+             return 0;
+        case Number(n):
+             return 0;    
+        default:
+            abort("error in diff($t$, $x$)");
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// code for testing                                                           //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+testParseAndDiff := procedure(s, v) {
+    r := parseAndDiff(s, v);
+    print("d/d$v$($s$) = $r$");
+    return r;
+};
+
+testParseAndDiff("x + x", "x");
+testParseAndDiff("x - x", "x");
+testParseAndDiff("x * x", "x");
+testParseAndDiff("x / x", "x");
+testParseAndDiff("2 ** x", "x");
+testParseAndDiff("x ** 2", "x");
+testParseAndDiff("x * exp(x)", "x");
+testParseAndDiff("x ** x", "x");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

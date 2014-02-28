@@ -1,0 +1,27 @@
+load("fixpoint.stlx");
+epsClosure := procedure(s, delta) {
+    result := fixpoint({s}, q |-> delta(q, ""));
+    return result;
+};
+deltaStar := procedure(s, c, delta) {
+    return {} +/ { epsClosure(q, delta) : q in delta(s, c) };
+};
+capitalDelta := procedure(m, c, delta) {
+    return {} +/ { deltaStar(q, c, delta) : q in m };
+};
+nfa2dfa := procedure(nfa) {
+    [states, sigma, delta, q0, final] := nfa;
+    newStart   := epsClosure(q0, delta);
+    nextStates := m |-> { capitalDelta(m, c, delta) : c in sigma };
+    newStates  := fixpoint({newStart}, nextStates);
+    newDelta   := [m, c] |-> capitalDelta(m, c, delta);
+    newFinal   := { m : m in newStates | m * final != {} };
+    return [newStates, sigma, newDelta, newStart, newFinal];
+};
+
+
+
+
+
+    
+

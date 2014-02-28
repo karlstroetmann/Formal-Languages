@@ -1,0 +1,29 @@
+// CUP specification for a simple expression evaluator (with actions)
+import java_cup.runtime.*;
+
+/* Terminals (tokens returned by the scanner). */
+terminal           SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD;
+terminal           UMINUS, LPAREN, RPAREN;
+terminal Number    NUMBER;
+terminal Variable  IDENTIFIER;
+
+/* Non-terminals */
+nonterminal Expr expr, product, factor;
+
+/* The grammar */
+expr    ::= expr:e PLUS   product:p   {: RESULT = new Sum(        e, p ); :} 
+    	 |  expr:e MINUS  product:p   {: RESULT = new Difference( e, p ); :} 
+         |  product:p                 {: RESULT = p;                      :} 
+         ;
+
+product ::= product:p TIMES  factor:f {: RESULT = new Product(  p, f ); :}
+         |  product:p DIVIDE factor:f {: RESULT = new Quotient( p, f ); :}
+         |  factor:f                  {: RESULT = f;     :}
+         ;
+
+factor  ::= NUMBER:n                  {: RESULT = n; :} 
+         |  IDENTIFIER:v              {: RESULT = v; :} 
+         |  LPAREN expr:e RPAREN      {: RESULT = e; :} 
+         ;
+  
+

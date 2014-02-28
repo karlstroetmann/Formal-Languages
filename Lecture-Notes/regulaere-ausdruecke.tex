@@ -1,0 +1,584 @@
+\chapter{Reguläre Ausdrücke \label{chapter:regular-expressions}}
+\href{http://en.wikipedia.org/wiki/Regular_expression}{\emph{Reguläre Ausdrücke}} sind Terme, die einfache formale Sprachen spezifizieren.
+Mit Hilfe eines regulären Ausdrucks lassen sich
+\begin{enumerate}
+\item die Auswahl zwischen mehreren Alternativen,
+\item Wiederholungen, und
+\item Verkettung
+\end{enumerate}
+angeben.  Viele moderne Skript-Sprachen (insbesondere die Sprache \href{http://en.wikipedia.org/wiki/Perl}{\textsl{Perl}}) wären ohne
+reguläre Ausdrücke undenkbar.  Alle modernen Hoch-Sprachen (z.B. \textsl{Java}, \texttt{C\#}, $\cdots$)
+enthalten umfangreiche Bibliotheken zur Unterstützung regulärer Ausdrücke.  Darüber hinaus gibt es eine
+Reihe von \textsc{Unix}-Werkzeugen wie \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}}, 
+\href{http://en.wikipedia.org/wiki/Sed}{\texttt{sed}} oder
+\href{http://en.wikipedia.org/wiki/Awk}{\texttt{awk}}, die auf der Verwendung regulärer
+Ausdrücke basieren. 
+
+\section{Einige Definitionen}
+Bevor wir die Definition der regulären Ausdrücke geben können, benötigen wir einige
+Definitionen.
+
+\begin{Definition}[Produkt von Sprachen]
+  Es sei $\Sigma$ ein Alphabet und $L_1 \subseteq \Sigma^*$ und $L_2 \subseteq \Sigma^*$ seien
+  formale Sprachen.  Dann definieren wir das \emph{Produkt} der Sprachen $L_1$ und $L_2$, geschrieben
+  $L_1 \cdot L_2$, als die Menge aller Konkatenationen $w_1w_2$, für die $w_1$ ein Wort aus $L_1$ und
+  $w_2$ ein Wort aus $L_2$ ist:
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $L_1 \cdot L_2 := \bigl\{ w_1w_2 \mid w_1 \in L_1 \wedge w_2 \in L_2 \bigr\}$ \qed
+\end{Definition}
+
+\example
+Es sei $\Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \}$ und $L_1$ und $L_2$ seien als
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_1 = \{ \texttt{ab}, \texttt{bc} \}$ \quad und \quad
+$L_2 = \{ \texttt{ac}, \texttt{cb} \}$ 
+\\[0.2cm]
+definiert.  Dann gilt 
+\\[0.2cm]
+\hspace*{1.3cm}
+$L_1 \cdot L_2 = \{ \texttt{abac}, \texttt{abcb}, \texttt{bcac}, \texttt{bccb} \}$.  \eox
+
+\begin{Definition}[Potenz einer Sprache] 
+Es sei $\Sigma$ eine Alphabet, $L \subseteq \Sigma^*$ eine formale Sprache und $n\in\mathbb{N}$
+eine natürlich Zahl.  Wir definieren die \emph{$n$-te Potenz} von $L$, wir schreiben $L^n$, durch
+Induktion nach $n$.
+\begin{enumerate}
+\item[I.A.:] $n = 0$: 
+
+      $L^0 := \{ \varepsilon \}$.
+
+      Hier steht $\varepsilon$ für das leere Wort, schreiben wir Worte als Listen von
+      Buchstaben, so gilt also $\varepsilon = []$.
+\item [I.S.:] $n \mapsto n + 1$:
+
+      $L^{n+1} = L^n \cdot L$
+\end{enumerate}
+\end{Definition}
+
+\example
+Es sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$ und $L = \{ \texttt{ab}, \texttt{ba} \}$.  Dann gilt:
+\begin{enumerate}
+\item $L^0 = \{ \varepsilon \}$,
+\item $L^1 = \{ \varepsilon \} \cdot \{ \texttt{ab}, \texttt{ba} \} = \{ \texttt{ab}, \texttt{ba} \}$,
+\item $L^2 = \{ \texttt{ab}, \texttt{ba} \} \cdot \{ \texttt{ab}, \texttt{ba} \} = 
+             \{ \texttt{abab}, \texttt{abba}, \texttt{baab}, \texttt{baba} \}$.  \eox
+\end{enumerate}
+
+\begin{Definition}[Kleene Closure]
+  Assume that $\Sigma$ is an Alphabet and $L \subseteq \Sigma^*$ is some formal language. Then the
+  \emph{Kleene closure} of $L$ is written as $L^*$ and is defined to be the union of all powers
+  $L^n$ for all $n \in \mathbb{N}$: 
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $L^* := \bigcup\limits_{n \in \mathbb{N}} L^n$.
+  \\[0.2cm]
+  Note that in these lecture notes we assume that $0 \in \mathbb{N}$. Therefore, $\varepsilon \in L^*$.
+  \qed  
+\end{Definition}
+
+\example
+Es sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$ und  $L = \{ \texttt{a} \}$.  Dann gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$L^* = \{ \texttt{a}^n \mid n \in \mathbb{N} \}$.
+\\[0.2cm]
+Hierbei bezeichnet $\texttt{a}^n$ das Wort der Länge $n$, das nur den
+Buchstaben \texttt{a} enthält, es gilt also 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{a}^n = \underbrace{\texttt{a} \cdots \texttt{a}}_n$.  \eox 
+\\[0.2cm]
+Formal definieren wir für einen beliebigen String $s$ und eine natürliche Zahl $n \in \mathbb{N}$
+den Ausdruck $s^n$ durch Induktion über $n$:
+\begin{tabbing}
+\hspace*{1.3cm} \= I.A. $n = 0$:  \hspace*{1.3cm} \= $s^0$ \hspace*{0.3cm} \= $:= \varepsilon$. \\[0.2cm]
+                \> I.S. $n \mapsto n + 1$:               \> $s^{n+1}$             \> $:= s^n s$, 
+                \quad wobei $s^n s$ für die Konkatenation der Strings $s^n$ und $s$ steht.
+\end{tabbing}
+
+Das letzte Beispiel zeigt, dass der Kleene-Abschluss einer endlichen
+Sprache unendlich sein kann.  Offenbar ist der Kleene-Abschluss einer Sprache $L$ dann unendlich,
+wenn $L$ wenigstens ein Wort mit einer Länge größer als 0 enthält.
+\vspace*{0.3cm}
+
+
+Wir geben nun die Definition der regulären Ausdrücke über einem Alphabet $\Sigma$.  Wir bezeichnen
+die Menge aller regulären Ausdrücke mit $\texttt{RegExp}_\Sigma$.  Die Definition dieser Menge
+verläuft induktiv. Gleichzeitig mit der Menge $\texttt{RegExp}_\Sigma$ definieren wir eine Funktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$L: \texttt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*}$,
+\\[0.2cm]
+die jedem regulären Ausdruck $r$ eine formale Sprache $L(r) \subseteq \Sigma^*$ zuordnet.\footnote{
+Für eine Menge $M$ bezeichnet $2^M$ die \emph{Potenzmenge} von $M$, also die Menge aller Teilmengen
+von $M$.}
+
+\begin{Definition}[reguläre Ausdrücke]
+  Die Menge $\texttt{RegExp}_\Sigma$ der \emph{regulären Ausdrücke} über dem Alphabet
+  $\Sigma$ wird wie folgt induktiv definiert:
+  \begin{enumerate}
+  \item $\emptyset \in \texttt{RegExp}_\Sigma$
+
+        Der reguläre Ausdruck $\emptyset$ bezeichnet die leere Sprache, es gilt also
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L(\emptyset) := \{\}$.
+
+        Zur Vermeidung von Verwirrung nehmen wir dabei an, dass das Zeichen $\emptyset$ nicht in dem Alphabet $\Sigma$
+        auftritt, es gilt also $\emptyset \not\in \Sigma$.
+  \item $\varepsilon \in \texttt{RegExp}_\Sigma$
+
+        Der reguläre Ausdruck $\varepsilon$ bezeichnet die Sprache, die nur das leere Wort 
+        $\varepsilon$ enthält: 
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L(\varepsilon) := \{ \varepsilon \}$
+        \\[0.2cm]
+        Beachten Sie, das die beiden Auftreten von $\varepsilon$ in der obigen Gleichung
+        verschiedene Dinge bezeichnen.  Das Auftreten auf der linken Seite der
+        Gleichung bezeichnet einen regulären Ausdruck, während das Auftreten auf der rechten Seite 
+        das leere Wort bezeichnet. 
+  \item $c \in \Sigma \rightarrow c \in \texttt{RegExp}_\Sigma$.
+
+        Jeder Buchstabe aus dem Alphabet $\Sigma$ fungiert also gleichzeitig als regulärer
+        Ausdruck.  Dieser Ausdruck beschreibt die Sprache, die aus genau dem Wort $c$ besteht:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L(c) := \{ c \}$
+        \\[0.2cm]
+        Bemerken Sie, dass wir an dieser Stelle Buchstaben mit Wörtern der Länge Eins identifizieren.
+  \item $r_1 \in \texttt{RegExp}_\Sigma \wedge r_2 \in \texttt{RegExp}_\Sigma
+         \rightarrow r_1 + r_2 \in \texttt{RegExp}_\Sigma$
+
+        Aus den regulären Ausdrücken $r_1$ und $r_2$ kann mit dem Infix-Operator
+        ``$+$'' ein neuer regulärer Ausdruck gebildet werden.  Dieser so gebildete Ausdruck
+        beschreibt die Vereinigung der Sprachen von $r_1$ und $r_2$:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L(r_1 + r_2) := L(r_1) \cup L(r_2)$.
+
+         Wir nehmen an, dass das Zeichen ``\texttt{+}'' nicht in dem Alphabet $\Sigma$
+         auftritt, es gilt also  $\squoted{+} \not\in \Sigma$.
+  \item $r_1 \in \texttt{RegExp}_\Sigma \wedge r_2 \in \texttt{RegExp}_\Sigma 
+         \rightarrow r_1 \cdot r_2 \in \texttt{RegExp}_\Sigma$
+
+        Aus den regulären Ausdrücken $r_1$ und $r_2$ kann also mit dem Infix-Operator
+        ``$\cdot$'' ein neuer regulärer Ausdruck gebildet werden.  Dieser so gebildete Ausdruck
+        beschreibt das Produkt der Sprachen von $r_1$ und $r_2$:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L(r_1 \cdot r_2) := L(r_1) \cdot L(r_2)$.
+
+         Wir nehmen wieder an, dass das Zeichen ``$\cdot$'' nicht in dem Alphabet $\Sigma$
+         auftritt, es gilt also  $\squoted{$\cdot$} \not\in \Sigma$.
+  \item $r \in \texttt{RegExp}_\Sigma \rightarrow r^* \in \texttt{RegExp}_\Sigma$
+
+        Aus dem regulären Ausdrücken $r$ kann mit dem Postfix-Operator
+        ``$^*$'' ein neuer regulärer Ausdruck gebildet werden.  Dieser so gebildete Ausdruck
+        steht für den Kleene-Abschluss der durch $r$ beschriebenen Sprache:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L(r^*) := \bigl(L(r)\bigr)^*$.
+
+         Wir nehmen $\squoted{$^*$} \not\in \Sigma$ an. 
+  \item $r \in \texttt{RegExp}_\Sigma \rightarrow (r) \in \texttt{RegExp}_\Sigma$
+
+        Reguläre Ausdrücke können geklammert werden.  Dadurch ändert sich die Sprache
+        natürlich nicht:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $L\bigl((r)\bigr) := L(r)$        . 
+
+        Wir nehmen dabei an, dass die Klammer-Symbole \qote{(} und \qote{)} nicht in
+        dem Alphabet $\Sigma$ auftreten, es gilt also
+        $\squoted{(} \not\in \Sigma$  und $\squoted{)} \not\in \Sigma$. \qed
+  \end{enumerate}
+\end{Definition}
+Um Klammern zu sparen vereinbaren wir die folgenden Operator-Präzedenzen:
+\begin{enumerate}
+\item Der Postfix-Operator ``$^*$'' bindet am stärksten.
+\item Der Infix-Operator ``$\cdot$'' bindet schwächer als ``$^*$'' und stärker als ``$+$''.
+\item Der Infix-Operator ``$+$'' bindet am schwächsten.
+\end{enumerate}
+Damit wird also der reguläre Ausdruck
+\\[0.2cm]
+\hspace*{1.3cm}
+$a + b \cdot c^*$ \quad implizit geklammert als \quad $a + \bigl(b \cdot (c^*)\bigr)$.
+
+\examples
+Bei den folgenden Beispielen ist das Alphabet $\Sigma$ durch die Definition
+\\[0.2cm]
+\hspace*{1.3cm}
+$\Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \}$
+\\[0.2cm]
+festgelegt.
+\begin{enumerate}
+\item $r_1 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})$
+
+      Der Ausdruck $r_1$ beschreibt alle Wörter, die aus genau zwei Buchstaben bestehen:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r_1) = \bigl\{ w \in \Sigma^* \,\big|\; |w| = 2 \bigr\}$.
+\item $r_2 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})^*$
+
+      Der Ausdruck $r_2$ beschreibt alle Wörter, die aus wenigstens einem Buchstaben bestehen.
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r_2) = \bigl\{ w \in \Sigma^* \,\big|\; |w| \geq 1 \bigr\}$.
+\item $r_3 := (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot 
+              (\texttt{b} + \texttt{c})^*$
+
+      Der Ausdruck $r_3$ beschreibt alle Wörter, in denen der Buchstabe \texttt{a}
+      genau einmal auftritt.  Ein solches Wort besteht aus einer beliebigen Anzahl
+      der Buchstaben \texttt{b} und \texttt{c} (dafür steht der Teilausdruck
+      $(\texttt{b} + \texttt{c})^*$) gefolgt von dem Buchstaben \texttt{a}, wiederum 
+      gefolgt von einer beliebigen Anzahl der Buchstaben \texttt{b} und \texttt{c}.
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r_3) = \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
+                        \#\bigl\{i \in \mathbb{N} \,\big|\; w[i] = \texttt{a} \bigl\} \,= 1 \Bigr\}$.
+\item $r_4 :=  (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot (\texttt{b} + \texttt{c})^* +
+               (\texttt{a} + \texttt{c})^* \cdot \texttt{b} \cdot (\texttt{a} + \texttt{c})^*$
+
+      Der Ausdruck $r_4$ beschreibt alle die Wörter, die entweder genau ein \texttt{a}
+      oder genau ein \texttt{b} enthalten.
+      \\[0.2cm]
+      \hspace*{0.3cm}
+      $L(r_4) = \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
+                        \#\bigl\{i \in \mathbb{N} \,\big|\; w[i] = \texttt{a} \bigl\} \,=
+                        1 \Bigr\} \;\cup\;
+                \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
+                        \#\bigl\{i \in \mathbb{N} \,\big|\; w[i] = \texttt{b} \bigl\} \,=
+                        1 \Bigr\}$.  \eox 
+\end{enumerate}
+
+\noindent
+\textbf{Bemerkung}: Die oben festgelegte Syntax regulärer Ausdrücke ist die Syntax, die in theoretischen
+Abhandlungen über formale Sprachen gebräuchlich ist, siehe beispielsweise \cite{hopcroft:06}.  Sie weicht
+allerdings von der Syntax ab, die in Sprachen wie \textsl{Java} gebräuchlich ist.
+Wir werden diese Unterschiede später noch diskutieren.
+
+\exercise
+\renewcommand{\labelenumi}{(\alph{enumi})}
+\begin{enumerate}
+\item Es sei $\Sigma = \{ a, b, c \}$.  Geben Sie einen regulären Ausdruck für die Sprache
+      $L \subseteq \Sigma^*$ an, deren Wörter mindestens ein $a$ und mindestens ein $b$
+      enthalten.
+\item Es sei $\Sigma = \{ 0, 1 \}$.   Geben Sie einen regulären Ausdruck für die Sprache
+      $L \subseteq \Sigma^*$ an, für die das drittletzte Zeichen eine $1$ ist.
+\item Wieder sei $\Sigma = \{ 0, 1 \}$.   Geben Sie einen regulären Ausdruck für die Sprache
+      $L \subseteq \Sigma^*$ der Wörter an, in denen der Teilstring $110$ nicht auftritt.
+
+       The regular expression $r$ that is sought for can be defined as 
+       \\[0.2cm]
+       \hspace*{1.3cm}
+       $r = (0 + 1 \cdot 0)^* \cdot 1^*$.
+       \\[0.2cm]
+       First, it is quite obvious that the language $L(r)$ does not contain a string $w$ such that
+       $w$ contains the substring $110$.  This is so because a character $1$ that is generated by the
+       part $(0 + 1 \cdot 0)^*$ is immediately followed by a $0$.  Hence if $w$ contains the
+       substring $110$, the first $1$ cannot originate from the regular expression $(0 + 1 \cdot 0)^*$.
+       Furthermore, if the first $1$ of the substring 110 originates from the regular expression
+       $1^*$, then there cannot be a $0$ following since the language generated by $1^*$ contains
+       only ones
+
+       Second, assume that the string $w$ does not contain the substring $110$.  We have to show that
+       $w \in L(r)$.  Now if the character $0$ does not occur in the
+       string $w$, then $w$ is just a bunch of zeros and therefore $w$ can be generated by the
+       regular expression $(0 + 1  \cdot 0)^* \cdot 1^*$.  If the string $w$ does contain the character $1$,
+       there are two cases.
+       \begin{enumerate}
+       \item The first occurrence of $1$ is followed by a $0$.  Then the prefix of $w$ upto and
+             including this $0$ is generated by the regular expression $(0 + 1 \cdot 0)^*$.  The
+             remaining part of $w$ is shorter and, by induction, can be shown to be generated by 
+             $(0 + 1 \cdot 0)^* \cdot 1^*$.
+       \item The first occurrence of $1$ is followed by another $1$.  In this case, the rest of $w$
+             must be made up of ones.  Hence, the part of $w$ starting with the first $1$ is
+             generated by $1^*$ and obviously the preceding zeros can all be generated by 
+             $(0 + 1 \cdot 0)^*$.
+       \end{enumerate}
+\item Again, assume $\Sigma = \{0,1\}$.  What is the language $L$ generated by the regular expression 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(1 + \varepsilon)\cdot(0\cdot 0^* \cdot 1)^* \cdot 0^*$?  \eox
+
+      This is the language $L$ such that the strings in $L$ do not contain the substring $11$.
+\end{enumerate}
+\renewcommand{\labelenumi}{\arabic{enumi}.}
+
+\section{Algebraische Vereinfachung regulärer Ausdrücke}
+Given two regular expressions $r_1$ and $r_2$, we write
+\\[0.2cm]
+\hspace*{1.3cm}
+$r_1 \doteq r_2$ \quad iff $L(r_1) = L(r_2)$
+\\[0.2cm]
+The following laws apply:
+\begin{enumerate}
+\item $r_1 + r_2 \doteq r_2 + r_1$
+
+      Der Beweis dieser Gleichung folgt aus der Definition und der Kommutativität der
+      Vereinigung von Mengen:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r_1 + r_2) = L(r_1) \cup L(r_2) = L(r_2) \cup L(r_1) = L(r_2 + r_1)$.
+\item $(r_1 + r_2) + r_3 \doteq r_1 + (r_2 + r_3)$
+
+      Diese Gleichung folgt aus der Assoziativität der Vereinigung.
+\item $(r_1 \cdot r_2) \cdot r_3 \doteq r_1 \cdot (r_2 \cdot r_3)$
+
+      Diese Gleichung folgt aus der Tatsache, dass die Konkatenation von Worten assoziativ
+      ist, für beliebige Wörter $u$, $v$ und $w$ gilt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(u v) w = u (v w)$.
+      \\[0.2cm]
+      Daraus folgt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $
+      \begin{array}[t]{lcl}
+        L\bigl( (r_1 \cdot r_2) \cdot r_3\bigr) 
+        & = & \bigl\{ x w \mid x \in L(r_1 \cdot r_2) \wedge w \in L(r_3)\bigr) \\[0.1cm]
+        & = & \bigl\{ (u v) w \mid u \in L(r_1) \wedge v \in L(r_2) \wedge w \in L(r_3)\bigr) \\[0.1cm]
+        & = & \bigl\{ u (v w) \mid u \in L(r_1) \wedge v \in L(r_2) \wedge w \in L(r_3)\bigr) \\[0.1cm]
+        & = & \bigl\{ u y \mid u \in L(r_1) \wedge y \in L(r_2 \cdot r_3)\bigr) \\[0.1cm]
+        & = & L\bigl( r_1 \cdot (r_2 \cdot r_3)\bigr).
+      \end{array}
+      $
+\item $\emptyset \cdot r \doteq r \cdot \emptyset \doteq \emptyset$
+\item $\varepsilon \cdot r \doteq r \cdot \varepsilon \doteq r$
+\item $\emptyset + r \doteq r + \emptyset \doteq r$
+\item $(r_1 + r_2) \cdot r_3 \doteq r_1 \cdot r_3 + r_2 \cdot r_3$
+\item $r_1 \cdot (r_2 + r_3) \doteq r_1 \cdot r_2 + r_1 \cdot r_3$
+\item $r + r \doteq r$, denn
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r+r) = L(r) \cup L(r) = L(r)$.
+\item $(r^*)^* \doteq r^*$      
+
+      Wir haben
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r^*) = \bigcup\limits_{n \in \mathbb{N}} L(r)^n$ 
+      \\[0.2cm]
+      und daraus folgt allgemein $L(r) \subseteq L(r^*)$.   Ersetzen wir in dieser
+      Beziehung $r$ durch $r^*$, so sehen wir, dass 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(r^*) \subseteq L\bigl((r^*)^*\bigr)$
+      \\[0.2cm]
+      gilt. Um die Umkehrung 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L\bigl((r^*)^*\bigr) \subseteq L(r^*)$
+      \\[0.2cm]
+      zu beweisen, betrachten wir zunächst die Worte $w \in L\bigl((r^*)^*\bigr)$.
+      Wegen 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L\bigl((r^*)^*\bigr) = \bigcup\limits_{n \in \mathbb{N}} L(r^*)^n$
+      \\[0.2cm]
+      gilt $w \in L\bigl((r^*)^*\bigr)$ genau dann, wenn es ein $n \in \mathbb{N}$
+      gibt, so dass es Wörter $u_1, \cdots,u_n \in L(r^*)$ gibt, so dass 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $w = u_1 \cdots u_n$.
+      \\[0.2cm]
+      Wegen $u_i \in L(r^*)$ gibt es für jedes $i \in \{1,\cdots,n\}$ eine Zahl
+      $m(i) \in \mathbb{N}$, so dass es für $j=1,\cdots, m(i)$ Wörter 
+      $v_{i,j} \in L(r)$ gibt, so dass
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $u_i = v_{1,i} \cdots v_{m(i),i}$
+      \\[0.2cm]
+      gilt.  Insgesamt gilt dann
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $w = v_{1,1} \cdots v_{m(1),1} v_{1,2} \cdots v_{m(2),2} \cdots v_{1,n} \cdots v_{m(n),n}$.
+      \\[0.2cm]
+      Also ist $w$ eine Konkatenation von Wörtern der Sprache $L(r)$ und das heißt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $w \in L\bigl(r^*\bigr)$
+      \\[0.2cm]
+      und damit ist die Inklusion
+      $L\bigl((r^*)^*\bigr) \subseteq L(r^*)$
+      gezeigt.
+\item $\emptyset^* \doteq \varepsilon$
+\item $\varepsilon^* \doteq \varepsilon$
+\item $r^* \doteq \varepsilon + r^* \cdot r$
+\item $r^* \doteq (\varepsilon + r)^*$
+\end{enumerate}
+Leider gibt es kein System von Gleichungen, aus denen man alle anderen Gleichungen für
+reguläre Ausdrücke ableiten kann.  Es gibt aber eine Ableitungs-Regel, die zusammen mit den oben 
+angegeben Gleichungen vollständig ist.  Diese Regel lautet
+\\[0.2cm]
+\hspace*{1.3cm}
+$\bruch{\;r \doteq r \cdot s + t \quad \varepsilon \not\in L(s)\;}{r \doteq t \cdot s^*}$
+\\[0.2cm]
+Wir werden diese Regel im Folgenden als \emph{Salomaa-Regel} bezeichnen.
+Die Korrektheit der Salomaa-Regel ist der Inhalt des folgenden Lemmas.
+
+\begin{Lemma}
+  Es seien $r$, $s$ und $t$ reguläre Ausdrücke, für welche die Gleichung
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $r \doteq r \cdot s + t$
+  \\[0.2cm]
+  gilt.  Außerdem gelte $\varepsilon \not\in L(s)$.  Dann gilt
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $r \doteq t \cdot s^*$.
+\end{Lemma}
+
+\proof
+Nach Voraussetzung wissen wir, dass
+\begin{equation}
+  \label{eq:r1}
+  L(r) = L(r) \cdot L(s) + L(t)  
+\end{equation}
+gilt.  Wir müssen die Gleichung
+\begin{equation}
+  \label{eq:r2}
+  L(r) = L(t) \cdot L(s^*)  
+\end{equation}
+nachweisen.  Wir spalten diesen Nachweis in zwei Teile auf und zeigen zunächst, dass
+\begin{equation}
+  \label{eq:r3}
+  L(r) \subseteq L(t) \cdot L(s^*)  
+\end{equation}
+gilt.  Es sei also $x \in L(r)$ gegeben.  Wir zeigen durch Induktion über die Länge von $x$, dass
+daraus $x \in L(t) \cdot L(s^*)$ folgt.   Nach der Voraussetzung $(\ref{eq:r1})$ gibt es zwei Möglichkeiten:
+\\[0.2cm]
+\hspace*{1.3cm}
+$x \in L(r) \cdot L(s)$ \quad oder \quad $x \in L(t)$.
+\\[0.2cm]
+Wir betrachten die Fälle getrennt und beginnen mit dem einfacheren Fall.
+\begin{enumerate}
+\item $x \in L(t)$.
+
+      Wegen $\varepsilon \in L(s^*)$ folgt dann sofort
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $x = x\varepsilon \in L(t) \cdot L(s^*)$.
+\item $x \in L(r) \cdot L(s)$.
+
+      Dann läßt sich $x$ in zwei Teilstrings $y$ und $z$ aufspalten, so dass gilt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $x = yz$, \quad $y \in L(r)$ \quad und \quad  $z \in L(s)$.
+      \\[0.2cm]
+      Da $\varepsilon \not\in L(s)$ vorausgesetzt ist, folgt $|z|>0$ und damit gilt $|y| < |x|$, so dass
+      wir auf $y$ die  Induktions-Voraussetzung anwenden können und damit
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $y \in L(t) \cdot L(s^*)$
+      \\[0.2cm]
+      schließen können.        Für $x$ heißt dies
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $x = yz \in L(t) \cdot L(s^*) \cdot L(s) \subseteq L(t) \cdot L(s^*)$
+      \\[0.2cm]
+      und damit ist der Beweis von $L(r) \subseteq L(t) \cdot L(s^*)$ abgeschlossen.
+\end{enumerate}
+Als nächstes zeigen wir, dass
+\begin{equation}
+  \label{eq:r4}
+  L(t \cdot s^*) \subseteq L(r)
+\end{equation}
+gilt.  Es sei also ein String  $x \in L(t \cdot s^*)$ gegeben und wir müssen nachweisen, dass 
+$x \in L(r)$ liegt.  Wenn $x \in L(t \cdot s^*)$ ist, dann muss $x$ die Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$x = y z_1 \cdots z_m$ \quad mit $y \in L(t)$ und $z_i \in L(s)$ für alle $i=1,\cdots,m$
+\\[0.2cm]
+haben.  Wir zeigen durch Induktion über $m \in \mathbb{N}$, dass 
+\\[0.2cm]
+\hspace*{1.3cm}
+$x = y z_1 \cdots z_m \in L(r)$ \quad für alle $m \in \mathbb{N}$ gilt.
+\begin{enumerate}
+\item[I.A.:] $m= 0$.
+
+             Dann gilt $x = y \in L(t)$ und aus der Voraussetzung (\ref{eq:r1}) folgt
+             $y \in L(r)$.
+\item[I.S.:] $m \mapsto m + 1$.
+
+             Nach Induktions-Voraussetzung gilt bereits
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $y z_1 \cdots z_m \in L(r)$.
+             \\[0.2cm]
+             Nach Gleichung (\ref{eq:r1}) haben wir dann
+             \\[0.2cm]
+             \hspace*{1.3cm}
+             $y z_1 \cdots z_m z_{m+1} \in L(r) \cdot L(s) \subseteq L(r)$
+             \\[0.2cm]
+             und damit ist die Induktion abgeschlossen.
+\end{enumerate}
+Damit ist die Gleichung $L(r) = L(t) \cdot L(s^*)$ nun vollständig bewiesen.
+\qed
+
+
+
+\remark
+Der Beweis der Tatsache, dass die oben angegebenen Gleichungen zusammen mit der Salomaa-Regel ausreichen,
+um jede gültige Gleichung zweier regulären Ausdrücke nachzuweisen, geht über den Rahmen der Vorlesung
+hinaus.  Der Beweis findet sich in einem Papier von Arto Salomaa \cite{salomaa:66}.
+
+\exercise
+Zeigen Sie die folgende Gleichung mit Hilfe algebraischer Umformungen und der Salomaa-Regel:
+\\[0.2cm]
+\hspace*{1.3cm}
+$1 \cdot 0 \cdot (1 \cdot 0)^* \doteq  1 \cdot (0 \cdot 1)^* \cdot 0$.
+\vspace*{0.1cm}
+
+\solution Wir weisen die Gleichung mit Hilfe der Salomaa-Regel
+\\[0.2cm]
+\hspace*{1.3cm} $\bruch{\;r \doteq r \cdot s + t \quad \varepsilon \not\in L(s)\;}{r \doteq t \cdot s^*}$
+\\[0.2cm]
+nach.  Wir definieren zunächst
+\\[0.2cm]
+\hspace*{1.3cm} $t := 1 \cdot 0$, \quad $s := 1 \cdot 0$ \quad und \quad 
+$r := 1 \cdot (0 \cdot 1)^* \cdot 0$.
+\\[0.2cm]
+Als nächstes zeigen wir, dass $r \doteq r \cdot s + t$ gilt.  Einsetzen der oben definierten Werte liefert
+\\[0.2cm]
+\hspace*{1.3cm}
+$1 \cdot (0 \cdot 1)^* \cdot 0 \eqmark 1 \cdot (0 \cdot 1)^* \cdot 0  \cdot (1 \cdot 0) + 1 \cdot 0$. 
+\hspace*{\fill} $(\star)$
+\\[0.2cm]
+Um $(\star)$ nachzuweisen, formen wir die rechte Seite dieser Gleichung wie folgt um:
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{cll}
+       & 1 \cdot (0 \cdot 1)^* \cdot 0  \cdot (1 \cdot 0) + 1 \cdot 0                 \\
+\doteq & 1 \cdot (0 \cdot 1)^* \cdot (0  \cdot 1) \cdot 0 + 1 \cdot 0               & 
+         \mbox{(Assoziativ-Gesetz)} \\
+\doteq & 1 \cdot \bigl( (0 \cdot 1)^* \cdot (0  \cdot 1) + \varepsilon\bigr)\cdot 0 & 
+         \mbox{(Distributiv-Gesetz)} \\
+\doteq & 1 \cdot (0 \cdot 1)^* \cdot 0 & 
+         \mbox{(Regel Nummer 13)} \\
+\end{array}
+$
+\\[0.2cm]
+Das ist aber genau die linke Seite von Gleichung $(\star)$, so dass wir damit $(\star)$ bewiesen haben.
+Weiterhin gilt $\varepsilon \not\in L(1 \cdot 0)$.  Damit sind die Voraussetzungen der Salomaa-Regel
+erfüllt und wir können schließen, dass die Gleichung
+\\[0.2cm]
+\hspace*{1.3cm}
+$r \doteq t \cdot s^*$
+\\[0.2cm]
+gültig ist.  Einsetzen der Werte von $r$, $s$ und $t$ liefert dann die Gleichung
+\\[0.2cm]
+\hspace*{1.3cm}
+$1 \cdot (0 \cdot 1)^* \cdot 0 \doteq (1 \cdot 0) \cdot (1 \cdot 0)^*$
+\\[0.2cm]
+und das ist die Behauptung.  \qed
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages.tex"
+%%% End: 

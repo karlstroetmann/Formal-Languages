@@ -1,0 +1,101 @@
+options { DEBUG_TOKEN_MANAGER = true; }
+
+PARSER_BEGIN(Assembler)
+
+import java.util.*;
+
+public class Assembler {
+    public static int sOpCode = 0;   // opcode
+    public static int sFirst  = 0;   // first  argument
+    public static int sSecond = 0;   // second argument
+    public static int sThird  = 0;   // third  argument
+    public static int sFourth = 0;   // fourth argument
+
+    public static ArrayList<AsmCmd> sProgram = new ArrayList<AsmCmd>();
+
+    public static void main(String args[]) throws ParseException {
+        SimpleCharStream      stream  = new SimpleCharStream(System.in);
+        AssemblerTokenManager manager = new AssemblerTokenManager(stream);
+        Token t;
+        do {
+            t = manager.getNextToken();
+        } while (t.kind != 0); // end of file gives t.kind = 0 
+        for (int i = 0; i < sProgram.size(); ++i) {
+            sProgram.get(i).writeCode();
+        }
+        System.out.close();
+    }
+}
+
+PARSER_END(Assembler)
+
+<DEFAULT, FIRST, SECOND, THIRD, FOURTH>
+TOKEN: {
+    <NL: "\n"> { 
+        AsmCmd cmd = new AsmCmd(Assembler.sOpCode,
+                                Assembler.sFirst,
+                                Assembler.sSecond,
+                                Assembler.sThird,
+                                Assembler.sFourth);
+        Assembler.sProgram.add(cmd);
+        Assembler.sFirst  = 0;
+        Assembler.sSecond = 0;
+        Assembler.sThird  = 0;
+        Assembler.sFourth = 0;
+    } : DEFAULT
+|   <SEPERATE: ([" ", "\t", ","])+>
+|   <#DIGIT:   ["0" - "9"]>
+}
+
+<DEFAULT>
+TOKEN: {
+    <"add">   { Assembler.sOpCode =  1; } : FIRST
+|   <"sub">   { Assembler.sOpCode =  2; } : FIRST
+|   <"mul">   { Assembler.sOpCode =  3; } : FIRST
+|   <"div">   { Assembler.sOpCode =  4; } : FIRST
+|   <"mod">   { Assembler.sOpCode =  5; } : FIRST
+|   <"and">   { Assembler.sOpCode =  6; } : FIRST
+|   <"or">    { Assembler.sOpCode =  7; } : FIRST
+|   <"not">   { Assembler.sOpCode =  8; } : FIRST
+|   <"const"> { Assembler.sOpCode =  9; } : FIRST
+|   <"sll">   { Assembler.sOpCode = 10; } : FIRST
+|   <"load">  { Assembler.sOpCode = 11; } : FIRST
+|   <"store"> { Assembler.sOpCode = 12; } : FIRST
+|   <"goto">  { Assembler.sOpCode = 13; } : FIRST
+|   <"ifeq">  { Assembler.sOpCode = 14; } : FIRST
+|   <"iflt">  { Assembler.sOpCode = 15; } : FIRST
+|   <"halt">  { Assembler.sOpCode = 16; } : FIRST
+|   <"in">    { Assembler.sOpCode = 17; } : FIRST
+|   <"out">   { Assembler.sOpCode = 18; } : FIRST
+|   <"data">  { Assembler.sOpCode =  0; } : FIRST
+}
+
+<FIRST> TOKEN: {
+    < "R" (<DIGIT>)+ > { 
+        Assembler.sFirst = new Integer(image.toString().substring(1)); 
+    } : SECOND
+|    < (<DIGIT>)+ > { 
+        Assembler.sFirst = new Integer(image.toString());
+    } : SECOND    
+}
+<SECOND> TOKEN: {
+    < "R" (<DIGIT>)+ > { 
+        Assembler.sSecond = new Integer(image.toString().substring(1)); 
+    } : THIRD
+|   < (<DIGIT>)+ > { 
+        Assembler.sSecond = new Integer(image.toString()); 
+    } : THIRD
+}
+<THIRD> TOKEN: {
+    < "R" (<DIGIT>)+ > { 
+        Assembler.sThird = new Integer(image.toString().substring(1)); 
+    } : FOURTH
+|   < (<DIGIT>)+ > { 
+        Assembler.sThird = new Integer(image.toString()); 
+    } : FOURTH
+}
+<FOURTH> TOKEN: {
+    < (<DIGIT>)+ > { 
+        Assembler.sFourth = new Integer(image.toString()); 
+    } : DEFAULT
+}

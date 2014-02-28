@@ -1,0 +1,23 @@
+// CUP specification for symbolic differentiation
+import java_cup.runtime.*;
+
+terminal           PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN;
+terminal Integer   NUMBER;
+terminal Variable  IDENTIFIER;
+
+nonterminal Expr   expr;
+
+precedence left    PLUS, MINUS;
+precedence left    TIMES, DIVIDE;
+
+/* The grammar */
+expr    ::= expr:e1 PLUS   expr:e2 {: RESULT = new Sum(        e1, e2 ); :} 
+         |  expr:e1 MINUS  expr:e2 {: RESULT = new Difference( e1, e2 ); :}
+         |  expr:e1 TIMES expr:e2  {: RESULT = new Product(    e1, e2 ); :}
+         |  expr:e1 DIVIDE expr:e2 {: RESULT = new Quotient(   e1, e2 ); :}
+         |  NUMBER:n               {: RESULT = new Number(     n      ); :} 
+         |  IDENTIFIER:v           {: RESULT = v;                        :} 
+         |  LPAREN expr:e RPAREN   {: RESULT = e;                        :}
+         ;
+
+

@@ -1,0 +1,53 @@
+PARSER_BEGIN(Klausur)
+
+public class Klausur {
+    static String  sName      = "";
+    static Integer sSumPoints = 0;
+    static Integer sMaxPoints;
+    
+    public static void main(String args[]) throws ParseException {
+        sMaxPoints = new Integer(args[0]);
+        Klausur parser = new Klausur(System.in);
+        parser.List();
+    }
+
+    static Double note() {
+        return 7.0 - 6.0 * sSumPoints / sMaxPoints;
+    }
+}
+
+PARSER_END(Klausur)
+
+TOKEN: {
+    <KURS:    (<LETTER>)+ ":" (~["\n"])* "\n">
+|   <NAME:    (<LETTER>)+ " " (<LETTER>)+>
+|   <COLON:   ":" ([ " ", "\t" ])+>
+|   <ZAHL:    "0" | ["1"-"9"] (["0"-"9"])*>
+|   <HYPHEN:  "-">
+|   <EOL:     ([" ", "\t"])* "\n">
+|   <WHITE:   [" ", "\t"]>
+|   <#LETTER: ["a"-"z", "A"-"Z", "ö", "ä", "ü", "Ö", "Ä", "Ü", "ß"]>
+}
+
+void Item(): {
+    Token  t;
+} { 
+    t = <KURS>   {}
+  | t = <NAME>   { sName      = t.image; 
+                   sSumPoints = 0;
+                   System.out.print(sName);
+                 }
+  | t = <COLON>  { System.out.print(t.image); }
+  | t = <ZAHL>   { sSumPoints += new Integer(t.image); }
+  | t = <HYPHEN> {}
+  | t = <EOL>    { if (sName.length() > 0) {
+                       System.out.printf(" %3.1f\n", note()); 
+                   }
+                 }
+  | t = <WHITE>  {}
+}
+
+void List(): {} 
+{
+    (Item())+ <EOF>
+}

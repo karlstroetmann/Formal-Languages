@@ -1,0 +1,58 @@
+myParse := procedure(s) {
+     tl := tokenizeString(s);
+     [result, rl] := parseExpr(tl);
+     assert(rl == [], "Parse Error: could not parse $tl$");
+     return result;
+};
+// This procedure takes a token list tl and tries to interpret this list
+// as an arithmetic expression.
+parseExpr := procedure(tl) {
+    [product, rl] := parseProduct(tl);
+    return parseExprRest(product, rl);
+};
+parseExprRest := procedure(sum, tl) {
+    match (tl) {
+        case ["+" | rl] : [product, ql] := parseProduct(rl);
+                          return parseExprRest(sum + product, ql);
+        case ["-" | rl] : [product, ql] := parseProduct(rl);
+                          return parseExprRest(sum - product, ql);
+        default:          return [sum, tl];
+    }
+};
+parseProduct := procedure(tl) {
+    [factor, rl] := parseFactor(tl);
+    return parseProductRest(factor, rl);
+};
+parseProductRest := procedure(product, tl) {
+    match (tl) {
+        case ["*" | rl] : [factor, ql] := parseFactor(rl);
+                          return parseProductRest(product * factor, ql);
+        case ["/" | rl] : [factor, ql] := parseFactor(rl);
+                          return parseProductRest(product / factor, ql);
+        default:          return [product, tl];
+    }
+};
+parseFactor := procedure(tl) {
+    match (tl) {
+        case ["(" | rl] : [expr, ql] := parseExpr(rl);
+                          assert(ql[1] == ")", "Parse Error");
+                          return [expr, ql[2..]];
+        default : assert(isNumber(tl[1]), "Parse Error");
+                  return [tl[1], tl[2..]];
+    }
+};
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/", "**"
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex '0|[1-9][0-9]*' as [ number   ]: tokenList += [ int(number) ];
+        regex '[-+*/()]'      as [ operator ]: tokenList += [ operator    ];
+        regex '[ \t\v\n]+'                   : // skip
+        default: abort("tokenizeString($s$)");
+    }
+    return tokenList;
+};
+
+print(myParse("1+2*(3-2)+5"));

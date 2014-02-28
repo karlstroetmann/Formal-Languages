@@ -1,0 +1,39 @@
+load("fixpoint.stlx");
+
+// This function minimizes the given finte automaton.
+//    fa : finite automaton, codes as a 5-tuple of the form
+//           [states, sigma, delta, q0, final]
+// The algorithm performs the folllowing steps:
+//   1. All states are eliminated that are not reachable.
+//   2. States are separated as long as possible.
+//   3. States that are equivalent are identified and grouped
+//      in equivalence classes.
+
+minimize := procedure(fa) {
+    [states, sigma, delta, q0, accepting] := fa;
+    states    := fixpoint( {q0}, q |-> { delta(q, c) : c in sigma });
+    separable := (states-accepting) >< accepting + accepting >< (states-accepting);
+    moreSep   := 
+        procedure(knownSep) {
+            return { [q1, q2] : [q1, q2] in states >< states
+                   | exists (c in sigma | [delta(q1, c), delta(q2, c)] == knownSep)
+                   };
+        };
+    allSeparable := fixpoint(separable, moreSep);
+    equivalent   := states >< states - allSeparable;
+    equivClasses := { { p : p in states | [p, q] in equivalent }: q in states };
+    newQ0     := arb({ m : m in equivClasses | q0 in m });
+    newAccept := { m : m in equivClasses | arb(m) in accepting };
+    newDelta  := procedure(m, c) {
+                     q := delta(arb(m), c);
+                     return arb({ x : x in equivClasses | q in x });
+                 };
+    return [equivClasses, sigma, newDelta, newQ0, newAccept];
+};
+
+
+
+
+
+
+

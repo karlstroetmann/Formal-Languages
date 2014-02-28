@@ -1,0 +1,299 @@
+Grammatik
+
+    0 $accept: Statement $end
+
+    1 Statement: MatchedStmnt
+    2          | UnMatchedStmnt
+
+    3 MatchedStmnt: "if" "(" EXPR ")" MatchedStmnt "else" MatchedStmnt
+    4             | "while" "(" EXPR ")" MatchedStmnt
+    5             | "{" StatementList "}"
+    6             | ID "=" EXPR ";"
+
+    7 UnMatchedStmnt: "if" "(" EXPR ")" Statement
+    8               | "if" "(" EXPR ")" MatchedStmnt "else" UnMatchedStmnt
+    9               | "while" "(" EXPR ")" UnMatchedStmnt
+
+   10 StatementList: /* leer */
+   11              | StatementList Statement
+
+
+Terminale und die Regeln, in denen sie verwendet werden
+
+$end (0) 0
+error (256)
+ID (258) 6
+EXPR (259) 3 4 6 7 8 9
+"if" (260) 3 7 8
+"(" (261) 3 4 7 8 9
+")" (262) 3 4 7 8 9
+"else" (263) 3 8
+"while" (264) 4 9
+"{" (265) 5
+"}" (266) 5
+"=" (267) 6
+";" (268) 6
+
+
+Nicht-Terminal und die Regeln, in denen sie verwendet werden
+
+$accept (14)
+    auf der linken Seite: 0
+Statement (15)
+    auf der linken Seite: 1 2, auf der rechten Seite: 0 7 11
+MatchedStmnt (16)
+    auf der linken Seite: 3 4 5 6, auf der rechten Seite: 1 3 4 8
+UnMatchedStmnt (17)
+    auf der linken Seite: 7 8 9, auf der rechten Seite: 2 8 9
+StatementList (18)
+    auf der linken Seite: 10 11, auf der rechten Seite: 5 11
+
+
+Zustand 0
+
+    0 $accept: . Statement $end
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    Statement       gehe zu Zustand 5 über
+    MatchedStmnt    gehe zu Zustand 6 über
+    UnMatchedStmnt  gehe zu Zustand 7 über
+
+
+Zustand 1
+
+    6 MatchedStmnt: ID . "=" EXPR ";"
+
+    "="  schiebe und gehe zu Zustand 8 über
+
+
+Zustand 2
+
+    3 MatchedStmnt: "if" . "(" EXPR ")" MatchedStmnt "else" MatchedStmnt
+    7 UnMatchedStmnt: "if" . "(" EXPR ")" Statement
+    8               | "if" . "(" EXPR ")" MatchedStmnt "else" UnMatchedStmnt
+
+    "("  schiebe und gehe zu Zustand 9 über
+
+
+Zustand 3
+
+    4 MatchedStmnt: "while" . "(" EXPR ")" MatchedStmnt
+    9 UnMatchedStmnt: "while" . "(" EXPR ")" UnMatchedStmnt
+
+    "("  schiebe und gehe zu Zustand 10 über
+
+
+Zustand 4
+
+    5 MatchedStmnt: "{" . StatementList "}"
+
+    $default  reduziere mit Regel 10 (StatementList)
+
+    StatementList  gehe zu Zustand 11 über
+
+
+Zustand 5
+
+    0 $accept: Statement . $end
+
+    $end  schiebe und gehe zu Zustand 12 über
+
+
+Zustand 6
+
+    1 Statement: MatchedStmnt .
+
+    $default  reduziere mit Regel 1 (Statement)
+
+
+Zustand 7
+
+    2 Statement: UnMatchedStmnt .
+
+    $default  reduziere mit Regel 2 (Statement)
+
+
+Zustand 8
+
+    6 MatchedStmnt: ID "=" . EXPR ";"
+
+    EXPR  schiebe und gehe zu Zustand 13 über
+
+
+Zustand 9
+
+    3 MatchedStmnt: "if" "(" . EXPR ")" MatchedStmnt "else" MatchedStmnt
+    7 UnMatchedStmnt: "if" "(" . EXPR ")" Statement
+    8               | "if" "(" . EXPR ")" MatchedStmnt "else" UnMatchedStmnt
+
+    EXPR  schiebe und gehe zu Zustand 14 über
+
+
+Zustand 10
+
+    4 MatchedStmnt: "while" "(" . EXPR ")" MatchedStmnt
+    9 UnMatchedStmnt: "while" "(" . EXPR ")" UnMatchedStmnt
+
+    EXPR  schiebe und gehe zu Zustand 15 über
+
+
+Zustand 11
+
+    5 MatchedStmnt: "{" StatementList . "}"
+   11 StatementList: StatementList . Statement
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+    "}"      schiebe und gehe zu Zustand 16 über
+
+    Statement       gehe zu Zustand 17 über
+    MatchedStmnt    gehe zu Zustand 6 über
+    UnMatchedStmnt  gehe zu Zustand 7 über
+
+
+Zustand 12
+
+    0 $accept: Statement $end .
+
+    $default  annehmen
+
+
+Zustand 13
+
+    6 MatchedStmnt: ID "=" EXPR . ";"
+
+    ";"  schiebe und gehe zu Zustand 18 über
+
+
+Zustand 14
+
+    3 MatchedStmnt: "if" "(" EXPR . ")" MatchedStmnt "else" MatchedStmnt
+    7 UnMatchedStmnt: "if" "(" EXPR . ")" Statement
+    8               | "if" "(" EXPR . ")" MatchedStmnt "else" UnMatchedStmnt
+
+    ")"  schiebe und gehe zu Zustand 19 über
+
+
+Zustand 15
+
+    4 MatchedStmnt: "while" "(" EXPR . ")" MatchedStmnt
+    9 UnMatchedStmnt: "while" "(" EXPR . ")" UnMatchedStmnt
+
+    ")"  schiebe und gehe zu Zustand 20 über
+
+
+Zustand 16
+
+    5 MatchedStmnt: "{" StatementList "}" .
+
+    $default  reduziere mit Regel 5 (MatchedStmnt)
+
+
+Zustand 17
+
+   11 StatementList: StatementList Statement .
+
+    $default  reduziere mit Regel 11 (StatementList)
+
+
+Zustand 18
+
+    6 MatchedStmnt: ID "=" EXPR ";" .
+
+    $default  reduziere mit Regel 6 (MatchedStmnt)
+
+
+Zustand 19
+
+    3 MatchedStmnt: "if" "(" EXPR ")" . MatchedStmnt "else" MatchedStmnt
+    7 UnMatchedStmnt: "if" "(" EXPR ")" . Statement
+    8               | "if" "(" EXPR ")" . MatchedStmnt "else" UnMatchedStmnt
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    Statement       gehe zu Zustand 21 über
+    MatchedStmnt    gehe zu Zustand 22 über
+    UnMatchedStmnt  gehe zu Zustand 7 über
+
+
+Zustand 20
+
+    4 MatchedStmnt: "while" "(" EXPR ")" . MatchedStmnt
+    9 UnMatchedStmnt: "while" "(" EXPR ")" . UnMatchedStmnt
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    MatchedStmnt    gehe zu Zustand 23 über
+    UnMatchedStmnt  gehe zu Zustand 24 über
+
+
+Zustand 21
+
+    7 UnMatchedStmnt: "if" "(" EXPR ")" Statement .
+
+    $default  reduziere mit Regel 7 (UnMatchedStmnt)
+
+
+Zustand 22
+
+    1 Statement: MatchedStmnt .
+    3 MatchedStmnt: "if" "(" EXPR ")" MatchedStmnt . "else" MatchedStmnt
+    8 UnMatchedStmnt: "if" "(" EXPR ")" MatchedStmnt . "else" UnMatchedStmnt
+
+    "else"  schiebe und gehe zu Zustand 25 über
+
+    $default  reduziere mit Regel 1 (Statement)
+
+
+Zustand 23
+
+    4 MatchedStmnt: "while" "(" EXPR ")" MatchedStmnt .
+
+    $default  reduziere mit Regel 4 (MatchedStmnt)
+
+
+Zustand 24
+
+    9 UnMatchedStmnt: "while" "(" EXPR ")" UnMatchedStmnt .
+
+    $default  reduziere mit Regel 9 (UnMatchedStmnt)
+
+
+Zustand 25
+
+    3 MatchedStmnt: "if" "(" EXPR ")" MatchedStmnt "else" . MatchedStmnt
+    8 UnMatchedStmnt: "if" "(" EXPR ")" MatchedStmnt "else" . UnMatchedStmnt
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    MatchedStmnt    gehe zu Zustand 26 über
+    UnMatchedStmnt  gehe zu Zustand 27 über
+
+
+Zustand 26
+
+    3 MatchedStmnt: "if" "(" EXPR ")" MatchedStmnt "else" MatchedStmnt .
+
+    $default  reduziere mit Regel 3 (MatchedStmnt)
+
+
+Zustand 27
+
+    8 UnMatchedStmnt: "if" "(" EXPR ")" MatchedStmnt "else" UnMatchedStmnt .
+
+    $default  reduziere mit Regel 8 (UnMatchedStmnt)

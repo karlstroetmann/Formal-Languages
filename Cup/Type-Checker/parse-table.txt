@@ -1,0 +1,718 @@
+===== Terminals =====
+[0]EOF [1]error [2]TYPE [3]SIGNATURE [4]LEFT_PAR 
+[5]RIGHT_PAR [6]COMMA [7]COLON [8]SEMICOLON [9]ASSIGN 
+[10]ARROW [11]PLUS [12]TIMES [13]FUNCTION [14]PARAMETER 
+
+
+===== Non terminals =====
+[0]program [1]term [2]termList [3]varList [4]type 
+[5]typeList [6]typeSum [7]typeDef [8]typeDefList [9]signature 
+[10]signatures [11]argTypes [12]typedTerm [13]typedTerms 
+
+===== Productions =====
+[0] program ::= typeDefList signatures typedTerms 
+[1] $START ::= program EOF 
+[2] typeDefList ::= typeDefList typeDef 
+[3] typeDefList ::= typeDef 
+[4] typeDef ::= TYPE FUNCTION ASSIGN typeSum SEMICOLON 
+[5] typeDef ::= TYPE FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN typeSum SEMICOLON 
+[6] type ::= FUNCTION LEFT_PAR typeList RIGHT_PAR 
+[7] type ::= FUNCTION 
+[8] type ::= PARAMETER 
+[9] typeList ::= typeList COMMA type 
+[10] typeList ::= type 
+[11] typeSum ::= typeSum PLUS type 
+[12] typeSum ::= type 
+[13] signature ::= SIGNATURE FUNCTION COLON argTypes ARROW type SEMICOLON 
+[14] signature ::= SIGNATURE FUNCTION COLON type SEMICOLON 
+[15] signatures ::= signatures signature 
+[16] signatures ::= signature 
+[17] argTypes ::= argTypes TIMES type 
+[18] argTypes ::= type 
+[19] varList ::= varList COMMA PARAMETER 
+[20] varList ::= PARAMETER 
+[21] term ::= FUNCTION LEFT_PAR termList RIGHT_PAR 
+[22] term ::= FUNCTION 
+[23] termList ::= termList COMMA term 
+[24] termList ::= term 
+[25] typedTerm ::= term COLON type SEMICOLON 
+[26] typedTerms ::= typedTerms typedTerm 
+[27] typedTerms ::= typedTerm 
+
+===== Viable Prefix Recognizer =====
+START lalr_state [0]: {
+  [typeDef ::= (*) TYPE FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [typeDefList ::= (*) typeDefList typeDef , {TYPE SIGNATURE }]
+  [typeDef ::= (*) TYPE FUNCTION ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [$START ::= (*) program EOF , {EOF }]
+  [typeDefList ::= (*) typeDef , {TYPE SIGNATURE }]
+  [program ::= (*) typeDefList signatures typedTerms , {EOF }]
+}
+transition on TYPE to state [4]
+transition on typeDef to state [3]
+transition on typeDefList to state [2]
+transition on program to state [1]
+
+-------------------
+lalr_state [1]: {
+  [$START ::= program (*) EOF , {EOF }]
+}
+transition on EOF to state [58]
+
+-------------------
+lalr_state [2]: {
+  [signatures ::= (*) signature , {SIGNATURE FUNCTION }]
+  [typeDef ::= (*) TYPE FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [typeDefList ::= typeDefList (*) typeDef , {TYPE SIGNATURE }]
+  [signature ::= (*) SIGNATURE FUNCTION COLON argTypes ARROW type SEMICOLON , {SIGNATURE FUNCTION }]
+  [signatures ::= (*) signatures signature , {SIGNATURE FUNCTION }]
+  [typeDef ::= (*) TYPE FUNCTION ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [signature ::= (*) SIGNATURE FUNCTION COLON type SEMICOLON , {SIGNATURE FUNCTION }]
+  [program ::= typeDefList (*) signatures typedTerms , {EOF }]
+}
+transition on TYPE to state [4]
+transition on typeDef to state [32]
+transition on signatures to state [31]
+transition on SIGNATURE to state [30]
+transition on signature to state [29]
+
+-------------------
+lalr_state [3]: {
+  [typeDefList ::= typeDef (*) , {TYPE SIGNATURE }]
+}
+
+-------------------
+lalr_state [4]: {
+  [typeDef ::= TYPE (*) FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [typeDef ::= TYPE (*) FUNCTION ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+}
+transition on FUNCTION to state [5]
+
+-------------------
+lalr_state [5]: {
+  [typeDef ::= TYPE FUNCTION (*) ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [typeDef ::= TYPE FUNCTION (*) LEFT_PAR varList RIGHT_PAR ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+}
+transition on ASSIGN to state [7]
+transition on LEFT_PAR to state [6]
+
+-------------------
+lalr_state [6]: {
+  [varList ::= (*) varList COMMA PARAMETER , {RIGHT_PAR COMMA }]
+  [varList ::= (*) PARAMETER , {RIGHT_PAR COMMA }]
+  [typeDef ::= TYPE FUNCTION LEFT_PAR (*) varList RIGHT_PAR ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+}
+transition on PARAMETER to state [22]
+transition on varList to state [21]
+
+-------------------
+lalr_state [7]: {
+  [type ::= (*) PARAMETER , {SEMICOLON PLUS }]
+  [typeDef ::= TYPE FUNCTION ASSIGN (*) typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [type ::= (*) FUNCTION , {SEMICOLON PLUS }]
+  [typeSum ::= (*) type , {SEMICOLON PLUS }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {SEMICOLON PLUS }]
+  [typeSum ::= (*) typeSum PLUS type , {SEMICOLON PLUS }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on typeSum to state [9]
+transition on type to state [8]
+
+-------------------
+lalr_state [8]: {
+  [typeSum ::= type (*) , {SEMICOLON PLUS }]
+}
+
+-------------------
+lalr_state [9]: {
+  [typeDef ::= TYPE FUNCTION ASSIGN typeSum (*) SEMICOLON , {TYPE SIGNATURE }]
+  [typeSum ::= typeSum (*) PLUS type , {SEMICOLON PLUS }]
+}
+transition on PLUS to state [19]
+transition on SEMICOLON to state [18]
+
+-------------------
+lalr_state [10]: {
+  [type ::= PARAMETER (*) , {RIGHT_PAR COMMA SEMICOLON ARROW PLUS TIMES }]
+}
+
+-------------------
+lalr_state [11]: {
+  [type ::= FUNCTION (*) , {RIGHT_PAR COMMA SEMICOLON ARROW PLUS TIMES }]
+  [type ::= FUNCTION (*) LEFT_PAR typeList RIGHT_PAR , {RIGHT_PAR COMMA SEMICOLON ARROW PLUS TIMES }]
+}
+transition on LEFT_PAR to state [12]
+
+-------------------
+lalr_state [12]: {
+  [type ::= (*) PARAMETER , {RIGHT_PAR COMMA }]
+  [typeList ::= (*) type , {RIGHT_PAR COMMA }]
+  [type ::= (*) FUNCTION , {RIGHT_PAR COMMA }]
+  [type ::= FUNCTION LEFT_PAR (*) typeList RIGHT_PAR , {RIGHT_PAR COMMA SEMICOLON ARROW PLUS TIMES }]
+  [typeList ::= (*) typeList COMMA type , {RIGHT_PAR COMMA }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {RIGHT_PAR COMMA }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on typeList to state [14]
+transition on type to state [13]
+
+-------------------
+lalr_state [13]: {
+  [typeList ::= type (*) , {RIGHT_PAR COMMA }]
+}
+
+-------------------
+lalr_state [14]: {
+  [type ::= FUNCTION LEFT_PAR typeList (*) RIGHT_PAR , {RIGHT_PAR COMMA SEMICOLON ARROW PLUS TIMES }]
+  [typeList ::= typeList (*) COMMA type , {RIGHT_PAR COMMA }]
+}
+transition on RIGHT_PAR to state [16]
+transition on COMMA to state [15]
+
+-------------------
+lalr_state [15]: {
+  [type ::= (*) PARAMETER , {RIGHT_PAR COMMA }]
+  [type ::= (*) FUNCTION , {RIGHT_PAR COMMA }]
+  [typeList ::= typeList COMMA (*) type , {RIGHT_PAR COMMA }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {RIGHT_PAR COMMA }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on type to state [17]
+
+-------------------
+lalr_state [16]: {
+  [type ::= FUNCTION LEFT_PAR typeList RIGHT_PAR (*) , {RIGHT_PAR COMMA SEMICOLON ARROW PLUS TIMES }]
+}
+
+-------------------
+lalr_state [17]: {
+  [typeList ::= typeList COMMA type (*) , {RIGHT_PAR COMMA }]
+}
+
+-------------------
+lalr_state [18]: {
+  [typeDef ::= TYPE FUNCTION ASSIGN typeSum SEMICOLON (*) , {TYPE SIGNATURE }]
+}
+
+-------------------
+lalr_state [19]: {
+  [type ::= (*) PARAMETER , {SEMICOLON PLUS }]
+  [type ::= (*) FUNCTION , {SEMICOLON PLUS }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {SEMICOLON PLUS }]
+  [typeSum ::= typeSum PLUS (*) type , {SEMICOLON PLUS }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on type to state [20]
+
+-------------------
+lalr_state [20]: {
+  [typeSum ::= typeSum PLUS type (*) , {SEMICOLON PLUS }]
+}
+
+-------------------
+lalr_state [21]: {
+  [typeDef ::= TYPE FUNCTION LEFT_PAR varList (*) RIGHT_PAR ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [varList ::= varList (*) COMMA PARAMETER , {RIGHT_PAR COMMA }]
+}
+transition on RIGHT_PAR to state [24]
+transition on COMMA to state [23]
+
+-------------------
+lalr_state [22]: {
+  [varList ::= PARAMETER (*) , {RIGHT_PAR COMMA }]
+}
+
+-------------------
+lalr_state [23]: {
+  [varList ::= varList COMMA (*) PARAMETER , {RIGHT_PAR COMMA }]
+}
+transition on PARAMETER to state [28]
+
+-------------------
+lalr_state [24]: {
+  [typeDef ::= TYPE FUNCTION LEFT_PAR varList RIGHT_PAR (*) ASSIGN typeSum SEMICOLON , {TYPE SIGNATURE }]
+}
+transition on ASSIGN to state [25]
+
+-------------------
+lalr_state [25]: {
+  [type ::= (*) PARAMETER , {SEMICOLON PLUS }]
+  [type ::= (*) FUNCTION , {SEMICOLON PLUS }]
+  [typeSum ::= (*) type , {SEMICOLON PLUS }]
+  [typeDef ::= TYPE FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN (*) typeSum SEMICOLON , {TYPE SIGNATURE }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {SEMICOLON PLUS }]
+  [typeSum ::= (*) typeSum PLUS type , {SEMICOLON PLUS }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on typeSum to state [26]
+transition on type to state [8]
+
+-------------------
+lalr_state [26]: {
+  [typeDef ::= TYPE FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN typeSum (*) SEMICOLON , {TYPE SIGNATURE }]
+  [typeSum ::= typeSum (*) PLUS type , {SEMICOLON PLUS }]
+}
+transition on PLUS to state [19]
+transition on SEMICOLON to state [27]
+
+-------------------
+lalr_state [27]: {
+  [typeDef ::= TYPE FUNCTION LEFT_PAR varList RIGHT_PAR ASSIGN typeSum SEMICOLON (*) , {TYPE SIGNATURE }]
+}
+
+-------------------
+lalr_state [28]: {
+  [varList ::= varList COMMA PARAMETER (*) , {RIGHT_PAR COMMA }]
+}
+
+-------------------
+lalr_state [29]: {
+  [signatures ::= signature (*) , {SIGNATURE FUNCTION }]
+}
+
+-------------------
+lalr_state [30]: {
+  [signature ::= SIGNATURE (*) FUNCTION COLON argTypes ARROW type SEMICOLON , {SIGNATURE FUNCTION }]
+  [signature ::= SIGNATURE (*) FUNCTION COLON type SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on FUNCTION to state [48]
+
+-------------------
+lalr_state [31]: {
+  [signature ::= (*) SIGNATURE FUNCTION COLON type SEMICOLON , {SIGNATURE FUNCTION }]
+  [typedTerm ::= (*) term COLON type SEMICOLON , {EOF FUNCTION }]
+  [term ::= (*) FUNCTION , {COLON }]
+  [signature ::= (*) SIGNATURE FUNCTION COLON argTypes ARROW type SEMICOLON , {SIGNATURE FUNCTION }]
+  [typedTerms ::= (*) typedTerm , {EOF FUNCTION }]
+  [term ::= (*) FUNCTION LEFT_PAR termList RIGHT_PAR , {COLON }]
+  [signatures ::= signatures (*) signature , {SIGNATURE FUNCTION }]
+  [program ::= typeDefList signatures (*) typedTerms , {EOF }]
+  [typedTerms ::= (*) typedTerms typedTerm , {EOF FUNCTION }]
+}
+transition on FUNCTION to state [37]
+transition on SIGNATURE to state [30]
+transition on term to state [36]
+transition on typedTerms to state [35]
+transition on typedTerm to state [34]
+transition on signature to state [33]
+
+-------------------
+lalr_state [32]: {
+  [typeDefList ::= typeDefList typeDef (*) , {TYPE SIGNATURE }]
+}
+
+-------------------
+lalr_state [33]: {
+  [signatures ::= signatures signature (*) , {SIGNATURE FUNCTION }]
+}
+
+-------------------
+lalr_state [34]: {
+  [typedTerms ::= typedTerm (*) , {EOF FUNCTION }]
+}
+
+-------------------
+lalr_state [35]: {
+  [term ::= (*) FUNCTION LEFT_PAR termList RIGHT_PAR , {COLON }]
+  [typedTerms ::= typedTerms (*) typedTerm , {EOF FUNCTION }]
+  [program ::= typeDefList signatures typedTerms (*) , {EOF }]
+  [typedTerm ::= (*) term COLON type SEMICOLON , {EOF FUNCTION }]
+  [term ::= (*) FUNCTION , {COLON }]
+}
+transition on FUNCTION to state [37]
+transition on term to state [36]
+transition on typedTerm to state [47]
+
+-------------------
+lalr_state [36]: {
+  [typedTerm ::= term (*) COLON type SEMICOLON , {EOF FUNCTION }]
+}
+transition on COLON to state [44]
+
+-------------------
+lalr_state [37]: {
+  [term ::= FUNCTION (*) LEFT_PAR termList RIGHT_PAR , {RIGHT_PAR COMMA COLON }]
+  [term ::= FUNCTION (*) , {RIGHT_PAR COMMA COLON }]
+}
+transition on LEFT_PAR to state [38]
+
+-------------------
+lalr_state [38]: {
+  [term ::= FUNCTION LEFT_PAR (*) termList RIGHT_PAR , {RIGHT_PAR COMMA COLON }]
+  [termList ::= (*) term , {RIGHT_PAR COMMA }]
+  [term ::= (*) FUNCTION LEFT_PAR termList RIGHT_PAR , {RIGHT_PAR COMMA }]
+  [termList ::= (*) termList COMMA term , {RIGHT_PAR COMMA }]
+  [term ::= (*) FUNCTION , {RIGHT_PAR COMMA }]
+}
+transition on FUNCTION to state [37]
+transition on termList to state [40]
+transition on term to state [39]
+
+-------------------
+lalr_state [39]: {
+  [termList ::= term (*) , {RIGHT_PAR COMMA }]
+}
+
+-------------------
+lalr_state [40]: {
+  [term ::= FUNCTION LEFT_PAR termList (*) RIGHT_PAR , {RIGHT_PAR COMMA COLON }]
+  [termList ::= termList (*) COMMA term , {RIGHT_PAR COMMA }]
+}
+transition on RIGHT_PAR to state [42]
+transition on COMMA to state [41]
+
+-------------------
+lalr_state [41]: {
+  [term ::= (*) FUNCTION LEFT_PAR termList RIGHT_PAR , {RIGHT_PAR COMMA }]
+  [termList ::= termList COMMA (*) term , {RIGHT_PAR COMMA }]
+  [term ::= (*) FUNCTION , {RIGHT_PAR COMMA }]
+}
+transition on FUNCTION to state [37]
+transition on term to state [43]
+
+-------------------
+lalr_state [42]: {
+  [term ::= FUNCTION LEFT_PAR termList RIGHT_PAR (*) , {RIGHT_PAR COMMA COLON }]
+}
+
+-------------------
+lalr_state [43]: {
+  [termList ::= termList COMMA term (*) , {RIGHT_PAR COMMA }]
+}
+
+-------------------
+lalr_state [44]: {
+  [type ::= (*) PARAMETER , {SEMICOLON }]
+  [type ::= (*) FUNCTION , {SEMICOLON }]
+  [typedTerm ::= term COLON (*) type SEMICOLON , {EOF FUNCTION }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {SEMICOLON }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on type to state [45]
+
+-------------------
+lalr_state [45]: {
+  [typedTerm ::= term COLON type (*) SEMICOLON , {EOF FUNCTION }]
+}
+transition on SEMICOLON to state [46]
+
+-------------------
+lalr_state [46]: {
+  [typedTerm ::= term COLON type SEMICOLON (*) , {EOF FUNCTION }]
+}
+
+-------------------
+lalr_state [47]: {
+  [typedTerms ::= typedTerms typedTerm (*) , {EOF FUNCTION }]
+}
+
+-------------------
+lalr_state [48]: {
+  [signature ::= SIGNATURE FUNCTION (*) COLON argTypes ARROW type SEMICOLON , {SIGNATURE FUNCTION }]
+  [signature ::= SIGNATURE FUNCTION (*) COLON type SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on COLON to state [49]
+
+-------------------
+lalr_state [49]: {
+  [type ::= (*) PARAMETER , {SEMICOLON ARROW TIMES }]
+  [argTypes ::= (*) type , {ARROW TIMES }]
+  [type ::= (*) FUNCTION , {SEMICOLON ARROW TIMES }]
+  [signature ::= SIGNATURE FUNCTION COLON (*) type SEMICOLON , {SIGNATURE FUNCTION }]
+  [argTypes ::= (*) argTypes TIMES type , {ARROW TIMES }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {SEMICOLON ARROW TIMES }]
+  [signature ::= SIGNATURE FUNCTION COLON (*) argTypes ARROW type SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on argTypes to state [51]
+transition on type to state [50]
+
+-------------------
+lalr_state [50]: {
+  [argTypes ::= type (*) , {ARROW TIMES }]
+  [signature ::= SIGNATURE FUNCTION COLON type (*) SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on SEMICOLON to state [57]
+
+-------------------
+lalr_state [51]: {
+  [argTypes ::= argTypes (*) TIMES type , {ARROW TIMES }]
+  [signature ::= SIGNATURE FUNCTION COLON argTypes (*) ARROW type SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on TIMES to state [53]
+transition on ARROW to state [52]
+
+-------------------
+lalr_state [52]: {
+  [type ::= (*) PARAMETER , {SEMICOLON }]
+  [type ::= (*) FUNCTION , {SEMICOLON }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {SEMICOLON }]
+  [signature ::= SIGNATURE FUNCTION COLON argTypes ARROW (*) type SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on type to state [55]
+
+-------------------
+lalr_state [53]: {
+  [type ::= (*) PARAMETER , {ARROW TIMES }]
+  [type ::= (*) FUNCTION , {ARROW TIMES }]
+  [argTypes ::= argTypes TIMES (*) type , {ARROW TIMES }]
+  [type ::= (*) FUNCTION LEFT_PAR typeList RIGHT_PAR , {ARROW TIMES }]
+}
+transition on FUNCTION to state [11]
+transition on PARAMETER to state [10]
+transition on type to state [54]
+
+-------------------
+lalr_state [54]: {
+  [argTypes ::= argTypes TIMES type (*) , {ARROW TIMES }]
+}
+
+-------------------
+lalr_state [55]: {
+  [signature ::= SIGNATURE FUNCTION COLON argTypes ARROW type (*) SEMICOLON , {SIGNATURE FUNCTION }]
+}
+transition on SEMICOLON to state [56]
+
+-------------------
+lalr_state [56]: {
+  [signature ::= SIGNATURE FUNCTION COLON argTypes ARROW type SEMICOLON (*) , {SIGNATURE FUNCTION }]
+}
+
+-------------------
+lalr_state [57]: {
+  [signature ::= SIGNATURE FUNCTION COLON type SEMICOLON (*) , {SIGNATURE FUNCTION }]
+}
+
+-------------------
+lalr_state [58]: {
+  [$START ::= program EOF (*) , {EOF }]
+}
+
+-------------------
+-------- ACTION_TABLE --------
+From state #0
+ [term 2:SHIFT(to state 4)]
+From state #1
+ [term 0:SHIFT(to state 58)]
+From state #2
+ [term 2:SHIFT(to state 4)] [term 3:SHIFT(to state 30)]
+From state #3
+ [term 2:REDUCE(with prod 3)] [term 3:REDUCE(with prod 3)]
+From state #4
+ [term 13:SHIFT(to state 5)]
+From state #5
+ [term 4:SHIFT(to state 6)] [term 9:SHIFT(to state 7)]
+From state #6
+ [term 14:SHIFT(to state 22)]
+From state #7
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #8
+ [term 8:REDUCE(with prod 12)] [term 11:REDUCE(with prod 12)]
+From state #9
+ [term 8:SHIFT(to state 18)] [term 11:SHIFT(to state 19)]
+From state #10
+ [term 5:REDUCE(with prod 8)] [term 6:REDUCE(with prod 8)]
+ [term 8:REDUCE(with prod 8)] [term 10:REDUCE(with prod 8)]
+ [term 11:REDUCE(with prod 8)] [term 12:REDUCE(with prod 8)]
+From state #11
+ [term 4:SHIFT(to state 12)] [term 5:REDUCE(with prod 7)]
+ [term 6:REDUCE(with prod 7)] [term 8:REDUCE(with prod 7)]
+ [term 10:REDUCE(with prod 7)] [term 11:REDUCE(with prod 7)]
+ [term 12:REDUCE(with prod 7)]
+From state #12
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #13
+ [term 5:REDUCE(with prod 10)] [term 6:REDUCE(with prod 10)]
+From state #14
+ [term 5:SHIFT(to state 16)] [term 6:SHIFT(to state 15)]
+From state #15
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #16
+ [term 5:REDUCE(with prod 6)] [term 6:REDUCE(with prod 6)]
+ [term 8:REDUCE(with prod 6)] [term 10:REDUCE(with prod 6)]
+ [term 11:REDUCE(with prod 6)] [term 12:REDUCE(with prod 6)]
+From state #17
+ [term 5:REDUCE(with prod 9)] [term 6:REDUCE(with prod 9)]
+From state #18
+ [term 2:REDUCE(with prod 4)] [term 3:REDUCE(with prod 4)]
+From state #19
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #20
+ [term 8:REDUCE(with prod 11)] [term 11:REDUCE(with prod 11)]
+From state #21
+ [term 5:SHIFT(to state 24)] [term 6:SHIFT(to state 23)]
+From state #22
+ [term 5:REDUCE(with prod 20)] [term 6:REDUCE(with prod 20)]
+From state #23
+ [term 14:SHIFT(to state 28)]
+From state #24
+ [term 9:SHIFT(to state 25)]
+From state #25
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #26
+ [term 8:SHIFT(to state 27)] [term 11:SHIFT(to state 19)]
+From state #27
+ [term 2:REDUCE(with prod 5)] [term 3:REDUCE(with prod 5)]
+From state #28
+ [term 5:REDUCE(with prod 19)] [term 6:REDUCE(with prod 19)]
+From state #29
+ [term 3:REDUCE(with prod 16)] [term 13:REDUCE(with prod 16)]
+From state #30
+ [term 13:SHIFT(to state 48)]
+From state #31
+ [term 3:SHIFT(to state 30)] [term 13:SHIFT(to state 37)]
+From state #32
+ [term 2:REDUCE(with prod 2)] [term 3:REDUCE(with prod 2)]
+From state #33
+ [term 3:REDUCE(with prod 15)] [term 13:REDUCE(with prod 15)]
+From state #34
+ [term 0:REDUCE(with prod 27)] [term 13:REDUCE(with prod 27)]
+From state #35
+ [term 0:REDUCE(with prod 0)] [term 13:SHIFT(to state 37)]
+From state #36
+ [term 7:SHIFT(to state 44)]
+From state #37
+ [term 4:SHIFT(to state 38)] [term 5:REDUCE(with prod 22)]
+ [term 6:REDUCE(with prod 22)] [term 7:REDUCE(with prod 22)]
+From state #38
+ [term 13:SHIFT(to state 37)]
+From state #39
+ [term 5:REDUCE(with prod 24)] [term 6:REDUCE(with prod 24)]
+From state #40
+ [term 5:SHIFT(to state 42)] [term 6:SHIFT(to state 41)]
+From state #41
+ [term 13:SHIFT(to state 37)]
+From state #42
+ [term 5:REDUCE(with prod 21)] [term 6:REDUCE(with prod 21)]
+ [term 7:REDUCE(with prod 21)]
+From state #43
+ [term 5:REDUCE(with prod 23)] [term 6:REDUCE(with prod 23)]
+From state #44
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #45
+ [term 8:SHIFT(to state 46)]
+From state #46
+ [term 0:REDUCE(with prod 25)] [term 13:REDUCE(with prod 25)]
+From state #47
+ [term 0:REDUCE(with prod 26)] [term 13:REDUCE(with prod 26)]
+From state #48
+ [term 7:SHIFT(to state 49)]
+From state #49
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #50
+ [term 8:SHIFT(to state 57)] [term 10:REDUCE(with prod 18)]
+ [term 12:REDUCE(with prod 18)]
+From state #51
+ [term 10:SHIFT(to state 52)] [term 12:SHIFT(to state 53)]
+From state #52
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #53
+ [term 13:SHIFT(to state 11)] [term 14:SHIFT(to state 10)]
+From state #54
+ [term 10:REDUCE(with prod 17)] [term 12:REDUCE(with prod 17)]
+From state #55
+ [term 8:SHIFT(to state 56)]
+From state #56
+ [term 3:REDUCE(with prod 13)] [term 13:REDUCE(with prod 13)]
+From state #57
+ [term 3:REDUCE(with prod 14)] [term 13:REDUCE(with prod 14)]
+From state #58
+ [term 0:REDUCE(with prod 1)]
+------------------------------
+-------- REDUCE_TABLE --------
+From state #0
+ [non term 0->state 1] [non term 7->state 3] [non term 8->state 2]
+From state #1
+From state #2
+ [non term 7->state 32] [non term 9->state 29] [non term 10->state 31]
+From state #3
+From state #4
+From state #5
+From state #6
+ [non term 3->state 21]
+From state #7
+ [non term 4->state 8] [non term 6->state 9]
+From state #8
+From state #9
+From state #10
+From state #11
+From state #12
+ [non term 4->state 13] [non term 5->state 14]
+From state #13
+From state #14
+From state #15
+ [non term 4->state 17]
+From state #16
+From state #17
+From state #18
+From state #19
+ [non term 4->state 20]
+From state #20
+From state #21
+From state #22
+From state #23
+From state #24
+From state #25
+ [non term 4->state 8] [non term 6->state 26]
+From state #26
+From state #27
+From state #28
+From state #29
+From state #30
+From state #31
+ [non term 1->state 36] [non term 9->state 33] [non term 12->state 34]
+ [non term 13->state 35]
+From state #32
+From state #33
+From state #34
+From state #35
+ [non term 1->state 36] [non term 12->state 47]
+From state #36
+From state #37
+From state #38
+ [non term 1->state 39] [non term 2->state 40]
+From state #39
+From state #40
+From state #41
+ [non term 1->state 43]
+From state #42
+From state #43
+From state #44
+ [non term 4->state 45]
+From state #45
+From state #46
+From state #47
+From state #48
+From state #49
+ [non term 4->state 50] [non term 11->state 51]
+From state #50
+From state #51
+From state #52
+ [non term 4->state 55]
+From state #53
+ [non term 4->state 54]
+From state #54
+From state #55
+From state #56
+From state #57
+From state #58
+-----------------------------
+------- CUP v0.11a beta 20060608 Parser Generation Summary -------
+  0 errors and 0 warnings
+  15 terminals, 14 non-terminals, and 28 productions declared, 
+  producing 59 unique parse states.
+  0 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  0 conflicts detected (0 expected).
+  Code written to "parser.java", and "sym.java".
+---------------------------------------------------- (v0.11a beta 20060608)

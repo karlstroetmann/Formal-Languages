@@ -1,0 +1,191 @@
+
+Grammar
+rule 1    input ->		/* empty */
+rule 2    input -> input line
+rule 3    line -> '\n'
+rule 4    line -> exp '\n'
+rule 5    exp -> NUM
+rule 6    exp -> exp exp '+'
+rule 7    exp -> exp exp '-'
+rule 8    exp -> exp exp '*'
+rule 9    exp -> exp exp '/'
+rule 10   exp -> exp exp '^'
+rule 11   exp -> exp 'n'
+
+Terminals, with rules where they appear
+
+$ (-1)
+'\n' (10) 3 4
+'*' (42) 8
+'+' (43) 6
+'-' (45) 7
+'/' (47) 9
+'^' (94) 10
+'n' (110) 11
+error (256)
+NUM (257) 5
+
+Nonterminals, with rules where they appear
+
+input (11)
+    on left: 1 2, on right: 2
+line (12)
+    on left: 3 4, on right: 2
+exp (13)
+    on left: 5 6 7 8 9 10 11, on right: 4 6 7 8 9 10 11
+
+
+state 0
+
+    $default	reduce using rule 1 (input)
+
+    input	go to state 1
+
+
+
+state 1
+
+    input  ->  input . line   (rule 2)
+
+    $   	go to state 14
+    NUM 	shift, and go to state 2
+    '\n'	shift, and go to state 3
+
+    line	go to state 4
+    exp 	go to state 5
+
+
+
+state 2
+
+    exp  ->  NUM .   (rule 5)
+
+    $default	reduce using rule 5 (exp)
+
+
+
+state 3
+
+    line  ->  '\n' .   (rule 3)
+
+    $default	reduce using rule 3 (line)
+
+
+
+state 4
+
+    input  ->  input line .   (rule 2)
+
+    $default	reduce using rule 2 (input)
+
+
+
+state 5
+
+    line  ->  exp . '\n'   (rule 4)
+    exp  ->  exp . exp '+'   (rule 6)
+    exp  ->  exp . exp '-'   (rule 7)
+    exp  ->  exp . exp '*'   (rule 8)
+    exp  ->  exp . exp '/'   (rule 9)
+    exp  ->  exp . exp '^'   (rule 10)
+    exp  ->  exp . 'n'   (rule 11)
+
+    NUM 	shift, and go to state 2
+    '\n'	shift, and go to state 6
+    'n' 	shift, and go to state 7
+
+    exp 	go to state 8
+
+
+
+state 6
+
+    line  ->  exp '\n' .   (rule 4)
+
+    $default	reduce using rule 4 (line)
+
+
+
+state 7
+
+    exp  ->  exp 'n' .   (rule 11)
+
+    $default	reduce using rule 11 (exp)
+
+
+
+state 8
+
+    exp  ->  exp . exp '+'   (rule 6)
+    exp  ->  exp exp . '+'   (rule 6)
+    exp  ->  exp . exp '-'   (rule 7)
+    exp  ->  exp exp . '-'   (rule 7)
+    exp  ->  exp . exp '*'   (rule 8)
+    exp  ->  exp exp . '*'   (rule 8)
+    exp  ->  exp . exp '/'   (rule 9)
+    exp  ->  exp exp . '/'   (rule 9)
+    exp  ->  exp . exp '^'   (rule 10)
+    exp  ->  exp exp . '^'   (rule 10)
+    exp  ->  exp . 'n'   (rule 11)
+
+    NUM 	shift, and go to state 2
+    '+' 	shift, and go to state 9
+    '-' 	shift, and go to state 10
+    '*' 	shift, and go to state 11
+    '/' 	shift, and go to state 12
+    '^' 	shift, and go to state 13
+    'n' 	shift, and go to state 7
+
+    exp 	go to state 8
+
+
+
+state 9
+
+    exp  ->  exp exp '+' .   (rule 6)
+
+    $default	reduce using rule 6 (exp)
+
+
+
+state 10
+
+    exp  ->  exp exp '-' .   (rule 7)
+
+    $default	reduce using rule 7 (exp)
+
+
+
+state 11
+
+    exp  ->  exp exp '*' .   (rule 8)
+
+    $default	reduce using rule 8 (exp)
+
+
+
+state 12
+
+    exp  ->  exp exp '/' .   (rule 9)
+
+    $default	reduce using rule 9 (exp)
+
+
+
+state 13
+
+    exp  ->  exp exp '^' .   (rule 10)
+
+    $default	reduce using rule 10 (exp)
+
+
+
+state 14
+
+    $   	go to state 15
+
+
+
+state 15
+
+    $default	accept

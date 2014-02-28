@@ -1,0 +1,112 @@
+// This function computes a regular expression that is equivalent to the
+// deterministic finite state machine given as argument.
+dfa2RegExp := procedure(dfa) {
+    [states, sigma, delta, q0, accepting] := dfa;
+    return simplify(regexpSum({ rpq(q0, p, sigma, delta, states) : p in accepting }));
+};
+// This function takes a set s = { r1, ..., rn } of regular expressions
+// as argument.  It returns the regular expression r1 + ... + rn.
+regexpSum := procedure(s) {
+    match (s) {
+        case {}:
+             return 0;
+        case { r }:
+             return r;
+        case { r | rs }:
+             return Or(r, regexpSum(rs));
+    }
+};
+// compute the regular expression to get from state p1 to state p2
+// using states from allowed inbetween
+rpq := procedure(p1, p2, sigma, delta, allowed) {
+    match (allowed) {
+        case {}: 
+             allChars := { c : c in sigma | delta(p1, c) == p2 };
+             sum := regexpSum(allChars);
+             if (p1 == p2) {
+                 if (allChars == {}) {
+                     return "";
+                 } else {
+                     return Or("", sum);
+                 }
+             } else {
+                 return sum;
+             }
+        case { qk | restAllowed }:
+             rkp1p2 := rpq(p1, p2, sigma, delta, restAllowed);
+             rkp1qk := rpq(p1, qk, sigma, delta, restAllowed);
+             rkqkqk := rpq(qk, qk, sigma, delta, restAllowed);
+             rkqkp2 := rpq(qk, p2, sigma, delta, restAllowed);
+             return simplify(Or(rkp1p2, Cat(Cat(rkp1qk, Star(rkqkqk)), rkqkp2)));
+    }    
+};
+simplify := procedure(r) {
+    while (true) {
+        oldR := r;
+        r    := simplifyOnce(r);
+        if (r == oldR) {
+            return r;
+        }
+    }
+};
+simplifyOnce := procedure(r) {
+    match (r) {
+        case 0:
+             return 0;
+        case "": 
+             return "";
+        case c | isString(c):
+             return c;
+        case Or(0, s):  
+             return simplifyOnce(s);
+        case Or(s, 0):  
+             return simplifyOnce(s);
+        case Or(s, s):  
+             return simplifyOnce(s);
+        case Or("", Cat(t, Star(t))):
+             return Star(t);
+        case Or("", Cat(Star(t), t)):
+             return Star(t);
+        case Or(Cat(t, Star(t)), ""):
+             return Star(t);
+        case Or(Cat(Star(t), t), ""):
+             return Star(t);
+        case Or(s, Cat(s,t)):
+             return simplifyOnce(Cat(s, Or("", t)));
+        case Or(s, Cat(t,s)):
+             return simplifyOnce(Cat(Or("", t), s));
+        case Or(s, t):  
+             return Or(simplifyOnce(s), simplifyOnce(t));
+        case Cat(0, s): 
+             return 0;
+        case Cat(s, 0): 
+             return 0;
+        case Cat("", s): 
+             return s;
+        case Cat(s, ""): 
+             return s;
+        case Cat(Or("", s), Star(s)):
+             return Star(simplifyOnce(s));
+        case Cat(Or(s, ""), Star(s)):
+             return Star(simplifyOnce(s));
+        case Cat(Star(s), Or(s, "")):
+             return Star(simplifyOnce(s));
+        case Cat(Star(s), Or("", s)):
+             return Star(simplifyOnce(s));
+        case Cat(s, t): 
+             return Cat(simplifyOnce(s), simplifyOnce(t));
+        case Star(0):
+             return "";
+        case Star(""):
+             return "";
+        case Star(Or("", s)):
+             return simplifyOnce(Star(s));
+        case Star(Or(s, "")):
+             return simplifyOnce(Star(s));
+        case Star(c):
+             return Star(simplifyOnce(c));
+        default:        
+        abort("Syntax error in simplifyOnce($r$)");
+    }
+};
+

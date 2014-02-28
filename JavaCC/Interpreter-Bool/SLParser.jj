@@ -1,0 +1,180 @@
+PARSER_BEGIN(SLParser)
+
+import java.util.*;
+
+public class SLParser {  
+    public static void main(String args[]) throws ParseException {
+        SLParser        parser  = new SLParser(System.in);
+        List<Statement> program = parser.stmntList();
+        for (Statement stmnt: program) {
+            System.out.println(stmnt);
+        }
+        for (Statement stmnt: program) {
+            stmnt.execute();
+        }
+    }
+}
+PARSER_END(SLParser)
+
+// stmntList : statment stmntList 
+//           | /* epsilon */
+//           ;
+List<Statement> stmntList() : {
+    Statement       s;
+    List<Statement> l;
+}{
+      s = statement() l = stmntList() { l.add(0, s); return l;              }
+    | /* epsilon */                   { return new LinkedList<Statement>(); }
+}
+
+// statement : assignment ";"
+//           | "print" "(" expr ")" ";"
+//           | "if"    "(" boolExpr ")" "{" stmntList "}"
+//           | "while" "(" boolExpr ")" "{" stmntList "}"
+//           | "for"   "(" assignment ";" boolExpr ";" assignment ")" "{" stmntList "}"
+//           ;
+Statement statement() : {
+    Assignment a, i, u;
+    Expr       r;
+    BoolExpr   b;
+    List<Statement> l;
+} {
+      a = assignment(true) ";"                               { return a;                }
+    | "print" "(" r = expr() ")"    ";"                      { return new Print(r);     }
+    | "if"    "(" b = boolExpr() ")" "{" l = stmntList() "}" { return new IfThen(b, l); }
+    | "while" "(" b = boolExpr() ")" "{" l = stmntList() "}" { return new While (b, l); }
+    | "for" "(" i = assignment(false) ";" b = boolExpr() ";" u = assignment(false) ")" 
+      "{" l = stmntList() "}" { return new For(i, b, u, l); }
+}
+
+// assignment : variable "=" expr ;
+Assignment assignment(boolean semicolon) : {
+    Variable v;
+    Expr     r;
+} {
+    v = variable() "=" r = expr() { return new Assignment(v, r, semicolon); }
+}
+
+// boolExpr : conjunction boolExprRest;
+BoolExpr boolExpr() : {
+    BoolExpr b, c;
+} {
+    c = conjunction() b = boolExprRest(c) { return b; }
+}
+
+// boolExprRest : "||" conjunction boolExprRest
+//              | /* epsilon */
+//              ;
+BoolExpr boolExprRest(BoolExpr b) : {
+    BoolExpr c, d, r;
+} {
+    "||" c = conjunction() { d = new Disjunction(b, c); } r = boolExprRest(d) { return r; }
+    | /* epsilon */                                                           { return b; } 
+}
+
+// conjunction : negation conjunctionRest;
+BoolExpr conjunction() : {
+    BoolExpr r, n;
+} {
+    n = negation() r = conjunctionRest(n) { return r; }
+}
+
+// conjunctionRest : "&&" negation conjunctionRest
+//                 | /* epsilon */
+//                 ;
+BoolExpr conjunctionRest(BoolExpr b) : {
+    BoolExpr n, c, r;
+} {
+      "&&" n = negation() { c = new Conjunction(b, n); } r = conjunctionRest(c) { return r; }
+    | /* epsilon */                                                             { return b; }
+}
+
+// negation : "!" simpleBoolExpr
+//          | "(" boolExpr ")"
+//          | simpleBoolExpr
+//          ;
+BoolExpr negation() : {
+    BoolExpr b;
+} {
+      "!" b = simpleBoolExpr() { return new Negation(b); }
+    | LOOKAHEAD( "(" boolExpr())
+      "(" b = boolExpr() ")"   { return b;               }
+    | b = simpleBoolExpr()     { return b;               }
+}
+
+// simpleBoolExpr : expr "==" expr
+//                | expr "<"  expr
+//                ; 
+BoolExpr simpleBoolExpr() : {
+    Expr l, r;
+} {
+    l = expr() (   "==" r = expr() { return new Equal   (l, r); }
+                 | "<"  r = expr() { return new LessThan(l, r); }
+               )
+}
+
+// expr : product exprRest;
+Expr expr() : {
+    Expr p, r;
+} {
+    p = product() r = exprRest(p) { return r; }
+}
+
+// exprRest : "+" product exprRest
+//          | "-" product exprRest
+//          | /* epsilon */
+//          ;
+Expr exprRest(Expr s) : {
+    Expr p, a, r;
+} {
+      "+" p = product() { a = new Sum       (s, p); } r = exprRest(a) { return r; }
+    | "-" p = product() { a = new Difference(s, p); } r = exprRest(a) { return r; }
+    | /* epsilon */                                                   { return s; }
+}
+
+// product : factor productRest;
+Expr product() : {
+    Expr f, r;
+} {
+    f = factor() r = productRest(f) { return r; }
+}
+
+// productRest : "*" factor productRest
+//             | "/" factor productRest
+//             | /* epsilon */
+//             ;
+Expr productRest(Expr p) : {
+    Expr f, a, r;
+} {
+      "*" f = factor() { a = new Product (p, f); } r = productRest(a) { return r; }
+    | "/" f = factor() { a = new Quotient(p, f); } r = productRest(a) { return r; }
+    | /* epsilon */                                                   { return p; }
+}
+
+// factor : "(" expr ")"
+//        | variable
+//        | NUMBER
+//        ;
+Expr factor() : {
+    Expr  r, v;
+    Token t;
+} {
+      "(" r = expr() ")" { return r; }
+    | v = variable()     { return v; }
+    | t = <NUMBER>       { return new MyNumber(t.image); }
+}
+
+Variable variable() : {
+    Token t;
+} {
+    t = <IDENTIFIER> { return new Variable(t.image); }
+}
+
+// forget about white space
+SKIP: { " " | "\t" | "\r" | "\n" }
+
+TOKEN: {
+    <NUMBER:     ("0" | ["1"-"9"] (["0"-"9"])*) ("." (["0"-"9"])*)?> 
+  | <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+}
+

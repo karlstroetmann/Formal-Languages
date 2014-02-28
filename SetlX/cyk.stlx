@@ -1,0 +1,39 @@
+
+cyk := procedure(s, rules) {
+    n := #s;
+    x := {};
+    for (i in [1 .. n]) {
+        x[[i,i]] := { a : [a, x] in rules | x == s[i] };
+    }
+    for (h in [2 .. n]) {
+        for (i in [1 .. n+1-h]) {
+            x[[i,i+h-1]] := {};
+            for (k in [1 .. h-1]) {
+                x[[i,i+h-1]] += 
+                    { a : [a, bc] in rules | bc[1] in x[[i,i+k-1]] && 
+                                             bc[2] in x[[i+k,i+h-1]]
+                    };
+            }
+
+        }
+    }
+    return x;
+};
+
+rules := { ["S", "AB"], ["S", "BC"], 
+           ["A", "BA"], ["A", "a"],
+           ["B", "CC"], ["B", "b"],
+           ["C", "AB"], ["C", "a"]
+         };
+
+s := "ababaa";
+n := #s;
+x := cyk(s, rules);
+for (h in [1 .. n]) {
+    result := "";
+    for (i in [1 .. n+1-h]) {
+        result += "X[$i$, $i+h-1$] = $x[[i, i+h-1]]$, ";
+    }
+    print(result);
+}
+

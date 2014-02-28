@@ -1,0 +1,237 @@
+Grammatik
+
+    0 $accept: Statement $end
+
+    1 Statement: "if" "(" EXPR ")" Statement
+    2          | "if" "(" EXPR ")" Statement "else" Statement
+    3          | "while" "(" EXPR ")" Statement
+    4          | "{" StatementList "}"
+    5          | ID "=" EXPR ";"
+
+    6 StatementList: /* leer */
+    7              | StatementList Statement
+
+
+Terminale und die Regeln, in denen sie verwendet werden
+
+$end (0) 0
+error (256)
+ID (258) 5
+EXPR (259) 1 2 3 5
+"if" (260) 1 2
+"else" (261) 2
+"(" (262) 1 2 3
+")" (263) 1 2 3
+"while" (264) 3
+"{" (265) 4
+"}" (266) 4
+"=" (267) 5
+";" (268) 5
+
+
+Nicht-Terminal und die Regeln, in denen sie verwendet werden
+
+$accept (14)
+    auf der linken Seite: 0
+Statement (15)
+    auf der linken Seite: 1 2 3 4 5, auf der rechten Seite: 0 1 2 3
+    7
+StatementList (16)
+    auf der linken Seite: 6 7, auf der rechten Seite: 4 7
+
+
+Zustand 0
+
+    0 $accept: . Statement $end
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    Statement  gehe zu Zustand 5 über
+
+
+Zustand 1
+
+    5 Statement: ID . "=" EXPR ";"
+
+    "="  schiebe und gehe zu Zustand 6 über
+
+
+Zustand 2
+
+    1 Statement: "if" . "(" EXPR ")" Statement
+    2          | "if" . "(" EXPR ")" Statement "else" Statement
+
+    "("  schiebe und gehe zu Zustand 7 über
+
+
+Zustand 3
+
+    3 Statement: "while" . "(" EXPR ")" Statement
+
+    "("  schiebe und gehe zu Zustand 8 über
+
+
+Zustand 4
+
+    4 Statement: "{" . StatementList "}"
+
+    $default  reduziere mit Regel 6 (StatementList)
+
+    StatementList  gehe zu Zustand 9 über
+
+
+Zustand 5
+
+    0 $accept: Statement . $end
+
+    $end  schiebe und gehe zu Zustand 10 über
+
+
+Zustand 6
+
+    5 Statement: ID "=" . EXPR ";"
+
+    EXPR  schiebe und gehe zu Zustand 11 über
+
+
+Zustand 7
+
+    1 Statement: "if" "(" . EXPR ")" Statement
+    2          | "if" "(" . EXPR ")" Statement "else" Statement
+
+    EXPR  schiebe und gehe zu Zustand 12 über
+
+
+Zustand 8
+
+    3 Statement: "while" "(" . EXPR ")" Statement
+
+    EXPR  schiebe und gehe zu Zustand 13 über
+
+
+Zustand 9
+
+    4 Statement: "{" StatementList . "}"
+    7 StatementList: StatementList . Statement
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+    "}"      schiebe und gehe zu Zustand 14 über
+
+    Statement  gehe zu Zustand 15 über
+
+
+Zustand 10
+
+    0 $accept: Statement $end .
+
+    $default  annehmen
+
+
+Zustand 11
+
+    5 Statement: ID "=" EXPR . ";"
+
+    ";"  schiebe und gehe zu Zustand 16 über
+
+
+Zustand 12
+
+    1 Statement: "if" "(" EXPR . ")" Statement
+    2          | "if" "(" EXPR . ")" Statement "else" Statement
+
+    ")"  schiebe und gehe zu Zustand 17 über
+
+
+Zustand 13
+
+    3 Statement: "while" "(" EXPR . ")" Statement
+
+    ")"  schiebe und gehe zu Zustand 18 über
+
+
+Zustand 14
+
+    4 Statement: "{" StatementList "}" .
+
+    $default  reduziere mit Regel 4 (Statement)
+
+
+Zustand 15
+
+    7 StatementList: StatementList Statement .
+
+    $default  reduziere mit Regel 7 (StatementList)
+
+
+Zustand 16
+
+    5 Statement: ID "=" EXPR ";" .
+
+    $default  reduziere mit Regel 5 (Statement)
+
+
+Zustand 17
+
+    1 Statement: "if" "(" EXPR ")" . Statement
+    2          | "if" "(" EXPR ")" . Statement "else" Statement
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    Statement  gehe zu Zustand 19 über
+
+
+Zustand 18
+
+    3 Statement: "while" "(" EXPR ")" . Statement
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    Statement  gehe zu Zustand 20 über
+
+
+Zustand 19
+
+    1 Statement: "if" "(" EXPR ")" Statement .
+    2          | "if" "(" EXPR ")" Statement . "else" Statement
+
+    "else"  schiebe und gehe zu Zustand 21 über
+
+    $default  reduziere mit Regel 1 (Statement)
+
+
+Zustand 20
+
+    3 Statement: "while" "(" EXPR ")" Statement .
+
+    $default  reduziere mit Regel 3 (Statement)
+
+
+Zustand 21
+
+    2 Statement: "if" "(" EXPR ")" Statement "else" . Statement
+
+    ID       schiebe und gehe zu Zustand 1 über
+    "if"     schiebe und gehe zu Zustand 2 über
+    "while"  schiebe und gehe zu Zustand 3 über
+    "{"      schiebe und gehe zu Zustand 4 über
+
+    Statement  gehe zu Zustand 22 über
+
+
+Zustand 22
+
+    2 Statement: "if" "(" EXPR ")" Statement "else" Statement .
+
+    $default  reduziere mit Regel 2 (Statement)

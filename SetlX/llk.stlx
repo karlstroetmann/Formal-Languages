@@ -1,0 +1,149 @@
+load("grammar-parser.stlx");
+
+// Check whether a grammar is LL(k) for a given k and compute the parse table.
+// The parameter f is the name of the file containing the grammar.  The second
+// parameter k specifies the number of lookahead tokens.
+parseTable := procedure(f, k) {
+    [rules, variables, s] := readGrammar(f);
+    print("\nThe following grammar has been read:\n");
+    for ([v, il] in rules) {
+        print("$v$ -> $itemList2String(il)$");
+    }
+    print("\nComputing First and Follow for k = $k$:\n");    
+    pt := {};  // pt is the parse table implemented as a binary relation.
+    first := computeFirst(k, rules, variables);
+    for (v in variables) {
+        print("First($v$, $k$) = $first[v]$");
+    }
+    follow := computeFollow(k, rules, s, first, variables);
+    for (v in variables) {
+        print("Follow($v$, $k$) = $follow[v]$");
+    }
+    print("\nComputing the parse table:\n");    
+    for ([a, alpha] in rules) {
+        for (s in unionK(firstList(k, alpha, first), follow[a], k)) {
+            rulesAS := pt[[a, s]];
+            if (rulesAS == om) {
+                rulesAS := {};
+            }
+            pt[[a,s]] := rulesAS + { [a, alpha] };
+        }
+    }
+    return pt;
+};
+
+// Given a grammar g and a natural number k, this function computes the first
+// sets of all variables of g.
+computeFirst := procedure(k, rules, variables) {
+    first := initializeMap(variables);
+    change := true;
+    while (change) {
+        change := false;    
+        for ([a, body] in rules) {
+            new := firstList(k, body, first);
+            if (!(new <= first[a])) { 
+                change := true;
+                first[a] += new;
+            }
+        }
+    }
+    return first;
+};
+
+computeFollow := procedure(k, rules, s, first, variables) {
+    follow := initializeMap(variables);
+    follow[s] := { [ "\$" ] };
+    change := true;
+    while (change) {
+        change := false;    
+        for ([a, body] in rules) {
+            for (i in [1 .. #body]) {
+                match (body[i]) {
+                    case Var(yi):
+                        tail := firstList(k, body[i+1 ..], first);
+                        new  := unionK(tail, follow[a], k);
+                        if (!(new <= follow[yi])) { 
+                            change := true; 
+                            follow[yi] += new;
+                        }
+                }
+            }
+        }
+    }
+    return follow;
+};
+
+initializeMap := procedure(variables) {
+    return { [a, {}] : a in variables };
+};
+
+// Given a list of grammar items, i.e. a list of variables and tokens, this 
+// function returns the set First(k, alpha), which is the set of all strings
+// of length k that can be the prefix of a list of tokens derived from alpha.
+firstList := procedure(k, alpha, first) {
+    match (alpha) {
+        case []: 
+             return { [] };
+        case [ Var(v) | r ]:
+             firstV := first[v];
+             firstR := firstList(k, r, first);
+             return unionK(firstV, firstR, k);
+        case [ Token(t) | r ]:
+             firstR := firstList(k, r, first);
+             return unionK({ [t] }, firstR, k);
+    }
+};
+
+// Given a list s, this funktion returns the prefix of s that has length k.
+// If the length of s is less than k, s is returned.
+prefixK := procedure(s, k) {
+    if (#s <= k) {
+        return s;
+    }
+    return s[1..k];
+};
+
+addK := procedure(u, v, k) {
+    return prefixK(u + v, k);
+};
+
+// Given two sets of lists s and t, this function concatenates all lists of
+// s with all lists of t and then returns the prefixes of length k of these 
+// lists.
+unionK := procedure(s, t, k) {
+    return { addK(u, v, k) : u in s, v in t };
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Testing                                                                    //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+rule2String := procedure(rule) {
+    match (rule) {
+        case [v, []]  : return "$v$ -> /* epsilon */";
+        case [v, body]: return "$v$ -> $itemList2String(body)$";
+    }
+};
+
+test := procedure(f, k) {
+    pt := parseTable(f, k);
+    isLLk := true;
+    for ([[variable, prefix], rules] in pt) {
+        print("pt($variable$, $prefix$) = ${ rule2String(r) : r in rules }$");
+        if (#rules > 1) {
+            isLLk := false;
+        }
+    }
+    if (isLLk) {
+        print("\nThe grammar is an LL($k$) grammar.\n");
+    } else {
+        print("\nThe grammar is not an LL($k$) grammar.\n");
+    }
+};
+
+// test("expr.g", 1);
+// test("expr-left.g", 1);
+// test("test.g", 1);
+test("Examples/bool-expr.g", 2);

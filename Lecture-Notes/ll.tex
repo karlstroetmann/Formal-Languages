@@ -1,0 +1,1327 @@
+\chapter{LL(k)-Sprachen}
+In diesem Kapitel werden wir die Theorie vorstellen,  die 
+Top-Down Parser-Generatoren wie beispielsweise \textsc{Antlr} zu Grunde liegt.  Es handelt
+sich dabei um die Theorie der LL($k$)-Sprachen. 
+Dabei steht das erste $L$ dafür, dass der Parser die Eingabe von \underline{l}inks nach rechts parst,
+das zweite $L$ steht dafür, dass der Parser versucht, eine \underline{L}inks-Ableitung des
+zu parsenden Wortes zu berechnen. Eine Links-Ableitung ist dabei eine Ableitung, bei der
+immer die linkeste Variable ersetzt wird.
+ Die Zahl $k$ in LL($k$) bedeutet, dass der Parser an Hand der nächsten $k$ Token
+entscheidet, welche Regel verwendet wird.  Falls beispielsweise $k=1$ ist, wird also nur das nächste 
+Token zur Entscheidung herangezogen.  Dieses Token bezeichnen wir dann als \emph{Lookahead-Token}.
+Wir betrachten zunächst den Fall $k=1$. 
+Bevor wir die Theorie der LL(1)-Parser darstellen, machen wir auf zwei Probleme
+aufmerksam, die wir bei der Erstellung von Top-Down-Parsern lösen müssen.
+\begin{enumerate}
+\item Das erste Problem ist Links-Rekursion, die beispielsweise in den Regeln folgenden
+      Regeln zur Beschreibung arithmetischer Ausdrücke auftritt:
+      \begin{eqnarray*}
+        \textsl{Expr}    & \rightarrow & \;\textsl{Expr} \quoted{+} \textsl{Product}  \\
+                         & \mid        & \;\textsl{Expr} \quoted{-} \textsl{Product}  \\
+                         & \mid        & \;\textsl{Product}                           
+      \end{eqnarray*}
+      Wir hatten im Abschnitt \ref{links-rekursion} gezeigt, wie die Links-Rekursion aus
+      einer Grammatik eliminiert werden kann. 
+      
+      Zusätzlich haben wir gesehen, dass es bei der Verwendung von \textsc{Ebnf}-Grammatiken 
+      oft in natürlicher Weise möglich, die Links-Rekursion durch die Verwendung der
+      Postfix-Operatoren ``\texttt{*}'' und ``\texttt{+}'' zu vermeiden.  Beispielsweise
+      können wir die obigen Regeln für arithmetische Ausdrücke zu der \textsc{Ebnf}-Regel
+      \begin{eqnarray*} 
+        \textsl{Expr}    & \rightarrow & \textsl{Product}\;\; ((\quoted{+}|\quoted{-}) \;\;\textsl{Product})^* 
+      \end{eqnarray*}
+      umschreiben.
+\item Das zweite Problem erkennen wir, wenn wir die folgende Grammatik-Regel für 
+      Gleichungen und Ungleichungen betrachten:
+      \begin{eqnarray*}
+        \textsl{boolExpr} & \rightarrow & \textsl{expr} \quoted{==}    \textsl{expr} \\
+                          & \mid        & \textsl{expr} \quoted{<}\;\, \textsl{expr} 
+      \end{eqnarray*}
+      Diese Grammatik-Regeln sind nicht links-rekursiv, aber
+      für einen Top-Down-Parser, der mit nur einem Token Look-Ahead
+      auskommen soll, ist die Frage, welche der beiden Regeln zum Parsen verwendet
+      werden soll, offenbar nicht zu beantworten.  Wir stellen gleich ein Verfahren vor, mit dem sich
+      Grammatiken so transformieren lassen, dass dieses Problem verschwindet.
+\end{enumerate}
+
+\section{Links-Faktorisierung}
+Ist $A$ ein Nicht-Terminal
+und gibt es zwei verschiedene Regeln, mit denen $A$ abgeleitet werden kann, beispielsweise
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow \beta$ \quad und \quad $A \rightarrow \gamma$,
+\\[0.2cm]
+so muss es bei der Verwendung eines LL(1)-Parsers möglich sein, an Hand des Look-Ahead-Tokens zu
+erkennen, welche Regel benutzt werden soll.  In der Praxis gibt es häufig Situationen, wo
+diese Voraussetzung nicht erfüllt ist.  Wir haben oben bereits ein solches Beispiel
+gesehen.  Um das Beispiel zu vervollständigen, benötigen wir noch Regeln zur Ableitung von
+ \textsl{expr}.  Abbildung \ref{fig:Expr3} zeigt eine vollständige Grammatik, mit der
+ Gleichungen und Ungleichungen arithmetischer Ausdrücke beschrieben werden können.
+
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+
+  \begin{eqnarray*}
+  \textsl{boolExpr}    & \rightarrow & \textsl{expr} \quoted{==}    \textsl{expr} \\
+                       & \mid        & \textsl{expr} \quoted{!=}\;\, \textsl{expr} \\
+                       & \mid        & \textsl{expr} \quoted{<=}\;\, \textsl{expr} \\
+                       & \mid        & \textsl{expr} \quoted{>=}\;\, \textsl{expr} \\
+                       & \mid        & \textsl{expr} \quoted{>}\;\, \textsl{expr} \\
+                       & \mid        & \textsl{expr} \quoted{<}\;\, \textsl{expr} \\[0.2cm]
+  \textsl{expr}        & \rightarrow & \;\textsl{product}\;\;\textsl{exprRest}            \\[0.2cm]
+  \textsl{exprRest}    & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{product}     & \rightarrow & \;\textsl{factor}\;\;\textsl{productRest}          \\[0.2cm]
+  \textsl{productRest} & \rightarrow & \quoted{*} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{factor}      & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}                \\
+                       & \mid        & \;\textsc{Number}                                  \\
+                       & \mid        & \;\textsc{Identifier} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}}}
+  \end{center}
+  \caption{Grammatik ohne Links-Rekursion für Gleichungen und Ungleichungen.}
+  \label{fig:Expr3}
+\end{figure}
+
+\noindent
+Es ist nicht möglich einen LL(1)-Parser zu implementieren, der Boole'sche Ausdrücke
+mit Hilfe dieser Regeln  erkennen kann, denn alle Regeln für \textsl{boolExpr} beginnen
+mit \textsl{expr}.  Wir können die Grammatik aber durch \emph{Links-Faktorisierung}
+(Englisch: \emph{left factoring})  
+so umschreiben, das ein Token als Look-Ahead ausreicht, indem wir den Teil aus den beiden 
+Grammatik-Regeln ausklammern, der am Anfang der beiden Regeln identisch ist.  In dem
+obigen Beispiel führen wir dann für den verbleibenden Rest das neue Nicht-Terminal
+\textsl{boolExprRest} ein und erhalten so die Regeln
+\begin{eqnarray*}
+\textsl{boolExpr}     & \rightarrow & \;\textsl{expr} \;\;\textsl{boolExprRest} \\[0.2cm]
+\textsl{boolExprRest} & \rightarrow & \quoted{==}    \textsl{expr} \quad \mid \quad \quoted{!=} \textsl{expr}
+                                      \quad \mid \quad \quoted{<=} \textsl{expr}                                  \\
+                      & \mid        & \quoted{>=}\;\, \textsl{expr} \quad \mid \quad \quoted{<} \textsl{expr} 
+                                      \quad \mid \quad \quoted{>} \textsl{expr}. 
+\end{eqnarray*}
+Mit diesen Regeln reicht nun ein Token als Look-Ahead aus, denn die verschiedenen Alternativen
+für \textsl{boolExprRest} unterscheiden sich in dem ersten Token des Rumpfs der Regel.
+Verwenden wir statt einer einfachen Grammatik eine \textsc{Ebnf}-Grammatik, so lassen sich die 
+obigen Regeln kürzer in der Form
+\begin{eqnarray*}
+\textsl{boolExpr} & \rightarrow & \textsl{expr}\;\;
+                                  (\quoted{==}\mid \quoted{!=}\mid \quoted{<=} \mid \quoted{>=} \mid \quoted{<})  
+                                  \;\;\textsl{expr} 
+\end{eqnarray*}
+darstellen.
+
+Um den allgemeinen Fall der Links-Faktorisierung diskutieren zu können, nehmen wir an, dass
+$A$ ein Nicht-Terminal ist, das durch insgesamt $m + n$ Regeln definiert wird, wobei der
+Rumpf der ersten $m$ Regeln immer mit $\alpha$ anfängt, wobei $\alpha$ ein String aus
+Terminalen und Nicht-Terminalen ist.  Die Regeln haben also die folgende Form:
+\begin{eqnarray*}
+  A & \rightarrow & \alpha \;\; \beta_1 \\
+    & \mid        & \alpha \;\; \beta_2 \\
+    & \vdots      & \vdots              \\
+    & \mid        & \alpha \;\; \beta_m \\
+    & \mid        & \gamma_1            \\
+    & \vdots      & \vdots              \\
+    & \mid        & \gamma_n            
+\end{eqnarray*}
+Bei dieser Darstellung sei vorausgesetzt, dass die Strings $\beta_1$, $\cdots$, $\beta_m$
+keinen  Präfix haben, der allen $\beta_i$ gemeinsam ist und dass $\alpha$ auch kein Präfix einer der Strings
+$\gamma_i$ ist.  Bei der Links-Faktorisierung dieser Regeln klammern wir einerseits den
+gemeinsamen Präfix $\alpha$ aus und führen andererseits eine neue syntaktische Variable $B$ ein, die
+den auf $\alpha$ folgenden Rest bezeichnet.  Wir erhalten dann die folgenden Regeln:
+\[
+\begin{array}{lclclcl}
+  A & \rightarrow & \alpha \;\; B & \qquad & B & \rightarrow & \beta_1   \\
+    & \mid        & \gamma_1      &        &   & \mid        & \beta_2   \\
+    & \vdots      & \vdots        &        &   & \vdots      & \vdots    \\
+    & \mid        & \gamma_n      &        &   & \mid        & \beta_m   \\[0.2cm]
+\end{array}
+\]
+Um alle gemeinsamen Präfixe auszuklammern muss dieses Verfahren unter 
+Umständen mehrfach durchgeführt werden.  Die nächste Aufgabe gibt dafür ein Beispiel.
+
+\exercise
+Geben Sie eine Links-Faktorisierung für die folgenden Grammatik-Regeln an.
+\begin{eqnarray*}
+  A & \rightarrow & \quoted{a} \quoted{b} U \quoted{d} \\
+    & \mid        & \quoted{a} V \quoted{b} \quoted{d} \\
+    & \mid        & \quoted{a} \quoted{b} W            \\
+    & \mid        & \quoted{x} U                       \\
+    & \mid        & \quoted{x} V                       
+\end{eqnarray*}
+
+\solution
+Zunächst eliminieren wir das gemeinsame Präfix \qote{a} und führen dazu die neue
+syntaktische Variable $B$ ein.  Wir erhalten:
+\begin{eqnarray*}
+  A & \rightarrow & \quoted{a} B             \\
+    & \mid        & \quoted{x} U             \\
+    & \mid        & \quoted{x} V             \\[0.2cm]
+  B & \rightarrow & \quoted{b} U \quoted{d}  \\
+    & \mid        & \;V \quoted{b} \quoted{d}\\
+    & \mid        & \quoted{b} W             
+\end{eqnarray*}
+Nun eliminieren wir das Präfix \qote{x} aus beiden letzten Regeln für $A$.  Wir führen
+dazu die neue syntaktische Variable $C$ ein. Dann erhalten wir:
+\begin{eqnarray*}
+  A & \rightarrow & \quoted{a} B              \\
+    & \mid        & \quoted{x} C              \\[0.2cm]
+  C & \rightarrow & U                         \\
+    & \mid        & V                         \\[0.2cm]
+  B & \rightarrow & \quoted{b} U \quoted{d}   \\
+    & \mid        & \;V \quoted{b} \quoted{d} \\
+    & \mid        & \quoted{b} W              
+\end{eqnarray*}
+Als letztes eliminieren wir das Präfix \qote{b}, das in zwei der Regeln für die
+syntaktische Variable $B$ auftritt.  Wir nennen die neu eingeführte Variable $D$ und erhalten:
+\begin{eqnarray*}
+  A & \rightarrow & \quoted{a} B              \\
+    & \mid        & \quoted{x} C              \\[0.2cm]
+  C & \rightarrow & U                         \\
+    & \mid        & V                         \\[0.2cm]
+  B & \rightarrow & \quoted{b} D              \\
+    & \mid        & \;V \quoted{b} \quoted{d} \\[0.2cm]
+  D & \rightarrow & U \quoted{d}              \\
+    & \mid        & W              \hspace*{11cm} _\Box
+\end{eqnarray*}
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Remark}: The parser generator \textsc{Antlr} automatically performs left-factorisation.
+
+
+\section{\textsl{First} und \textsl{Follow}}
+Nicht für jede links-faktorisierte Grammatik läßt sich ein LL(1)-Parser bauen.  Betrachten
+wir die folgenden Regeln:
+\begin{eqnarray*}
+  A & \rightarrow & B \; \mid\; C \\
+  B & \rightarrow & \quoted{a} U  \\
+  C & \rightarrow & \quoted{a} V  
+\end{eqnarray*}
+Will der Parser ein $A$ parsen und ist das nächste Token ein \qote{a}, so ist nicht klar,
+ob der Parser als nächstes die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow B$ \quad oder \quad $A \rightarrow C$
+\\[0.2cm]
+verwenden soll.  Für die obige Grammatik läßt sich daher kein LL(1)-Parser implementieren.
+Zur Entscheidung, ob sich für eine gegebene Grammatik ein LL(1)-Parser implementieren läßt,
+benötigen wir die Funktionen $\textsl{First}()$ und $\textsl{Follow}()$, die wir gleich
+definieren werden.  Um diese Funktionen implementieren zu können, definieren wir vorher  den
+Begriff einer $\varepsilon$-erzeugenden syntaktischen Variablen.
+
+\begin{Definition}[$\varepsilon$-erzeugend]
+Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $A$ sei eine
+syntaktische Variable, also $A \in V$.  Dann heißt die Variable $A$
+\emph{$\varepsilon$-erzeugend} genau dann, wenn
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \Rightarrow^* \varepsilon$
+\\[0.2cm]
+gilt, also dann, wenn sich aus der Variablen $A$ das leere Wort ableiten läßt. 
+Wir schreiben $\textsl{nullable}(A)$ wenn die Variable $A$ als $\varepsilon$-erzeugend
+nachgewiesen ist.
+\qed
+\end{Definition}
+
+\examples
+\begin{enumerate}
+\item Bei der in Abbildung \ref{fig:Expr3} auf Seite \pageref{fig:Expr3} gezeigten Grammatik
+      sind offenbar die Variablen \textsl{exprRest} und \textsl{productRest} $\varepsilon$-erzeugend.
+\item Wir betrachten nun ein weniger offensichtliches Beispiel.  Die Grammatik $G$
+      enthalte die folgenden Regeln:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $S \rightarrow A \; B \; C$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \quoted{a} B \mid A \quoted{b} \mid B\;C$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $B \rightarrow \quoted{a} B \mid A \quoted{b} \mid C\;C$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $C \rightarrow A\;B\; C \mid \varepsilon$
+      \\[0.2cm]
+      Zunächst ist offenbar die Variable $C$ $\varepsilon$-erzeugend.  Dann sehen wir,
+      dass aufgrund der Regel $B \rightarrow C \;C$ auch $B$ $\varepsilon$-erzeugend ist
+      und daraus folgt dann wegen der Regel $A \rightarrow B\;C$, dass auch $A$
+      $\varepsilon$-erzeugend ist.  Schließlich erkennen wir $S$ als $\varepsilon$-erzeugend,
+      denn die erste Regel lautet
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $S \rightarrow A \; B \; C$
+      \\[0.2cm]
+      und hier sind alle Variablen auf der rechten Seite der Regel $\varepsilon$-erzeugend.
+\end{enumerate}
+ 
+\begin{Definition}[$\textsl{First}()$]
+Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $A \in V$.
+Dann definieren wir $\textsl{First}(A)$ als die Menge aller der Token $t$, mit denen ein
+von $A$ abgeleitetes Wort beginnen kann:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{First}(A) := \{ t \in T \mid \exists \gamma \in (V \cup T)^*: A \Rightarrow^* t\gamma \}$.
+\\[0.2cm]
+Die Definition der Funktion $\textsl{First}()$ kann wie folgt auf Strings aus $(V \cup T)^*$ 
+erweitert werden: 
+\begin{enumerate}
+\item $\textsl{First}(\varepsilon) = \{\}$.
+\item $\textsl{First}(t \beta) = \{ t \}$ \quad falls $t \in T$.
+\item $\textsl{First}(A \beta) = \left\{
+       \begin{array}[c]{ll}
+         \textsl{First}(A) \cup \textsl{First}(\beta) & \mbox{falls $A \Rightarrow^* \varepsilon$;} \\
+         \textsl{First}(A)                            & \mbox{sonst.}
+       \end{array}
+       \right.
+      $ 
+\end{enumerate}
+If $A$ is a variable of $G$ and the rules defining $A$ are given as 
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow \alpha_1 \mid \cdots \mid \alpha_n$,
+\\[0.2cm]
+then we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{First}(A) = \bigcup\limits_{i=1}^n \textsl{First}(\alpha_i)$.   \qed
+\end{Definition}
+
+\remarkEng
+Note that the definitions of the function \textsl{First} for variables from $V$ and strings from 
+$(V \cup T)^*$ are mutually recursive.  The computation of \textsl{First} is best done via a
+fixpoint computation:  Start by setting $\textsl{First}(A) := \{\}$ for all variables $A\in V$ and
+then continue to iterate the equations defining $\textsl{First}(A)$ until none of the sets
+$\textsl{First}(A)$ changes any more.  The next example clarifies this idea.
+
+\example
+Wir können für die Variablen $A$ der in Abbildung \ref{fig:Expr3} gezeigten Grammatik 
+die Mengen $\textsl{A}$ iterativ berechnen.  Wir berechnen
+die Funktion $\textsl{First}(A)$ für die einzelnen Variablen $A$ am besten so, dass wir mit den
+Variablen beginnen, die in der Hierarchie ganz unten stehen. 
+\begin{enumerate}
+\item Zunächst folgt aus den Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{factor} \rightarrow \quoted{(} \textsl{expr} \quoted{)} \mid \textsl{NUMBER} \mid \textsl{IDENTIFIER}$,
+      \\[0.2cm]
+      dass jeder von \textsl{Factor} abgeleitete String entweder mit einer öffnenden
+      Klammer, einer Zahl oder einem Bezeichner beginnt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{factor}) = \{ \quoted{(}, \textsl{NUMBER}, \textsl{IDENTIFIER}\; \}$.
+\item Analog folgt aus den Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{productRest} \rightarrow \quoted{*} \textsl{factor}\;\;\textsl{productRest} \;
+                            \mid        \quoted{/} \textsl{factor}\;\;\textsl{productRest} \;
+                            \mid        \varepsilon$,
+      \\[0.2cm]
+      dass ein \textsl{productRest} entweder mit dem Zeichen \qote{*} oder \qote{/} beginnt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{productRest}) = \{ \quoted{*}, \quoted{/} \}$
+\item Die Regel für die Variable \textsl{product} lautet
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}$.
+      \\[0.2cm]
+      Da die Variable \textsl{factor} nicht $\varepsilon$ erzeugend ist, sehen wir, dass
+      die Menge $\textsl{First}(\textsl{product})$ mit der Menge
+      $\textsl{First}(\textsl{factor})$ übereinstimmt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{product}) = \{ \quoted{(}, \textsl{NUMBER}, \textsl{IDENTIFIER}\; \}$.
+\item Aus den Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{exprRest} \rightarrow \quoted{+} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \quoted{-} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \varepsilon$
+      \\[0.2cm]
+      können wir $\textsl{First}(\textsl{exprRest})$ wie folgt berechnen:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{exprRest}) = \{ \quoted{+}, \quoted{-} \}$.
+\item Weiter folgt aus der Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}$
+      \\[0.2cm]
+      und der Tatsache, dass $\textsl{product}$ nicht $\varepsilon$-erzeugend ist,
+      dass die  $\textsl{First}(\textsl{expr})$ mit der Mengen
+      $\textsl{First}(\textsl{product})$ übereinstimmt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{expr}) = \{ \quoted{(}, \textsl{NUMBER}, \textsl{IDENTIFIER}\; \}$.
+\item Schließlich folgt aus den Regeln für die syntaktische Variable \textsl{boolExpr}
+      sowie der Tatsache, dass die syntaktische Variable \textsl{expr} nicht $\varepsilon$-erzeugend ist,
+      dass $\textsl{First}(\textsl{boolExpr})$ mit $\textsl{First}(\textsl{expr})$ identisch ist:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{boolExpr}) = \{ \quoted{(}, \textsl{NUMBER}, \textsl{IDENTIFIER}\; \}$.
+      \qed
+\end{enumerate}
+Since we have computed the sets $\textsl{First}(A)$ in a clever order, we did not have to perform a
+proper fixpoint iteration in this example.
+\eox
+
+
+\begin{Definition}[$\textsl{Follow}()$]
+Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $A \in V$.
+Bei der Berechnung von $\textsl{Follow}()$ wird die Grammatik zunächst abgeändert,
+indem wir das Symbol \qote{\symbol{36}} als neues Symbol zu der Menge $T$ der Terminale
+hinzufügen.  Zu den Variablen wird das neue Symbol $\widehat{S}$ hinzugefügt, dass auch
+gleichzeitig das neue Start-Symbol der Grammatik ist.  Zu der Menge $R$ der Regeln
+fügen wir die folgende Regel neu hinzu:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\widehat{S} \rightarrow S \quoted{\symbol{36}}$.
+\\[0.2cm]
+Das Terminal \qote{\symbol{36}} steht hierbei für das Ende der Eingabe (\textsc{Eof},
+\emph{end of file}).
+Weiter definieren wir
+\\[0.2cm]
+\hspace*{1.3cm}
+ $\widehat{T} := T \cup \{ \quoted{\symbol{36}} \}$.
+\\[0.2cm]
+Die so veränderte Grammatik bezeichnen wir als die \emph{augmentierte} Grammatik.
+Dann definieren wir $\textsl{Follow}(A)$ als die Menge aller der Token $t$, die in einer
+Ableitung auf $A$ folgen können:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{Follow}(A) := 
+ \{ t \in \widehat{T} \mid \exists \beta,\gamma \in (V \cup \widehat{T})^*: 
+                           \widehat{S} \Rightarrow^* \beta A t \gamma 
+  \}
+$.
+\\[0.2cm]
+Wenn sich aus dem Start-Symbol $\widehat{S}$ also irgendwie ein String $\beta A t\gamma$ ableiten läßt,
+bei dem das Token $t$ auf die Variable $A$ folgt, dann ist $t$ ein Element
+der Menge $\textsl{Follow}(A)$.
+\qed  
+\end{Definition}
+
+\example
+Wir untersuchen wieder die in Abbildung \ref{fig:Expr3} gezeigte Grammatik für arithmetische Ausdrücke.
+\begin{enumerate}
+\item Aufgrund der neu hinzugefügten Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\widehat{S} \rightarrow \textsl{boolExpr} \quoted{\symbol{36}}$
+      \\[0.2cm]
+      muss die Menge $\textsl{Follow}(\textsl{boolExpr})$ das Zeichen \qote{\symbol{36}}
+      enthalten.  Da die syntaktische Variable \textsl{boolExpr} sonst nirgends in der
+      Grammatik vorkommt, haben wir 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{boolExpr}) = \{ \quoted{\symbol{36}} \}$.
+\item Die Grammatik-Regeln für die syntaktische Variable \textsl{boolExpr}
+      zeigen uns zunächst, dass die Menge $\textsl{Follow}(\textsl{expr})$ die Zeichen
+      \qote{==}, \qote{!=}, \qote{<=}, \qote{>=}, \qote{<}   und \qote{>} enthält.  Da \textsl{expr} auch am Ende dieser Regeln steht,
+      folgt weiter, dass alle Elemente aus $\textsl{Follow}(\textsl{boolExpr})$ auch auf 
+      \textsl{expr} folgen können, wir haben also auch
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\quoted{\symbol{36}} \in \textsl{Follow}(\textsl{expr})$.
+      \\[0.2cm]
+      Aufgrund der Regel 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{factor} \rightarrow \quoted{(} \textsl{expr} \quoted{)}$
+      \\[0.2cm]
+      muss die Menge $\textsl{Follow}(\textsl{expr})$ außerdem das Zeichen \qote{)}
+      enthalten.  Also haben wir insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{expr}) = \{ \quoted{==}, \quoted{!=}, \quoted{>=}, \quoted{<=}, \quoted{>}, \quoted{<}, \quoted{\symbol{36}}, \quoted{)} \}$.
+\item Aufgrund der Regel 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}$
+      \\[0.2cm]      
+      wissen wir, dass alle Terminale, die auf ein \textsl{expr} folgen können, auch auf
+      ein \textsl{exprRest} folgen können, womit wir schon mal wissen, dass
+      $\textsl{Follow}(\textsl{exprRest})$ die Token \qote{==}, \qote{!=}, \qote{<=}, \qote{>=}, \qote{<}, \qote{\symbol{36}}  und \qote{)}
+      enthält.   Da \textsl{exprRest} sonst nur am Ende der Regeln vorkommt, die
+      \textsl{exprRest} definieren, sind das auch schon alle Token, die auf
+      \textsl{exprRest} folgen können und wir haben
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{exprRest}) = 
+       \{ \quoted{==}, \quoted{!=}, \quoted{>=}, \quoted{<=}, \quoted{>}, \quoted{<}, \quoted{\symbol{36}}, \quoted{)} \}$.
+\item Die Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{exprRest} \rightarrow \quoted{+} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \quoted{-} \textsl{product}\;\;\textsl{exprRest}$
+      \\[0.2cm]
+      zeigen, dass auf ein \textsl{product} alle Elemente aus $\textsl{First}(\textsl{exprRest})$
+      folgen können, aber das ist noch nicht alles:  Da die Variable \textsl{exprRest}
+      $\varepsilon$-erzeugend ist, können zusätzlich auf \textsl{product} auch
+      alle Token folgen, die auf \textsl{exprRest} folgen.  Damit haben wir insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{product}) = 
+      \{ \quoted{+}, \quoted{-},  \quoted{==}, \quoted{!=}, \quoted{>=}, \quoted{<=}, \quoted{>}, \quoted{<}, \quoted{\symbol{36}}, \quoted{)} \}$.
+\item Die Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}$
+      \\[0.2cm]      
+      zeigt, dass alle Terminale, die auf ein \textsl{product} folgen können, auch auf
+      ein \textsl{productRest} folgen können.
+      Da \textsl{productRest} sonst nur am Ende der Regeln vorkommt, die
+      \textsl{productRest} definieren, sind das auch schon alle Token, die auf
+      \textsl{productRest} folgen können und wir haben insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{productRest}) = 
+      \{ \quoted{+}, \quoted{-}, \quoted{==}, \quoted{!=}, \quoted{>=}, \quoted{<=}, \quoted{>}, \quoted{<}, \quoted{\symbol{36}}, \quoted{)} \}$.
+\item Die Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{productRest} \rightarrow \quoted{*} \textsl{factor}\;\;\textsl{productRest} 
+                            \mid        \quoted{/} \textsl{factor}\;\;\textsl{productRest}$ 
+      \\[0.2cm]
+      zeigen, dass auf ein \textsl{factor} alle Elemente aus $\textsl{First}(\textsl{productRest})$
+      folgen können, aber das ist noch nicht alles:  Da die Variable \textsl{productRest}
+      $\varepsilon$-erzeugend ist, können zusätzlich auf \textsl{factor} auch
+      alle Token folgen, die auf \textsl{productRest} folgen.  Damit haben wir insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{factor}) = 
+      \{ \quoted{*}, \quoted{/}, \quoted{+}, \quoted{-}, \quoted{==}, \quoted{!=}, \quoted{>=}, \quoted{<=}, \quoted{>}, \quoted{<}, \quoted{\symbol{36}}, \quoted{)} \}$.
+      \qed
+\end{enumerate}
+
+\noindent
+Das letzte Beispiel zeigt, dass die Berechnung des Prädikats $\textsl{nullable}()$ 
+und die Berechnung der Mengen $\textsl{First}(A)$ und $\textsl{Follow}(A)$ für eine syntaktische
+Variable $A$ eng miteinander verbunden sind.  
+Es sei
+\\[0.2cm]
+\hspace*{1.3cm}
+ $A \rightarrow Y_1 Y_2 \cdots Y_k$ 
+\\[0.2cm]
+eine Grammatik-Regel.
+Dann bestehen zwischen dem Prädikat $\texttt{nullable}()$ und den beiden Funktionen
+$\textsl{First}()$ und $\textsl{Follow}()$ die folgenden Beziehungen:
+\begin{enumerate}
+\item $\forall t \in T: \neg\, \textsl{nullable}(t)$.
+\item $k = 0 \Rightarrow \textsl{nullable}(A)$.
+\item $\bigl(\forall i \in \{1, \cdots, k\}: \textsl{nullable}(Y_i)\bigr) \Rightarrow
+       \textsl{nullable}(A)$.
+
+      Setzen wir hier $k=0$ so sehen wir, dass 2.~ein Spezialfall von 3.~ist.
+\item $\textsl{First}(Y_1) \subseteq \textsl{First}(A)$.
+\item $\bigl(\forall j \in \{1,\cdots,i-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow
+       \textsl{First}(Y_i) \subseteq \textsl{First}(A)$.
+\item $\textsl{Follow}(A) \subseteq \textsl{Follow}(Y_k)$.
+\item $\bigl(\forall j \in \{i+1, \cdots, k\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
+       \textsl{Follow}(A) \subseteq \textsl{Follow}(Y_i)$.
+
+      Setzen wir hier $i=k$ so sehen wir, dass 6.~ein Spezialfall von 7.~ist.
+\item $\forall i \in \{1,\cdots,k-1\}:\textsl{First}(Y_{i+1}) \subseteq \textsl{Follow}(Y_i)$.
+\item $\bigl(\forall j \in \{i+1, \cdots, l-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
+       \textsl{First}(Y_l) \subseteq \textsl{Follow}(Y_i)$.
+
+      Setzen wir hier $l=i+1$ so sehen wir, dass 8.~ein Spezialfall von 9.~ist.
+\end{enumerate}
+Mit Hilfe dieser Beziehungen können $\textsl{nullable}()$, $\textsl{First}()$ und
+$\textsl{Follow}()$ iterativ berechnet werden:  
+\begin{enumerate}
+\item Zunächst werden die Funktionen $\textsl{First}(A)$ und
+      $\textsl{Follow}(A)$ für jede syntaktische Variable $A$ mit der leeren Menge initialisiert.
+      Das Prädikat $\textsl{nullable}(A)$ wird für jede syntaktische Variable auf $\texttt{false}$
+      gesetzt.
+\item Anschließend werden die oben angegebenen Regeln so lange angewendet, wie sich durch die
+      Anwendung Änderungen ergeben. 
+\end{enumerate}
+
+\section{LL(1)-Grammatiken}
+Wir können nun die Frage beantworten, für welche Grammatiken ein Top-Down-Parser erzeugt
+werden kann, der immer mit einem Token Lookahead auskommt.  
+
+\begin{Definition}[LL(1)-Grammatik]
+Eine Grammatik $G$ ist eine \emph{LL(1)-Grammatik} genau dann, wenn für jede syntaktische Variable
+$A$, für die es in der Grammatik $G$ zwei verschiedene Regeln
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow \alpha$ \quad und \quad $A \rightarrow \beta$ 
+\\[0.2cm]
+gibt, die folgenden Bedingungen erfüllt sind:
+\begin{enumerate}
+\item $\neg( \alpha \Rightarrow^* \varepsilon \wedge \beta \Rightarrow^* \varepsilon)$.
+
+      Die Rümpfe zweier verschiedener Regeln der selben Variablen
+      dürfen nicht beide das leere Wort ableiten.
+\item $\textsl{First}(\alpha) \cap \textsl{First}(\beta) = \{\}$.
+
+      Die Ableitungen der Rümpfe zweier verschiedener Regeln der selben Variablen
+      dürfen nicht mit dem selben Token beginnen.
+\item   $(\beta  \Rightarrow^* \varepsilon) \rightarrow \textsl{First}(\alpha) \cap
+\textsl{Follow}(A) = \{\}$.
+
+      Wenn $\beta$ den leeren String ableitet, dann müssen die Mengen
+      $\textsl{First}(\alpha)$ und $\textsl{Follow}(A)$ disjunkt sein.  
+      \qed
+\end{enumerate}
+\end{Definition}
+
+\noindent
+Wir diskutieren nun die Idee, die hinter der obigen Definition steht.
+\begin{enumerate}
+\item Falls das leere Wort sowohl über die Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \alpha$ \quad als auch über \quad $A \rightarrow \beta$
+      \\[0.2cm]
+      ableitbar wäre, so wissen wir nicht, welche Regel wir anwenden sollen, wenn
+      wir ein $A$ ableiten sollen und das nächste Eingabe-Token ein Element der Menge
+      $\textsl{Follow}(A)$ ist.
+\item Um ein $A$ zu parsen und zwischen den beiden Regeln für $A$ unterscheiden zu können,
+      verwenden wir das folgende Rezept:
+
+      Parsen wir ein $A$ und ist das Lookahead-Token ein Element der Menge
+      $\textsl{First}(\alpha)$, so verwenden wir die Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \alpha$.
+      \\[0.2cm]
+      Analog verwenden wir die Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \beta$,
+      \\[0.2cm]
+      wenn das Lookahead-Token ein Element der Menge $\textsl{First}(\beta)$ ist.
+
+      Dieses Rezept funktioniert natürlich nur, wenn die Mengen $\textsl{First}(\alpha)$
+      und $\textsl{First}(\beta)$ disjunkt sind.
+\item Das obige Rezept um ein $A$ zu parsen muss in dem Fall, dass $\beta$ das leere Wort
+      ableitet, wie folgt erweitert werden.
+  
+      Gilt $\beta \Rightarrow^* \varepsilon$ und ist das Lookahead-Token ein Element der
+      Menge $\textsl{Follow}(A)$, so verwenden wir die Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \beta$.
+     
+      Damit diese Regel nicht im Widerspruch zu den unter Punkt 2.~genannten Regeln steht,
+      benötigen wir die Bedingungen
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(\beta  \Rightarrow^* \varepsilon) \rightarrow \textsl{First}(\alpha) \cap \textsl{Follow}(A) = \{\}.$ 
+\end{enumerate}
+Insgesamt versuchen wir also dann mit einer Regel $A \rightarrow \alpha$ zu reduzieren,
+wenn eine der beiden folgenden Bedingungen erfüllt sind.  In diesen Bedingungen bezeichnet
+\textsl{lat} das Lookahead-Token.
+\begin{enumerate}
+\item $\textsl{lat} \in \textsl{First}(\alpha)$ \quad oder
+\item $\alpha \Rightarrow^* \varepsilon$ und $\textsl{lat} \in \textsl{Follow}(\alpha)$.
+\end{enumerate}
+
+\remark
+Falls eine Grammatik $G$ links-rekursiv ist und die links-rekursiven Regeln nicht 
+überflüssig sind, dann ist klar, dass $G$ keine LL(1)-Grammatik sein kann.
+
+
+\subsection{Berechnung der Parse-Tabelle}
+Nach diesen Vorbereitungen können wir nun zu einer LL(1)-Grammatik die \emph{Parse-Tabelle}
+berechnen.  Für eine Grammatik $G = \langle V, T, R, S \rangle$ ist die Parse-Tabelle
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{parseTable}: V \times T \rightarrow 2^R$,
+\\[0.2cm]
+eine Funktion, so dass der Aufruf $\textsl{parseTable}(A,t)$ einer syntaktischen Variable $A$ und
+einem Token $t$ die Menge aller Regeln der Form  
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow \alpha$
+\\[0.2cm]
+zuordnet, die bei einer Ableitung von $A$ in Frage kommen, wenn das nächste zu lesenden Token den
+Wert $t$ hat.  Diese Funktion genügt den folgenden beiden Bedingungen:
+\begin{enumerate}
+\item Ist  $A \rightarrow \alpha$ eine Regel der Grammatik und ist $t$ ein Token aus der Menge 
+      $\textsl{First}(\alpha)$, dann ist diese Regel ein Element der Menge
+      $\textsl{parseTable}(A,t)$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(A \rightarrow \alpha) \in R \; \wedge \; t \in \textsl{First}(\alpha) 
+      \;\Rightarrow\; (A \rightarrow \alpha) \in \textsl{parseTable}(A,t)$.
+\item Ist $A \rightarrow \alpha$ eine Regel der Grammatik, wobei $\alpha$ 
+      $\varepsilon$-erzeugend ist, und ist $t$ ein Token aus der Menge 
+      $\textsl{Follow}(A)$, dann ist diese Regel ein Element der Menge
+      $\textsl{parseTable}(A,t)$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(A \rightarrow \alpha) \in R \; \wedge \; \alpha \Rightarrow^* \varepsilon 
+       \;\wedge\;t \in \textsl{Follow}(A) 
+       \;\Rightarrow\; (A \rightarrow \alpha) \in \textsl{parseTable}(A,t)$.
+\end{enumerate}
+Eine Grammatik ist genau dann eine $LL(1)$-Grammatik, wenn die Mengen
+$\textsl{parseTable}(A,t)$ für jede syntaktische Variable $A$ und jedes Token $t$ maximal
+eine Regel enthält:
+\\[0.2cm]
+\hspace*{1.3cm} $G$ ist LL(1) \quad g.d.w. \quad  
+$\forall A \in V: \forall t \in T: \textsl{card}\bigl(\textsl{parseTable}(A,t)\bigr) \leq 1$.
+\\[0.2cm]
+Falls die Menge $\textsl{parseTable}(A,t)$ leer ist, so heißt dies einfach, dass wir beim
+Parsen von $A$ nicht auf das Token $t$ stoßen können.  Parsen wir also ein $A$ und sehen
+als erstes Zeichen das Token $t$, so muss ein Syntax-Fehler vorliegen.  
+
+\section{LL(k)-Grammatiken}
+Viele interessante Grammatiken sind keine $LL(1)$-Grammatiken.
+Abbildung \ref{fig:Expr4} zeigt ein Beispiel.  Bei dieser Grammatiken werden für arithmetische
+Ausdrücke auch Funktionsaufrufe der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(a_1, \cdots, a_n)$
+\\[0.2cm]
+zugelassen.  Dabei ist $f$ ein Funktionszeichen, das syntaktisch nicht von einem Identfier zu
+unterscheiden ist.  Dadurch gibt es zwischen den beiden Regeln
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Identifier}$ \quad und \quad
+$\textsl{factor} \rightarrow \textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}$ 
+\\[0.2cm]
+einen Konflikt:  Soll ein \textsl{factor} geparst werden und ist das nächste zu lesende Zeichen ein 
+\textsc{Identifier}, so ist nicht klar, welche der beiden Regeln angewendet werden sollen.
+Die Lösung des Problems besteht in diesem Fall darin, zusätzlich das zweite Zeichen mit heran zu
+ziehen:  Handelt es sich um das Zeichen $\quoted{(}$, so ist offenbar die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}$ 
+\\[0.2cm]
+heranzuziehen, andernfalls muss die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Identifier}$ 
+\\[0.2cm]
+verwendet werden.
+
+\begin{figure}[!ht]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+
+  \begin{eqnarray*}
+  \textsl{expr}        & \rightarrow & \;\textsl{product}\;\;\textsl{exprRest}            \\[0.2cm]
+  \textsl{exprRest}    & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{product}     & \rightarrow & \;\textsl{factor}\;\;\textsl{productRest}          \\[0.2cm]
+  \textsl{productRest} & \rightarrow & \quoted{*} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{factor}      & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}                \\
+                       & \mid        & \;\textsl{Number}                                  \\
+                       & \mid        & \;\textsc{Identifier}                              \\
+                       & \mid        & \;\textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}
+                       \\[0.2cm]
+  \textsl{argList}     & \rightarrow & \textsl{expr} \;\;\textsl{argsRest}                    \\
+                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+  \textsl{argsRest}    & \rightarrow & \quoted{,} \textsl{expr} \;\;\textsl{argsRest}         \\
+                       & \mid        & \varepsilon                   
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}}}
+  \end{center}
+  \caption{Arithmetische Ausdrücke mit Funktions-Aufrufen.}
+  \label{fig:Expr4}
+\end{figure}
+
+Im allgemeinen Fall kann das Verfahren so erweitert werden, dass $k$ Token bei der Entscheidung,
+welche Regel zu verwenden ist, als Lookahead herangezogen werden.  
+Wir skizzieren die Grundzüge dieser Theorie.
+Als erstes verallgemeinern wir die Definition der Funktion $\textsl{First}()$.  
+
+\begin{Definition}[$\textsl{First}(k,\alpha)$]
+  Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik. Wir definieren eine Funktion
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\textsl{First}: \mathbb{N} \times (V \cup T)^* \rightarrow 2^{T^*}$,
+  \\[0.2cm]
+  so dass $\textsl{First}(k,\alpha)$ für eine natürliche Zahl $k$ und einen String $\alpha$, der aus
+  Terminalen und syntaktischen Variablen besteht, die Menge der Token-Strings berechnet, die
+  höchstens die Länge $k$ haben und die Präfix eines von $\alpha$ abgeleiteten Strings sind.  Formal
+  lautet die Definition:
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\textsl{First}(k, \alpha) := 
+  \bigl\{ x \in T^* \mid \exists y \in T^*: \alpha \Rightarrow^* x y \wedge |x| = k \} \cup
+  \{ x \in T^* \mid \alpha \Rightarrow^* x \wedge |x| < k \bigr\}.$ \qed  
+\end{Definition}
+
+\example
+Streichen wir zur Vereinfachung in der in Abbildung \ref{fig:Expr3} gezeigte Grammatik 
+für arithmetische Ausdrücke die Regel 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Number}$
+\\[0.2cm]
+sowie die Regeln für \textsl{boolExpr}
+und kürzen wir weiter das Token \textsc{Identifier} als \textsc{Id} ab, so erhalten wir
+beispielsweise:
+\begin{enumerate}
+\item $\textsl{First}(2, \textsl{expr}) = 
+      \bigl\{\, \textsc{Id}, \,\squoted{(}\, \textsc{Id},\, \squoted{((},\,
+      \textsc{Id} \squoted{+},\, \textsc{Id} \squoted{-},\,
+      \textsc{Id} \squoted{*},\, \textsc{Id} \squoted{/}\,
+      \bigr\}$,
+\item $\textsl{First}(2, \textsl{exprRest}) = 
+      \bigl\{\,
+      \varepsilon,\,
+      \squoted{+}\textsc{Id},\, 
+      \squoted{+(},\, 
+      \squoted{-} \textsc{Id},\,
+      \squoted{-(},\,
+      \bigr\}$,
+\item $\textsl{First}(2, \textsl{product}) = 
+      \bigl\{\, \textsc{Id}, \,\squoted{(}\, \textsc{Id},\, \squoted{((},\,
+      \textsc{Id} \squoted{*},\, \textsc{Id} \squoted{/}\,
+      \bigr\}$,
+\item $\textsl{First}(2, \textsl{productRest}) = 
+      \bigl\{\, 
+      \varepsilon,\,
+      \squoted{*}\textsc{Id},\, 
+      \squoted{*(},\, 
+      \squoted{/}\textsc{Id},\, 
+      \squoted{/(}\, 
+      \bigr\}$,
+\item $\textsl{First}(2, \textsl{factor}) = 
+      \bigl\{\, \textsc{Id}, \,\squoted{(}\, \textsc{Id},\, \squoted{((}\,
+      \bigr\}$.
+\end{enumerate}
+
+\begin{Definition}[$\textsl{Follow}(k,A)$]
+  Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik. Wir definieren eine Funktion
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\textsl{Follow}: \mathbb{N} \times V \rightarrow 2^{T^*}$,
+  \\[0.2cm]
+  so dass $\textsl{Follow}(k,A)$ für eine natürliche Zahl $k$ und eine syntaktische
+  Variable $V$ die Menge der Token-Strings berechnet, die
+  höchstens die Länge $k$ haben und in einer Ableitung, die vom Start-Sysmbol $S$ ausgeht,
+  auf $A$ folgen können.  Formal
+  lautet die Definition:
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\textsl{Follow}(k, A) := 
+  \bigl\{ x \in T^* \mid \exists \alpha, \gamma \in (T\cup V)^*: 
+      S \Rightarrow^* \alpha A \gamma \wedge x \in \textsl{First}(k, \gamma) \bigr\}$. \qed  
+\end{Definition}
+
+\example
+Setzen wir das letzte Beispiel sinngemäß fort, so erhalten wir:
+\begin{enumerate}
+\item $\textsl{Follow}(2, \textsl{expr}) = 
+      \bigl\{\, \varepsilon,\, 
+      \squoted{)},\, 
+      \squoted{))}\,
+      \bigr\}$,
+\item $\textsl{Follow}(2, \textsl{exprRest}) = 
+      \bigl\{\,
+      \varepsilon,\,
+      \squoted{)},\, 
+      \squoted{))}\,
+      \bigr\}$,
+\item $\textsl{Follow}(2, \textsl{product}) = 
+      \bigl\{\, 
+      \varepsilon,\,
+      \squoted{+} \textsc{Id},\, 
+      \squoted{+(},\, 
+      \squoted{-} \textsc{Id},\,
+      \squoted{-(},\,
+      \squoted{)},\, 
+      \squoted{))}\,
+      \bigr\}$,
+\item $\textsl{Follow}(2, \textsl{productRest}) = 
+      \bigl\{\, 
+      \varepsilon,\,
+      \squoted{+} \textsc{Id},\, 
+      \squoted{+(},\, 
+      \squoted{-} \textsc{Id},\,
+      \squoted{-(},\,
+      \squoted{)},\, 
+      \squoted{))}\,
+      \bigr\}$,
+\item $\textsl{Follow}(2, \textsl{factor}) = \bigl\{\, 
+      \varepsilon,\,
+      \squoted{)},\, 
+      \squoted{))},\,
+      \squoted{+} \textsc{Id},\, 
+      \squoted{+(},\, 
+      \squoted{-} \textsc{Id},\,
+      \squoted{-(},\,
+      \squoted{*} \textsc{Id},\, 
+      \squoted{*(},\, 
+      \squoted{/Id},\, 
+      \squoted{/(}\, 
+      \bigr\}$.
+\end{enumerate}
+
+\begin{Definition}[Starke $LL(k)$-Grammatik]
+  Eine kontextfreie Grammatik $G = \langle V, T, R, S \rangle$ ist eine 
+  \emph{starke $LL(k)$-Grammatik} genau dann, wenn für je zwei verschiedene Grammatik-Regeln
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $A \rightarrow \beta$ \quad und \quad $A \rightarrow \gamma$
+  \\[0.2cm]
+  aus der Menge $R$ die Bedingung 
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\forall \sigma, \tau \in \textsl{Follow}(k, A): 
+   \textsl{First}(k, \beta \sigma) \cap \textsl{First}(k, \gamma \tau) = \{\}$
+  \\[0.2cm]
+  erfüllt ist. \qed
+\end{Definition}
+
+\noindent
+\textbf{Erklärung}:  Um die obige Definition zu verstehen, nehmen wir an, wir wollten ein $A$ parsen.
+Wenn wir einen $LL(k)$-Parser bauen wollen, dürfen wir die nächsten $k$ Symbole der Eingabe lesen
+und müssen entscheiden, welche der Regeln von $A$ in Frage kommen.  Diese $k$ Symbole können das
+Resultat der Ableitung von $\beta$ oder $\gamma$ sein.  Wenn die von $\beta$ oder $\gamma$
+abgeleiteten Strings kürzer als $k$ sind, so kann es sich aber auch schon um Token
+handeln, die in einer Ableitung auf $A$ folgen, die also Elemente der Menge
+$\textsl{Follow}(k,A)$ sind.  Für eine Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow \beta$
+\\[0.2cm]
+und einen String $\sigma \in \textsl{Follow}(k,A)$
+enthält die Menge $\textsl{First}(k, \beta \sigma)$ alle die Strings der Länge
+$\leq k$, die in einer Ableitung von $A$, welche die Regel $A \rightarrow \beta$ benutzt,
+folgen können.  Sind diese Mengen für verschiedene Regeln disjunkt, so läßt sich an Hand der
+$k$ folgenden Token entscheiden, welche der Regeln angewendet werden muss.
+\vspace*{0.2cm}
+
+\noindent
+\textbf{Bemerkung}:
+In der theoretischen Informatik gibt es neben dem Begriff der \emph{starken} $LL(k)$-Grammatik auch
+noch den Begriff der (einfachen) $LL(k)$-Grammatik.  Bei einer solchen $LL(k)$-Grammatik dürfen bei
+der Auswahl der Regel nicht nur die nächsten $k$ Eingabe-Token berücksichtigt werden, sondern
+zusätzlich kann der Parser alle bisher gelesenen Token mit zu Rate ziehen.  
+Dadurch kann in bestimten Fällen zu gegebener Variable und gegebenem Lookahead auch dann
+noch eine Regel ausgewählt werden, wenn das Kriterium der starken $LL(k)$-Grammatik nicht
+erfüllt ist.
+Da dieser Begriff
+wesentlich komplexer ist als der Begriff der
+starken $LL(k)$-Grammatik, verzichten wir auf eine formale Darstellung des
+allgemeineren Begriffs.  
+Die dem allgemeineren Begriff zu Grunde liegende Theorie ist sehr ausführlich in
+\cite{aho:72} dargestellt. 
+
+\subsection{Berechnung von $\textsl{First}()$ und $\textsl{Follow}()$}
+In diesem Abschnitt zeigen wir, wir die Funktionen $\textsl{First}(k, \alpha)$ und
+$\textsl{Follow}(k, A)$ berechnet werden können.  Dazu benötigen wir verschiedene
+Hilfsfunktionen, die wir vorab definieren.
+\begin{enumerate}
+\item Die Funktion $\textsl{prefix}(k, w)$ berechnet für eine natürliche Zahl $k$
+      und einen String $w$ den Präfix von $w$ mit der Länge $k$.  Ist die Länge von $w$
+      kleiner oder gleich $k$, so wird $w$ zurück gegeben:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{prefix}(k, w) = \left\{
+       \begin{array}{ll}
+         w[1\!:\!k]  & \mbox{falls $k < |w|$;}  \\
+         w       & \mbox{sonst.}
+       \end{array}
+       \right.
+      $
+      \\[0.2cm]
+      Hier bezeichnet die Notation $w[1\!:\!k]$ den Teilstring von $w$, der 
+      aus den ersten $k$ Buchstaben von $w$ besteht.
+\item Der Operator $+_k$ verkettet zwei Strings und bildet anschließend das Päfix der
+      Länge $k$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $v +_k w = \textsl{prefix}(k, vw)$.
+      \\[0.2cm]
+      Hier bezeichnet $vw$ die Verkettung der Strings $v$ und $w$.
+\item Die Definition des Operators $+_k$ wird auf Mengen von Strings verallgemeinert:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $M +_k N := \{ v +_k w \mid v \in M \wedge w \in N \}$.
+\end{enumerate}
+
+\example
+Wir haben
+\\[0.2cm]
+\hspace*{1.7cm}
+$\{ \varepsilon, \quoted{a}, \quoted{ab}, \quoted{abc} \} +_2 
+ \{ \varepsilon, \quoted{x}, \quoted{yx} \} $
+\\[0.2cm]
+\hspace*{1.3cm}
+$= \{ \varepsilon, \quoted{a}, \quoted{ab}, \quoted{x}, \quoted{yx},
+    \quoted{ax}, \quoted{ay} \}
+$. \qed
+\vspace*{0.2cm}
+
+\noindent
+Die Berechnung von $\textsl{First}(k,\alpha)$ für $\alpha \in (V \cup T)^*$ wird auf die
+Berechnung von $\textsl{First}(k, X)$ mit $X \in V \cup T$ zurück geführt,
+denn es gilt
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{First}(k, X_1 X_2 \cdots X_n) = 
+ \textsl{First}(k, X_1) +_k \textsl{First}(k, X_2) +_k \cdots +_k \textsl{First}(k, X_n)$.
+\\[0.2cm]
+Für ein Terminal $t \in T$ gilt offenbar
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{First}(k, t) = t$.
+\\[0.2cm]
+Die Berechnung der Mengen $\textsl{First}(k, A)$ für eine syntaktische Variable $A \in V$
+erfolgt iterativ über folgenden Algorithmus:
+\begin{enumerate}
+\item Zunächst werden alle Mengen $\textsl{First}(k, A)$ mit der leeren Menge initialisiert:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(k, A) := \{\}$.
+\item Anschließend wird für jede Grammatik-Regel der Form 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \alpha$
+      \\[0.2cm]
+      die Menge $\textsl{First}(k, A)$ wie folgt erweitert:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(k, A) := \textsl{First}(k, A) \cup \textsl{First}(k,\alpha)$.
+\item Der zweite Schritt wird in einer Schleife solange durchgeführt, bis sich keine
+      der Mengen $\textsl{First}(k, A)$ mehr durch die Hinzunahme von
+      $\textsl{First}(k,\alpha)$ ändert.
+\end{enumerate}
+Sind die Mengen $\textsl{First}(k, A)$ berechnet, so können wir anschließend die Mengen 
+$\textsl{Follow}(k, A)$ für alle syntaktischen Variablen berechnen.  Auch die Berechnung
+der Mengen $\textsl{Follow}(k, A)$ ist iterativ.  Sie erfolgt nach dem folgenden
+Schema:
+\begin{enumerate}
+\item Zunächst werden alle Mengen $\textsl{Follow}(k, A)$ mit der leeren Menge initialisiert:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(k, A) = \{\}$.
+      \\[0.2cm]
+      Anschließend setzen wir für das Start-Symbol $S$ der Grammatik
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(k, S) = \{ \symbol{36} \}$.
+      \\[0.2cm]
+      Hier steht ``$\symbol{36}$'' für das Ende der Eingabe.  Die Idee ist, dass hinter dem
+      Start-Symbol keine weitere Eingabe mehr kommen kann.  Beachten Sie, dass in diesem
+      Fall der String ``$\symbol{36}$'' nicht aus $k$ Zeichen besteht, sondern nur aus
+      einem Zeichen.
+\item Für jede Grammatik-Regel der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow Y_1 Y_2 \cdots Y_l$,
+      \\[0.2cm]
+      für die $Y_l$ eine syntaktische Variable ist, erweitern wir die Menge
+      $\textsl{Follow}(k, Y_l)$ wie folgt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(k, Y_l) := \textsl{Follow}(k, Y_l) \cup \textsl{Follow}(k, A)$,
+      \\[0.2cm]
+      denn alles, was auf ein $A$ folgen kann, kann auch auf ein $Y_l$ folgen.
+\item Für jede Grammatik-Regel der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow Y_1 Y_2 \cdots Y_i Y_{i+1} \cdots Y_l$,
+      \\[0.2cm]
+      und jeden Index $i \in \{1, \cdots, l-1\}$, für den $Y_i$ eine syntaktische Variable
+      ist, erweitern wir die Menge $\textsl{Follow}(k, Y_i)$ wie folgt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(k, Y_i) := \textsl{Follow}(k, Y_i) \cup
+       \bigl(\textsl{First}(k, Y_{i+1} \cdots Y_l) +_k \textsl{Follow}(k,A)\bigr) 
+      $.
+      \\[0.2cm]
+      Der Grund, warum wir hier noch die Menge $\textsl{Follow}(k,A)$ anhängen ist der,
+      dass die Strings aus  der Menge $\textsl{First}(k, Y_{i+1} \cdots Y_l)$ eventuell
+      kürzer als $k$ sind.  In diesem Fall müssen noch die Präfixe von
+      $\textsl{Follow}(k, A)$ angehängt werden.
+
+      \textbf{Bemerkung}:  Beachten Sie, dass der zweite Schritt ein Spezialfall des
+      dritten Schritts ist, denn wenn wir im dritten Schritt $i := l$ setzen, dann ist
+      der String $Y_{i+1} \cdots Y_l$ leer und somit enthält die Menge
+      $\textsl{First}(k, Y_{i+1}\cdots Y_l)$ dann nur den leeren String $\varepsilon$, so
+      dass der Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\bigl(\textsl{First}(k, Y_{i+1} \cdots Y_l) +_k \textsl{Follow}(k,A)\bigr)$  \quad
+      zu \quad $\textsl{Follow}(k,A)\bigr)$
+      \\[0.2cm]
+      vereinfacht werden kann.  Bei der Implementierung werden wir daher nur den dritten
+      Schritt umsetzen.
+\item Der zweite und der dritte Schritt werden in einer Schleife solange durchgeführt, bis sich keine
+      der Mengen $\textsl{Follow}(k, A)$ mehr ändert.
+\end{enumerate}
+
+\subsection{Implementation in \textsc{SetlX}}
+Figure \ref{fig:llk.stlx:computeFirst} on page \pageref{fig:llk.stlx:computeFirst} shows an
+implementation of the function \texttt{First} in \textsc{SetlX}.  We proceed to discuss the
+implementation line by line.
+
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    computeFirst := procedure(k, rules, variables) {
+        first := initializeMap(variables);
+        change := true;
+        while (change) {
+            change := false;    
+            for ([a, body] in rules) {
+                new := firstList(k, body, first);
+                if (!(new <= first[a])) { 
+                    change := true;
+                    first[a] += new;
+                }
+            }
+        }
+        return first;
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The function \texttt{computeFirst}.}
+\label{fig:llk.stlx:computeFirst}
+\end{figure}
+\begin{enumerate}
+\item The first parameter $k$ is the number of lookahead tokens, while the second parameter
+      \texttt{rules} is the set of all grammar rules. Here, a rule of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \beta$
+      \\[0.2cm]
+      is represented in \textsc{SetlX} as a pair of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{[ $A$, $\beta$ ]}.
+      \\[0.2cm]
+      Finally. the parameter \texttt{variables} is the set of all syntactical variables.
+\item The function $\texttt{computeFirst}(k, \texttt{rules}, \mathtt{variables})$ is supposed to compute
+      $\textsl{First}(k, A)$ for all syntactical variables $A$.  This is done by creating a binary
+      relation \texttt{first} in line 2.  At the end of the computation, the relation
+      \texttt{first} will contain a pair $[A, \textsl{First}(k,A)]$ for every syntactical variable
+      $A$.  Therefore, the variable \texttt{first} codes the function \textsl{First}.
+
+      Since the function \texttt{first} is computed via a fixpoint iteration, $\mathtt{first}[A]$
+      is initialized to the empty set for all syntactical variables $A$.  This is done by the function
+      \texttt{initializeMap} in line 2.  The function \texttt{initializeMap} is shown in
+      Figure \ref{fig:llk.stlx:auxiliary} in line 1.
+\item The computation of \texttt{First} is done in the \texttt{while}-loop that extends from line 4
+      to line 13.  This \texttt{while}-loop is controlled by the Boolean flag
+      \texttt{change}.  This variable is set to false at the beginning of the loop in line 5.
+      If we ever find a variable \texttt{a} in line 6 such that \texttt{first[a]} gets incremented
+      in line 10,
+      then the variable \texttt{a} is changed to \texttt{true} so that the iteration can keep going.
+      On the other hand, if we don't find any new strings that have to be added to \texttt{first[a]}
+      for any variable \texttt{a}, then we have successfully computed the function \textsl{First}
+      for all variables and the fixpoint iteration can be stopped.
+\item Given a rule of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \beta$
+      \\[0.2cm]
+      we know that 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(k, \beta) \subseteq \textsl{First}(A)$
+      \\[0.2cm]
+      and therefore $\textsl{First}(k, \beta)$ has to be added to $\textsl{First}(A)$.
+      In our implementation,  $\textsl{First}(k, \beta)$ is computed by the function
+      \texttt{firstList} that is shown in Figure \ref{fig:llk.stlx:firstList} on page
+      \pageref{fig:llk.stlx:firstList}.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    firstList := procedure(k, alpha, first) {
+        match (alpha) {
+            case []: 
+                 return { [] };
+            case [ Var(v) | r ]:
+                 firstV := first[v];
+                 firstR := firstList(k, r, first);
+                 return unionK(firstV, firstR, k);
+            case [ Token(t) | r ]:
+                 firstR := firstList(k, r, first);
+                 return unionK({ [t] }, firstR, k);
+        }
+    }; 
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The implementation of \texttt{firstList}.}
+\label{fig:llk.stlx:firstList}
+\end{figure}
+
+Figure \ref{fig:llk.stlx:firstList} shows the implementation of the function \texttt{firstList}.
+\begin{enumerate}
+\item The first parameter $k$ is the number of lookahead tokens, the second parameter \texttt{alpha}
+      is a list of variables and terminals, and the last parameter \texttt{first} is a binary
+      relation coding the function $\textsl{First}(k, A)$ for all syntactical variables $A$.
+\item If \texttt{alpha} has the form $[Y_1, \cdots, Y_n]$, then the formula to compute
+      $\textsl{First}(k,\mathtt{alpha})$ is
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(k,[Y_1, \cdots, Y_n]) =  \textsl{First}(k, Y_1) +_k \textsl{First}(k, Y_2) +_k \cdots +_k \textsl{First}(k, Y_n)$.
+      \\[0.2cm]
+      This sum is computed recursively.  The operator $+_k$ is implemented via the function
+      \texttt{unionK} that is shown in Figure \ref{fig:llk.stlx:auxiliary}.
+\end{enumerate}
+\pagebreak
+
+\noindent
+Figure \ref{fig:llk.stlx:computeFollow} on page \pageref{fig:llk.stlx:computeFollow} shows the
+implementation of the function \texttt{Follow}.  
+\begin{enumerate}
+\item The parameter $k$ is the number of lookahead tokens, \texttt{rules} is the set of grammar
+      rules, \texttt{s} is the start symbol of the grammar, \texttt{first} is a binary relation
+      representing the function \textsl{First}, and \texttt{variables} is the set of all syntactical
+      variables of the grammar.
+\item Like the function \texttt{First}, the function \texttt{Follow} is also implemented as a binary
+      relation.  This relation is stored in the variable \texttt{follow}.  At the beginning of the
+      computation, for all syntactical variables $A$ the set $\texttt{follow}[A]$ is initialized as
+      an empty set via the function 
+      \texttt{initializeMap}.   Additionally, the end-of-file symbol ``\texttt{\symbol{36}}'' is
+      added into the follow set of the start symbol \texttt{s}.
+\item If we have a grammar rule of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow Y_1 Y_2 \cdots Y_i Y_{i+1} \cdots Y_l$,
+      \\[0.2cm]
+      and if, furthermore, $Y_i$ is a syntactical variable, then we have to extend the set
+      $\texttt{follow}(Y_i)$ as follows:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{follow}(Y_i) \;\texttt{+=}\; \texttt{First}(k, [Y_{i+1}, \cdots, Y_l)]) +_k \texttt{follow}(A)$.
+      \\[0.2cm]
+      This rule is implemented in line 11 and 12.  The expression $\texttt{First}(k, [Y_{i+1},\cdots, Y_l)])$ 
+      is computed via the function \texttt{firstList}.
+\item The variable \texttt{change} controls the fixpoint iteration: The \texttt{while}-loop keeps
+      going as long as there is a syntactical variable $A$ such that $\mathtt{follow}[A]$ has changed.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    computeFollow := procedure(k, rules, s, first, variables) {
+        follow := initializeMap(variables);
+        follow[s] := { [ "\$" ] };
+        change := true;
+        while (change) {
+            change := false;    
+            for ([a, body] in rules) {
+                for (i in [1 .. #body]) {
+                    match (body[i]) {
+                        case Var(yi):
+                            tail := firstList(k, body[i+1 ..], first);
+                            new  := unionK(tail, follow[a], k);
+                            if (!(new <= follow[yi])) { 
+                                change := true; 
+                                follow[yi] += new;
+                            }
+                    }
+                }
+            }
+        }
+        return follow;
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The function \texttt{computeFollow}.}
+\label{fig:llk.stlx:computeFollow}
+\end{figure}
+%\$
+
+\pagebreak 
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    initializeMap := procedure(variables) {
+        return { [a, {}] : a in variables };
+    };
+    prefixK := procedure(s, k) {
+        if (#s <= k) {
+            return s;
+        }
+        return s[1..k];
+    };
+    addK := procedure(u, v, k) {
+        return prefixK(u + v, k);
+    };
+    unionK := procedure(s, t, k) {
+        return { addK(u, v, k) : u in s, v in t };
+    };    
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Some auxiliary functions.}
+\label{fig:llk.stlx:auxiliary}
+\end{figure}
+
+\noindent
+Finally, Figure \ref{fig:llk.stlx:auxiliary} on page \pageref{fig:llk.stlx:auxiliary} shows the
+implementation of some auxiliary functions. 
+\begin{enumerate}
+\item The function \texttt{initializeMap} takes a set of variables and creates a relation that
+      assigns the empty set to all of these variables.
+\item The function \texttt{prefixK} takes a list $s$ and computes the prefix of $s$
+      that has a length of $k$.  If the length of $s$ is at most $k$, then $s$ is returned
+      unchanged. 
+\item The function $\texttt{addK}(u,v,k)$ computes $u +_k v$ for two lists $u$ and $v$.
+\item The function $\texttt{unionK}(s, t, k)$ computes the set $s +_k t$ for two sets of 
+      lists $s$ and $t$.
+\end{enumerate}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 

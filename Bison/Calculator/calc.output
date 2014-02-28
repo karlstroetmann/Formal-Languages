@@ -1,0 +1,363 @@
+Grammar
+
+    0 $accept: lines $end
+
+    1 lines: statement '\n'
+    2      | lines statement '\n'
+
+    3 statement: NAME '=' arithExpr
+    4          | arithExpr
+
+    5 arithExpr: arithExpr '+' product
+    6          | arithExpr '-' product
+    7          | product
+
+    8 product: product '*' factor
+    9        | product '/' factor
+   10        | factor
+
+   11 factor: '(' arithExpr ')'
+   12       | NAME
+   13       | FUNC '(' arithExpr ')'
+   14       | NUMBER
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'\n' (10) 1 2
+'(' (40) 11 13
+')' (41) 11 13
+'*' (42) 8
+'+' (43) 5
+'-' (45) 6
+'/' (47) 9
+'=' (61) 3
+error (256)
+NAME (258) 3 12
+FUNC (259) 13
+NUMBER (260) 14
+
+
+Nonterminals, with rules where they appear
+
+$accept (14)
+    on left: 0
+lines (15)
+    on left: 1 2, on right: 0 2
+statement (16)
+    on left: 3 4, on right: 1 2
+arithExpr (17)
+    on left: 5 6 7, on right: 3 4 5 6 11 13
+product (18)
+    on left: 8 9 10, on right: 5 6 7 8 9
+factor (19)
+    on left: 11 12 13 14, on right: 8 9 10
+
+
+state 0
+
+    0 $accept: . lines $end
+
+    NAME    shift, and go to state 1
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    lines      go to state 5
+    statement  go to state 6
+    arithExpr  go to state 7
+    product    go to state 8
+    factor     go to state 9
+
+
+state 1
+
+    3 statement: NAME . '=' arithExpr
+   12 factor: NAME .
+
+    '='  shift, and go to state 10
+
+    $default  reduce using rule 12 (factor)
+
+
+state 2
+
+   13 factor: FUNC . '(' arithExpr ')'
+
+    '('  shift, and go to state 11
+
+
+state 3
+
+   14 factor: NUMBER .
+
+    $default  reduce using rule 14 (factor)
+
+
+state 4
+
+   11 factor: '(' . arithExpr ')'
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    arithExpr  go to state 13
+    product    go to state 8
+    factor     go to state 9
+
+
+state 5
+
+    0 $accept: lines . $end
+    2 lines: lines . statement '\n'
+
+    $end    shift, and go to state 14
+    NAME    shift, and go to state 1
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    statement  go to state 15
+    arithExpr  go to state 7
+    product    go to state 8
+    factor     go to state 9
+
+
+state 6
+
+    1 lines: statement . '\n'
+
+    '\n'  shift, and go to state 16
+
+
+state 7
+
+    4 statement: arithExpr .
+    5 arithExpr: arithExpr . '+' product
+    6          | arithExpr . '-' product
+
+    '+'  shift, and go to state 17
+    '-'  shift, and go to state 18
+
+    $default  reduce using rule 4 (statement)
+
+
+state 8
+
+    7 arithExpr: product .
+    8 product: product . '*' factor
+    9        | product . '/' factor
+
+    '*'  shift, and go to state 19
+    '/'  shift, and go to state 20
+
+    $default  reduce using rule 7 (arithExpr)
+
+
+state 9
+
+   10 product: factor .
+
+    $default  reduce using rule 10 (product)
+
+
+state 10
+
+    3 statement: NAME '=' . arithExpr
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    arithExpr  go to state 21
+    product    go to state 8
+    factor     go to state 9
+
+
+state 11
+
+   13 factor: FUNC '(' . arithExpr ')'
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    arithExpr  go to state 22
+    product    go to state 8
+    factor     go to state 9
+
+
+state 12
+
+   12 factor: NAME .
+
+    $default  reduce using rule 12 (factor)
+
+
+state 13
+
+    5 arithExpr: arithExpr . '+' product
+    6          | arithExpr . '-' product
+   11 factor: '(' arithExpr . ')'
+
+    '+'  shift, and go to state 17
+    '-'  shift, and go to state 18
+    ')'  shift, and go to state 23
+
+
+state 14
+
+    0 $accept: lines $end .
+
+    $default  accept
+
+
+state 15
+
+    2 lines: lines statement . '\n'
+
+    '\n'  shift, and go to state 24
+
+
+state 16
+
+    1 lines: statement '\n' .
+
+    $default  reduce using rule 1 (lines)
+
+
+state 17
+
+    5 arithExpr: arithExpr '+' . product
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    product  go to state 25
+    factor   go to state 9
+
+
+state 18
+
+    6 arithExpr: arithExpr '-' . product
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    product  go to state 26
+    factor   go to state 9
+
+
+state 19
+
+    8 product: product '*' . factor
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    factor  go to state 27
+
+
+state 20
+
+    9 product: product '/' . factor
+
+    NAME    shift, and go to state 12
+    FUNC    shift, and go to state 2
+    NUMBER  shift, and go to state 3
+    '('     shift, and go to state 4
+
+    factor  go to state 28
+
+
+state 21
+
+    3 statement: NAME '=' arithExpr .
+    5 arithExpr: arithExpr . '+' product
+    6          | arithExpr . '-' product
+
+    '+'  shift, and go to state 17
+    '-'  shift, and go to state 18
+
+    $default  reduce using rule 3 (statement)
+
+
+state 22
+
+    5 arithExpr: arithExpr . '+' product
+    6          | arithExpr . '-' product
+   13 factor: FUNC '(' arithExpr . ')'
+
+    '+'  shift, and go to state 17
+    '-'  shift, and go to state 18
+    ')'  shift, and go to state 29
+
+
+state 23
+
+   11 factor: '(' arithExpr ')' .
+
+    $default  reduce using rule 11 (factor)
+
+
+state 24
+
+    2 lines: lines statement '\n' .
+
+    $default  reduce using rule 2 (lines)
+
+
+state 25
+
+    5 arithExpr: arithExpr '+' product .
+    8 product: product . '*' factor
+    9        | product . '/' factor
+
+    '*'  shift, and go to state 19
+    '/'  shift, and go to state 20
+
+    $default  reduce using rule 5 (arithExpr)
+
+
+state 26
+
+    6 arithExpr: arithExpr '-' product .
+    8 product: product . '*' factor
+    9        | product . '/' factor
+
+    '*'  shift, and go to state 19
+    '/'  shift, and go to state 20
+
+    $default  reduce using rule 6 (arithExpr)
+
+
+state 27
+
+    8 product: product '*' factor .
+
+    $default  reduce using rule 8 (product)
+
+
+state 28
+
+    9 product: product '/' factor .
+
+    $default  reduce using rule 9 (product)
+
+
+state 29
+
+   13 factor: FUNC '(' arithExpr ')' .
+
+    $default  reduce using rule 13 (factor)

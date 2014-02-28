@@ -1,0 +1,206 @@
+Tokens:    [$, '(', ')', '*', '+', NUMBER]
+
+Variables: [S, e, f, p]
+
+Grammar: 
+S -> e
+e -> e '+' p
+e -> p
+f -> '(' e ')'
+f -> NUMBER
+p -> f
+p -> p '*' f
+
+
+s0 = { S -> <*> e: [$],
+       e -> <*> e '+' p: [$, '+'],
+       e -> <*> p: [$, '+'],
+       f -> <*> '(' e ')': [$, '*', '+'],
+       f -> <*> NUMBER: [$, '*', '+'],
+       p -> <*> f: [$, '*', '+'],
+       p -> <*> p '*' f: [$, '*', '+']
+     }
+
+s1 = { S -> e <*>: [$],
+       e -> e <*> '+' p: [$, '+']
+     }
+
+s2 = { e -> <*> e '+' p: [')', '+'],
+       e -> <*> p: [')', '+'],
+       f -> <*> '(' e ')': [')', '*', '+'],
+       f -> <*> NUMBER: [')', '*', '+'],
+       f -> '(' <*> e ')': [$, '*', '+'],
+       p -> <*> f: [')', '*', '+'],
+       p -> <*> p '*' f: [')', '*', '+']
+     }
+
+s3 = { e -> <*> e '+' p: [')', '+'],
+       e -> <*> p: [')', '+'],
+       f -> <*> '(' e ')': [')', '*', '+'],
+       f -> <*> NUMBER: [')', '*', '+'],
+       f -> '(' <*> e ')': [')', '*', '+'],
+       p -> <*> f: [')', '*', '+'],
+       p -> <*> p '*' f: [')', '*', '+']
+     }
+
+s4 = { e -> e <*> '+' p: [')', '+'],
+       f -> '(' e <*> ')': [$, '*', '+']
+     }
+
+s5 = { e -> e <*> '+' p: [')', '+'],
+       f -> '(' e <*> ')': [')', '*', '+']
+     }
+
+s6 = { e -> e '+' <*> p: [$, '+'],
+       f -> <*> '(' e ')': [$, '*', '+'],
+       f -> <*> NUMBER: [$, '*', '+'],
+       p -> <*> f: [$, '*', '+'],
+       p -> <*> p '*' f: [$, '*', '+']
+     }
+
+s7 = { e -> e '+' <*> p: [')', '+'],
+       f -> <*> '(' e ')': [')', '*', '+'],
+       f -> <*> NUMBER: [')', '*', '+'],
+       p -> <*> f: [')', '*', '+'],
+       p -> <*> p '*' f: [')', '*', '+']
+     }
+
+s8 = { e -> e '+' p <*>: [$, '+'],
+       p -> p <*> '*' f: [$, '*', '+']
+     }
+
+s9 = { e -> e '+' p <*>: [')', '+'],
+       p -> p <*> '*' f: [')', '*', '+']
+     }
+
+s10 = { e -> p <*>: [$, '+'],
+        p -> p <*> '*' f: [$, '*', '+']
+      }
+
+s11 = { e -> p <*>: [')', '+'],
+        p -> p <*> '*' f: [')', '*', '+']
+      }
+
+s12 = { f -> <*> '(' e ')': [$, '*', '+'],
+        f -> <*> NUMBER: [$, '*', '+'],
+        p -> p '*' <*> f: [$, '*', '+']
+      }
+
+s13 = { f -> <*> '(' e ')': [')', '*', '+'],
+        f -> <*> NUMBER: [')', '*', '+'],
+        p -> p '*' <*> f: [')', '*', '+']
+      }
+
+s14 = { f -> '(' e ')' <*>: [$, '*', '+'] }
+
+s15 = { f -> '(' e ')' <*>: [')', '*', '+'] }
+
+s16 = { f -> NUMBER <*>: [$, '*', '+'] }
+
+s17 = { f -> NUMBER <*>: [')', '*', '+'] }
+
+s18 = { p -> f <*>: [$, '*', '+'] }
+
+s19 = { p -> f <*>: [')', '*', '+'] }
+
+s20 = { p -> p '*' f <*>: [$, '*', '+'] }
+
+s21 = { p -> p '*' f <*>: [')', '*', '+'] }
+
+Action Table:
+action(s0, '(') = <shift, s2>
+action(s0, NUMBER) = <shift, s16>
+action(s1, $) = <accept>
+action(s1, '+') = <shift, s6>
+action(s2, '(') = <shift, s3>
+action(s2, NUMBER) = <shift, s17>
+action(s3, '(') = <shift, s3>
+action(s3, NUMBER) = <shift, s17>
+action(s4, ')') = <shift, s14>
+action(s4, '+') = <shift, s7>
+action(s5, ')') = <shift, s15>
+action(s5, '+') = <shift, s7>
+action(s6, '(') = <shift, s2>
+action(s6, NUMBER) = <shift, s16>
+action(s7, '(') = <shift, s3>
+action(s7, NUMBER) = <shift, s17>
+action(s8, $) = <reduce, e -> e '+' p>
+action(s8, '*') = <shift, s12>
+action(s8, '+') = <reduce, e -> e '+' p>
+action(s9, ')') = <reduce, e -> e '+' p>
+action(s9, '*') = <shift, s13>
+action(s9, '+') = <reduce, e -> e '+' p>
+action(s10, $) = <reduce, e -> p>
+action(s10, '*') = <shift, s12>
+action(s10, '+') = <reduce, e -> p>
+action(s11, ')') = <reduce, e -> p>
+action(s11, '*') = <shift, s13>
+action(s11, '+') = <reduce, e -> p>
+action(s12, '(') = <shift, s2>
+action(s12, NUMBER) = <shift, s16>
+action(s13, '(') = <shift, s3>
+action(s13, NUMBER) = <shift, s17>
+action(s14, $) = <reduce, f -> '(' e ')'>
+action(s14, '*') = <reduce, f -> '(' e ')'>
+action(s14, '+') = <reduce, f -> '(' e ')'>
+action(s15, ')') = <reduce, f -> '(' e ')'>
+action(s15, '*') = <reduce, f -> '(' e ')'>
+action(s15, '+') = <reduce, f -> '(' e ')'>
+action(s16, $) = <reduce, f -> NUMBER>
+action(s16, '*') = <reduce, f -> NUMBER>
+action(s16, '+') = <reduce, f -> NUMBER>
+action(s17, ')') = <reduce, f -> NUMBER>
+action(s17, '*') = <reduce, f -> NUMBER>
+action(s17, '+') = <reduce, f -> NUMBER>
+action(s18, $) = <reduce, p -> f>
+action(s18, '*') = <reduce, p -> f>
+action(s18, '+') = <reduce, p -> f>
+action(s19, ')') = <reduce, p -> f>
+action(s19, '*') = <reduce, p -> f>
+action(s19, '+') = <reduce, p -> f>
+action(s20, $) = <reduce, p -> p '*' f>
+action(s20, '*') = <reduce, p -> p '*' f>
+action(s20, '+') = <reduce, p -> p '*' f>
+action(s21, ')') = <reduce, p -> p '*' f>
+action(s21, '*') = <reduce, p -> p '*' f>
+action(s21, '+') = <reduce, p -> p '*' f>
+
+Goto Table:
+goto(s0, e) = s1
+goto(s0, f) = s18
+goto(s0, p) = s10
+goto(s0, '(') = s2
+goto(s0, NUMBER) = s16
+goto(s1, '+') = s6
+goto(s2, e) = s4
+goto(s2, f) = s19
+goto(s2, p) = s11
+goto(s2, '(') = s3
+goto(s2, NUMBER) = s17
+goto(s3, e) = s5
+goto(s3, f) = s19
+goto(s3, p) = s11
+goto(s3, '(') = s3
+goto(s3, NUMBER) = s17
+goto(s4, ')') = s14
+goto(s4, '+') = s7
+goto(s5, ')') = s15
+goto(s5, '+') = s7
+goto(s6, f) = s18
+goto(s6, p) = s8
+goto(s6, '(') = s2
+goto(s6, NUMBER) = s16
+goto(s7, f) = s19
+goto(s7, p) = s9
+goto(s7, '(') = s3
+goto(s7, NUMBER) = s17
+goto(s8, '*') = s12
+goto(s9, '*') = s13
+goto(s10, '*') = s12
+goto(s11, '*') = s13
+goto(s12, f) = s20
+goto(s12, '(') = s2
+goto(s12, NUMBER) = s16
+goto(s13, f) = s21
+goto(s13, '(') = s3
+goto(s13, NUMBER) = s17

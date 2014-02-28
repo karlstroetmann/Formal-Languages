@@ -1,0 +1,32 @@
+load("regexp-2-nfa.stlx");
+load("nfa-2-dfa.stlx");
+load("minimize.stlx");
+load("dfa-2-string.stlx");
+load("nfa-2-string.stlx");
+load("regexp-parser.stlx");
+
+test := procedure(s, sigma) {
+    r := myParse(s);
+    print("Regular expression: $s$");
+    converter := regexp2NFA(sigma);
+    n := converter.toNFA(r);
+    print("Non-Deterministic FSM: ");
+    print(nfa2string(n));
+    nfa2dot(n, "nfa");
+    print("Deterministic FSM:");
+    f := nfa2dfa(n);
+    print(dfa2string(f));
+    dfa2dot(f, "dfa");
+    print("Minimized FSM:");
+    m := minimize(f);
+    print(dfa2string(m));
+    dfa2dot(m, "min-dfa");
+};
+
+sigma := { "a", "b" };
+r := "a(ba)*";
+test(r, sigma);
+
+// sigma := { "a", "b", "c", "d" };
+// r := "a(bc)*d";
+// test(r, sigma);

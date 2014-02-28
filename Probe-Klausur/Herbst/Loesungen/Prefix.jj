@@ -1,0 +1,37 @@
+PARSER_BEGIN(Prefix)
+
+import java.util.*;
+
+public class Prefix {  
+    public static void main(String args[]) throws ParseException {
+        Prefix parser = new Prefix(System.in);
+        parser.lines();
+    }
+}
+PARSER_END(Prefix)
+
+void lines() : {
+	Integer e;
+} {
+	  e = expr() "\n" { System.out.println(e); } lines()
+	| /* empty */     { return;                }   
+}
+
+Integer expr() : {
+	Integer l, r;
+	Token   t;
+} {
+	  "+" l = expr()  r = expr() { return l + r; }
+	| "-" l = expr()  r = expr() { return l - r; }
+	| "*" l = expr()  r = expr() { return l * r; }
+	| "/" l = expr()  r = expr() { return l / r; }
+    | t = <NUMBER>               { return new Integer(t.image); }
+}
+
+// forget about white space
+SKIP: { " " | "\t" | "\r" }
+
+TOKEN: {
+    <NUMBER: (["0"-"9"])+> 
+}
+

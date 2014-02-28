@@ -1,0 +1,392 @@
+===== Terminals =====
+[0]EOF [1]error [2]SEMI [3]PLUS [4]MINUS 
+[5]TIMES [6]DIVIDE [7]MOD [8]LPAREN [9]RPAREN 
+[10]NUMBER 
+
+===== Non terminals =====
+[0]expr_list [1]expr_part [2]expr [3]prod [4]fact 
+[5]NT$0 
+
+===== Productions =====
+[0] expr_list ::= expr_list expr_part 
+[1] $START ::= expr_list EOF 
+[2] expr_list ::= expr_part 
+[3] NT$0 ::= 
+[4] expr_part ::= expr NT$0 SEMI 
+[5] expr ::= expr PLUS prod 
+[6] expr ::= expr MINUS prod 
+[7] expr ::= prod 
+[8] prod ::= prod TIMES fact 
+[9] prod ::= prod DIVIDE fact 
+[10] prod ::= prod MOD fact 
+[11] prod ::= fact 
+[12] fact ::= LPAREN expr RPAREN 
+[13] fact ::= NUMBER 
+
+===== Viable Prefix Recognizer =====
+START lalr_state [0]: {
+  [prod ::= (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [prod ::= (*) prod TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [expr ::= (*) expr PLUS prod , {SEMI PLUS MINUS }]
+  [expr_list ::= (*) expr_part , {EOF LPAREN NUMBER }]
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [prod ::= (*) prod MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [expr ::= (*) prod , {SEMI PLUS MINUS }]
+  [expr_part ::= (*) expr NT$0 SEMI , {EOF LPAREN NUMBER }]
+  [$START ::= (*) expr_list EOF , {EOF }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [prod ::= (*) prod DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [expr ::= (*) expr MINUS prod , {SEMI PLUS MINUS }]
+  [expr_list ::= (*) expr_list expr_part , {EOF LPAREN NUMBER }]
+}
+transition on expr to state [7]
+transition on expr_list to state [6]
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on expr_part to state [3]
+transition on fact to state [2]
+transition on prod to state [1]
+
+-------------------
+lalr_state [1]: {
+  [prod ::= prod (*) MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= prod (*) , {SEMI PLUS MINUS RPAREN }]
+  [prod ::= prod (*) DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= prod (*) TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on TIMES to state [14]
+transition on DIVIDE to state [13]
+transition on MOD to state [12]
+
+-------------------
+lalr_state [2]: {
+  [prod ::= fact (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+
+-------------------
+lalr_state [3]: {
+  [expr_list ::= expr_part (*) , {EOF LPAREN NUMBER }]
+}
+
+-------------------
+lalr_state [4]: {
+  [fact ::= NUMBER (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+
+-------------------
+lalr_state [5]: {
+  [prod ::= (*) fact , {PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) prod TIMES fact , {PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= (*) expr PLUS prod , {PLUS MINUS RPAREN }]
+  [fact ::= (*) NUMBER , {PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) prod MOD fact , {PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= (*) prod , {PLUS MINUS RPAREN }]
+  [fact ::= LPAREN (*) expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) LPAREN expr RPAREN , {PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) prod DIVIDE fact , {PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= (*) expr MINUS prod , {PLUS MINUS RPAREN }]
+}
+transition on expr to state [22]
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on fact to state [2]
+transition on prod to state [1]
+
+-------------------
+lalr_state [6]: {
+  [prod ::= (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [prod ::= (*) prod TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [expr ::= (*) expr PLUS prod , {SEMI PLUS MINUS }]
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [prod ::= (*) prod MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [expr ::= (*) prod , {SEMI PLUS MINUS }]
+  [$START ::= expr_list (*) EOF , {EOF }]
+  [expr_part ::= (*) expr NT$0 SEMI , {EOF LPAREN NUMBER }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [prod ::= (*) prod DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD }]
+  [expr ::= (*) expr MINUS prod , {SEMI PLUS MINUS }]
+  [expr_list ::= expr_list (*) expr_part , {EOF LPAREN NUMBER }]
+}
+transition on EOF to state [21]
+transition on expr to state [7]
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on expr_part to state [20]
+transition on fact to state [2]
+transition on prod to state [1]
+
+-------------------
+lalr_state [7]: {
+  [expr ::= expr (*) PLUS prod , {SEMI PLUS MINUS }]
+  [expr_part ::= expr (*) NT$0 SEMI , {EOF LPAREN NUMBER }]
+  [expr ::= expr (*) MINUS prod , {SEMI PLUS MINUS }]
+  [NT$0 ::= (*) , {SEMI }]
+}
+transition on MINUS to state [10]
+transition on PLUS to state [9]
+transition on NT$0 to state [8]
+
+-------------------
+lalr_state [8]: {
+  [expr_part ::= expr NT$0 (*) SEMI , {EOF LPAREN NUMBER }]
+}
+transition on SEMI to state [19]
+
+-------------------
+lalr_state [9]: {
+  [prod ::= (*) prod TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) prod MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) prod DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= expr PLUS (*) prod , {SEMI PLUS MINUS RPAREN }]
+}
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on fact to state [2]
+transition on prod to state [18]
+
+-------------------
+lalr_state [10]: {
+  [prod ::= (*) prod TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) prod MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= expr MINUS (*) prod , {SEMI PLUS MINUS RPAREN }]
+  [prod ::= (*) prod DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on fact to state [2]
+transition on prod to state [11]
+
+-------------------
+lalr_state [11]: {
+  [prod ::= prod (*) MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= expr MINUS prod (*) , {SEMI PLUS MINUS RPAREN }]
+  [prod ::= prod (*) DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= prod (*) TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on TIMES to state [14]
+transition on DIVIDE to state [13]
+transition on MOD to state [12]
+
+-------------------
+lalr_state [12]: {
+  [prod ::= prod MOD (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on fact to state [17]
+
+-------------------
+lalr_state [13]: {
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= prod DIVIDE (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on fact to state [16]
+
+-------------------
+lalr_state [14]: {
+  [fact ::= (*) NUMBER , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [fact ::= (*) LPAREN expr RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= prod TIMES (*) fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on LPAREN to state [5]
+transition on NUMBER to state [4]
+transition on fact to state [15]
+
+-------------------
+lalr_state [15]: {
+  [prod ::= prod TIMES fact (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+
+-------------------
+lalr_state [16]: {
+  [prod ::= prod DIVIDE fact (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+
+-------------------
+lalr_state [17]: {
+  [prod ::= prod MOD fact (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+
+-------------------
+lalr_state [18]: {
+  [prod ::= prod (*) MOD fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [prod ::= prod (*) DIVIDE fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= expr PLUS prod (*) , {SEMI PLUS MINUS RPAREN }]
+  [prod ::= prod (*) TIMES fact , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+transition on TIMES to state [14]
+transition on DIVIDE to state [13]
+transition on MOD to state [12]
+
+-------------------
+lalr_state [19]: {
+  [expr_part ::= expr NT$0 SEMI (*) , {EOF LPAREN NUMBER }]
+}
+
+-------------------
+lalr_state [20]: {
+  [expr_list ::= expr_list expr_part (*) , {EOF LPAREN NUMBER }]
+}
+
+-------------------
+lalr_state [21]: {
+  [$START ::= expr_list EOF (*) , {EOF }]
+}
+
+-------------------
+lalr_state [22]: {
+  [expr ::= expr (*) PLUS prod , {PLUS MINUS RPAREN }]
+  [fact ::= LPAREN expr (*) RPAREN , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+  [expr ::= expr (*) MINUS prod , {PLUS MINUS RPAREN }]
+}
+transition on MINUS to state [10]
+transition on PLUS to state [9]
+transition on RPAREN to state [23]
+
+-------------------
+lalr_state [23]: {
+  [fact ::= LPAREN expr RPAREN (*) , {SEMI PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+}
+
+-------------------
+-------- ACTION_TABLE --------
+From state #0
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #1
+ [term 2:REDUCE(with prod 7)] [term 3:REDUCE(with prod 7)]
+ [term 4:REDUCE(with prod 7)] [term 5:SHIFT(to state 14)]
+ [term 6:SHIFT(to state 13)] [term 7:SHIFT(to state 12)]
+ [term 9:REDUCE(with prod 7)]
+From state #2
+ [term 2:REDUCE(with prod 11)] [term 3:REDUCE(with prod 11)]
+ [term 4:REDUCE(with prod 11)] [term 5:REDUCE(with prod 11)]
+ [term 6:REDUCE(with prod 11)] [term 7:REDUCE(with prod 11)]
+ [term 9:REDUCE(with prod 11)]
+From state #3
+ [term 0:REDUCE(with prod 2)] [term 8:REDUCE(with prod 2)]
+ [term 10:REDUCE(with prod 2)]
+From state #4
+ [term 2:REDUCE(with prod 13)] [term 3:REDUCE(with prod 13)]
+ [term 4:REDUCE(with prod 13)] [term 5:REDUCE(with prod 13)]
+ [term 6:REDUCE(with prod 13)] [term 7:REDUCE(with prod 13)]
+ [term 9:REDUCE(with prod 13)]
+From state #5
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #6
+ [term 0:SHIFT(to state 21)] [term 8:SHIFT(to state 5)]
+ [term 10:SHIFT(to state 4)]
+From state #7
+ [term 2:REDUCE(with prod 3)] [term 3:SHIFT(to state 9)]
+ [term 4:SHIFT(to state 10)]
+From state #8
+ [term 2:SHIFT(to state 19)]
+From state #9
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #10
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #11
+ [term 2:REDUCE(with prod 6)] [term 3:REDUCE(with prod 6)]
+ [term 4:REDUCE(with prod 6)] [term 5:SHIFT(to state 14)]
+ [term 6:SHIFT(to state 13)] [term 7:SHIFT(to state 12)]
+ [term 9:REDUCE(with prod 6)]
+From state #12
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #13
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #14
+ [term 8:SHIFT(to state 5)] [term 10:SHIFT(to state 4)]
+From state #15
+ [term 2:REDUCE(with prod 8)] [term 3:REDUCE(with prod 8)]
+ [term 4:REDUCE(with prod 8)] [term 5:REDUCE(with prod 8)]
+ [term 6:REDUCE(with prod 8)] [term 7:REDUCE(with prod 8)]
+ [term 9:REDUCE(with prod 8)]
+From state #16
+ [term 2:REDUCE(with prod 9)] [term 3:REDUCE(with prod 9)]
+ [term 4:REDUCE(with prod 9)] [term 5:REDUCE(with prod 9)]
+ [term 6:REDUCE(with prod 9)] [term 7:REDUCE(with prod 9)]
+ [term 9:REDUCE(with prod 9)]
+From state #17
+ [term 2:REDUCE(with prod 10)] [term 3:REDUCE(with prod 10)]
+ [term 4:REDUCE(with prod 10)] [term 5:REDUCE(with prod 10)]
+ [term 6:REDUCE(with prod 10)] [term 7:REDUCE(with prod 10)]
+ [term 9:REDUCE(with prod 10)]
+From state #18
+ [term 2:REDUCE(with prod 5)] [term 3:REDUCE(with prod 5)]
+ [term 4:REDUCE(with prod 5)] [term 5:SHIFT(to state 14)]
+ [term 6:SHIFT(to state 13)] [term 7:SHIFT(to state 12)]
+ [term 9:REDUCE(with prod 5)]
+From state #19
+ [term 0:REDUCE(with prod 4)] [term 8:REDUCE(with prod 4)]
+ [term 10:REDUCE(with prod 4)]
+From state #20
+ [term 0:REDUCE(with prod 0)] [term 8:REDUCE(with prod 0)]
+ [term 10:REDUCE(with prod 0)]
+From state #21
+ [term 0:REDUCE(with prod 1)]
+From state #22
+ [term 3:SHIFT(to state 9)] [term 4:SHIFT(to state 10)]
+ [term 9:SHIFT(to state 23)]
+From state #23
+ [term 2:REDUCE(with prod 12)] [term 3:REDUCE(with prod 12)]
+ [term 4:REDUCE(with prod 12)] [term 5:REDUCE(with prod 12)]
+ [term 6:REDUCE(with prod 12)] [term 7:REDUCE(with prod 12)]
+ [term 9:REDUCE(with prod 12)]
+------------------------------
+-------- REDUCE_TABLE --------
+From state #0
+ [non term 0->state 6] [non term 1->state 3] [non term 2->state 7]
+ [non term 3->state 1] [non term 4->state 2]
+From state #1
+From state #2
+From state #3
+From state #4
+From state #5
+ [non term 2->state 22] [non term 3->state 1] [non term 4->state 2]
+From state #6
+ [non term 1->state 20] [non term 2->state 7] [non term 3->state 1]
+ [non term 4->state 2]
+From state #7
+ [non term 5->state 8]
+From state #8
+From state #9
+ [non term 3->state 18] [non term 4->state 2]
+From state #10
+ [non term 3->state 11] [non term 4->state 2]
+From state #11
+From state #12
+ [non term 4->state 17]
+From state #13
+ [non term 4->state 16]
+From state #14
+ [non term 4->state 15]
+From state #15
+From state #16
+From state #17
+From state #18
+From state #19
+From state #20
+From state #21
+From state #22
+From state #23
+-----------------------------
+------- CUP v0.11a beta 20060608 Parser Generation Summary -------
+  0 errors and 0 warnings
+  11 terminals, 6 non-terminals, and 14 productions declared, 
+  producing 24 unique parse states.
+  0 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  0 conflicts detected (0 expected).
+  Code written to "parser.java", and "sym.java".
+---------------------------------------------------- (v0.11a beta 20060608)

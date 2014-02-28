@@ -1,0 +1,40 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// The code below is used to test the function nfa2dfa.                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+load("nfa-2-dfa.stlx");
+load("nfa-2-string.stlx");
+load("dfa-2-string.stlx");
+
+// Transition function of a finite state automaton that recognizes whether
+// a binary string is divisable by three.
+delta45 := procedure(q, c) {
+    match ([q, c]) {
+        case [0, "" ]: return {1, 2};
+        case [1, "b"]: return {3};
+        case [2, "a"]: return {4};
+        case [2, "b"]: return {};
+        case [3, "a"]: return {5};
+        case [3, "b"]: return {};
+        case [4, "a"]: return {};
+        case [4, "b"]: return {6};
+        case [5, "" ]: return {7};
+        case [6, "" ]: return {7};
+        case [7, "" ]: return {0};
+        default:       return {};
+     }
+};
+
+nfa45 := [{0 .. 7}, {"a", "b"}, delta45, 0, {7}];
+
+test := procedure(nfa) {
+    print("\nnon-deterministic finite state machine:");
+    print(nfa2string(nfa));
+    dfa := nfa2dfa(nfa);
+    print("\ndeterministic finite state machine:");
+    print(dfa2string(dfa));
+    dfa2dot(dfa, "dfa");
+};
+
+test(nfa45);

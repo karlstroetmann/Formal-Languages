@@ -1,0 +1,48 @@
+PARSER_BEGIN(DeclarationParser)
+
+public class DeclarationParser {  
+    public static void main(String args[]) throws ParseException {
+        DeclarationParser parser = new DeclarationParser(System.in);
+        parser.item();
+    }
+}
+PARSER_END(DeclarationParser)
+
+void item() : {} {
+      declaration()
+    | definition()
+}   
+// declaration : <IDENTIFIER> "(" paramList ")" ";" ;
+void declaration() : {} {
+    <IDENTIFIER> "(" paramList() ")" ";"
+}
+// definition : <IDENTIFIER> "(" paramList ")" body ;
+void definition() : {} {
+    <IDENTIFIER> "(" paramList() ")" body()
+}
+void paramList() : {} {
+      neParamList()
+    | { /* epsilon */ }
+}
+void neParamList() : {} {
+       <IDENTIFIER> "," neParamList()
+     | <IDENTIFIER>
+}
+void body() : {} {
+    "{" stmntList() "}"
+}
+void stmntList() : {} {
+       stmnt() stmntList()
+     | { /* epsilon */ }
+}
+void stmnt() : {} {
+    "to be done" ";"
+}
+
+// forget about white space
+SKIP: { " " | "\t" | "\r" | "\n" }
+
+TOKEN: {
+  <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+}
+

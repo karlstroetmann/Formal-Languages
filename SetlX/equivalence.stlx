@@ -1,0 +1,34 @@
+load("fixpoint.stlx"); 
+load("regexp-2-nfa.stlx");
+load("nfa-2-dfa.stlx");
+
+// Check whether the regular expressions r1 and r2 describe
+// the same language.
+regExpEquiv := procedure(r1, r2, sigma) {
+    fsm1      := regexp2DFA(r1, sigma);
+    fsm2      := regexp2DFA(r2, sigma);    
+    r1MinusR2 := fsmComplement(fsm1, fsm2);
+    r2MinusR1 := fsmComplement(fsm2, fsm1);
+    return isEmpty(r1MinusR2) && isEmpty(r2MinusR1);
+};
+regexp2DFA := procedure(r, sigma) {
+    converter := regexp2NFA(sigma);
+    nfa       := converter.toNFA(r);    
+    return nfa2dfa(nfa);    
+};
+// Return a DFA that recognizes the language L(f1) \ L(f2).
+fsmComplement := procedure(f1, f2) {
+    [states1, sigma, delta1, q1, a1] := f1;
+    [states2,     _, delta2, q2, a2] := f2;
+    states := states1 >< states2;
+    delta  := procedure(q, c) {
+                  [q1, q2] := q;
+                  return [delta1(q1, c), delta2(q2, c)];
+              };
+    return [states, sigma, delta, [q1, q2], a1 >< (states2 - a2)];
+};
+isEmpty := procedure(fsm) {
+    [states, sigma, delta, q0, accepting] := fsm;
+    reachable := fixpoint({q0}, q |-> { delta(q, c) : c in sigma });
+    return reachable * accepting == {};
+};

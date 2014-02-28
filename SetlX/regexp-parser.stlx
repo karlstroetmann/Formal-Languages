@@ -1,0 +1,69 @@
+// The parser implemented in the function parseExpr parses an arithmetic 
+// expression according to the following EBNF grammar.
+//
+//   RegExp  -> Product ("+" Product)*
+//   Product -> Factor Factor*
+//   Factor  -> Atom "*"?
+//   Atom    -> "(" Expr ")" | Char | "" | 0
+
+myParse := procedure(s) {
+     tl := tokenizeString(s);
+     [regexp, rl] := parseRegExp(tl);
+     assert(rl == [], "Parse Error: could not parse $tl$");
+     return regexp;
+};
+
+// This procedure takes a token list tl and tries to interpret this list
+// as a regular expression.
+parseRegExp := procedure(tl) {
+    [result, rl] := parseProduct(tl);
+    while (#rl > 1 && rl[1] == "+") {
+        [arg, rl] := parseProduct(rl[2..]);
+        result := Or(result, arg);
+    }
+    return [result, rl];
+};
+
+parseProduct := procedure(tl) {
+    [result, rl] := parseFactor(tl);
+    while (#rl > 0 && !(rl[1] in ["+", "*", ")"])) {
+        [arg, rl] := parseFactor(rl);
+        result := Cat(result, arg);
+    }
+    return [result, rl];
+};
+
+parseFactor := procedure(tl) {
+    [atom, rl] := parseAtom(tl);
+    if (#rl > 0 && rl[1] == "*") {
+        return [Star(atom), rl[2..]];
+    }
+    return [atom, rl];
+};
+
+parseAtom := procedure(tl) {
+    match (tl) {
+        case [ 0  | rl] : return [ 0, rl];
+        case ["(" | rl] : [expr, ql] := parseRegExp(rl);
+                          assert(ql[1] == ")", "Parse Error");
+                          return [expr, ql[2..]];
+        case [ s  | rl] : assert(isString(s) && #s <= 1, "parse error: $tl$");
+                          return [ s, rl];
+        default : abort("parse error in parseAtom($tl$)");
+    }
+};
+
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/", "**"
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex '[+*()]'   as [ op ]: tokenList += [ op ];
+        regex '[a-zA-Z]' as [ c  ]: tokenList += [ c  ];
+        regex '0'                 : tokenList += [ 0  ];
+        regex '""'                : tokenList += [ "" ];
+        regex '[ \t\v\n]+'        : // skip
+    }
+    return tokenList;
+};

@@ -1,0 +1,31 @@
+PARSER_BEGIN(RDParser)
+
+import java.util.*;
+
+public class RDParser {
+    
+    public static void main(String args[]) throws ParseException, ParseError {
+        SimpleCharStream     stream    = new SimpleCharStream(System.in);
+        RDParserTokenManager manager   = new RDParserTokenManager(stream);
+        ArrayList<Token>     tokenList = new ArrayList<Token>();
+        Token token;
+        do {
+            token = manager.getNextToken();
+            tokenList.add(token);
+        } while (token.kind != RDParserConstants.EOF); // end of file 
+        ExprParser parser = new ExprParser(tokenList);
+        double     result = parser.parseExpr();
+        System.out.println("result: " + result);
+    }
+}
+
+PARSER_END(RDParser)
+
+// forget about white space
+SKIP: { " " | "\t" | "\r" | "\n" }
+
+TOKEN: {
+    <NUMBER:   ("0" | ["1"-"9"] (["0"-"9"])*) ("." (["0"-"9"])*)?> 
+  | <OPERATOR: "+" | "-" | "*" | "/" | "(" | ")">
+}
+

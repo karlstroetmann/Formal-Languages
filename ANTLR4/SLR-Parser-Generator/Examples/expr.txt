@@ -1,0 +1,120 @@
+Tokens:    [$, '(', ')', '*', '+', NUMBER]
+
+Variables: [S, e, f, p]
+
+Grammar: 
+S -> e $
+e -> e '+' p
+e -> p
+f -> '(' e ')'
+f -> NUMBER
+p -> f
+p -> p '*' f
+
+
+Follow(  S) = []
+Follow(  e) = [$, ')', '+']
+Follow(  f) = [$, ')', '*', '+']
+Follow(  p) = [$, ')', '*', '+']
+s0 = { S -> <*> e $,
+       e -> <*> e '+' p,
+       e -> <*> p,
+       f -> <*> '(' e ')',
+       f -> <*> NUMBER,
+       p -> <*> f,
+       p -> <*> p '*' f
+     }
+
+s1 = { S -> e <*> $,
+       e -> e <*> '+' p
+     }
+
+s2 = { e -> <*> e '+' p,
+       e -> <*> p,
+       f -> <*> '(' e ')',
+       f -> <*> NUMBER,
+       f -> '(' <*> e ')',
+       p -> <*> f,
+       p -> <*> p '*' f
+     }
+
+s3 = { e -> e <*> '+' p,
+       f -> '(' e <*> ')'
+     }
+
+s4 = { e -> e '+' <*> p,
+       f -> <*> '(' e ')',
+       f -> <*> NUMBER,
+       p -> <*> f,
+       p -> <*> p '*' f
+     }
+
+s5 = { e -> e '+' p <*>,
+       p -> p <*> '*' f
+     }
+
+s6 = { e -> p <*>,
+       p -> p <*> '*' f
+     }
+
+s7 = { f -> <*> '(' e ')',
+       f -> <*> NUMBER,
+       p -> p '*' <*> f
+     }
+
+s8 = { f -> '(' e ')' <*> }
+
+s9 = { f -> NUMBER <*> }
+
+s10 = { p -> f <*> }
+
+s11 = { p -> p '*' f <*> }
+
+Action Table:
+action(s0, '(') = <shift, s2>
+action(s0, NUMBER) = <shift, s9>
+action(s1, $) = <accept>
+action(s1, '+') = <shift, s4>
+action(s2, '(') = <shift, s2>
+action(s2, NUMBER) = <shift, s9>
+action(s3, ')') = <shift, s8>
+action(s3, '+') = <shift, s4>
+action(s4, '(') = <shift, s2>
+action(s4, NUMBER) = <shift, s9>
+action(s5, $) = <reduce, e -> e '+' p>
+action(s5, ')') = <reduce, e -> e '+' p>
+action(s5, '*') = <shift, s7>
+action(s5, '+') = <reduce, e -> e '+' p>
+action(s6, $) = <reduce, e -> p>
+action(s6, ')') = <reduce, e -> p>
+action(s6, '*') = <shift, s7>
+action(s6, '+') = <reduce, e -> p>
+action(s7, '(') = <shift, s2>
+action(s7, NUMBER) = <shift, s9>
+action(s8, $) = <reduce, f -> '(' e ')'>
+action(s8, ')') = <reduce, f -> '(' e ')'>
+action(s8, '*') = <reduce, f -> '(' e ')'>
+action(s8, '+') = <reduce, f -> '(' e ')'>
+action(s9, $) = <reduce, f -> NUMBER>
+action(s9, ')') = <reduce, f -> NUMBER>
+action(s9, '*') = <reduce, f -> NUMBER>
+action(s9, '+') = <reduce, f -> NUMBER>
+action(s10, $) = <reduce, p -> f>
+action(s10, ')') = <reduce, p -> f>
+action(s10, '*') = <reduce, p -> f>
+action(s10, '+') = <reduce, p -> f>
+action(s11, $) = <reduce, p -> p '*' f>
+action(s11, ')') = <reduce, p -> p '*' f>
+action(s11, '*') = <reduce, p -> p '*' f>
+action(s11, '+') = <reduce, p -> p '*' f>
+
+Goto Table:
+goto(s0, e) = s1
+goto(s0, f) = s10
+goto(s0, p) = s6
+goto(s2, e) = s3
+goto(s2, f) = s10
+goto(s2, p) = s6
+goto(s4, f) = s10
+goto(s4, p) = s5
+goto(s7, f) = s11

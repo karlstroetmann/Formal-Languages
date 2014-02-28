@@ -1,0 +1,1109 @@
+
+\chapter{Der Scanner-Generator \textsl{JFlex}}
+Ein \emph{Scanner} ist ein Werkzeug, das einen gegebenen Text in Gruppen einzelner
+\emph{Token} aufspaltet.  Beispielsweise spaltet der Scanner, der für einen
+\texttt{C}-Compiler eingesetzt wird, den Programmtext in die folgenden Token auf:
+\begin{enumerate}
+\item Schlüsselwörter wie ``\texttt{if}'', ``\texttt{while}'', etc.
+\item Operator-Symbole wie ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'',
+      ``\texttt{<=}'', etc.
+\item Konstanten, wobei es in der Sprache \texttt{C} drei Arten von Konstanten gibt:
+      \begin{enumerate}
+      \item Zahlen, beispielsweise ``\texttt{123}'' oder ``\texttt{1.23e2}'',
+      \item Strings, die in doppelten Hochkommata eingeschlossen sind, 
+            beispielsweise ``\texttt{\symbol{34}hallo\symbol{34}}'',
+      \item einzelne Buchstaben, die in Quotes eingeschlossen sind, beispielsweise
+            ``\texttt{\symbol{39}a\symbol{39}}''.
+      \end{enumerate}
+\item Namen, die als Bezeichner für Variablen, Funktionen, oder Typ-Definitionen
+      fungieren.
+\item Kommentare.
+\item Sogenannte \emph{White-Space-Zeichen}.  Hierzu gehören Leerzeichen, horizontale und
+      vertikale Tabulatoren, Zeilenumbrüche und Seitenvorschübe.
+\end{enumerate}
+Das Werkzeug \textsl{JFlex}\/ \cite{klein:2009} ist ein sogenannter Scanner-Generator,
+also ein Werkzeug, das aus einer Spezifikation verschiedener Token automatisch einen
+Scanner generiert.  Die einzelnen Token werden dabei durch reguläre Ausdrücke definiert.  
+Im Netz finden Sie dieses Programm unter der Adresse
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://jflex.de}{\texttt{http://jflex.de}}
+\\[0.2cm]
+Da das Programm selber in \textsl{Java} implementiert ist, kann es auf allen Plattformen
+eingesetzt werden, auf denen \textsl{Java} zur Verfügung steht.
+
+In nächsten Abschnitt besprechen wir die Struktur einer \textsl{JFlex}-Eingabe-Datei und
+zeigen wie \textsl{JFlex}\/ aufgerufen wird.  Anschließend zeigen wir, wie reguläre Ausdrücke
+in der Eingabe-Sprache von \textsl{JFlex}\/ spezifiziert werden können.  Das Kapitel wird
+durch ein Beispiel abgerundet, bei dem wir mit Hilfe von \textsl{JFlex}\/ ein Programm
+erzeugen, mit dessen Hilfe die Ergebnisse einer Klausur ausgewertet werden können.
+
+Die von \textsl{JFlex}\/ erzeugten Scanner sind \textsl{Java}-Programme.  Für die
+Sprachen \texttt{C} und \texttt{C++} gibt es ein Äquivalent unter dem Namen 
+\href{http://en.wikipedia.org/wiki/Lex_(software)}{\textsl{Lex}}
+\cite{lesk:1975} bzw.~\href{http://flex.sourceforge.net}{\textsl{Flex}} \cite{nicol93}.
+
+
+\section{Struktur einer \textsl{JFlex}-Spezifikation}
+Eine \textsl{JFlex}-Spezifikation besteht aus drei
+Abschnitten, die durch den String ``\texttt{\%\%}'', der am Anfang einer Zeile stehen
+muss, von einander getrennt werden.
+\begin{enumerate}
+\item Der erste Teil ist der \emph{Benutzer-Code}.  Er besteht aus
+      \texttt{package}-Deklarationen und \texttt{import}-Befehlen, die wörtlich an den
+      Anfang der erzeugten Scanner-Klasse kopiert werden.  Zusätzlich kann der
+      Benutzer-Code noch die Definition lokaler \textsl{Java}-Klassen enthalten.
+      Allerdings ist es sinnvoller, solche Klassen in separaten Dateien definieren.
+
+      Abbildung \ref{fig:count.jflex} auf Seite \pageref{fig:count.jflex} zeigt ein
+      Beispiel für eine \textsl{JFlex}-Spezifikation für einen Scanner, der Zahlen
+      erkennen und aufaddieren soll.  In diesem Fall besteht der Benutzer-Code nur aus der
+      \texttt{package}-Deklaration in Zeile 1.
+\item Der zweite Teil ist \emph{Options-Teil}.  Dieser Teil enthält die Spezifikation 
+      verschiedener Optionen, sowie eventuell die Deklaration von Variablen und Methoden
+      der erzeugten Scanner-Klasse.
+
+      In Abbildung \ref{fig:count.jflex} erstreckt sich dieser Teil von Zeile 3 bis Zeile
+      15.
+\item Der dritte Teil ist der \emph{Aktions-Teil}.  Hier werden die Strings, die der
+      Scanner erkennen soll, mit Hilfe von regulären Ausdrücken spezifiziert.  Zusätzlich
+      wird festgelegt, wie der Scanner diese Strings verarbeiten soll.
+
+      In Abbildung \ref{fig:count.jflex} erstreckt sich der \emph{Aktions-Teil} von Zeile
+      17 bis Zeile 19.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    package count;
+    %%
+    
+    %class Count
+    %standalone
+    %unicode
+    
+    %{
+        int mCount = 0;
+    %}
+    
+    %eof{
+        System.out.println("Total: " + mCount); 
+    %eof}
+    
+    %%
+    
+    0|[1-9][0-9]*  { mCount += new Integer(yytext()); }
+    .|\n           { /* skip */                       }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine einfache Scanner-Spezifikation für \textsl{JFlex}}
+\label{fig:count.jflex}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    Hier sind 3 Äpfel und 5 Birnen.
+    Und hier sind 8 Bananen.
+    Wieviel Stücke Obst sind in diesem Text versteckt?
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine Eingabe-Datei für den in Abbildung \ref{fig:count.jflex} spezifizierten Scanner.}
+\label{fig:input.txt}
+\end{figure}
+
+Wir diskutieren nun die in Abbildung \ref{fig:count.jflex} gezeigte \textsl{JFlex}-Spezifikation.
+Der in dieser Abbildung gezeigte Scanner hat die Aufgabe, alle natürlichen Zahlen, die in einer
+Datei vorkommen, aufzuaddieren.  Eine Eingabe-Datei für den zu entwickelnden Scanner könnte wie in
+Abbildung \ref{fig:input.txt} auf Seite \pageref{fig:input.txt} gezeigt aussehen.  Wir diskutieren
+die Spezifikation des Scanners aus Abbildung \ref{fig:count.jflex} jetzt Zeile für Zeile.
+\begin{enumerate}
+\item Zeile 1 spezifiziert, dass der erzeugte Scanner zu dem Paket \texttt{count} gehören
+      soll.  Im allgemeinen Fall würden hier auch noch \texttt{import}-Spezifikationen stehen, aber
+      dieses Beispiel ist so einfach, dass keine Imports erforderlich sind.
+\item Zeile 4 spezifiziert, dass die erzeugte Scanner-Klasse den Namen \texttt{Count} haben soll.
+\item Zeile 5 legt durch die Option ``\texttt{\%standalone}'' 
+      fest, dass der erzeugte Scanner nicht Teil eines Parsers ist, sondern als
+      unabhängiges Programm eingesetzt werden soll.  Daher wird \textsl{JFlex} die Klasse
+      \texttt{Count} mit einer Methode $\texttt{main}()$ ausstatten.  Diese Methode wird alle
+      Dateien, die ihr als Argument übergeben werden, scannen.
+
+      Einen Scanner, der selber mit einer $\texttt{main}$-Methode ausgestattet ist, werden wir im
+      Folgenden als \emph{Stand-Alone-Scanner} bezeichnen.
+\item Zeile 6 legt durch die Option ``\texttt{\%unicode} 
+      fest, dass ein Scanner für Unicode erzeugt werden soll.  Zum Scannen von
+      Text-Dateien sollte diese Option immer gewählt werden.
+\item In den Zeilen 8 bis 10 deklarieren wir mit Hilfe der Schlüsselwörter 
+      ``\texttt{\%\{}'' und
+      ``\texttt{\%\}}'', 
+      die Variable \texttt{mCount} als zusätzliche Member-Variable des erzeugten Scanners.
+      An dieser Stelle können wir neben Member-Variablen auch zusätzliche Methoden definieren.
+      
+      Es ist zu beachten, dass die Schlüsselwörter ``\texttt{\%\{}'' und
+      ``\texttt{\%\}}'' 
+      am Anfang einer Zeile stehen müssen.
+\item In den Zeilen 12 bis 14 spezifizieren  wir mit Hilfe der Schlüsselwörter 
+      ``\texttt{\%eof\{}'' und
+      ``\texttt{\%eof\}}'' 
+      einen Befehl, der ausgeführt werden soll,  wenn das Ende
+      der Datei erreicht ist.  Dies ist nur bei einem Stand-Alone-Scanner notwendig.
+      In dem obigen Beispiel geben wir hier die ermittelte Summe aller Zahlen aus.
+
+      Wieder ist zu beachten, dass die Schlüsselwörter
+      ``\texttt{\%eof\{}'' und
+      ``\texttt{\%eof\}}'' 
+      am Zeilen-Anfang stehen müssen.
+\item Die Zeilen 18 und 19 enthalten die Regeln unseres Scanners.  Eine Regel hat die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \textsl{regexp} $\quoted{\{}$ \textsl{action} $\quoted{\}}$
+      \\[0.2cm]
+      Hierbei ist \textsl{regexp} ein regulärer Ausdruck und \textsl{action} ist ein Fragment von
+      \textsl{Java}-Code, das ausgeführt wird, wenn der Ausdruck \textsl{regexp} im Text erkannt
+      wird.
+
+      In Zeile 18 spezifiziert der reguläre Ausdruck ``\texttt{[1-9][0-9]*}'' eine natürliche Zahl.
+      Der zu dieser Zahl korrespondierende String wird von der Funktion $\texttt{yytext}()$ zurück
+      gegeben und mit Hilfe des Konstruktors für die Klasse \texttt{Integer} in eine Zahl
+      umgewandelt.
+
+      In Zeile 19 spezifiziert der reguläre Ausdruck ``\texttt{.|\symbol{92}n}'' ein beliebiges
+      Zeichen.  Der reguläre Ausdruck ``\texttt{.}'' spezifiziert dabei ein Zeichen, dass
+      von einem Zeilenumbruch verschieden ist, während ``\texttt{\symbol{92}n}'' für einen
+      Zeilenumbruch steht. Der Operator ``\texttt{|}'' steht für die Alternative.  Im
+      letzten Kapitel hatten wir dafür den Operator ``$+$'' verwendet.
+      Sie sehen, dass die Syntax, mit der reguläre Ausdrücke in \textsl{JFlex} spezifiziert
+      werden können, von der im zweiten Kapitel gegebenen Darstellung abweicht.  Wir
+      werden diese Syntax später im Detail diskutieren.
+
+      Die Aktion besteht hier nur aus einem Kommentar.  Daher wird das durch den regulären
+      Ausdruck ``\texttt{.|\symbol{92}n}'' erkannte Zeichen einfach
+      überlesen.  Diese Regel ist notwendig, denn ein Stand-Alone-Scanner gibt jedes Zeichen, das
+      nicht von einer Regel erkannt wird, auf der Standard-Ausgabe aus.  
+\end{enumerate}
+Aus der in Abbildung \ref{fig:count.jflex} gezeigten \textsl{JFlex}-Spezifikation können wir mit dem
+Befehl 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{jflex -d count count.jflex}
+\\[0.2cm]
+die Datei \texttt{Count.java} erzeugen.  Die Option ``\texttt{-d}'' spezifiziert dabei, dass diese
+Datei in dem Verzeichnis \texttt{count} erstellt wird.  Das ist notwendig, weil der Scanner die
+Package-Spezifikation 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{package count;}
+\\[0.2cm] 
+enthält.  Die so erzeugte Datei \texttt{Count.java}
+können wir mit dem Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{javac count/Count.java}
+\\[0.2cm]
+übersetzen.   Den Scanner können wir dann über den Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{java count.Count input.txt}
+\\[0.2cm]
+aufrufen, wobei \texttt{input.txt} den Namen der zu scannenden Datei angibt.
+
+\section{Reguläre Ausdrücke in \textsl{JFlex}}
+Im letzten Kapitel haben wir reguläre Ausdrücke mit einer minimalen Syntax definiert.
+Dies ist nützlich, wenn wir später die Äquivalenz von den durch regulären Ausdrücken spezifizierten
+Sprachen mit den Sprachen, die von endlichen Automaten erkannt werden können,  beweisen wollen.
+Für die Praxis ist eine reichhaltigere Syntax wünschenswert.  Daher bietet die Eingabe-Sprache von
+\textsl{JFlex}\/ eine Reihe von Abkürzungen an, mit der komplexe reguläre Ausdrücke kompakter
+beschrieben werden können.  Den regulären Ausdrücken von \texttt{JFlex} liegt das
+\textsc{Ascii}-Alphabet zu Grunde, wobei zwischen den Zeichen, die als Operatoren dienen können,
+und den restlichen Zeichen unterschieden wird.  Die Menge \textsl{OpSyms}\/ der Operator-Symbole 
+ist wie folgt definiert:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{OpSyms} := \{$ ``\texttt{.}'', 
+``\texttt{*}'', 
+``\texttt{+}'', 
+``\texttt{?}'', 
+``\texttt{!}'', 
+``\texttt{\symbol{126}}'', 
+``\texttt{|}'', 
+``\texttt{(}'', 
+``\texttt{)}'', 
+``\texttt{[}'', 
+``\texttt{]}'', 
+``\texttt{\{}'', 
+``\texttt{\}}'', 
+\\[0.2cm]
+\hspace*{3.4cm}
+``\texttt{<}'', 
+``\texttt{>}'',
+``\texttt{/}'', 
+``\texttt{\symbol{92}}'', 
+``\texttt{\symbol{94}}'', 
+``\texttt{\symbol{36}}'', 
+``\texttt{\symbol{34}}'' $\}$
+\\[0.2cm]
+Zusätzlich bezeichne $\textsl{WsSym}$ die Menge der \textsc{Ascii}-Symbole, die
+White-Space darstellen.  Diese Menge enthält also Blanks, Zeilenumbrüche und Tabulatoren.
+Damit können wir nun die Menge $\textsl{Regexp}\/$ der von \textsl{JFlex}\/ unterstützen regulären
+Ausdrücke induktiv definieren. 
+\begin{enumerate}
+\item $c \in \textsl{Regexp}$ \quad falls $c \in \Sigma_{\textsc{\scriptsize Ascii}}
+       \backslash \bigl(\textsl{OpSyms} \cup \textsl{WsSyms}\bigr)$
+
+      Alle Buchstaben $c$ aus dem \textsc{Ascii}-Alphabet, die keine Operator-Symbol und
+      keine White-Space-Symbole sind, können als reguläre Ausdrücke verwendet werden.  Der
+      reguläre Ausdruck $c$ spezifiziert genau den Buchstaben $c$.
+\item ``\texttt{.}''$\in \textsl{Regexp}$
+
+      Der reguläre Ausdruck ``\texttt{.}'' spezifiziert ein Zeichen, das von einem
+      Zeilenumbruch ``\texttt{\symbol{92}n}'' verschieden ist.
+\item $\texttt{\symbol{92}}x \in \textsl{Regexp}$ \quad 
+      falls $x \in \{ \texttt{a}, \texttt{b}, \texttt{f}, \texttt{n}, \texttt{r}, \texttt{t}, \texttt{v} \}$ 
+
+      Die Syntax $\texttt{\symbol{92}}x$ ermöglicht es, Steuerzeichen 
+      zu spezifizieren.  Im einzelnen gilt:
+      \begin{enumerate}
+      \item \texttt{\symbol{92}a} entspricht dem Steuerzeichen \texttt{Ctrl-G} (\emph{alert}).
+      \item \texttt{\symbol{92}b} entspricht dem Steuerzeichen \texttt{Ctrl-H} (\emph{backspace}).
+      \item \texttt{\symbol{92}f} entspricht dem Steuerzeichen \texttt{Ctrl-L} (\emph{form feed}).
+      \item \texttt{\symbol{92}n} entspricht dem Steuerzeichen \texttt{Ctrl-J} (\emph{newline}).
+      \item \texttt{\symbol{92}r} entspricht dem Steuerzeichen \texttt{Ctrl-M} (\emph{carriage return}).
+      \item \texttt{\symbol{92}t} entspricht dem Steuerzeichen \texttt{Ctrl-I} (\emph{tabulator}).
+      \item \texttt{\symbol{92}v} entspricht dem Steuerzeichen \texttt{Ctrl-K} (\emph{vertical tabulator}).
+      \end{enumerate}
+\item $\texttt{\symbol{92}}abc \in \textsl{Regexp}$ \quad 
+      falls $a,b,c \in \{ \texttt{0}, \cdots \texttt{7} \}$ 
+
+      Bei der Syntax $\texttt{\symbol{92}}abc$ sind $a$, $b$ und $c$ oktale Ziffern und $abc$
+      muss als Zahl im Oktal-System interpretierbar sein.
+      Dann wird durch  $\texttt{\symbol{92}}abc$ das Zeichen spezifiziert, das im
+      \textsc{Ascii}-Code an der durch die Oktalzahl $abc$ spezifizierten Stelle steht.
+      Beispielsweise steht der Ausdruck ``\texttt{\symbol{92}040}'' für das Leerzeichen
+      ``\texttt{ }'',       denn das Leerzeichen hat dezimal
+      den \textsl{Ascii}-Code $32$ und in dem Oktalsystem schreibt sich diese Zahl als $40_{(8)}$.
+\item $\texttt{\symbol{92}x}ab \in \textsl{Regexp}$ \quad 
+      falls $a,b \in \{ \texttt{0}, \cdots, \texttt{9}, \mathtt{a},\cdots, \mathtt{f}, \mathtt{A},\cdots, \mathtt{F} \}$ 
+
+      Bei der Syntax $\texttt{\symbol{92}x}ab$ sind $a$ und $b$ hexadezimale Ziffern.
+      Dann wird durch  $\texttt{\symbol{92}x}ab$ das Zeichen spezifiziert, das im
+      \textsc{Ascii}-Code an der durch die Hexadezimalzahl  $ab$ spezifizierten Stelle steht.
+      Beispielsweise steht der Ausdruck ``\texttt{\symbol{92}x5A}'' für den Buchstaben ``\texttt{Z}''
+      denn dieser Buchstabe hat dezimal den \textsl{Ascii}-Code $90$ und im
+      Hexadezimalsystem  schreibt sich diese Zahl als 
+      $\texttt{0x5A}$.
+\item $\texttt{\symbol{92}u}abcd \in \textsl{Regexp}$ \quad 
+      falls $a,b,c,d \in \{ \texttt{0}, \cdots, \texttt{9}, \mathtt{a},\cdots, \mathtt{f}, \mathtt{A},\cdots, \mathtt{F} \}$ 
+
+      Bei der Syntax $\texttt{\symbol{92}u}abcd$ sind $a$, $b$, $c$ und $d$ hexadezimale Ziffern.
+      Dann wird durch  $\texttt{\symbol{92}u}abcd$ das Zeichen spezifiziert, das im
+      \href{http://en.wikipedia.org/wiki/Unicode}{\emph{Unicode}} die durch den Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $a \cdot 16^3 + b \cdot 16^2 + c \cdot 16 + d$
+      \\[0.2cm]
+      gegebene Position hat.  For example, \texttt{\symbol{92}u2200} specifies the unicode character
+      ``$\forall$''.
+\item $\texttt{\symbol{92}}o \in \textsl{Regexp}$ \quad falls $o \in \textsl{OpSyms}$ 
+      
+      Die Operator-Symbole können durch Voranstellen eines Backslashs spezifiziert werden.
+      Wollen wir beispielsweise das Zeichen ``\texttt{*}'' erkennen, so können wir dafür
+      den regulären Ausdruck ``\texttt{\symbol{92}*}'' verwenden.
+\item $r_1r_2 \in \textsl{Regexp}$ \quad falls $r_1,r_2 \in \textsl{Regexp}$
+
+      Die Konkatenation zweier regulärer Ausdrücke wird in \textsl{JFlex}\/ ohne den Infix-Operator
+      ``$\cdot$'' geschrieben.  Der Ausdruck $r_1r_2$ steht also für einen String $s$ der
+      sich in die Form $s = uv$ so aufspalten läßt, dass $u$ durch $r_1$ und $v$ durch
+      $r_2$ spezifiziert wird.
+\item $r_1\texttt{|}r_2 \in \textsl{Regexp}$ \quad falls $r_1,r_2 \in \textsl{Regexp}$
+
+      Für die Alternative zweier regulärer Ausdrücke wird in \textsl{JFlex}\/ an Stelle des Infix-Operators
+      ``$+$'' der Operator ``\texttt{|}'' verwendet.
+\item $r\texttt{*} \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
+
+      Der Postfix-Operator ``\texttt{*}'' bezeichnet den Kleene-Abschluss.
+\item $r\texttt{+} \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
+
+      Der Ausdruck ``$r\texttt{+}$'' ist eine Variante des Kleene-Abschlusses, bei der
+      gefordert wird, dass $r$ mindestens einmal auftritt.  Daher gilt die folgende Äquivalenz:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $r\texttt{+} \doteq rr\mathtt{*}$.
+\item $r\texttt{?} \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
+
+      Der Ausdruck ``$r\texttt{?}$'' legt fest, dass $r$ einmal oder keinmal auftritt.
+      Es gilt die folgende Äquivalenz:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $r\texttt{?} \doteq r|\varepsilon$.
+      \\[0.2cm]
+      Hier ist allerdings zu beachten, dass der Ausdruck ``$\varepsilon$'' 
+      von \textsl{JFlex} nicht unterstützt wird.
+\item $r\texttt{\{}n\texttt{\}} \in \textsl{Regexp}$ \quad falls $n \in \mathbb{N}$
+
+      Der Ausdruck ``$r\texttt{\{}n\texttt{\}}$'' legt fest, dass $r$ genau $n$ mal auftritt.
+      Der reguläre Ausdruck ``\texttt{a\{4\}}'' beschreibt also den String ``\texttt{aaaa}''.
+\item $r\texttt{\{}m,n \texttt{\}} \in \textsl{Regexp}$ \quad falls $m,n \in \mathbb{N}$
+  und $m \leq n$.
+
+      Der Ausdruck ``$r\texttt{\{}m,n\texttt{\}}$'' legt fest, dass $r$ mehrmal auftritt
+      und zwar mindestens $m$ mal und höchstens $n$ mal.
+      Der reguläre Ausdruck ``\texttt{a\{3,5\}}'' beschreibt also die folgenden Strings:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      ``\texttt{aaa}'', ``\texttt{aaaa}'' und ``\texttt{aaaaa}''.
+\item $\texttt{\symbol{94}}r$ \quad falls $r \in \textsl{Regexp}$
+
+      Der Ausdruck $\texttt{\symbol{94}}r$ legt fest, dass der reguläre Ausdruck $r$
+      am Anfang einer Zeile stehen muss.  
+
+      Bei der Verwendung des Operators ``\texttt{\symbol{94}}''
+      gibt es eine wichtige Einschränkung:  Der Operator
+      ``$\texttt{\symbol{94}}$'' darf nur auf der äußersten Ebene eines regulären
+      Ausdrucks verwendet werden.  Eine Konstruktion der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{\symbol{94}}r_1|r_2$
+      \\[0.2cm]
+      ist also verboten, denn hier tritt der Operator innerhalb einer Alternative auf.
+\item $r\texttt{\symbol{36}}$ \quad falls $r \in \textsl{Regexp}$
+
+      Der Ausdruck $r\texttt{\symbol{36}}$ legt fest, dass der reguläre Ausdruck $r$
+      am Ende einer Zeile stehen muss.  
+
+      Für die Verwendung des Operators ``\texttt{\symbol{36}}''
+      gibt es eine ähnliche Einschränkung wie bei dem Operator ``\texttt{\symbol{94}}'':  
+      Der Operator ``$\texttt{\symbol{36}}$'' darf nur auf der äußersten Ebene eines regulären
+      Ausdrucks verwendet werden.  Eine Konstruktion der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $r_1|r_2\texttt{\symbol{36}}$
+      \\[0.2cm]
+      ist verboten, denn hier tritt der Operator innerhalb einer Alternative auf.
+\item $r_1\texttt{/}r_2$ \quad falls $r_1, r_2 \in \textsl{Regexp}$
+  
+      Der Ausdruck $r_1\texttt{/}r_2$ legt fest, dass auf den durch $r_1$ spezifizierten Text
+      ein Text folgen muss, der der Spezifikation $r_2$ genügt.  Im Unterschied zur einfachen
+      Konkatenation von $r_1$ und $r_2$ wird durch den regulären Ausdruck
+      $r_1\texttt{/}r_2$ aber der selbe Text 
+      spezifiziert, der durch $r_1$ spezifiziert wird.  Der Operator ``\texttt{/}'' liefert
+      also nur eine zusätzliche Bedingung, die für eine erfolgreiche Erkennung des regulären
+      Ausdrucks erfüllt sein muss.  Die Methode ``\texttt{yytext()}'', die den erkannten Text
+      zurück gibt, liefert nur den Text zurück, der dem regulären Ausdruck $r_1$
+      entspricht.  Der Text, der dem regulären Ausdruck $r_2$ entspricht, kann dann von
+      der nächsten Regel bearbeitet werden.  In der angelsächsischen Literatur wird $r_2$ als
+      \emph{trailing context} bezeichnet.
+
+      Für die Verwendung des Operators ``\texttt{/}''
+      gibt es eine ähnliche Einschränkung wie bei dem Operator ``\texttt{\symbol{36}}'':  
+      Der Operator ``\texttt{/}'' darf nur auf der äußersten Ebene eines regulären
+      Ausdrucks verwendet werden.
+\item $(r) \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
+
+      Genau wie im letzten Kapitel auch können reguläre Ausdrücke geklammert werden.
+      Für die Präzedenzen der Operatoren gilt:
+      Die Postfix-Operatoren ``\texttt{*}'', ``\texttt{?}'', ``\texttt{+}'',
+      ``\texttt{\{}$n$\texttt{\}}'' und ``\texttt{\{}$m$,$n$\texttt{\}}''
+      binden am stärksten, der Operator ``\texttt{|}'' bindet am schwächsten.
+\end{enumerate}
+Alle bis hierher vorgestellten Operatoren können auch in dem für die Sprache
+\texttt{C} verfügbaren Werkzeug \textsl{Flex} verwendet werden.  \textsl{JFlex}
+unterstützt zusätzlich den Negations-Operator ``\texttt{!}'' und den \textsl{Upto}-Operator
+``\texttt{\symbol{126}}''.  Wir besprechen diese Operatoren später.
+
+Die Spezifikation der regulären Ausdrücke ist noch nicht vollständig, denn es gibt in \textsl{JFlex}
+noch die Möglichkeit, sogenannte \emph{Bereiche} zu spezifizieren.  Ein \emph{Bereich}
+(Englisch: \emph{character class})
+spezifiziert eine Menge von Buchstaben in kompakter Weise.  Dazu werden die eckigen
+Klammern benutzt.  Beispielsweise lassen sich die Vokale durch den regulären Ausdruck
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{[aeiou]}
+\\[0.2cm]
+spezifizieren.  Dieser Ausdruck ist als Abkürzung zu verstehen, es gilt:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{[aeiou]} \doteq \texttt{a|e|i|o|u}$
+\\[0.2cm]
+Die Menge aller kleinen lateinischen Buchstaben läßt sich durch
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{[a-z]}
+\\[0.2cm]
+spezifizieren, es gilt also
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{[a-z]} \doteq \texttt{a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z}$.
+\\[0.2cm]
+Die Menge aller lateinischen Buchstaben zusammen mit dem Unterstrich
+kann durch
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{[a-zA-Z\_]}
+\\[0.2cm]
+beschrieben werden.  \textsl{JFlex} gestattet auch, das Komplement einer solchen Menge zu bilden.
+Dazu ist es lediglich erforderlich, nach der öffnenden eckigen Klammer das Zeichen
+``\texttt{\symbol{94}}'' zu verwenden.  Beispielsweise beschreibt der Ausdruck
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{[\symbol{94}0-9]}
+\\[0.2cm]
+alle \textsc{Ascii}-Zeichen, die keine Ziffern sind.  
+\pagebreak
+
+\examples
+Um die Diskussion anschaulicher zu machen, präsentieren wir einige Beispiele regulärer Ausdrücke.
+\begin{enumerate}
+\item \texttt{[a-zA-Z][a-zA-Z0-9\_]*}
+
+      Dieser reguläre Ausdruck spezifiziert die Worte, die aus lateinischen Buchstaben, Ziffern und
+      dem Unterstrich ``\texttt{\_}'' bestehen und die außerdem mit einem lateinischen 
+      Buchstaben beginnen.
+\item \texttt{\symbol{92}/\symbol{92}/.*}
+
+      Hier wird ein \texttt{C}-Kommentar beschrieben, der sich bis zum Zeilenende erstreckt.
+\item \texttt{0|[1-9][0-9]*}
+
+      Dieser Ausdruck beschreibt natürliche Zahlen.  Hier ist es wichtig darauf zu achten,
+      dass eine natürliche Zahl nur dann mit der Ziffer \texttt{0} beginnt, wenn es sich um die
+      Zahl \texttt{0} handelt.
+\end{enumerate}
+Unsere bisherige Diskussion regulärer Ausdrücke ist noch nicht vollständig.  
+\begin{enumerate}
+\item Reguläre Ausdrücke können zur Formatierung sowohl Leerzeichen als auch Tabulatoren enthalten.
+      Folglich verändert das Einfügen von Leerzeichen und Tabulatoren die Semantik eines
+      regulären Ausdrucks  nicht.
+      Soll ein Leerzeichen oder ein Tabulator erkannt werden, so ist dies durch die regulären 
+      Ausdrücke ``\texttt{[ ]}'' bzw. ``\texttt{\symbol{92}t}'' möglich.
+\item Innerhalb von doppelten Hochkommata verlieren alle Operator-Symbole bis auf
+      ``\texttt{\symbol{92}}'' ihre Bedeutung.  So beschreibt der reguläre Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{34}/*\symbol{34}}
+      \\[0.2cm]
+      beispielsweise den Anfang eines mehrzeiligen \texttt{C}-Kommentars.  Sowohl
+      ``\texttt{/}'' als auch ``\texttt{*}'' sind eigentlich Operator-Symbole, aber
+      innerhalb der Anführungszeichen stehen diese Zeichen für sich selbst.
+\item \textsl{JFlex} bietet zusätzlich den Negations-Operator ``\texttt{!}'' als
+      Präfix-Operator an.  Ist $r$ ein regulärer Ausdruck, so steht der reguläre Ausdruck
+      ``$\texttt{!}r$'' für das Komplement der durch $r$ beschriebenen Sprache.
+
+      Die Präzedenz dieses Operators ist geringer als die Präzedenz der Postfix-Operatoren
+      ``\texttt{+}'', ``\texttt{*}'' und ``\texttt{?}'', aber höher als die Präzedenz des
+      Konkatenations-Operators.   Damit wird der Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{!a*b} \quad also als \quad
+      \texttt{(!(a*))b} 
+      \\[0.2cm]
+      geklammert.  Wie nützlich dieser Operator ist, zeigt sich bei der Spezifikation von 
+      mehrzeiligen \texttt{C}-Kommentaren.  Ein regulärer Ausdruck, der mehrzeilige
+      \texttt{C}-Kommentare erkennt, läßt sich mit dem Operator ``\texttt{!}''in der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{34}/*\symbol{34} !([\symbol{94}]* \symbol{34}*/\symbol{34} [\symbol{94}]*) 
+              \symbol{34}*/\symbol{34}}
+      \\[0.2cm]
+      schreiben.  Wir diskutieren diesen Ausdruck im Detail.
+      \begin{enumerate}
+      \item Zunächst müssen wir natürlich die Zeichenreihe ``\texttt{/*}'' erkennen.
+            Dafür ist der Ausdruck ``\texttt{\symbol{34}/*\symbol{34}}'' zuständig.
+            Dieser Ausdruck ist in den doppelten Anführungszeichen ``\texttt{\symbol{34}}''
+            eingeschlossen, damit das Zeichen ``\texttt{*}'' nicht als Operator interpretiert wird.
+      \item Das Innere eines Kommentars darf die Zeichenreihe ``\texttt{*/}'' nicht enthalten.
+            Der Ausdruck ``\texttt{[\symbol{94}]}'' spezifiziert das Komplement der leeren Menge,
+            also ein beliebiges Zeichen.  Damit steht der Ausdruck
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{[\symbol{94}]* \symbol{34}*/\symbol{34} [\symbol{94}]*}
+            \\[0.2cm]
+            für einen Text, der irgendwo innen drin den String ``\texttt{*/}'' enthält,
+            wobei vorher und nachher beliebige Zeichen stehen können.  Die Negation dieses Ausdrucks
+            beschreibt dann genau das, was in einem Kommentar der Form \texttt{/*} $\cdots$
+            \texttt{*/} innen drin stehen darf:  Beliebiger Text, der den String ``\texttt{*/}''
+            nicht als Zeichenfolge enthält.
+      \item Am Ende wird der Kommentar dann durch den String ``\texttt{*/}'' abgeschlossen.
+      \end{enumerate}
+      Der Negations-Operator kann auch dazu benutzt werden, denn Durchschnitt zweier
+      regulärer Ausdrücke $r_1$ und $r_2$ zu definieren, denn aufgrund des deMorgan'schen Gesetztes
+      der Aussagen-Logik gilt für beliebige aussagen-logische Formeln $f_1$ und $f_2$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $f_1 \wedge f_2 \leftrightarrow \neg(\neg f_1 \vee \neg f_2)$.
+      \\[0.2cm]
+      Damit können wir den Durchschnitt der regulären Ausdrücke $r_1$ und $r_2$ als
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{!(!$r_1$|!$r_2$)}
+      \\[0.2cm]
+      definieren.  Dieser Ausdruck beschreibt also gerade solche Strings, die sowohl in der
+      durch den regulären Ausdruck $r_1$ spezifizierten Sprache, als auch in der durch $r_2$
+      spezifizierten Sprache liegen.
+
+      Die Erfahrung zeigt, dass die endlichen Automaten, die mit Hilfe des Negations-Operators
+      konstruiert werden, sehr groß werden können.  Daher sollte dieser Operator mit Vorsicht benutzt
+      werden.
+\item Weiterhin bietet \textsl{JFlex} den \emph{Upto}-Operator ``\texttt{\symbol{126}}'' an.
+      Ist $r$ ein regulärer Ausdruck, so spezifiziert der Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{126}}$r$
+      \\[0.2cm]
+      den \underline{kürzesten} String, der mit $r$ endet.  Mit diesem Operator kann ein mehrzeiliger
+      \texttt{C}-Kommentar sehr prägnant durch den Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{34}/*\symbol{34} \symbol{126}\symbol{34}*/\symbol{34}}
+      \\[0.2cm]
+      spezifiziert werden.  Dieser Ausdruck ist wie folgt zu lesen:
+      Ein mehrzeiliger Kommentar beginnt mit dem String ``\texttt{/*}'' und endet mit dem
+      ersten Aufreten des Strings ``\texttt{*/}''.
+
+      Intern wird der Upto-Operator mit Hilfe des Negations-Operators implementiert.  Der Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{126}}$r$ \qquad wird auf den Ausdruck \qquad
+      \texttt{!([\symbol{94}]* $r$ [\symbol{94}]*) $r$}
+      \\[0.2cm]
+      zurück geführt.  Dabei steht ``\texttt{!([\symbol{94}]* $r$ [\symbol{94}]*)}'' für beliebigen
+      Text, der $r$ nicht enthält.  Darauf folgt dann Text, der durch $r$ beschrieben
+      wird.
+\item In \textsl{JFlex} können innerhalb von Bereichen bestimmte in \textsl{Java} 
+      vordefinierte \emph{Zeichen-Klassen}
+      benutzt werden um reguläre Ausdrücke zu spezifizieren.  So spezifiziert der reguläre
+      Ausdruck
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{[:digit:]}
+      \\[0.2cm]
+      beispielsweise eine Ziffer.  Insgesamt sind die folgenden Zeichen-Klassen
+      vordefiniert, die jeweils auf Methoden der Klasse \texttt{java.lang.Character}
+      zurückgeführt werden:
+      \begin{enumerate}
+      \item \texttt{[:jletter:]} wird zurückgeführt auf die Methode
+            $\texttt{isJavaIdentifierStart}()$.
+            
+            Der reguläre Ausdruck beschreibt also genau die Zeichen $c$, für welche der Aufruf
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\mathtt{Character}.\texttt{isJavaIdentifierStart}(c)$
+            \\[0.2cm]
+            als Ergebnis \texttt{true} zurück liefert.
+      \item \texttt{[:jletterdigit:]} wird zurückgeführt auf die Methode
+            $\texttt{isJavaIdentifierPart}()$.
+      \item \texttt{[:letter:]} wird zurückgeführt auf die Methode
+            $\texttt{isLetter}()$.
+      \item \texttt{[:digit:]} wird zurückgeführt auf die Methode
+            $\texttt{isDigit}()$.
+      \item \texttt{[:uppercase:]} wird zurückgeführt auf die Methode
+            $\texttt{isUppercase}()$.
+      \item \texttt{[:lowercase:]} wird zurückgeführt auf die Methode
+            $\texttt{isLowercase}()$.
+      \end{enumerate}
+\end{enumerate}
+
+\section{Weitere Optionen}
+In diesem Abschnitt wollen wir die wichtigsten Optionen vorstellen, die im Options-Teil eine
+\textsl{JFlex}-Spezifikation angegeben werden können.  Alle Optionen beginnen mit dem Zeichen
+``\texttt{\%}'', das am Zeilen-Anfang stehen muss.
+\begin{enumerate}
+\item \texttt{\%char}
+
+      Mit dieser Option wird das Mitzählen von Zeichen aktiviert.  Wird diese Option angegeben,
+      so steht die Variable \texttt{yychar} zur Verfügung.  Diese Variable ist vom Typ \texttt{int}
+      und gibt an, wieviele Zeichen bereits gelesen worden sind.
+\item \texttt{\%line}
+
+      Mit dieser Option wird das Mitzählen von Zeilen aktiviert.  Wird diese Option angegeben,
+      so steht die Variable \texttt{yyline} zur Verfügung.  Diese Variable ist vom Typ \texttt{int}
+      und gibt an, wieviele Zeilen bereits gelesen worden sind.
+\item \texttt{\%column}
+
+      Mit dieser Option wird mitgezählt, wieviele Zeichen seit dem letzten Zeilen-Umbruch
+      gelesen worden sind.  Diese Information wird in der Variablen 
+      \texttt{yycolumn} zur Verfügung gestellt.
+\item \texttt{\%cup}
+
+      Diese Option spezifiziert, dass ein Scanner für den Parser-Generator \textsc{Cup} erstellt
+      werden soll.  Wir werden diese Option später benutzen, wenn wir mit \textsl{JFlex} und
+      \textsl{Cup} einen Parser erzeugen.
+\item \texttt{\%ignorecase}
+
+      Falls eine \textsl{JFlex}-Spezifikation  diese Option enthält, dann spielt Groß- und
+      Kleinschreibung keine Rolle.  Beispielsweise trifft der reguläre Ausdruck \texttt{[a-z]+}
+      dann auch auf den String ``\texttt{ABC}'' zu.
+\end{enumerate}
+
+\section{Ein komplexeres Beispiel: Noten-Berechnung }
+In diesem Abschnitt diskutieren wir eine Anwendung von \textsl{JFlex}.  Es geht dabei um die
+Auswertung von Klausuren.   Bei der Korrektur einer Klausur lege ich eine Datei an, die das in dem
+in Abbildung \ref{fig:ergebnis} beispielhaft gezeigte Format besitzt.
+
+\begin{figure}[!h]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    Klausur: Algorithmen und Datenstrukturen
+    Kurs:    TIT09AID
+    
+    Aufgaben:            1. 2. 3. 4. 5. 6.
+    Max Müller:          9 12 10  6  6  0
+    Dietmar Dumpfbacke:  4  4  2  0  -  -
+    Susi Sorglos:        9 12 12  9  9  6
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Klausurergebnisse}
+\label{fig:ergebnis}
+\end{figure}
+
+\begin{enumerate}
+\item Die erste Zeile enthält nach dem Schlüsselwort \texttt{Klausur} den Titel der Klausur.
+\item Die zweite Zeile gibt den Kurs an.
+\item Die dritte Zeile ist leer.
+\item Die vierte Zeile gibt die Nummern der einzelnen Aufgaben an.
+\item Danach folgt eine Tabelle.  Jede Zeile dieser Tabelle listet die Punkte auf,
+      die ein Student erzielt hat.  Der Name des Studenten wird dabei am Zeilenanfang angegeben.
+      Auf den Namen folgt ein Doppelpunkt und daran schließen sich dann Zahlen an, die angeben,
+      wieviele Punkte bei den einzelnen Aufgaben erzielt wurden.  Wurde eine Aufgabe nicht
+      bearbeitet, so steht in der entsprechenden Spalte ein Bindestrich ``\texttt{-}''.
+\end{enumerate}
+Das \textsl{JFlex}-Programm, das wir entwickeln werden, berechnet zunächst die Summe
+\texttt{sumPoints} aller Punkte, die ein Student erzielt hat.  Aus dieser Summe wird dann nach der
+Formel 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{note} = 7 - 6 \cdot \bruch{\;\texttt{sumPoints}\;}{\texttt{maxPoints}}$
+\\[0.2cm]
+die Note errechnet, wobei die Variable \texttt{maxPoints} die  Punktzahl
+angibt, die für die Note 1,0 benötigt wird.  Diese Zahl ist ein Argument, das dem Programm
+beim Start übergeben wird. 
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    %%
+    %class Note
+    %int        // declare return type of yylex
+    %line
+    %column
+    %unicode    
+    %{
+        public int mMaxPoints = 0;
+        public int mSumPoints = 0;
+        public double note() {
+            return 7.0 - 6.0 * mSumPoints / mMaxPoints;
+        } 
+        public void errorMsg() {
+            System.out.printf("invalid character '%s' at line %d, column %d\n", 
+                              yytext(), yyline + 1, yycolumn + 1); 
+        }
+        public static void main(String argv[]) {
+            Note scanner = null;
+            try {
+                scanner = new Note( new java.io.FileReader(argv[0]) );
+                scanner.mMaxPoints = new Integer(argv[1]);
+                scanner.yylex();
+            } catch (java.io.FileNotFoundException e) {
+                System.out.println("File not found : \""+argv[0]+"\"");
+            } catch (java.io.IOException e) {
+                System.out.println("IO error scanning file \""+argv[0]+"\"");
+                System.out.println(e);
+            } catch (Exception e) {
+                System.out.println("Second argument (maxpoints) missing?");
+                e.printStackTrace();
+            }
+        }
+    %}
+
+    ZAHL = 0|[1-9][0-9]*
+    NAME = [A-Za-zäöüÄÖÜß]+[ ][A-Za-zäöüÄÖÜß\-]+
+    %% 
+    
+    [A-Za-z]+:.*\n { /* skip header                         */ }
+    {NAME}/:       { System.out.print(yytext()); 
+                     mSumPoints = 0;                           }
+    :[ \t]+        { System.out.print(yytext());               }
+    {ZAHL}         { mSumPoints += new Integer(yytext());      }
+    -              { /* skip hyphens                        */ }
+    [ \t]          { /* skip blanks and tabs                */ }
+    ^[ \t]*\n      { /* skip empty line                     */ }
+    \n             { System.out.printf(" %3.1f\n", note());    }
+    .              { errorMsg();                               }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Berechnung von Noten mit Hilfe von \textsl{JFlex}.}
+\label{fig:note.jflex}
+\end{figure}
+
+Abbildung \ref{fig:note.jflex} zeigt die \textsl{JFlex}-Spezifikation, aus der sich
+automatisch ein \textsl{Java}-Programm zur Noten-Berechnung erstellen läßt.
+\begin{enumerate}
+\item Zeile 2 legt den Namen der Klasse fest.
+\item In Zeile 3 spezifizieren wir durch die Option ``\texttt{int}'', dass die
+      Scanner-Methode \textsl{yylex()} den Rückgabe-Wert \texttt{int} hat.
+      
+      Dies ist deswegen erforderlich, weil in einem Scanner, der nicht als
+      \texttt{standalone} deklariert ist, dieser Rückgabe-Wert den Typ \texttt{Yytoken} hat.
+      Die Klasse \texttt{Yytoken} wird allerdings von \textsl{JFlex} selber gar nicht definiert, denn
+      \textsl{JFlex} erwartet, dass diese Klasse von dem Parser, an dem der Scanner
+      angeschlossen wird, definiert wird.  Da wir gar keinen Parser anschließen wollen,
+      wäre der Typ \texttt{Yytoken} dann undefiniert.  Um zu vermeiden, dass der
+      Rückgabe-Wert der Methode \texttt{yylex()} den Typ \texttt{Yytoken} bekommt,
+      könnten wir den Scanner auch als \texttt{standalone} deklarieren, aber dann
+      hätten wir keine Möglichkeit mehr,
+      die Methode \texttt{main()} anzugeben.  Diese Methode benötigen, wir um die dem
+      Programm als Argument übergebene Punktzahl einlesen zu können.
+\item In den Zeilen 8 und 9 deklarieren wir die Variablen \texttt{mMaxPoints} und
+      \texttt{mSumPoints} als Member-Variablen der erzeugten Klasse.
+\item In der Methode \texttt{main()} erzeugen wir zunächst in Zeile 20 den Scanner und
+      setzen dann in Zeile 21 die Variable \texttt{mMaxPoints} auf den beim Aufruf
+      übergebenen Wert.  Der Scanner wird durch den Aufruf in Zeile 22 gestartet.
+
+\item In dem Definitions-Abschnitt werden zwei Abkürzungen definiert:
+      \begin{enumerate}
+      \item Zeile 35 enthält die Definition von \texttt{ZAHL}.  Mit dieser Definition können
+            wir später anstelle des regulären Ausdrucks
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{0|[1-9][0-9]*}
+            \\[0.2cm]
+            kürzer ``\texttt{\{ZAHL\}}'' schreiben.  Beachten Sie, dass der Name einer Abkürzung
+            bei der Verwendung der Abkürzung in geschweiften Klammern eingefaßt werden muss.
+      \item Zeile 36 enthält die Definition von \texttt{NAME}.  In dem regulären Ausdruck
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{[A-Za-zöäüÖÄÜß]+[ ][A-Za-zöäüÖÄÜß]+}
+            \\[0.2cm]
+            wird festgelegt, dass ein Name aus großen und kleinen lateinischen
+            Buchstaben sowie Umlauten besteht und das Vor- und Nachname durch ein
+            Leerzeichen getrennt werden.
+      \end{enumerate}
+\item Der Regel-Abschnitt erstreckt sich von Zeile 39 -- 48.
+      \begin{enumerate}
+      \item Die Regel in Zeile 39 dient dazu, die beiden Kopfzeilen
+            der zu verarbeitenden Datei zu lesen.  Diese Zeilen bestehen jeweils aus einem Wort,
+            auf das ein Dopplepunkt folgt.  Dahinter steht beliebiger Text, der mit einem
+            Zeilenumbruch endet.  
+      \item Die Regel in Zeile 40 liest den Namen eines Studenten, dem ein Doppelpunkt
+            folgen muss.  Da wir den Doppelpunkt mit dem Operator ``\texttt{/}''von dem Namen
+            abtrennen, ist der Doppelpunkt nicht Bestandteil des von dieser Regel gelesenen Textes.
+            Dadurch können wir den Doppelpunkt in der nächsten Regel noch benutzen.
+
+            Wenn wir einen Namen gelesen haben, geben wir diesen mit Hilfe eines
+            \texttt{print}-Befehls aus.  Sie sehen hier, dass wir mit Hilfe der Methode
+            $\texttt{yytext()}$ auf den durch den regulären Ausdruck erkannten Text
+            zugreifen können.
+
+            Anschließend setzen wir die Variable \texttt{mSumPoints}
+            auf 0.  Dies ist erforderlich, weil diese Variable ja vorher noch die Punkte eines
+            anderen Studenten enthalten könnte.
+      \item Die nächste Regel in Zeile 42 ließt die Leerzeichen und Tabulatoren ein, die auf 
+            den Doppelpunkt folgen und gibt diese aus.  Dadurch erreichen wir, dass die Ausgabe
+            der Noten genauso formatiert wird wie die Eingabe-Datei.
+      \item Die Regel in Zeile 43 dient dazu, die Punkte, die der Student bei einer Aufgabe 
+            erreicht hat, einzulesen.  Da die Zahl zunächst nur als String zur Verfügung steht,
+            müssen wir diesen String in eine Zahl
+            umwandeln.  Dazu benutzen wir den Konstruktor der Klasse \texttt{Integer}.
+            Anschließend wird diese Zahl dann zu der Summe der Punkte hinzuaddiert.
+      \item Für nicht bearbeitete Aufgaben enthält die Eingabe-Datei einen Bindestrich
+            ``\texttt{-}''.  Diese Bindestriche werden durch die Regel in Zeile 44
+            eingelesen und ignoriert.  Daher ist das Kommando dieser Regel (bis auf den Kommentar)
+            leer.
+      \item In der gleichen Weise überlesen wir mit der Regel in Zeile 45
+            Leerzeichen und Tabulatoren, die nicht auf einen Doppelpunkt folgen.
+      \item Die Regel in Zeile 46 dient dazu Zeilen einzulesen, die nur aus Leerzeichen
+            und Tabulatoren bestehen.  
+      \item Wenn wir nun einen einzelnen Zeilenumbruch lesen, dann muss dieser von einer Zeile
+            stammen, die die Punkte eines Studenten auflistet.  In diesem Fall berechnen wir mit
+            der Regel in Zeile 47 die erzielte Note und geben diese mit einer Stelle hinter
+            dem Komma aus.  
+      \item Die bis hierhin vorgestellten Regeln ermöglichen es, eine syntaktisch korrekte 
+            Eingabe-Datei zu verarbeiten.  Für den Fall, dass die Eingabe-Datei Syntaxfehler
+            enthält, ist es sinnvoll, eine Fehlermeldung auszugeben, denn sonst könnte es passieren,
+            dass auf Grund eines einfachen Tippfehlers eine falsche Note berechnet wird.
+            Daher enthält Zeile 48 eine Default-Regel, die immer dann greift, wenn keine der
+            anderen Regeln zum Zuge gekommen ist.  Diese Regel liest ein einzelnes Zeichen und
+            gibt eine Fehlermeldung aus.  Diese Fehlermeldung enthält das gelesene Zeichen. 
+            Außerdem werden die Variablen \texttt{yyline} und \texttt{yycolumn} benutzt um die
+            Position des fehlerhaften Zeichens anzugeben.
+      \end{enumerate}
+\end{enumerate}
+
+\subsection{Zustände}
+Viele syntaktische Konstrukte lassen sich zwar im Prinzip mit regulären Ausdrücken beschreiben,
+aber die Ausdrücke, die benötigt werden, sind sehr unübersichtlich.  Ein gutes Beispiel
+hierfür ist der reguläre Ausdruck zur Spezifikation von mehrzeilige
+\texttt{C}-Kommentaren, also Kommentaren der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{/*} $\cdots$ \texttt{*/}
+\\[0.2cm]
+Wenn wir hier einen regulären Ausdruck angeben möchten, der weder den Upto-Operator noch
+den Negations-Operator verwendet\footnote{
+  Die meisten anderen Werkzeuge, die mit regulären
+  Ausdrücken arbeiten, unterstützen weder den Negations-Operator noch den Upto-Operator.},
+so müßten wir den folgenden regulären Ausdruck verwenden:
+%\/\*([^*]|(\*+[^*/]))*\*+\/ 
+\begin{equation}
+  \label{eq:multiline-comment}
+\texttt{\symbol{92}/\symbol{92}*([\symbol{94}*]|\symbol{92}*+[\symbol{94}*/])*\symbol{92}*+\symbol{92}/}  
+\end{equation}
+Zunächst ist dieser Ausdruck schwer zu lesen.  Das liegt vor allem daran,
+dass die Operator-Symbole ``\texttt{/}'' und ``\texttt{*}'' durch einen Backslash
+geschützt werden müssen.  Aber auch die Logik, die hinter diesem Ausdruck steht, ist nicht
+ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
+\begin{enumerate}
+\item \texttt{\symbol{92}/\symbol{92}*} 
+
+      Hierdurch wird der String ``\texttt{/*}'', der den Kommentar einleitet,  spezifiziert.
+\item \texttt{([\symbol{94}*]|\symbol{92}*+[\symbol{94}*/])*}
+  
+      Dieser Teil spezifiziert alle Zeichen, die zwischen dem öffnenden String ``\texttt{/*}''
+      und einem schließenden String der Form ``\texttt{*/}'' liegen.  Wie müssen
+      sicherstellen, dass dieser Teil die Zeichenreihe ``\texttt{*/}'' nicht enthält, denn
+      sonst würden wir in einer Zeile der Form
+      \\[0.2cm]
+      \hspace*{1.3cm} \texttt{/* first */ ++n; /* second */}
+      \\[0.2cm]
+      den Befehl ``\texttt{++n;}'' für einen Teil des Kommentars halten.  Der erste Teil des
+      obigen regulären Ausdrucks ``\texttt{[\symbol{94}*]}'' steht für ein beliebiges
+      von ``\texttt{*}'' verschiedenes Zeichen.  Denn solange wir kein ``\texttt{*}'' lesen,
+      kann der Text auch kein ``\texttt{*/}'' enthalten.  Das Problem ist, dass das Innere
+      eines Kommentars aber durchaus das Zeichen ``\texttt{*}'' enthalten kann, es darf
+      nur kein ``\texttt{/}'' folgen.  Daher spezifiziert die Alternative
+      ``\texttt{\symbol{92}*+[\symbol{94}*/]}'' einen String, der aus beliebig vielen 
+      ``\texttt{*}''-Zeichen besteht, auf die dann aber noch ein Zeichen folgen muss, dass
+      sowohl von ``\texttt{/}'' als auch von ``\texttt{*}'' verschieden ist.
+      
+      Der Ausdruck ``\texttt{[\symbol{94}*]|\symbol{92}*+[\symbol{94}*/]}''
+      spezifiziert jetzt also entweder ein Zeichen, das von ``\texttt{*}'' verschieden
+      ist, oder aber eine Folge von ``\texttt{*}''-Zeichen, auf die dann noch ein von
+      ``\texttt{/}'' verschiedenes Zeichen folgt.  Da solche Folgen beliebig oft vorkommen
+      können, wird der ganze Ausdruck in Klammern eingefaßt und mit dem Quantor
+      ``\texttt{*}'' dekoriert.   
+\item \texttt{\symbol{92}*+\symbol{92}/}
+
+      Dieser reguläre Ausdruck spezifiziert das Ende des Kommentars.  Es kann aus einer 
+      beliebigen positiven Anzahl von ``\texttt{*}''-Zeichen bestehen, auf die dann noch
+      ein ``\texttt{/}'' folgt.  Wenn wir hier nur den Ausdruck
+      ``\texttt{\symbol{92}*\symbol{92}/}'' verwenden würden, dann könnten wir Kommentare der
+      Form 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{/*** blah ***/}
+      \\[0.2cm]
+      nicht mehr erkennen, denn der unter 2. diskutierte reguläre Ausdruck akzeptiert
+      nur Folgen von ``\texttt{*}'', auf die kein ``\texttt{*}'' folgt.
+\end{enumerate}
+
+\begin{figure}[!h]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    /**
+      remove C comments from a file 
+    */
+    
+    %%
+    
+    %class Decomment
+    %standalone
+    %unicode
+    
+    %%
+    
+    \/\*([^*]|\*+[^*/])*\*+\/ { /* skip multi  line comments */ }
+    \/\/.*                    { /* skip single line comments */ }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Entfernung von Kommentaren aus einem C-Programm.}
+\label{fig:decomment.jflex}
+\end{figure}
+
+\noindent
+Abbildung \ref{fig:decomment.jflex} zeigt ein \textsl{JFlex}-Programm, das aus einem
+\texttt{C}-Programm sowohl einzeilige Kommentare der Form ``\texttt{//} $\cdots$''
+als auch mehrzeilige Kommentare der Form ``\texttt{/*} $\cdots$ \texttt{*/} entfernt.
+Das Programm an sich ist zwar recht kurz, aber der reguläre Ausdruck zur Erkennung
+mehrzeiliger Kommentare ist sehr kompliziert und damit nur schwer zu verstehen.
+Es gibt zwei Möglichkeiten, um dieses Programm zu vereinfachen:
+\begin{enumerate}
+\item Wir könnten den oben bereits diskutierten Upto-Operator benutzen.
+\item Alternativ können wir auch mit sogenannten \emph{Start-Zuständen} arbeiten.
+      Wir werden die letzte Möglichkeit jetzt vorführen.
+\end{enumerate}
+Wir diskutieren diese Start-Zustände an Hand eines Beispiels: Wir wollen eine
+\textsc{Html}-Datei in eine Text-Datei konvertieren.  Die \textsl{JFlex}-Spezifikation, die
+in Abbildung \ref{fig:html2txt.jflex} gezeigt wird, führt dazu die folgenden Aktionen durch:
+\begin{enumerate}
+\item Zunächst wird der Kopf der \textsc{Html}-Datei, der in den Tags ``\texttt{<head>}''
+      und ``\texttt{</head>}'' eingeschlossen ist, entfernt.
+\item Die Skripte, die in der \textsc{Html}-Datei enthalten sind, werden ebenfalls
+      entfernt.
+\item Außerdem werden die \textsc{Html}-Tags entfernt.
+\end{enumerate}
+
+
+Zur Deklaration der verschiedenen Zustände wird das Schlüsselwort
+``\texttt{\symbol{37}xstate}'' verwendet. 
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    package Converter;
+    
+    %% 
+    
+    %class Html2Txt
+    %standalone
+    %line
+    %unicode
+    
+    %xstate header script
+    %%
+    
+    "<head>"            { yybegin(header);         }
+    "<script"[^>\n]+">" { yybegin(script);         }
+    "<"[^>\n]+">"       { /* skip html tags */     }
+    [\n]+               { System.out.print("\n");  }
+    &nbsp;              { System.out.print(" ");   }
+    &auml;              { System.out.print("ä");   }
+    &ouml;              { System.out.print("ö");   }
+    &uuml;              { System.out.print("ü");   }
+    &Auml;              { System.out.print("Ä");   }
+    &Ouml;              { System.out.print("Ö");   }
+    &Uuml;              { System.out.print("Ü");   }
+    &szlig;             { System.out.print("ß");   }
+    
+    <header>"</head>"   { yybegin(YYINITIAL);      }
+    <header>.|\n        { /* skip anything else */ }
+    
+    <script>"</script>" { yybegin(YYINITIAL);      }
+    <script>.|\n        { /* skip anything else */ }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Transformation einer \textsc{Html}-Datei in eine reine Text-Datei}
+\label{fig:html2txt.jflex}
+\end{figure}
+
+Wir diskutieren jetzt die in Abbildung \ref{fig:html2txt.jflex} gezeigte
+\textsl{JFlex}-Datei im Detail.
+\begin{enumerate}
+\item In Zeile 10 deklarieren wir die beiden \textsl{Zustände}\/
+      \texttt{header} und \texttt{script} über das Schlüsselwort ``\texttt{\%xstate}''
+      als \emph{exklusive} Start-Zustände.
+      Die allgemeine Syntax einer solchen Deklaration ist wie folgt:
+      \begin{enumerate}
+      \item Am Zeilen-Anfang einer Zustands-Deklaration steht der String ``\texttt{\symbol{37}xstate}''
+            oder ``\texttt{\symbol{37}state}''.  
+            Der String ``\texttt{\symbol{37}xstate}'' spezifiziert \emph{exklusive} Zustände,
+            der String ``\texttt{\symbol{37}state}'' spezifiziert \emph{inklusive} Zustände.
+            Den Unterschied zwischen diesen beiden Zustandsarten erklären wir später.
+      \item Darauf folgt eine Liste der Namen der deklarierten Zustände.  Die Namen werden
+            durch Leerzeichen getrennt.
+      \end{enumerate}
+\item In Zeile 3 haben wir den String ``\texttt{<head>}'' in doppelte Hochkommata
+      eingeschlossen.  Dadurch verlieren die Operator-Symbole ``\texttt{<}'' ihre
+      Bedeutung.  Dies ist eine allgemeine Möglichkeit, um Operator-Symbole in
+      \textsl{JFlex}\/ spezifizieren zu können.  Wollen wir beispielsweise den String
+      ``\texttt{a*}''  wörtlich erkennen, so können wir an Stelle von ``\texttt{a\symbol{92}*}''
+      auch klarer
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{34}a*\symbol{34}}
+      \\[0.2cm]
+      schreiben.
+      
+      Wird der String ``\texttt{<head>}'' erkannt, so wird in Zeile 13 die Aktion 
+      ``\texttt{yybegin(header)}'' ausgeführt.  Damit wechselt der Scanner aus dem
+      Default-Zustand ``\texttt{YYINITIAL}'', in dem der Scanner startet,
+      in den oben deklarierten Zustand \texttt{header}.
+      Da dieser Zustand als \emph{exklusiver} Zustand deklariert worden ist, können jetzt
+      nur noch solche Regeln angewendet werden, die mit dem Prefix ``\texttt{<header>}''
+      beginnen.  Wäre der Zustand als \emph{inklusiver} Zustand deklariert worden, so könnten auch solche 
+      Regeln verwendet werden, die nicht mit einem Zustand markiert sind.  Solche Regeln
+      sind implizit mit dem Zustand ``\texttt{<YYINITIAL>}'' markiert.
+      
+      Die Regeln, die mit dem Zustand ``\texttt{header}'' markiert sind, finden wir weiter
+      unten in den Zeilen 26 und 27.
+\item In Zeile 14 wechseln wir entsprechend in den Zustand ``\texttt{script}'' wenn
+      wir ein öffnendes \texttt{Script}-Tag sehen.
+\item In Zeile 15 werden alle restlichen Tags gelesen.  Da die Aktion hier leer ist,
+      werden diese Tags einfach entfernt.
+\item In Zeile 16 ersetzen wir die Zeichenreihe ``\texttt{\&nbsp;}'' durch ein Blank.
+\item  In den folgenden Zeilen werden die \textsc{Html}-Darstellungen von Umlauten
+      durch die entsprechenden Zeichen ersetzt.
+\item Zeile 26 beginnt mit der Zustands-Spezifikation ``\texttt{header}''.  Daher ist
+      diese Regel nur dann aktiv, wenn der Scanner in dem Zustand ``\texttt{header}'' ist.
+      Diese Regel sucht nach dem schließenden Tag ``\texttt{</head>}''.  Wird dieses Tag
+      gefunden, so wechselt der Scanner zurück in den Default-Zustand \texttt{YYINITIAL},
+      in dem nur die Regeln verwendet werden, die nicht mit einem Zustand markiert sind.
+\item Zeile 27 enthält ebenfalls eine Regel, die nur im Zustand ``\texttt{header}''
+      ausgeführt wird.  Diese Regel liest ein beliebiges Zeichen, welches nicht weiter 
+      verarbeitet wird und daher im Endeffekt verworfen wird.
+\item Die Zeilen 29 und 30 enthalten entsprechende Regeln für den Zustand
+      ``\texttt{script}''.
+\end{enumerate}
+
+\exercise
+Einige Programmiersprachen unterstützen geschachtelte Kommentare.  Nehmen Sie an, dass Sie
+für eine Programmiersprache, bei der Kommentare der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{/*} $\cdots$ \texttt{*/}
+\\[0.2cm]
+unterstützt werden, ein \textsl{JFlex}-Programm erstellen sollen, dass diese Kommentare
+aus einem gegebenen Programm entfernt. 
+ Nehmen Sie dabei an, dass solche Kommentare geschachtelt werden dürfen.  
+Nehmen Sie weiter an, dass die Programmiersprache auch Strings enthält, die durch doppelte
+Anführungszeichen begrenzt werden.  Falls die
+Zeichenfolgen ``\texttt{/*}'' und ``\texttt{*/}'' innerhalb eines Strings auftreten,
+sollen diese Zeichenfolgen nicht als Begrenzung eines Kommentars gewertet werden.
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages.tex"
+%%% End: 

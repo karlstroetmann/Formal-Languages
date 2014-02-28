@@ -1,0 +1,261 @@
+
+\subsection{Implementing a Recursive Decent Parser that Uses an \textsc{EBNF} Grammar}
+The previous two solutions to parse an arithmetical expressions were not completely
+satifying:  The reason is that we did not really fix the problem but rather cured the
+symptoms.  The real problem is that context free grammars are not that convenient to
+describe programming languages.  Let us extend the power of context free languages
+slightly by admitting regular expression on the right hand side of grammar rules.  
+These new type of grammars are known as
+\href{http://en.wikipedia.org/wiki/Extended_Backus_Naur_Form}{\emph{extended Backus Naur form}}
+grammars, which 
+is abbreviated as \textsc{Ebnf} grammars.  An \textsc{Ebnf} grammar admits the operators
+\squoted{*}, \squoted{?}, \squoted{+}, and \squoted{|} on the right hand side of a grammar
+rule.  The meaning of these operators is the same as when these operators are used in 
+regular expressions.
+
+It can be shown that the languages described by \textsc{Ebnf} grammars are still context
+free languages.  Therefore, these operators do not change the expressive power of context-free
+grammars. 
+However, it is often much more \underline{convenient} to describe a language using an \textsc{Ebnf}
+grammar rather than using a context free grammar.  Figure \ref{fig:arith-expr-ebnf}
+displays an \textsc{Ebnf} grammar for arithmetical expressions.  We have extended this
+grammar to allow for the exponentiation operator \squoted{**}.  In order to support this
+operator, we had to introduce a new syntactical variable, which we called \textsl{Base}.
+In an arithmetical expression, \textsl{Base} serves as the base of a power.  The
+exponent can be an arbitrary \textsl{Factor}.  This way, an expression of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{2 ** 3 ** 4}  \quad is parsed as \quad
+\texttt{2 ** (3 ** 4)}
+\\[0.2cm]
+and therefore the operator \squoted{**} is right associative.  This is also the convention used in
+mathematics. 
+Furthermore, we have added the function symbols \squoted{exp} and \squoted{ln} to be able to
+support the exponential function and the natural logarithm.  The grammar also supports
+variables.  The reason is that we want to implement a program for \emph{symbolic differentiation}:
+We want to implement a function that takes a string respresenting an 
+arithmetical expression and then does the following:
+\begin{enumerate}
+\item In the first step, the string is translated into an abstract syntax tree.
+\item In the second step, this tree is differentiated symbolically with respect to
+      a given variable.
+\end{enumerate}
+For example, given the string
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{x * exp(x)}
+\\[0.2cm]
+the program is supposed to compute the answer
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{1 * exp(x) + x * exp(x)},
+\\[0.2cm]
+since we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\frac{d\;}{dx} \bigl(x \cdot \exp(x)\bigr) = 1 \cdot \exp(x) + x \cdot \exp(x)$
+\\[0.2cm]
+Obviously, the grammar in Figure \ref{fig:arith-expr-ebnf}  is
+more concise than the context free grammar discussed at the beginning of this chapter.
+For example, the first rule clearly expresses that an arithmetical expression is a list of
+products that are separated by the operators \squoted{+} and \squoted{-}.
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+
+  \begin{eqnarray*}
+  \textsl{Expr}    & \rightarrow & \;\textsl{Product}\;\; \bigl((\squoted{+}\;|\;\squoted{-})\;\; \textsl{Product}\bigr)^* \\[0.2cm]
+  \textsl{Product} & \rightarrow & \;\textsl{Factor}\;\; \bigl((\squoted{*}\;|\;\squoted{/})\;\; \textsl{Factor} \bigr)^* \\[0.2cm]
+  \textsl{Factor}  & \rightarrow & \;\textsl{Base}\;\; (\squoted{**}\;\; \textsl{Factor})?                                 \\
+  \textsl{Base}    & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)}                  \\
+                   & \mid        & \quoted{exp} \quoted{(} \textsl{Expr} \quoted{)}                  \\
+                   & \mid        & \quoted{ln} \quoted{(} \textsl{Expr} \quoted{)}                  \\
+                   & \mid        & \;\textsc{Number}                                    \\
+                   & \mid        & \;\textsc{Variable}                                    
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage} \hspace*{1.cm}}}
+  \end{center}
+  \caption{\textsc{Ebnf} grammar for arithmetical expressions.}
+  \label{fig:arith-expr-ebnf}
+\end{figure}
+
+\noindent
+Figure \ref{fig:differentiate.stlx} shows a parser that implements this grammar.
+\begin{enumerate}
+\item The function \texttt{parseArithExpr} recognizes a \texttt{product} in line 2. 
+      The value of this \texttt{product} is stored in the variable 
+      \texttt{result} together with the list \texttt{rl} of those tokens that have not been consumed
+      yet.  If the list \texttt{rl} is not empty and the first token in this
+      list is either the operator \squoted{+} or the operator \squoted{-},
+      then the function \texttt{parseArithExpr} tries to recognize more products.
+      These are added to or subtracted from the \texttt{result} computed so far in
+      line 7 or 8.  If there are no more products to be parsed, the \texttt{while} loop 
+      terminates and the function returns the \texttt{result} together with the remaining
+      tokens.
+\item The function \texttt{parseProduct} recognizes a \texttt{factor} in line 14. 
+      The value of this \texttt{factor} is stored in the variable 
+      \texttt{result} together with the list \texttt{rl} of those tokens that have not been consumed
+      yet.  If the list \texttt{rl} is not empty and the first token in this
+      list is either the operator \squoted{*} or the operator \squoted{/},
+      then the function \texttt{parseProduct} tries to recognize more factors.
+      The \texttt{result} computed so far is multiplied with or divided by these factors in
+      line 19 or 20.  If there are no more products to be parsed, the \texttt{while} loop 
+      terminates and the function returns the \texttt{result} together with the list
+      \texttt{rl} of tokens that have not been consumed.
+\item The function \texttt{parseFactor} recognizes a \texttt{factor}.  
+      In any case, a factor starts with a base.  Optionally, a factor can be a power.
+      This is the case if the base is followed by the exponentiation operator \squoted{**}.
+\item The function \texttt{parseBase} recognizes a call of the exponential function, a
+      call of the natural logarithm, a parenthesized expression, a number, or a variable.
+      Fortunately, the first token of the token list tells us which case we have.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    parseArithExpr := procedure(tl) {
+        [result, rl] := parseProduct(tl);
+        while (#rl > 1 && rl[1] in ["+", "-"]) {
+            op := rl[1];
+            [arg, rl] := parseProduct(rl[2..]);
+            match (op) {
+                case "+": result := result + arg;
+                case "-": result := result - arg;
+            } 
+        }
+        return [result, rl];
+    };
+    parseProduct := procedure(tl) {
+        [result, rl] := parseFactor(tl);
+        while (#rl > 1 && rl[1] in ["*", "/"]) {
+            op := rl[1];
+            [arg, rl] := parseFactor(rl[2..]);
+            match (op) {
+                case "*": result := result * arg;
+                case "/": result := result / arg;
+            } 
+        }
+        return [result, rl];
+    };
+    parseFactor := procedure(tl) {
+        [atom, rl] := parseBase(tl);
+        match (rl) {
+            case [ "**" | ql ]: [factor, rl] := parseFactor(ql);
+                                return [atom ** factor, rl];
+            default:            return [atom, rl];
+        }
+    };    
+    parseBase := procedure(tl) {
+        match (tl) {
+            case [ "exp", "(" | rl ]: [expr, ql] := parseArithExpr(rl);
+                                      assert(ql[1] == ")", "Parse Error");
+                                      return [ Exp(expr), ql[2..]];
+            case [ "ln", "(" | rl ]:  [expr, ql] := parseArithExpr(rl);
+                                      assert(ql[1] == ")", "Parse Error");
+                                      return [ Ln(expr), ql[2..]];
+            case ["(" | rl ]:         [expr, ql] := parseArithExpr(rl);
+                                      assert(ql[1] == ")", "Parse Error");
+                                      return [expr, ql[2..]];
+            case [ Number(n) | rl ]:  return [Number(n), rl];
+            case [ Var(v) | rl ]:     return [Var(v), rl];
+            default:                  abort("parse error in parseBase($tl$)");
+        }
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{A parser for the grammar in Figure \ref{fig:arith-expr-ebnf}.}
+\label{fig:differentiate.stlx}
+\end{figure}
+
+The program in Figure \ref{fig:differentiate.stlx} generates an abstract syntax tree.
+This syntax tree is represented as a term in \textsc{SetlX}.  Note that in \textsc{SetlX}
+it is possible to use operators as functors.  For example, if we have the expression
+\\[0.2cm]
+\hspace*{1.3cm}
+$s + t$
+\\[0.2cm]
+and at least one of the arguments $s$ or $t$ is a term, then $s + t$ is a term, too.
+This enables us to write
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{result := result + arg;}
+\\[0.2cm]
+in line 7 of Figure \ref{fig:differentiate.stlx}.  Finally, Figure \ref{fig:diff.stlx}
+shows the implementation of the function \texttt{diff} that can be used for symbolic
+differentiation.  The argument $t$ of this function is supposed to be a term, the second
+argument $x$ is interpreted as the name of a variable.  For example, line 7 and 8 of Figure
+\ref{fig:diff.stlx} implement the product rule.  We have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\frac{d\;}{dx}(u \cdot v) = \frac{d\,u}{dx} \cdot v + u \cdot \frac{d\,v}{dx}$. 
+\\[0.2cm]
+The right hand side of this equation is returned in line 8: \texttt{t1} correspond to $u$
+and \texttt{t2} corresponds to $v$.  The other rules for differentiation are implemented
+in a similar way.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    diff := procedure(t, x) {
+        match (t) {
+            case t1 + t2 :
+                 return diff(t1, x) + diff(t2, x);
+            case t1 - t2 :
+                 return diff(t1, x) - diff(t2, x);
+            case t1 * t2 :
+                 return diff(t1, x) * t2 + t1 * diff(t2, x);
+            case t1 / t2 :
+                 return ( diff(t1, x) * t2 - t1 * diff(t2, x) ) / (t2 * t2);
+            case f ** Number(n): 
+                return Number(n) * diff(f, x) * f ** Number(n-1);
+            case f ** g :
+                 return diff( Exp(g * Ln(f)), x);
+            case Ln(a) :
+                 return diff(a, x) / a;
+            case Exp(a) : 
+                 return diff(a, x) * Exp(a);
+            case Var(x) : // x is defined above as second argument to diff
+                 return 1;
+            case Var(y) : // y is undefined, therefore matches any other variable
+                 return 0;
+            case Number(n):
+                 return 0;    
+            default:
+                abort("error in diff($t$, $x$)");
+        }
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{A function for symbolic differentiation.}
+\label{fig:diff.stlx}
+\end{figure}
+
+
+\paragraph{Historical Notes} The language \textsc{Algol} \cite{backus:1959,naur:1960} was the first
+programming language with a syntax that was based on a context-free grammar.  
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages.tex"
+%%% End: 

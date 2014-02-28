@@ -1,0 +1,38 @@
+PARSER_BEGIN(DeclarationEBNF)
+
+public class DeclarationEBNF {  
+    public static void main(String args[]) throws ParseException {
+        DeclarationEBNF parser = new DeclarationEBNF(System.in);
+        parser.item();
+    }
+}
+PARSER_END(DeclarationEBNF)
+
+void item() : {} {
+      LOOKAHEAD( declaration() )
+	  declaration() { System.out.println("declaration found"); }
+    | definition()  { System.out.println("definition found");  }
+}   
+void declaration() : {} {
+    <IDENTIFIER> "(" paramList() ")" ";"
+}
+void definition() : {} {
+    <IDENTIFIER> "(" paramList() ")" body()
+}
+void paramList() : {} {
+	[<IDENTIFIER> ("," <IDENTIFIER>)*]
+}
+void body() : {} {
+    "{" (stmnt())* "}"
+}
+void stmnt() : {} {
+    "to be done" ";"
+}
+
+// forget about white space
+SKIP: { " " | "\t" | "\r" | "\n" }
+
+TOKEN: {
+  <IDENTIFIER: (["a"-"z", "A"-"Z"])+>
+}
+
