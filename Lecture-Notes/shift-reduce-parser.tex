@@ -223,23 +223,23 @@ Strings spezifiziert aber sonst in dem String nicht auftritt.
             symbols := [];     // stack of symbols
             states  := ["s0"]; // stack of states, 0 is start state
             while (true) {            
-                q := states[1];
+                q := states[-1];
                 t := tl[index];
                 p := mActionTable[[q,t]];
                 match (p) {
                 case om: 
                      return false;
                 case Shift(s):
-                     symbols := [t] + symbols;
-                     states  := [s] + states;
+                     symbols := symbols + [t];
+                     states  := states  + [s];
                      index   += 1;
                 case Rule(head, body):
                      n       := #body;
-                     symbols := symbols[n+1 ..];
-                     states  := states[ n+1 ..]; 
-                     symbols := [head] + symbols;
-                     state   := states[1];
-                     states  := [ mGotoTable[[state, head]] ] + states;
+                     symbols := symbols[.. -(n+1)];
+                     states  := states[.. -(n+1)]; 
+                     symbols := symbols + [head];
+                     state   := states[-1];
+                     states  := states + [ mGotoTable[[state, head]] ];
                 case Accept():
                      return true;
                 } 
@@ -269,7 +269,7 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
 \item The variable \textsl{index} points to the next token in the token list that is to be
       read.  Therefore, this variable is initialized to 1.
 \item The variable \textsl{symbols} stores the stack of symbols.  The top of this stack is
-      at the beginning of this list.  Initially, the stack of symbols is empty.
+      at the end of this list.  Initially, the stack of symbols is empty.
 \item The variable \textsl{states} is the stack of states.  The start state is assumed to
       be the state ``\texttt{s0}''.  Therefore this stack is initialized to contain
       only this state.
@@ -289,7 +289,7 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
       \item $\textsl{action}(q,t) = \pair(\texttt{shift}, s)$.
         
             This action is represented in \textsc{SetlX} as the term \texttt{Shift($s$)}.
-            In this case, the token $t$ is pushed onto the symbol stack in line 18,
+            In this case, the token $t$ is pushed onto the symbol stack in line 17,
             while the state $s$ is pushed onto the stack of states.  Furthermore,
             the variable \textsl{index} is incremented to point to the next unread token.            
       \item $\textsl{action}(q,t) = \pair(\texttt{reduce}, A \rightarrow X_1 \cdots X_n)$.
