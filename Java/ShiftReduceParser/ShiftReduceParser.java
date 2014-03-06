@@ -65,7 +65,6 @@ public class ShiftReduceParser {
             System.out.println(p);
             if (p == null) {
                 System.out.println("action(" + q + ", " + t + ") undefined.");
-                System.out.println("Syntax error!");
                 return false;
             }
             if (p instanceof Shift) {
