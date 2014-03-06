@@ -713,7 +713,7 @@ beim Start übergeben wird.
     %int        // declare return type of yylex
     %line
     %column
-    %unicode    
+    %unicode
     %{
         public int mMaxPoints = 0;
         public int mSumPoints = 0;
@@ -723,25 +723,25 @@ beim Start übergeben wird.
         public void errorMsg() {
             System.out.printf("invalid character '%s' at line %d, column %d\n", 
                               yytext(), yyline + 1, yycolumn + 1); 
-        }
+        }    
         public static void main(String argv[]) {
-            Note scanner = null;
-            try {
-                scanner = new Note( new java.io.FileReader(argv[0]) );
-                scanner.mMaxPoints = new Integer(argv[1]);
-                scanner.yylex();
-            } catch (java.io.FileNotFoundException e) {
-                System.out.println("File not found : \""+argv[0]+"\"");
-            } catch (java.io.IOException e) {
-                System.out.println("IO error scanning file \""+argv[0]+"\"");
-                System.out.println(e);
-            } catch (Exception e) {
-                System.out.println("Second argument (maxpoints) missing?");
-                e.printStackTrace();
+            if (argv.length != 2) {
+                System.out.println("Usage : java Note <inputfile> <maxPoints>");
+            } else {
+                Note scanner = null;
+                try {
+                    scanner            = new Note(new java.io.FileReader(argv[0]));
+                    scanner.mMaxPoints = new Integer(argv[1]);
+                    scanner.yylex();
+                } catch (java.io.FileNotFoundException e) {
+                    System.out.println("File not found : \"" + argv[0] + "\"");
+                } catch (java.io.IOException e) {
+                    System.out.println("IO error scanning \"" + argv[0] + "\"");
+                    System.out.println(e);
+                } 
             }
-        }
+        } 
     %}
-
     ZAHL = 0|[1-9][0-9]*
     NAME = [A-Za-zäöüÄÖÜß]+[ ][A-Za-zäöüÄÖÜß\-]+
     %% 
@@ -752,7 +752,7 @@ beim Start übergeben wird.
     :[ \t]+        { System.out.print(yytext());               }
     {ZAHL}         { mSumPoints += new Integer(yytext());      }
     -              { /* skip hyphens                        */ }
-    [ \t]          { /* skip blanks and tabs                */ }
+    [ \t]          { /* skip white space                    */ }
     ^[ \t]*\n      { /* skip empty line                     */ }
     \n             { System.out.printf(" %3.1f\n", note());    }
     .              { errorMsg();                               }
@@ -782,9 +782,9 @@ automatisch ein \textsl{Java}-Programm zur Noten-Berechnung erstellen läßt.
       Programm als Argument übergebene Punktzahl einlesen zu können.
 \item In den Zeilen 8 und 9 deklarieren wir die Variablen \texttt{mMaxPoints} und
       \texttt{mSumPoints} als Member-Variablen der erzeugten Klasse.
-\item In der Methode \texttt{main()} erzeugen wir zunächst in Zeile 20 den Scanner und
-      setzen dann in Zeile 21 die Variable \texttt{mMaxPoints} auf den beim Aufruf
-      übergebenen Wert.  Der Scanner wird durch den Aufruf in Zeile 22 gestartet.
+\item In der Methode \texttt{main()} erzeugen wir zunächst in Zeile 23 den Scanner und
+      setzen dann in Zeile 24 die Variable \texttt{mMaxPoints} auf den beim Aufruf
+      übergebenen Wert.  Der Scanner wird durch den Aufruf in Zeile 25 gestartet.
 
 \item In dem Definitions-Abschnitt werden zwei Abkürzungen definiert:
       \begin{enumerate}

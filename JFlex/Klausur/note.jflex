@@ -22,18 +22,15 @@
         } else {
             Note scanner = null;
             try {
-                scanner = new Note( new java.io.FileReader(argv[0]) );
+                scanner            = new Note(new java.io.FileReader(argv[0]));
                 scanner.mMaxPoints = new Integer(argv[1]);
                 scanner.yylex();
             } catch (java.io.FileNotFoundException e) {
-                System.out.println("File not found : \""+argv[0]+"\"");
+                System.out.println("File not found : \"" + argv[0] + "\"");
             } catch (java.io.IOException e) {
-                System.out.println("IO error scanning file \""+argv[0]+"\"");
+                System.out.println("IO error scanning \"" + argv[0] + "\"");
                 System.out.println(e);
-            } catch (Exception e) {
-                System.out.println("Second argument (maxpoints) missing?");
-                e.printStackTrace();
-            }
+            } 
         }
     }
 
