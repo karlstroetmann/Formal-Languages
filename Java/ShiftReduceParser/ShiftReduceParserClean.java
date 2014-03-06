@@ -17,7 +17,7 @@ import java.io.*;
             ;
 */
 
-public class ShiftReduceParser {
+public class ShiftReduceParserClean {
     private List<Symbol>  mTokenList;
     private int           mIndex;    // index of next token
     private Stack<Symbol> mSymbols;
@@ -58,13 +58,9 @@ public class ShiftReduceParser {
         while (true) {            
             State  q = mStates.peek();
             Symbol t = peekNextToken();
-            System.out.println("");
-            System.out.println("current state: " + q);
-            System.out.println("next token:    " + t);
             Action p = action(q,t);
             System.out.println(p);
             if (p == null) {
-                System.out.println("action(" + q + ", " + t + ") undefined.");
                 return false;
             }
             if (p instanceof Shift) {

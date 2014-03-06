@@ -1,7 +1,6 @@
 class srParser(actionTable, gotoTable, stateTable) {
     mActionTable := actionTable;
     mGotoTable   := gotoTable;
-    mStateTable  := stateTable;
 
     parseSR := procedure(tl) {
         index   := 1;      // point to next token
@@ -10,32 +9,22 @@ class srParser(actionTable, gotoTable, stateTable) {
         while (true) {            
             q := states[1];
             t := tl[index];
-            print("states:  [ $join(states, \", \")$ ]");
-            print("symbols: $join(reverse(symbols), \" \")$ | $join(tl[index ..], \" \")$");
-            print("state:   { $join(mStateTable[q], \", \")$ }");
             p := mActionTable[[q,t]];
             match (p) {
             case om: 
-                 print("action($q$, $t$) undefined.");
-                 print("Syntax error!\n");
                  return false;
             case Shift(s):
-                 print("shifting state $s$");
-                 print("state:   { $join(mStateTable[s], \", \")$ }\n");
                  symbols := [t] + symbols;
                  states  := [s] + states;
                  index   += 1;
             case Rule(head, body):
-                 print("reducing with rule $head$ -> $join(body, \" \")$");
                  n       := #body;
                  symbols := symbols[n+1 ..];
                  states  := states[ n+1 ..]; 
                  symbols := [head] + symbols;
                  state   := states[1];
                  states  := [ mGotoTable[[state, head]] ] + states;      
-                 print("state:   { $join(mStateTable[mGotoTable[[state, head]]], \", \")$ }\n");
             case Accept():
-                 print("accepting\n");
                  return true;
             } 
         }
