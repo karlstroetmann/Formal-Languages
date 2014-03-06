@@ -9,7 +9,7 @@
 %{
     public int mMaxPoints = 0;
     public int mSumPoints = 0;
-    public double note() {
+    public double mark() {
         return 7.0 - 6.0 * mSumPoints / mMaxPoints;
     } 
     public void errorMsg() {
@@ -47,7 +47,7 @@ NAME = [A-Za-zäöüÄÖÜß]+[ ][A-Za-zäöüÄÖÜß\-]+
 -              { /* skip hyphens                        */ }
 [ \t]          { /* skip white space                    */ }
 ^[ \t]*\n      { /* skip empty line                     */ }
-\n             { System.out.printf(" %3.1f\n", note());    }
+\n             { System.out.printf(" %3.1f\n", mark());    }
 .              { errorMsg();                               }
 
 
