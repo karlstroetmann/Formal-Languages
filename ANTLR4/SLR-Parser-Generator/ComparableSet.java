@@ -130,7 +130,7 @@ public class ComparableSet<T extends Comparable<? super T>>
 
     // Diese Funktion wandelt die Menge in einen String um.  Nach jedem Element erfolgt 
     // ein Zeilenumbruch. Das Argument indent gibt an, um wieviel die einzelnen Zeilen 
-    // eingerückt werden sollen
+    // eingerueckt werden sollen
     public String toString(int indent) {
     Object[] elements = mSet.toArray();
     String result = "{ ";
