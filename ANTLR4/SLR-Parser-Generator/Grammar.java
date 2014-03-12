@@ -9,29 +9,29 @@ public class Grammar {
     private Set<Variable> mNullable;
     private Map<Variable, Set<MyToken>> mFirst;
     private Map<Variable, Set<MyToken>> mFollow;
-    // die Menge aller Zustände des Parsers
+    // die Menge aller Zustaende des Parsers
     private Set<ComparableSet<MarkedRule>> mStates;  
     private ComparableSet<MarkedRule> mStartState;
     private SimpleRule    mStartRule;
     private MarkedRule    mAcceptRule;
-    // Kodierung der Zustände als Zahlen. Jedem Zustand ist eine eindeutige
+    // Kodierung der Zustaende als Zahlen. Jedem Zustand ist eine eindeutige
     // Zahl >= 0 zugeordnet.
     private Map<ComparableSet<MarkedRule>, Integer> mStateNumbers;
-    private Integer mCount;  // Anzahl aller Zustände
+    private Integer mCount;  // Anzahl aller Zustaende
     // Diese Abbildung ordnet jedem Zustand eine eindeutige Zahl zu,
-    // mit deren Hilfe wir später den Zuständen Namen wie "s0", "s1", ...
-    // zuordnen können.
+    // mit deren Hilfe wir spaeter den Zustaenden Namen wie "s0", "s1", ...
+    // zuordnen koennen.
     private Map<ComparableSet<MarkedRule>, Map<MyToken, Action>> mActionTable;
-    // In dieser Tabelle werden die Zustände durch die Zahlen aus der Tabelle
+    // In dieser Tabelle werden die Zustaende durch die Zahlen aus der Tabelle
     // mStateNumbers kodiert.
     private Map<Integer, Map<Variable, Integer>> mGotoTable;
     // Diese Abbildung ordnet jedem Token eine eindeutige Zahl zu,
-    // mit deren Hilfe wir später den Token Namen wie "t0", "t1", ...
-    // zuordnen können.
+    // mit deren Hilfe wir spaeter den Token Namen wie "t0", "t1", ...
+    // zuordnen koennen.
     private Map<MyToken, Integer> mTokenNumbers;
     // Diese Abbildung ordnet jeder Regel eine eindeutige Zahl zu,
-    // mit deren Hilfe wir später den Regeln Namen wie "rule1", "rule2", ...
-    // zuordnen können.
+    // mit deren Hilfe wir spaeter den Regeln Namen wie "rule1", "rule2", ...
+    // zuordnen koennen.
     private Map<SimpleRule, Integer> mRuleMap;
 
     public Grammar(List<Rule> rules) {
@@ -103,8 +103,8 @@ public class Grammar {
     }
     
     // Diese Funktion ordnet jedem Zustand eine eindeutige Zahl zu,
-    // mit deren Hilfe wir später den Zuständen Namen wie "s0", "s1", ...
-    // zuordnen können.  Die Zuordnung wird in der Variablen mStateNumbers
+    // mit deren Hilfe wir spaeter den Zustaenden Namen wie "s0", "s1", ...
+    // zuordnen koennen.  Die Zuordnung wird in der Variablen mStateNumbers
     // gespeichert.
     void computeNumbers() {
         mCount = 0;
@@ -118,7 +118,7 @@ public class Grammar {
         }
     }
 
-    // Diese Funktion ruft die Funktion action() für alle möglichen Eingaben auf
+    // Diese Funktion ruft die Funktion action() fuer alle moeglichen Eingaben auf
     // und speichert das Ergebnis in der Tabelle mActionTable ab.  Gleichzeitig
     // wird die Tabelle am Bildschirm ausgegeben.
     void fillActionTable() {
@@ -139,7 +139,7 @@ public class Grammar {
         }
     }
 
-    // Diese Funktion ruft die Funktion gotoFct(s, v) für alle möglichen Zustände
+    // Diese Funktion ruft die Funktion gotoFct(s, v) fuer alle moeglichen Zustaende
     // s und Variablen v auf und speichert das Ergebnis in der Tabelle mGotoTable ab.
     // Gleichzeitig wird die Tabelle am Bildschirm ausgegeben.
     void fillGotoTable() {
@@ -172,16 +172,16 @@ public class Grammar {
         }
     }
 
-    // Diese Funktion berechnet alle vom Start-Zustand aus erreichbaren Folge-Zustände.
-    // Der Start-Zustand wird als Argument übergeben.
+    // Diese Funktion berechnet alle vom Start-Zustand aus erreichbaren Folge-Zustaende.
+    // Der Start-Zustand wird als Argument uebergeben.
     Set<ComparableSet<MarkedRule>> allStates(ComparableSet<MarkedRule> start) {
-        // result ist die Menge aller vom Start-Zustand aus erreichbaren Folge-Zustände.
+        // result ist die Menge aller vom Start-Zustand aus erreichbaren Folge-Zustaende.
         Set<ComparableSet<MarkedRule>> result = new TreeSet<ComparableSet<MarkedRule>>();
         result.add(start);
-        // recentStates ist die Menge der Zustände, die bei der letzten Iteration neu hinzu
+        // recentStates ist die Menge der Zustaende, die bei der letzten Iteration neu hinzu
         // gekommen sind.
         Set<ComparableSet<MarkedRule>> recentStates = result;
-        // newStates sammelt die Zustände auf, die bei der laufenden Iteration neu hinzu kommen.
+        // newStates sammelt die Zustaende auf, die bei der laufenden Iteration neu hinzu kommen.
         Set<ComparableSet<MarkedRule>> newStates    = new TreeSet<ComparableSet<MarkedRule>>();
         while (!recentStates.isEmpty()) {
             for (ComparableSet<MarkedRule> state: recentStates) {
@@ -215,7 +215,7 @@ public class Grammar {
         return result;
     }
 
-    /* Diese Funktion führt ein neues Start-Symbol S ein und erweitert
+    /* Diese Funktion fuehrt ein neues Start-Symbol S ein und erweitert
        die Grammatik um die Regel
        S -> E $,
        wobei E das alte Start-Symbol ist.

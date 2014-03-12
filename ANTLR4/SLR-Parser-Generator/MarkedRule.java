@@ -1,6 +1,6 @@
 import java.util.*; 
 
-/*  Diese Klasse repräsentiert die markierte Regel
+/*  Diese Klasse repraesentiert die markierte Regel
         mHead -> mFirst * mSecond.
  */
 public class MarkedRule implements Comparable<MarkedRule>
