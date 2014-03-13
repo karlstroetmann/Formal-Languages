@@ -766,12 +766,12 @@ Als nächstes berechnen wir $s_1 := \textsl{goto}(s_0, E)$:
   s_1 & = & \textsl{goto}(s_0, E)  \\
       & = & \textsl{closure}\bigl(\{  
                    S \rightarrow E \bullet,\;
-                   E \rightarrow E \bullet \quoted{+} E,\;
-                   E \rightarrow E \bullet \quoted{*} E \;
+                   E \rightarrow E \bullet \squoted{+}\; E,\;
+                   E \rightarrow E \bullet \squoted{*}\; E \;
             \}\bigr) \\
       & = & \{ S \rightarrow E \bullet,\;
-               E \rightarrow E \bullet \quoted{+} E,\;
-               E \rightarrow E \bullet \quoted{*} E \;
+               E \rightarrow E \bullet \squoted{+}\; E,\;
+               E \rightarrow E \bullet \squoted{*}\; E \;
             \}\bigr) 
 \end{array}
 \]
@@ -780,7 +780,7 @@ Nun berechnen wir $s_2 := \textsl{goto}(s_1, \squoted{+})$:
 \begin{array}[t]{lcl}
   s_2 & = & \textsl{goto}(s_1, \squoted{+})  \\
       & = & \textsl{closure}\bigl(\{ E \rightarrow E \quoted{+} \bullet E,\; \}\bigr) \\
-      & = & \{ E \rightarrow E \quoted{+} \bullet E,\;
+      & = & \{ E \rightarrow E \;\squoted{+} \bullet E,\;
                E \rightarrow \bullet E \quoted{+} E,\;
                E \rightarrow \bullet E \quoted{*} E,\;
                E \rightarrow \bullet N\;
@@ -793,17 +793,17 @@ Als nächstes berechnen wir $s_3 := \textsl{goto}(s_2, E)$:
   s_3 & = & \textsl{goto}(s_2, E)  \\
       & = & \textsl{closure}\bigl(\{  
                E \rightarrow E \quoted{+} E \bullet,\;
-               E \rightarrow E \bullet \quoted{+} E,\;
-               E \rightarrow E \bullet \quoted{*} E \}\bigr) \\
+               E \rightarrow E \bullet \squoted{+}\; E,\;
+               E \rightarrow E \bullet \squoted{*}\; E \}\bigr) \\
       & = & \{ E \rightarrow E \quoted{+} E \bullet,\;
-               E \rightarrow E \bullet \quoted{+} E,\;
-               E \rightarrow E \bullet \quoted{*} E \;
+               E \rightarrow E \bullet \squoted{+}\; E,\;
+               E \rightarrow E \bullet \squoted{*}\; E \;
             \}\bigr) 
 \end{array}
 \]
 Hier tritt bei der Berechnung von $\textsl{action}(s_3, \squoted{*})$ ein Shift-Reduce-Konflikt auf,
 denn einerseits verlangt die markierte Regel 
-\[ E \rightarrow E \bullet \quoted{*} E, \]
+\[ E \rightarrow E \bullet \squoted{*}\; E, \]
 dass das Token $\squoted{*}$ auf den Stack geschoben wird, andererseits haben wir
 \[ \textsl{Follow}(E) = \{ \;\squoted{+}, \;\squoted{*}, \;\squoted{\symbol{36}}\; \}, \]
 so dass, falls das nächste zu lesende Token den Wert $\squoted{*}$ hat, der Symbol-Stack mit der
@@ -911,6 +911,12 @@ Dieses Beispiel zeigt, dass SLR-Grammatiken im Allgemeinen nicht ausdruckstärker
 LL(1)-Grammatiken.  In der Praxis zeigt sich jedoch, dass viele Grammatiken, die nicht die
 LL(1)-Eigenschaft haben, SLR-Grammatiken sind.
 
+\remark
+As part of the resources provided with this lecture there is a
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/ANTLR4/SLR-Parser-Generator}{program}
+available that, given a grammar, computes the SLR-states together with the action table for a given grammar.  
+The \texttt{Makefile} of this program requires the prior installation of \href{http://www.antlr.org}{\textsc{Antlr}}.
+
 \section{Kanonische LR-Parser}
 Der Reduce-Reduce-Konflikt, der in der in Abbildung \ref{fig:reduce-reduce-conflict.grammar}
 gezeigten Grammatik auftritt, kann wie folgt gelöst werden:  In dem Zustand
@@ -1003,7 +1009,9 @@ etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}()$.
         \hspace*{1.3cm}
         $B \rightarrow \bullet \gamma: \bigcup \{ \textsl{First}(\beta t) \mid t \in L \}$
         \\[0.2cm]
-        ein Element der Menge $\mathcal{K}$.
+        ein Element der Menge $\mathcal{K}$.  Die Funktion $\textsl{First}(\alpha)$ berechnet dabei für
+        einen String $\alpha \in (T \cup V)^*$ die Menge aller Token $t$, mit denen ein String
+        beginnen kann, der von $\alpha$ abgeleitet worden ist.
   \end{enumerate}
   Die so definierte eindeutig bestimmte Menge $\mathcal{K}$ wird wieder mit
   $\textsl{closure}(\mathcal{M})$ bezeichnet. \qed
@@ -1243,12 +1251,12 @@ Beim Start-Zustand $s_0$ hatten wir im letzten Abschnitt einen Reduce-Reduce-Kon
 beiden Regeln $A \rightarrow \varepsilon$ und $B \rightarrow \varepsilon$ gefunden, weil 
 \[ \textsl{Follow}(A) \cap \textsl{Follow}(B) = \{ \squoted{x}, \squoted{y} \} \not= \{\} \]
 gilt.  Dieser Konflikt ist nun verschwunden, denn zwischen den e.m.R.s
-\[ A \rightarrow \bullet: \quoted{x} \quad \mbox{und} \quad 
-   B \rightarrow \bullet: \quoted{y}
+\[ A \rightarrow \bullet: \squoted{x} \quad \mbox{und} \quad 
+   B \rightarrow \bullet: \squoted{y}
 \]
 gibt es wegen $\squoted{x} \not= \squoted{y}$ keinen Konflikt.  Es ist leicht zu sehen, dass auch bei den
 anderen Zustände keine Konflikte auftreten.
-\vspace*{0.2cm}
+\pagebreak
 
 \exercise
 Berechnen Sie die Menge der Zustände eines LR-Parsers für die folgende Grammatik:
@@ -1264,6 +1272,12 @@ Untersuchen Sie außerdem, ob es bei dieser Grammatik Shift-Reduce-Konflikte oder
 Reduce-Reduce-Konflikte gibt.
 \vspace*{0.2cm}
 
+\remark
+As part of the resources provided with this lecture there is a
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/ANTLR4/LR-Parser-Generator}{program}
+available that, given a grammar, computes the LR-states together with the action table for a given grammar.  
+As for SLR-states, the \texttt{Makefile} of this program requires the prior installation of
+\href{http://www.antlr.org}{\textsc{Antlr}}. 
 
 \noindent
 \textbf{Bemerkung}: Die Theorie der kanonischen LR-Parser geht auf Donald E.~Knuth zurück,
@@ -1674,7 +1688,7 @@ ist ein Parser-Generator für \texttt{C}, \texttt{C++} und neuerdings auch \texts
 während \textsl{JavaCup} einen Parser in der Sprache \textsl{Java} erzeugt.  Falls Sie
 \textsl{JavaCup} benutzen, haben Sie keine Wahl, denn dieses Werkzeug erzeugt immer einen
 LALR-Parser.  Bei 
-\href{http://www.gnu.org/software/bison/manual/bison.html}{\textsl{Bison}} ist es in der Version 3.0
+\href{http://www.gnu.org/software/bison/manual/bison.html}{\textsl{Bison}} ist es ab der Version 3.0
  auch möglich, einen LR-Parser zu erzeugen.
 
 
