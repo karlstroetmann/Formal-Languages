@@ -1,7 +1,8 @@
 CLASSPATH=.:/usr/local/lib/antlr-4.1-complete.jar
 
 run: GrammarAnalysis.class
-	java -cp $(CLASSPATH) GrammarAnalysis Examples/exercise.g 
+	java -cp $(CLASSPATH) GrammarAnalysis Examples/c-grammar.g > Examples/c-grammar-states.txt
+#	java -cp $(CLASSPATH) GrammarAnalysis Examples/exercise.g 
 #	java -cp $(CLASSPATH) GrammarAnalysis Examples/expr.g 
 #	java -cp $(CLASSPATH) GrammarAnalysis Examples/non-slr.g 
 #	java -cp $(CLASSPATH) GrammarAnalysis Examples/lr-but-not-lalr.g 
