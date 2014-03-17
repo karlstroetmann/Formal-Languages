@@ -14,14 +14,12 @@ public class Grammar {
     private ComparableSet<MarkedRule> mStartState;
     private SimpleRule    mStartRule;
     private MarkedRule    mAcceptRule;
-    // Kodierung der Zustaende als Zahlen. Jedem Zustand ist eine eindeutige
-    // Zahl >= 0 zugeordnet.
-    private Map<ComparableSet<MarkedRule>, Integer> mStateNumbers;
-    private Integer mCount;  // Anzahl aller Zustaende
     // Diese Abbildung ordnet jedem Zustand eine eindeutige Zahl zu,
     // mit deren Hilfe wir spaeter den Zustaenden Namen wie "s0", "s1", ...
     // zuordnen koennen.
-    private Map<ComparableSet<MarkedRule>, Map<MyToken, Action>> mActionTable;
+    private Map<ComparableSet<MarkedRule>, Integer> mStateNumbers;
+    private Integer mCount;  // Anzahl aller Zustaende
+     private Map<ComparableSet<MarkedRule>, Map<MyToken, Action>> mActionTable;
     // In dieser Tabelle werden die Zustaende durch die Zahlen aus der Tabelle
     // mStateNumbers kodiert.
     private Map<Integer, Map<Variable, Integer>> mGotoTable;
