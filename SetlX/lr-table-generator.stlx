@@ -100,7 +100,6 @@ class grammar(rules, variables, start) {
     this.mTokens      := {};
     this.mStates      := {};
     this.mStateNames  := {};
-    this.mActionTable := {};
     this.mConflicts   := false;
 
   static {
@@ -155,7 +154,7 @@ class grammar(rules, variables, start) {
         }
         print("");
     };
-    epsClosure := procedure(markedRules) {
+    epsClosure := cachedProcedure(markedRules) {
         allRules := markedRules;
         newRules := markedRules;
         while (true) {
@@ -217,6 +216,7 @@ class grammar(rules, variables, start) {
     computeActionTable := procedure() {
         print("\nAction Table:");
         for (state in mStates) {
+            mActionTable := {};
             // compute shift actions
             for (token in mTokens) {
                 stateName := mStateNames[state];
@@ -224,17 +224,17 @@ class grammar(rules, variables, start) {
                 if (newState != {}) {
                     newName := mStateNames[newState];
                     t       := extractArg(token);
-                    mActionTable[ [state,t] ] := Shift(newName);
+                    mActionTable[t] := Shift(newName);
                     print("action(\"$stateName$\", $t$) = $Shift(newName)$");
                 }
             }
             // compute reduce actions
             for (mr in state | mr.isComplete()) {
                 for (t in mr.mFollowSet) {
-                    action1 := mActionTable[ [state, t] ];
+                    action1 := mActionTable[t];
                     action2 := Reduce(mr.toRule());
                     if (action1 == om) {
-                        mActionTable[ [state, t] ] := action2;
+                        mActionTable[t] := action2;
                         print("action(\"$stateName$\", $t$) = $action2$");
                     } else if (action1 != action2) {
                         this.mConflicts := true;

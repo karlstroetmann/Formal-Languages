@@ -1,3 +1,20 @@
+translation_unit
+	: external_declaration
+	| translation_unit external_declaration
+	;
+
+external_declaration
+	: function_definition
+	| declaration
+	;
+
+function_definition
+	: declaration_specifiers declarator declaration_list compound_statement
+	| declaration_specifiers declarator compound_statement
+	| declarator declaration_list compound_statement
+	| declarator compound_statement
+	;
+
 primary_expression
 	: IDENTIFIER
 	| CONSTANT
@@ -382,20 +399,4 @@ jump_statement
 	| 'return' expression ';'
 	;
 
-translation_unit
-	: external_declaration
-	| translation_unit external_declaration
-	;
-
-external_declaration
-	: function_definition
-	| declaration
-	;
-
-function_definition
-	: declaration_specifiers declarator declaration_list compound_statement
-	| declaration_specifiers declarator compound_statement
-	| declarator declaration_list compound_statement
-	| declarator compound_statement
-	;
 
