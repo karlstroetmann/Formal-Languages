@@ -100,8 +100,8 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
             \\[0.2cm]
             Durch diese Deklaration werden die Symbole $t_1$, $\cdots$, $t_n$ als Terminale
             deklariert.
-      \item Terminale mit einem zusätzlichen Wert.  In diesem Fall muss zusätzlich der Typ
-            dieses zusätzlichen Werts deklariert werden.  Die Syntax ist in diesem Fall
+      \item Terminale mit einem zusätzlichen Wert.  In diesem Fall muss der Typ
+            dieses Wertes deklariert werden.  Die Syntax dafür ist 
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{terminal} \textsl{type} $t_1$, $\cdots$, $t_n$;
@@ -258,16 +258,17 @@ aufrufen.  Dieser Befehl erzeugt verschiedene \textsl{Java}-Dateien.
 
 \noindent
 Neben dem Parser wird noch ein Scanner benötigt.  Diesen werden wir im nächsten Abschnitt präsentieren.
-Um mit dem Parser arbeiten zu können, brauchen wir eine Klasse, die eine Methode
+Um mit dem Parser arbeiten zu können, brauchen wir eine Klasse, welche die Methode
 $\texttt{main}()$ enthält.  Abbildung \ref{fig:Calculator.java} auf Seite
 \pageref{fig:Calculator.java} zeigt eine solche Klasse.  Wir
-erzeugen dort in Zeile 4 einen Parser, indem wir den Konstruktor der Klasse \texttt{parser} mit
+erzeugen dort in Zeile 6 einen Parser, indem wir den Konstruktor der in dem Paket
+\texttt{java\_cup.runtime} definierten Klasse \texttt{parser} mit
 einem Scanner als Argument initialsieren.  Die per Default von \textsl{JFlex} erzeugte Scanner-Klasse hat den
 Namen \texttt{Yylex} und bekommt als Argument entweder ein Objekt vom Typ \texttt{java.io.Reader}
 oder ein Objekt vom Typ \texttt{java.io.InputStream}.  Der Parser wird dann durch Aufruf der Methode
-$\textsl{parse}()$ gestartet, wobei eventuelle Ausnahmen noch abgefangen werden müssen.
+$\texttt{parse}()$ gestartet, wobei eventuelle Ausnahmen noch abgefangen werden müssen.
 Falls mit dem Start-Symbol der Grammatik ein Wert assoziert ist, so wird dieser Wert von
-der Methode $\textsl{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der Wert
+der Methode $\texttt{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der Wert
 \texttt{null} zurück gegeben.
 
 \begin{figure}[!ht]
@@ -280,6 +281,8 @@ der Methode $\textsl{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
+    import java_cup.runtime.*;
+
     public class Calculator {
         public static void main(String[] args) {
             try { 
@@ -377,7 +380,7 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
             Dieser Konstruktor bekommt als Argument eine natürliche Zahl, die festlegt,
             welche Art von Symbol 
             definiert werden soll.  Diese Zahl bezeichnen wir als \emph{Symbol-Nummer}.
-            Jedes Terminal und jede syntaktische Variable entspricht genau Symbol-Nummer. 
+            Jedem Terminal und jeder syntaktische Variablen entspricht genau Symbol-Nummer. 
             Die Kodierung der Symbol-Nummern wird von dem Parser-Generator \textsc{Cup} 
             in der Klasse \texttt{sym} festgelegt.  Abbildung \ref{fig:sym.java}
             auf Seite \pageref{fig:sym.java} zeigt diese von \textsc{Cup} erzeugte Klasse.
@@ -399,22 +402,23 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
                     Objekt \textsl{value})}
 
             Dieser Konstruktor erhält zusätzlich zur Symbol-Nummer und Position des gelesenen Tokens noch
-            den Wert, den dieses Token hat.
+            den Wert, der diesem Token zugeordnet ist.
       \end{enumerate}
-      Bei der Implementierung der Hilfs-Methoden $\texttt{symbol}()$ verwenden wir die Funktion
-      $\texttt{yylength}()$.  Diese Funktion gibt die Länge des Strings zurück, der dem zuletzt
-      erkannten Tokens entspricht.
+      Bei der Implementierung der beiden Hilfs-Methoden mit dem Namen $\texttt{symbol}()$ verwenden
+      wir die Funktion $\texttt{yylength}()$.  Diese Funktion wird von \textsl{JFLEX} zur Verfügung
+      gestellt und gibt die Länge des Strings zurück, der dem zuletzt erkannten Tokens entspricht.
 \item In den Zeilen 22 bis 29 erkennen wir die arithmetischen Operatoren und die Klammer-Symbole.
-      Wir verwenden dabei die in der Klasse \texttt{sym} definierten Konstanten.
+      Zur Spezifikation des zurückgegebenen Token verwenden wir dabei die in der Klasse \texttt{sym}
+      definierten Konstanten \texttt{SEMI}, \texttt{PLUS}, etc. 
 \item In Zeile 31 erkennen wir mit dem regulären Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche
-      Zahl.  Diese verwandeln wir durch Aufruf des Konstruktors
+      Zahl.  Diese wandeln wir durch den Konstruktor-Aufruf 
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{new Integer(yytext())}
       \\[0.2cm]
-      in ein Objekt vom Typ \texttt{Integer}, wobei der Text, der der Zahl entspricht, von der
-      Funktion $\texttt{yytext}()$ geliefert wird.  Anschließend geben wir ein Symbol zurück,
-      in dem dieses Objekt als zugehöriger Wert abgespeichert wird.
+      in ein Objekt vom Typ \texttt{Integer} um, wobei der String, der in eine Zahl umgewandelt wird, von der
+      Funktion $\texttt{yytext}()$ geliefert wird.  Anschließend geben wir ein Objekt der Klasse \texttt{Symbol} zurück,
+      in dem diese Zahl als mit dem Symbol assoziierter Wert abgespeichert wird.
 \item In Zeile 33 überlesen wir Leerzeichen, Tabulatoren und Zeilen-Umbrüche.
       Das Überlesen geschieht dadurch, dass wir in diesem Fall kein Symbol an den Parser zurück
       geben, denn die semantische Aktion enthält keinen \texttt{return}-Befehl.
@@ -422,7 +426,13 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
       beginnt, eine Fehlermeldung aus.  Dabei greifen wir auf die Variablen 
       \texttt{yyline} und \texttt{yycolumn} zurück, damit der Fehler lokalisiert werden kann.
 \end{enumerate}
-\textsl{JFlex} erzeugt den Scanner in der Klasse \texttt{Yylex}.  Wir hatten in Abbildung
+Durch den Aufruf
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{jflex calc.jflex}
+\\[0.2cm]
+erzeugt \textsl{JFlex} aus der Datei \texttt{clac.jflex} den Scanner in der Klasse \texttt{Yylex}.
+Wir hatten in Abbildung 
 \ref{fig:Calculator.java} gesehen, wie diese Klasse an den Parser angebunden wird.
 
 
@@ -462,17 +472,24 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
 \label{fig:calc-ambiguous.cup}
 \end{figure}
 
-Wir betrachten nun ein weiteres Beispiel.  Abbildung \ref{fig:calc-ambiguous.cup} zeigt eine Grammatik, die
-offenbar mehrdeutig ist. 
+Wir betrachten nun ein weiteres Beispiel.  Abbildung \ref{fig:calc-ambiguous.cup} zeigt eine 
+\textsl{JavaCup}-Spezifikation einer Grammatik, die offenbar mehrdeutig ist, da die Präzedenzen der
+arithmetischen Operatoren durch diese Grammatik nicht festgelegt werden.
   Mit dieser Grammatik ist beispielsweise nicht klar, ob der String
 \\[0.2cm]
 \hspace*{1.3cm} 
-\texttt{1 + 2 * 3} \quad als \quad  ``\texttt{(1 + 2) * 3}'' \quad oder als \quad ``\texttt{1 + (2 * 3)}''
+``\texttt{1 + 2 * 3}'' \quad als \quad  ``\texttt{(1 + 2) * 3}'' \quad oder als \quad ``\texttt{1 + (2 * 3)}''
 \\[0.2cm]
-gelesen werden soll.   Wir hatten im letzten Kapitel schon gesehen, dass es in einer mehrdeutigen Grammatik
-immer Shift/Reduce- oder Reduce/Reduce-Konflikte geben muss.
-Wenn wir versuchen, diese Grammatik mit \textsc{Cup} zu übersetzen und wenn wir dabei zusätzlich die Option 
-``\texttt{-dump}'' angeben, erhalten wir eine große Zahl von Shift/Reduce-Konflikten angezeigt.
+interpretiert werden soll.   Wir hatten im letzten Kapitel schon gesehen, dass es in einer
+mehrdeutigen Grammatik immer Shift/Reduce- oder Reduce/Reduce-Konflikte geben muss, denn jede
+LALR-Grammatik ist eindeutig.  Wenn wir versuchen, die Grammatik aus Abbildung
+\ref{fig:calc-ambiguous.cup} mit \textsc{Cup} zu übersetzen und wenn wir dabei zusätzlich die Option 
+``\texttt{-dump}'' angeben, der Aufruf von \textsc{Cup} hat dann die Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{cup -dump calc.cup}
+\\[0.2cm]
+so erhalten wir eine große Zahl von Shift/Reduce-Konflikten angezeigt.
 Beispielsweise erhalten wir die folgende Fehlermeldung:
 \begin{verbatim}
     Warning : *** Shift/Reduce conflict found in state #12
@@ -497,13 +514,7 @@ $R_2 \; := \;
 \\[0.2cm]
 einen Shift/Reduce-Konflikt gibt:  Die beiden markierten  Regeln $R_1$ und $R_2$
 sind Elemente eines Zustands, der von \textsc{Cup} intern mit der Nummer 12 versehen
-worden ist.  Die Menge aller Zustände kann über die Option ``\texttt{-dump}'' mit
-ausgegeben werden.   Dazu wird \textsc{Cup} in der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{cup -dump calc.cup}
-\\[0.2cm]
-aufgerufen.  Der Zustand mit der Nummer 12 wird dann wie folgt ausgegeben:
+worden ist.  Der Zustand mit der Nummer 12 hat folgende Form:
 \begin{verbatim}
   lalr_state [12]: {
     [expr ::= expr (*) MOD expr ,    {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
@@ -528,27 +539,34 @@ $\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{expr}$
 \\[0.2cm]
 zu erkennen, wobei er bereits eine \textsl{expr} erkannt hat und nun als nächstes das
 Token ``\texttt{+}'' erwartet wird.  Da das Token ``\texttt{+}'' auch in der Follow-Menge der
-Regel $R_1$ liegen kann, ist an dieser Stelle unklar, ob das Token ``\texttt{+}'' auf den
+erweiterten markierten Regel $R_1$ liegen kann, ist an dieser Stelle unklar, ob das Token
+``\texttt{+}'' auf den 
 Stack geschoben werden soll, oder ob stattdessen mit der Regel $R_1$ reduziert werden
 muss.  Bei einem Shift/Reduce-Konflikt entscheidet sich der von \textsc{Cup} erzeugte
 Parser immer dafür, das Token auf den Stack zu schieben.
 
 
 \section{Operator-Präzendenzen \label{section:operator-precedence}}
-Es ist mit   \textsc{Cup} möglich, Shift/Reduce-Konflikte durch die Angabe von \emph{Operator-Präzedenzen}
+Es ist mit   \textsc{Cup} möglich, Shift/Reduce-Konflikte durch die Angabe von
+\emph{Operator-Präzedenzen} 
 aufzulösen.  Abbildung \ref{fig:calc-precedence.cup} zeigt die Spezifikation einer Grammatik zur
 Erkennung arithmetischer Ausdrücke, die aus Zahlen und den binären Operatoren ``\texttt{+}'',
-``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'' und ``\texttt{\symbol{94}}'' aufgebaut sind.   Mit Hilfe der
-Schlüsselwörter ``\texttt{\%left}'' und ``\texttt{\%right}'' 
-haben wir festgelegt, dass die Operatoren ``\texttt{+}'',
-``\texttt{-}'', ``\texttt{*}'' und ``\texttt{/}'' \emph{links-assoziativ} sind, ein Ausdruck der Form
-\[ 3 - 2 - 1 \quad \mbox{wird also als} \quad (3 - 2) - 1 \quad \mbox{und nicht als} \quad 3 - (2-1) \]
+``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'' und ``\texttt{\symbol{94}}'' aufgebaut sind.   Mit
+Hilfe der Schlüsselwörter ``\texttt{precedence left}'' und ``\texttt{precedence right}'' 
+haben wir festgelegt, dass die Operatoren ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'' und
+``\texttt{/}'' \emph{links-assoziativ} sind, ein Ausdruck der Form 
+\\[0.2cm]
+\hspace*{1.3cm}
+$3 - 2 - 1$ \quad wird also als \quad $(3 - 2) - 1$ \quad und nicht als \quad $3 - (2-1)$
+\\[0.2cm]
 gelesen.  Demgegenüber ist der Operator ``\texttt{\symbol{94}}'', der in der \textsc{Cup}-Grammatik
 mit ``\texttt{POW}'' bezeichnet wir und die Potenzbildung bezeichnet,
 \emph{rechts-assoziativ}, der Ausdruck 
-\[ 4 \texttt{\symbol{94}} 3 \texttt{\symbol{94}} 2 \quad \mbox{wird also als} \quad 4^{\mbox{(}3^2\mbox{)}} \quad 
-   \mbox{und nicht als} \quad \bigl(4^3\bigr)^2
-\]
+\\[0.2cm]
+\hspace*{1.3cm}
+$4 \texttt{\symbol{94}} 3 \texttt{\symbol{94}} 2$ \quad wird daher als \quad
+$4^{\mbox{(}3^2\mbox{)}}$ \quad  und nicht als \quad $\bigl(4^3\bigr)^2$
+\\[0.2cm]
 interpretiert.   Die Reihenfolge, in der die Assoziativität der Operatoren spezifiziert werden, legt die
 \emph{Präzedenzen}, die auch als \emph{Bindungsstärken} bezeichnet werden, fest.  Dabei ist die
 Bindungsstärke umso größer, je später der Operator spezifiziert wird.  In unserem konkreten Beispiel bindet
@@ -656,7 +674,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
       \end{center}
       Für die Regeln, die keinen Operator enthalten, für den eine Bindungsstärke spezifiziert ist,
       bleibt die Präzedenz unspezifiziert.
-\item Ist nun $s$ ein Zustand, in dem zwei Regeln $r_1$ und $r_2$ der Form
+\item Ist $s$ ein Zustand, in dem zwei Regeln $r_1$ und $r_2$ der Form
       \\[0.2cm]
       \hspace*{1.3cm}
       $r_1 = (A \rightarrow \alpha \bullet o \;\beta:L_1)$ \quad und \quad
@@ -667,10 +685,10 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
       \hspace*{1.3cm}
       $\textsl{action}(s, o)$
       \\[0.2cm]
-      zunächst einen Shift/Reduce-Konflikt.  Ist nun $o$ ein Operator, für den eine Präzedenz $p(o)$
-      festgelegt worden ist und hat außerdem die Regel $r_2$, mit der reduziert werden würde, die Präzedenz
-      $p(r_2)$ so wird der Shift/Reduce-Konflikt in Abhängigkeit von der relativen Größe 
-      dieser beiden Zahlen aufgelöst.  Hier werden fünf Fälle unterschieden:
+      zunächst einen Shift/Reduce-Konflikt.  Falls dem Operator $o$ die Präzedenz $p(o)$
+      zugeordnet worden ist und wenn außerdem die Regel $r_2$, mit der reduziert werden würde, die
+      Präzedenz  $p(r_2)$ hat, so wird der Shift/Reduce-Konflikt in Abhängigkeit von der relativen
+      Größe   der beiden Zahlen $p(o)$ und $p(r_2)$ aufgelöst.  Hier werden fünf Fälle unterschieden:
       \begin{enumerate}
       \item $p(o) > p(B \rightarrow \gamma)$: 
             In diesem Fall bindet der Operator $o$ stärker.  Daher wird das Token $o$  
@@ -709,7 +727,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             Wenn in diesem Zustand als nächstes Zeichen ein ``\texttt{*}'' gelesen wird, so darf der
             bisher gelesene String ``\texttt{1+2}'' nicht mit der Regel 
             $E \rightarrow E \squoted{+} E$ reduziert werden, denn wir wollen die 2 ja zunächst mit 3 
-            multiplizieren.  Statt dessen muss das Zeichen 
+            multiplizieren.  Statt dessen muss also das Zeichen 
             ``\texttt{*}'' auf den Stack geschoben werden.
       \item $p(o) < p(B \rightarrow \gamma)$: 
             Jetzt bindet der Operator, der in der Regel $r_2$ auftritt, stärker als der
@@ -760,34 +778,34 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             Dass diese Regel sinnvoll ist, sehen wir, wenn wir beispielsweise den Eingabe-String
             \\[0.2cm]
             \hspace*{1.3cm}
-            $\texttt{1*2*3}$
+            $\texttt{1-2-3}$
             \\[0.2cm]
             mit den Grammatik-Regeln 
             \\[0.2cm]
             \hspace*{1.3cm}
-            $E \rightarrow E \quoted{+} E \mid E \quoted{*} E \mid \textsc{Number}$
+            $E \rightarrow E \quoted{+} E \mid E \quoted{-} E \mid \textsc{Number}$
             \\[0.2cm]
-            parsen.  Betrachten wir die Situation, bei der der Teilstring ``\texttt{1*2}''
-            bereits gelesen wurde und nun als nächstes das Token ``\texttt{*}''
+            parsen.  Betrachten wir die Situation, bei der der Teilstring ``\texttt{1-2}''
+            bereits gelesen wurde und nun als nächstes das Token ``\texttt{-}''
             verarbeitet werden soll.  Der LALR-Parser ist dann in dem folgenden Zustand:
             \\[0.2cm]
             \hspace*{1.3cm}
             $ 
             \begin{array}[t]{llcll}
          \bigl\{ 
-            & E & \rightarrow & E \bullet \squoted{*} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & E & \rightarrow & E \bullet \squoted{-} E: \{\symbol{36}, \squoted{-}, \squoted{+} \}, 
             & \\
-            & E & \rightarrow & E \bullet \squoted{+} E: \{\symbol{36}, \squoted{*}, \squoted{+} \}, 
+            & E & \rightarrow & E \bullet \squoted{+} E: \{\symbol{36}, \squoted{-}, \squoted{+} \}, 
             & \\
-            & E & \rightarrow & E \squoted{*} E \;\bullet: \{\symbol{36}, \squoted{*}, \squoted{+} \}
+            & E & \rightarrow & E \squoted{-} E \;\bullet: \{\symbol{36}, \squoted{-}, \squoted{+} \}
             & \bigr\}.
             \end{array}
             $
             \\[0.2cm]
-            Wenn in diesem Zustand als nächstes Zeichen ein ``\texttt{*}'' gelesen wird, so soll
-            der bisher gelesene String ``\texttt{1*2}'' mit der Regel 
-            $E \rightarrow E \squoted{*} E$ reduziert werden, denn wir wollen die 1 ja zunächst mit 2 
-            multiplizieren.  
+            Wenn in diesem Zustand als nächstes Zeichen ein ``\texttt{-}'' gelesen wird, so soll
+            der bisher gelesene String ``\texttt{1-2}'' mit der Regel 
+            $E \rightarrow E \squoted{-} E$ reduziert werden, denn wir wollen von der Zahl 1 ja
+            zunächst die Zahl 2 subtrahieren.  
       \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ ist rechts--assoziativ:
             In diesem Fall wird $o$ auf den
             Stack geschoben:
@@ -803,11 +821,23 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             mit den Grammatik-Regeln
             \\[0.2cm]
             \hspace*{1.3cm}
-            $E \rightarrow E \texttt{\symbol{94}} E  \mid \textsc{Number}$
+            $E \rightarrow E \,\texttt{\symbol{94}}\, E \mid \textsc{Number}$
             \\[0.2cm]
             zu parsen und die Situation zu betrachten, bei der der Teilstring
             ``\texttt{1\symbol{94}2}'' bereits verarbeitet wurde und als nächstes Zeichen nun
             der Operator ``\texttt{\symbol{94}}'' gelesen wird.
+            Der LALR-Parser ist dann in dem folgenden Zustand:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\bigl\{ 
+             E  \rightarrow E \bullet \quoted{\texttt{\symbol{94}}} E:
+             \{\symbol{36},\quoted{\texttt{\symbol{94}}} \},\;  E \rightarrow  E
+             \squoted{\texttt{\symbol{94}}} E \;\bullet: \{\symbol{36},\quoted{\texttt{\symbol{94}}}\}
+            \bigr\}.
+            $
+            \\[0.2cm]
+            Hier muss als nächstes das Token \quoted{\texttt{\symbol{94}}} auf den Stack geschoben
+            werden, denn wir wollen ja zunächst den Ausdruck ``$3 \texttt{\symbol{94}} 4$'' berechnen.
       \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ hat keine Assoziativität:
             In diesem Fall liegt ein Syntax-Fehler vor:
             \\[0.2cm]
@@ -842,12 +872,13 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             \texttt{precedence nonassoc $o$}
       \end{enumerate}
       In den Fällen, in denen ein Shift/Reduce-Konflikt nicht mit den oben angegebenen Regeln aufgelöst
-      werden kann, wird eine Warnung ausgegeben.  In diesem Fall wird der Konflikt dann dadurch aufgelöst, 
-      dass das betreffende Token auf den Stack geschoben wird.
+      werden kann, wird eine Warnung ausgegeben.  In diesem Fall wird der Konflikt dann per Default
+      dadurch aufgelöst,  dass das betreffende Token auf den Stack geschoben wird.
+      Wir werden später sehen, dass dies manchmal sehr nützlich sein kann.
 \end{enumerate}
 Die von \textsc{Cup} mit der Option ``\texttt{-dump}'' erzeugte Ausgabe zeigt im Detail, wie die
-Shift/Reduce-Konflikt Konflikte aufgelöst worden sind.  Wir betrachten exemplarisch zwei Zustände in dieser
-Datei.
+Shift/Reduce-Konflikt Konflikte aufgelöst worden sind.  Wir betrachten exemplarisch zwei Zustände in
+der Datei, die für die in Abbildung \ref{fig:calc-precedence.cup} gezeigte Grammatik erzeugt wird.
 \begin{enumerate}
 \item Der Zustand Nummer 14 hat die in Abbildung \ref{fig:state14} gezeigte Form.
       Hier gibt es unter anderem einen Shift/Reduce-Konflikt zwischen den beiden markierten Regeln
@@ -966,12 +997,22 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
 \textsc{Cup}-Grammatik zu lesen und zusätzlich die folgenden Anforderungen erfüllt:
 \begin{enumerate}
 \item Die Grammatik soll intern in Form eines abstrakten Syntax-Baums abgespeichert werden.  
-%\item Die zur Darstellung des Syntax-Baums benötigten Klassen sollen mit Hilfe des
-%      Klassen-Generators \textsc{Ep} erzeugt werden.
-\item Die Grammatik soll in lesbarer Form ausgegeben werden.  Dabei sollen die
-      semantischen Aktionen unterdrückt werden.
+      In dem Verzeichnis 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/GrammarParser/}{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/GrammarParser/}
+      \\[0.2cm]
+      finden Sie verschiedene \textsl{Java}-Klassen, mit denen Sie einen solchen Syntax-Baum
+      darstellen können.  Diese Klassen implementieren eine Methode \texttt{toString()}, mit deren
+      Hilfe sich der Syntax-Baum im \textsc{Html}-Format ausgeben lässt.
+\item Die semantischen Aktionen der Grammatik sollen unterdrückt werden.
 \item Testen Sie Ihr Programm, indem Sie es sowohl auf sich selbst als auch auf die im Unterricht
       vorgestellte Grammatik für arithmetische Ausdrücke anwenden.
+      Zusätzlich können Sie es auch auf die \texttt{C}-Grammatik, die Sie unter
+      \\[0.2cm]
+      \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Cup/Grammars/c-grammar.cup}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Cup/Grammars/c-grammar.cup}
+      \\[0.2cm]
+      im Netz finden, anwenden.
 \end{enumerate}
 
 
@@ -1686,7 +1727,8 @@ gezeigte Grammatik.  Diese Grammatik beschreibt drei Arten von Ausdrücken:
       \texttt{[x, y] |-> [x, y, x]}.
       \\[0.2cm]
 \item Zusätzlich sind als Ausdrücke Variablen-Namen zugelassen.
-\item Außerdem sind auch Listen von Ausdrücken möglich.
+\item Außerdem sind auch Listen von Ausdrücken möglich, wobei diese Listen in eckigen Klammern
+      eingefasst werden.  Diese Listen können dabei beliebig geschachtelt sein.
 \end{enumerate}
 
 \begin{figure}[!ht]
