@@ -1,0 +1,207 @@
+r0 := Rule("expr", ["expr", "'+'", "product"]);
+r1 := Rule("expr", ["expr", "'-'", "product"]);
+r2 := Rule("expr", ["product"]);
+r3 := Rule("product", ["product", "'*'", "factor"]);
+r4 := Rule("product", ["product", "'/'", "factor"]);
+r5 := Rule("product", ["factor"]);
+r6 := Rule("factor", ["'('", "expr", "')'"]);
+r7 := Rule("factor", ["NUMBER"]);
+r8 := Rule("S", ["expr"]);
+
+
+stateTable := {};
+stateTable["s0"] := "{ S -> (*) expr: {\$}, expr -> (*) expr '+' product: {\$, '+', '-', }, expr -> (*) expr '-' product: {\$, '+', '-', }, expr -> (*) product: {\$, '+', '-', }, factor -> (*) '(' expr ')': {\$, '*', '+', '-', '/', }, factor -> (*) NUMBER: {\$, '*', '+', '-', '/', }, product -> (*) factor: {\$, '*', '+', '-', '/', }, product -> (*) product '*' factor: {\$, '*', '+', '-', '/', }, product -> (*) product '/' factor: {\$, '*', '+', '-', '/', },  }";
+stateTable["s1"] := "{ expr -> (*) expr '+' product: {')', '+', '-', }, expr -> (*) expr '-' product: {')', '+', '-', }, expr -> (*) product: {')', '+', '-', }, factor -> (*) '(' expr ')': {')', '*', '+', '-', '/', }, factor -> (*) NUMBER: {')', '*', '+', '-', '/', }, product -> (*) factor: {')', '*', '+', '-', '/', }, product -> (*) product '*' factor: {')', '*', '+', '-', '/', }, product -> (*) product '/' factor: {')', '*', '+', '-', '/', }, factor -> '(' (*) expr ')': {\$, '*', '+', '-', '/', },  }";
+stateTable["s2"] := "{ expr -> (*) expr '+' product: {')', '+', '-', }, expr -> (*) expr '-' product: {')', '+', '-', }, expr -> (*) product: {')', '+', '-', }, factor -> (*) '(' expr ')': {')', '*', '+', '-', '/', }, factor -> (*) NUMBER: {')', '*', '+', '-', '/', }, product -> (*) factor: {')', '*', '+', '-', '/', }, product -> (*) product '*' factor: {')', '*', '+', '-', '/', }, product -> (*) product '/' factor: {')', '*', '+', '-', '/', }, factor -> '(' (*) expr ')': {')', '*', '+', '-', '/', },  }";
+stateTable["s3"] := "{ factor -> (*) '(' expr ')': {\$, '*', '+', '-', '/', }, factor -> (*) NUMBER: {\$, '*', '+', '-', '/', }, product -> (*) factor: {\$, '*', '+', '-', '/', }, product -> (*) product '*' factor: {\$, '*', '+', '-', '/', }, product -> (*) product '/' factor: {\$, '*', '+', '-', '/', }, expr -> expr '+' (*) product: {\$, '+', '-', },  }";
+stateTable["s4"] := "{ factor -> (*) '(' expr ')': {\$, '*', '+', '-', '/', }, factor -> (*) NUMBER: {\$, '*', '+', '-', '/', }, product -> (*) factor: {\$, '*', '+', '-', '/', }, product -> (*) product '*' factor: {\$, '*', '+', '-', '/', }, product -> (*) product '/' factor: {\$, '*', '+', '-', '/', }, expr -> expr '-' (*) product: {\$, '+', '-', },  }";
+stateTable["s5"] := "{ factor -> (*) '(' expr ')': {\$, '*', '+', '-', '/', }, factor -> (*) NUMBER: {\$, '*', '+', '-', '/', }, product -> product '*' (*) factor: {\$, '*', '+', '-', '/', },  }";
+stateTable["s6"] := "{ factor -> (*) '(' expr ')': {\$, '*', '+', '-', '/', }, factor -> (*) NUMBER: {\$, '*', '+', '-', '/', }, product -> product '/' (*) factor: {\$, '*', '+', '-', '/', },  }";
+stateTable["s7"] := "{ factor -> (*) '(' expr ')': {')', '*', '+', '-', '/', }, factor -> (*) NUMBER: {')', '*', '+', '-', '/', }, product -> (*) factor: {')', '*', '+', '-', '/', }, product -> (*) product '*' factor: {')', '*', '+', '-', '/', }, product -> (*) product '/' factor: {')', '*', '+', '-', '/', }, expr -> expr '+' (*) product: {')', '+', '-', },  }";
+stateTable["s8"] := "{ factor -> (*) '(' expr ')': {')', '*', '+', '-', '/', }, factor -> (*) NUMBER: {')', '*', '+', '-', '/', }, product -> (*) factor: {')', '*', '+', '-', '/', }, product -> (*) product '*' factor: {')', '*', '+', '-', '/', }, product -> (*) product '/' factor: {')', '*', '+', '-', '/', }, expr -> expr '-' (*) product: {')', '+', '-', },  }";
+stateTable["s9"] := "{ factor -> (*) '(' expr ')': {')', '*', '+', '-', '/', }, factor -> (*) NUMBER: {')', '*', '+', '-', '/', }, product -> product '*' (*) factor: {')', '*', '+', '-', '/', },  }";
+stateTable["s10"] := "{ factor -> (*) '(' expr ')': {')', '*', '+', '-', '/', }, factor -> (*) NUMBER: {')', '*', '+', '-', '/', }, product -> product '/' (*) factor: {')', '*', '+', '-', '/', },  }";
+stateTable["s11"] := "{ factor -> '(' expr (*) ')': {\$, '*', '+', '-', '/', }, expr -> expr (*) '+' product: {')', '+', '-', }, expr -> expr (*) '-' product: {')', '+', '-', },  }";
+stateTable["s12"] := "{ factor -> '(' expr (*) ')': {')', '*', '+', '-', '/', }, expr -> expr (*) '+' product: {')', '+', '-', }, expr -> expr (*) '-' product: {')', '+', '-', },  }";
+stateTable["s13"] := "{ factor -> '(' expr ')' (*): {\$, '*', '+', '-', '/', } }";
+stateTable["s14"] := "{ factor -> '(' expr ')' (*): {')', '*', '+', '-', '/', } }";
+stateTable["s15"] := "{ factor -> NUMBER (*): {\$, '*', '+', '-', '/', } }";
+stateTable["s16"] := "{ factor -> NUMBER (*): {')', '*', '+', '-', '/', } }";
+stateTable["s17"] := "{ S -> expr (*): {\$}, expr -> expr (*) '+' product: {\$, '+', '-', }, expr -> expr (*) '-' product: {\$, '+', '-', },  }";
+stateTable["s18"] := "{ expr -> expr '+' product (*): {\$, '+', '-', }, product -> product (*) '*' factor: {\$, '*', '+', '-', '/', }, product -> product (*) '/' factor: {\$, '*', '+', '-', '/', },  }";
+stateTable["s19"] := "{ expr -> expr '+' product (*): {')', '+', '-', }, product -> product (*) '*' factor: {')', '*', '+', '-', '/', }, product -> product (*) '/' factor: {')', '*', '+', '-', '/', },  }";
+stateTable["s20"] := "{ expr -> expr '-' product (*): {\$, '+', '-', }, product -> product (*) '*' factor: {\$, '*', '+', '-', '/', }, product -> product (*) '/' factor: {\$, '*', '+', '-', '/', },  }";
+stateTable["s21"] := "{ expr -> expr '-' product (*): {')', '+', '-', }, product -> product (*) '*' factor: {')', '*', '+', '-', '/', }, product -> product (*) '/' factor: {')', '*', '+', '-', '/', },  }";
+stateTable["s22"] := "{ product -> factor (*): {\$, '*', '+', '-', '/', } }";
+stateTable["s23"] := "{ product -> factor (*): {')', '*', '+', '-', '/', } }";
+stateTable["s24"] := "{ expr -> product (*): {\$, '+', '-', }, product -> product (*) '*' factor: {\$, '*', '+', '-', '/', }, product -> product (*) '/' factor: {\$, '*', '+', '-', '/', },  }";
+stateTable["s25"] := "{ expr -> product (*): {')', '+', '-', }, product -> product (*) '*' factor: {')', '*', '+', '-', '/', }, product -> product (*) '/' factor: {')', '*', '+', '-', '/', },  }";
+stateTable["s26"] := "{ product -> product '*' factor (*): {\$, '*', '+', '-', '/', } }";
+stateTable["s27"] := "{ product -> product '*' factor (*): {')', '*', '+', '-', '/', } }";
+stateTable["s28"] := "{ product -> product '/' factor (*): {\$, '*', '+', '-', '/', } }";
+stateTable["s29"] := "{ product -> product '/' factor (*): {')', '*', '+', '-', '/', } }";
+
+actionTable := {};
+actionTable[["s0", '(']] := Shift("s1");
+actionTable[["s0", "NUMBER"]] := Shift("s15");
+
+actionTable[["s1", '(']] := Shift("s2");
+actionTable[["s1", "NUMBER"]] := Shift("s16");
+
+actionTable[["s2", '(']] := Shift("s2");
+actionTable[["s2", "NUMBER"]] := Shift("s16");
+
+actionTable[["s3", '(']] := Shift("s1");
+actionTable[["s3", "NUMBER"]] := Shift("s15");
+
+actionTable[["s4", '(']] := Shift("s1");
+actionTable[["s4", "NUMBER"]] := Shift("s15");
+
+actionTable[["s5", '(']] := Shift("s1");
+actionTable[["s5", "NUMBER"]] := Shift("s15");
+
+actionTable[["s6", '(']] := Shift("s1");
+actionTable[["s6", "NUMBER"]] := Shift("s15");
+
+actionTable[["s7", '(']] := Shift("s2");
+actionTable[["s7", "NUMBER"]] := Shift("s16");
+
+actionTable[["s8", '(']] := Shift("s2");
+actionTable[["s8", "NUMBER"]] := Shift("s16");
+
+actionTable[["s9", '(']] := Shift("s2");
+actionTable[["s9", "NUMBER"]] := Shift("s16");
+
+actionTable[["s10", '(']] := Shift("s2");
+actionTable[["s10", "NUMBER"]] := Shift("s16");
+
+actionTable[["s11", ')']] := Shift("s13");
+actionTable[["s11", '+']] := Shift("s7");
+actionTable[["s11", '-']] := Shift("s8");
+
+actionTable[["s12", ')']] := Shift("s14");
+actionTable[["s12", '+']] := Shift("s7");
+actionTable[["s12", '-']] := Shift("s8");
+
+actionTable[["s13", '$']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s13", '*']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s13", '+']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s13", '-']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s13", '/']] := Reduce("factor -> '(' expr ')'");
+
+actionTable[["s14", ')']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s14", '*']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s14", '+']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s14", '-']] := Reduce("factor -> '(' expr ')'");
+actionTable[["s14", '/']] := Reduce("factor -> '(' expr ')'");
+
+actionTable[["s15", '$']] := Reduce("factor -> NUMBER");
+actionTable[["s15", '*']] := Reduce("factor -> NUMBER");
+actionTable[["s15", '+']] := Reduce("factor -> NUMBER");
+actionTable[["s15", '-']] := Reduce("factor -> NUMBER");
+actionTable[["s15", '/']] := Reduce("factor -> NUMBER");
+
+actionTable[["s16", ')']] := Reduce("factor -> NUMBER");
+actionTable[["s16", '*']] := Reduce("factor -> NUMBER");
+actionTable[["s16", '+']] := Reduce("factor -> NUMBER");
+actionTable[["s16", '-']] := Reduce("factor -> NUMBER");
+actionTable[["s16", '/']] := Reduce("factor -> NUMBER");
+
+actionTable[["s17", '+']] := Shift("s3");
+actionTable[["s17", '-']] := Shift("s4");
+actionTable[["s17", '$']] := Reduce("S -> expr");
+
+actionTable[["s18", '*']] := Shift("s5");
+actionTable[["s18", '/']] := Shift("s6");
+actionTable[["s18", '$']] := Reduce("expr -> expr '+' product");
+actionTable[["s18", '+']] := Reduce("expr -> expr '+' product");
+actionTable[["s18", '-']] := Reduce("expr -> expr '+' product");
+
+actionTable[["s19", '*']] := Shift("s9");
+actionTable[["s19", '/']] := Shift("s10");
+actionTable[["s19", ')']] := Reduce("expr -> expr '+' product");
+actionTable[["s19", '+']] := Reduce("expr -> expr '+' product");
+actionTable[["s19", '-']] := Reduce("expr -> expr '+' product");
+
+actionTable[["s20", '*']] := Shift("s5");
+actionTable[["s20", '/']] := Shift("s6");
+actionTable[["s20", '$']] := Reduce("expr -> expr '-' product");
+actionTable[["s20", '+']] := Reduce("expr -> expr '-' product");
+actionTable[["s20", '-']] := Reduce("expr -> expr '-' product");
+
+actionTable[["s21", '*']] := Shift("s9");
+actionTable[["s21", '/']] := Shift("s10");
+actionTable[["s21", ')']] := Reduce("expr -> expr '-' product");
+actionTable[["s21", '+']] := Reduce("expr -> expr '-' product");
+actionTable[["s21", '-']] := Reduce("expr -> expr '-' product");
+
+actionTable[["s22", '$']] := Reduce("product -> factor");
+actionTable[["s22", '*']] := Reduce("product -> factor");
+actionTable[["s22", '+']] := Reduce("product -> factor");
+actionTable[["s22", '-']] := Reduce("product -> factor");
+actionTable[["s22", '/']] := Reduce("product -> factor");
+
+actionTable[["s23", ')']] := Reduce("product -> factor");
+actionTable[["s23", '*']] := Reduce("product -> factor");
+actionTable[["s23", '+']] := Reduce("product -> factor");
+actionTable[["s23", '-']] := Reduce("product -> factor");
+actionTable[["s23", '/']] := Reduce("product -> factor");
+
+actionTable[["s24", '*']] := Shift("s5");
+actionTable[["s24", '/']] := Shift("s6");
+actionTable[["s24", '$']] := Reduce("expr -> product");
+actionTable[["s24", '+']] := Reduce("expr -> product");
+actionTable[["s24", '-']] := Reduce("expr -> product");
+
+actionTable[["s25", '*']] := Shift("s9");
+actionTable[["s25", '/']] := Shift("s10");
+actionTable[["s25", ')']] := Reduce("expr -> product");
+actionTable[["s25", '+']] := Reduce("expr -> product");
+actionTable[["s25", '-']] := Reduce("expr -> product");
+
+actionTable[["s26", '$']] := Reduce("product -> product '*' factor");
+actionTable[["s26", '*']] := Reduce("product -> product '*' factor");
+actionTable[["s26", '+']] := Reduce("product -> product '*' factor");
+actionTable[["s26", '-']] := Reduce("product -> product '*' factor");
+actionTable[["s26", '/']] := Reduce("product -> product '*' factor");
+
+actionTable[["s27", ')']] := Reduce("product -> product '*' factor");
+actionTable[["s27", '*']] := Reduce("product -> product '*' factor");
+actionTable[["s27", '+']] := Reduce("product -> product '*' factor");
+actionTable[["s27", '-']] := Reduce("product -> product '*' factor");
+actionTable[["s27", '/']] := Reduce("product -> product '*' factor");
+
+actionTable[["s28", '$']] := Reduce("product -> product '/' factor");
+actionTable[["s28", '*']] := Reduce("product -> product '/' factor");
+actionTable[["s28", '+']] := Reduce("product -> product '/' factor");
+actionTable[["s28", '-']] := Reduce("product -> product '/' factor");
+actionTable[["s28", '/']] := Reduce("product -> product '/' factor");
+
+actionTable[["s29", ')']] := Reduce("product -> product '/' factor");
+actionTable[["s29", '*']] := Reduce("product -> product '/' factor");
+actionTable[["s29", '+']] := Reduce("product -> product '/' factor");
+actionTable[["s29", '-']] := Reduce("product -> product '/' factor");
+actionTable[["s29", '/']] := Reduce("product -> product '/' factor");
+
+gotoTable := {};
+gotoTable[["s0", "expr"]] := "s17";
+gotoTable[["s0", "factor"]] := "s22";
+gotoTable[["s0", "product"]] := "s24";
+gotoTable[["s1", "expr"]] := "s11";
+gotoTable[["s1", "factor"]] := "s23";
+gotoTable[["s1", "product"]] := "s25";
+gotoTable[["s2", "expr"]] := "s12";
+gotoTable[["s2", "factor"]] := "s23";
+gotoTable[["s2", "product"]] := "s25";
+gotoTable[["s3", "factor"]] := "s22";
+gotoTable[["s3", "product"]] := "s18";
+gotoTable[["s4", "factor"]] := "s22";
+gotoTable[["s4", "product"]] := "s20";
+gotoTable[["s5", "factor"]] := "s26";
+gotoTable[["s6", "factor"]] := "s28";
+gotoTable[["s7", "factor"]] := "s23";
+gotoTable[["s7", "product"]] := "s19";
+gotoTable[["s8", "factor"]] := "s23";
+gotoTable[["s8", "product"]] := "s21";
+gotoTable[["s9", "factor"]] := "s27";
+gotoTable[["s10", "factor"]] := "s29";
