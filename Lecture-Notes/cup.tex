@@ -1155,10 +1155,17 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
       \item Einerseits gibt es Befehle, bei denen jedem ``\texttt{if}'' auch ein ``\texttt{else}''
             zugeordnet ist.  Zwischen einem ``\texttt{if}'' und einem ``\texttt{else}'' dürfen nur
             solche Befehle auftreten.
-      \item Andererseits gibt es Befehle, bei denen dem letzten ``\texttt{if}'' kein
-            ``\texttt{else}'' zugeordnet ist.  solche Befehle dürfen nicht zwischen einem
-            ``\texttt{if}'' und einem ``\texttt{else}'' auftreten.
-      \end{enumerate}
+
+            Wir bezeichnen Befehle dieser Form als \emph{geschlossene Befehle}.  Die Idee bei dieser
+            Sprechweise besteht darin, dass ``\texttt{if}'' als öffnende Klammer zu interpretieren,
+            während das ``\texttt{else}'' einer schließenden Klammer entspricht.  Bei einem
+            geschlossenen Befehl entspricht jeder öffnenden Klammer eine schließende Klammer.
+     \item Andererseits gibt es Befehle, bei denen dem letzten ``\texttt{if}'' kein
+            ``\texttt{else}'' zugeordnet ist.  Solche Befehle bezeichnen wir als \emph{offene Befehle}.
+            Offene Befehle dürfen nicht zwischen einem ``\texttt{if}'' und einem ``\texttt{else}''
+            auftreten, denn dann müsste das ``\texttt{else}'' dem ``\texttt{if}'' des offenen
+            Befehls zugeordnet werden und der offene Befehl wäre in Wahrheit geschlossen.
+     \end{enumerate}
       Abbildung \ref{fig:dangling-else-correct.cup} zeigt die Umsetzung dieser Idee.
       Die syntaktische Kategorie \textsl{MatchedStmnt} beschreibt dabei die Befehle, 
       bei denen jedem ``\texttt{if}'' ein ``\texttt{else}'' zugeordnet ist, während die Kategorie 
@@ -1309,51 +1316,6 @@ Reduce/Reduce-Konflikte in verschiedene Kategorien einteilen.
 Wir betrachten die letzten beiden Fälle nun im Detail und zeigen Wege auf, wie die Konflikte gelöst
 werden können.
 
-\subsection{Mehrdeutigkeits-Konflikte}
-Abbildung \ref{fig:ambiguity-conflict.cup} zeigt die \textsl{Cup}-Spezifikation einer
-Grammatik, die offensichtlich mehrdeutig ist, denn das Token \textsc{Number} kann sowohl
-als ein \texttt{a} als auch als ein \texttt{b} geparst werden.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    terminal    NUMBER;
-    nonterminal s, a, b;
-    
-    s ::= a 
-       |  b
-       ;
-    a ::= NUMBER
-       ;
-    b ::= NUMBER
-       ;
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Eine mehrdeutige Grammatik.}
-\label{fig:ambiguity-conflict.cup}
-\end{figure}
-
-\noindent
-\textsl{Cup} liefert bei dieser Grammatik die folgende Fehlermeldung:
-\begin{verbatim}
-    Warning : *** Reduce/Reduce conflict found in state #4
-      between b ::= NUMBER (*) 
-      and     a ::= NUMBER (*) 
-      under symbols: {EOF}
-      Resolved in favor of the second production.
-\end{verbatim}
-Die einzige Möglichkeit diesen Konflikt aufzulösen besteht darin, die Grammatik so
-umzuschreiben, dass die Mehrdeutigkeit verschwindet.
-
-
 \subsection{Look-Ahead-Konflikte}
 Ein Look-Ahead-Konflikt liegt dann vor, wenn die Grammatik zwar eindeutig ist, aber ein Look-Ahead von einem
 Token nicht ausreicht um zu entscheiden,  mit welcher Regel reduziert werden soll.  Abbildung 
@@ -1364,7 +1326,7 @@ Diese Grammatik habe ich im Netz auf der Seite von Pete Jinks unter der Adresse
 \href{http://www.cs.man.ac.uk/~pjj/cs212/ho/node19.html}{\texttt{http://www.cs.man.ac.uk/\symbol{126}pjj/cs212/ho/node19.html}}
 \\[0.1cm]
 gefunden.},
-die zwar eindeutig ist, aber trotzdem keine LR-Grammatik ist.  
+die zwar eindeutig ist, aber nicht die LR(1)-Eigenschaft hat.  
 
 \begin{figure}[!ht]
 \centering
@@ -1662,7 +1624,7 @@ LALR-Parser-Generator nicht mehr zusammengefasst werden.  Dadurch gibt es dann a
 \caption{Einige Zustände der in Abbildung \ref{fig:myst-solved.g} gezeigten Grammatik.}
 \label{fig:myst-solved.txt}
 \end{figure}
-\vspace*{\fill}
+
 
 
 \exercise
@@ -1690,6 +1652,9 @@ aussieht, wenn die Teilliste
 $x_1$, $x_2$, $\cdots$, $x_{k-1}$, $x_k$ \quad mit $k \leq n$ 
 \\[0.2cm]
 gelesen worden ist.
+\vspace*{\fill}
+\pagebreak
+
 
 \section{Auflösung von Shift/Reduce-Konflikten}
 Es gibt im wesentlichen zwei Arten von Shift/Reduce-Konflikten:
@@ -1725,7 +1690,6 @@ gezeigte Grammatik.  Diese Grammatik beschreibt drei Arten von Ausdrücken:
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{[x, y] |-> [x, y, x]}.
-      \\[0.2cm]
 \item Zusätzlich sind als Ausdrücke Variablen-Namen zugelassen.
 \item Außerdem sind auch Listen von Ausdrücken möglich, wobei diese Listen in eckigen Klammern
       eingefasst werden.  Diese Listen können dabei beliebig geschachtelt sein.
