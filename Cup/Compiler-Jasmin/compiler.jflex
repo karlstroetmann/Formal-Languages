@@ -45,9 +45,9 @@ import java_cup.runtime.*;
 [a-zA-Z][a-zA-Z_0-9]* { return symbol(sym.IDENTIFIER, yytext());          }
 0|[1-9][0-9]*         { return symbol(sym.NUMBER, new Integer(yytext())); }
 
-[ \t\v\n\r]           { /* skip white space */ }   
-"//" [^\n]*           { /* skip comments    */ }   
-"/*" ~"*/"            { /* skip comments    */ }   
+[ \t\v\n\r]           { /* skip white space          */ }   
+"//" [^\n]*           { /* skip single line comments */ }   
+"/*" ~"*/"            { /* skip multi  line comments */ }   
 
 [^] { throw new Error("Illegal character '" + yytext() + 
                       "' at line " + yyline + ", column " + yycolumn); }

@@ -10,8 +10,7 @@ import java_cup.runtime.*;
 %{   
     private Symbol symbol(int type) {
         return new Symbol(type, yychar, yychar + yylength());
-    }
-    
+    }    
     private Symbol symbol(int type, Object value) {
         return new Symbol(type, yychar, yychar + yylength(), value);
     }
@@ -46,7 +45,7 @@ import java_cup.runtime.*;
 "while"               { return symbol( sym.WHILE     ); }
 
 [a-zA-Z][a-zA-Z_0-9]* { return symbol(sym.IDENTIFIER, yytext());          }
-[0-9]|[1-9][0-9]*     { return symbol(sym.NUMBER, new Integer(yytext())); }
+0|[1-9][0-9]*         { return symbol(sym.NUMBER, new Integer(yytext())); }
 
 [ \t\v\n\r]           { /* skip white space */ }   
 "//" [^\n]*           { /* skip comments    */ }   

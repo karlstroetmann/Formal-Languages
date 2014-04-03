@@ -1,5 +1,5 @@
-#CLASSPATH = "/Users/stroetma/Software/JavaCup/java-cup-11a.jar:." 
-CLASSPATH = "/Users/karlstroetmann/Software/JavaCup/java-cup-11a.jar:." 
+CLASSPATH = "/Users/stroetma/Software/JavaCup/java-cup-11a.jar:." 
+#CLASSPATH = "/Users/karlstroetmann/Software/JavaCup/java-cup-11a.jar:." 
 
 run: Examples/sum.ijvm
 	echo "3" | ijvm-sim Examples/sum.ijvm
@@ -22,7 +22,7 @@ Compiler.class: Assign.java Block.java BoolExpr.java Compiler.java Conjunction.j
 	javac -g -Xlint:unchecked -cp $(CLASSPATH) Compiler.java
 
 parser.java sym.java: compiler.cup
-	java -cp $(CLASSPATH) java_cup.Main -expect 1 compiler.cup
+	cup -expect 1 compiler.cup
 
 Yylex.java: compiler.jflex
 	jflex compiler.jflex

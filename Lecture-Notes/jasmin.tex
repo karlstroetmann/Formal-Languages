@@ -158,7 +158,8 @@ We will proceed to discuss the different assembler commands in more detail later
 first have to discuss some background: One of the design goal of the programming language
 \textsl{Java} was compatibility.  The idea was 
 that it should be possible to execute \textsl{Java} class files on any computer.  Therefore, the
-\textsl{Java} designers decided to create a so called \emph{virtual machine}.  A virtual machine is
+\textsl{Java} designers decided to create a so called 
+\href{http://en.wikipedia.org/wiki/Virtual_machine}{\emph{virtual machine}}.  A virtual machine is
 a computer architecture that, instead of being implemented in silicon, simulated. 
 Programs written in \textsl{Java} are first compiled into so called \emph{class files}.  These class
 files correspond to the machine code of the \textsl{Java} virtual machine (\textsc{Jvm}).  
@@ -187,12 +188,18 @@ memory is organized in the \textsc{Jvm}: In the \textsc{Jvm}, the memory is spli
       However, in the context of the \textsc{Jvm} the procedures are called \emph{methods}.
 
       The register \texttt{SP} points to the top of the stack.
-      The register \texttt{LV} (\emph{local variables}) points to the first argument of the current
-      method.   We will discuss this register in more detail when we discuss the invocation of
-      methods. 
+      If a method is called, the arguments of the method are placed on the stack.  
+      The register \texttt{LV} (\emph{local variables}) points to the first argument of the current  
+      method.    On top of the arguments, the local variables of the method are put on the stack.
+      Both the arguments and the local variables can be accessed via the register \texttt{LV}
+      by specifying their offset from the first argument.
+      We will discuss the register \texttt{LV} in more detail when we discuss the invocation of methods. 
+\item The \emph{heap} is used for dynamically allocated memory.  Newly created objects are
+      located in the heap.
 \item The \emph{constant pool} contains the definitions of constants and also the adresses of
       methods in program memory.
 \end{enumerate}
+In the following, we will be mostly concerned with the stack and the heap.
 We proceed to discuss some of the assembler instructions.
 
 \subsubsection{Arithmetical and Logical Instructions}
@@ -291,187 +298,29 @@ first argument had been stored.
 
 
 \paragraph{The instruction \squoted{\texttt{imul}}}
-multiplies the two integer values which are on top of the stack.
-Figure \ref{fig:ijvm-mul} on page \pageref{fig:ijvm-mul} pictures this command.
-The left part of the figure shows the stack as it is before the command \texttt{imul} is executed,
-while the right part of the figure depicts the situation after the execution of this command.  Note
-that after the command is executed, the stack pointer points to the position where formerly the
-first argument had been stored.
-If the product does not fit in 32 bits, only the lowest 32 bits of the result are written onto the
-stack. 
+multiplies the two integer values which are on top of the stack.  This instruction works similar to
+the instruction \texttt{iadd}.  If the product does not fit in 32 bits, only the lowest 32 bits of
+the result are written onto the stack. 
 
 
-
-\setlength{\unitlength}{0.5cm}
-\begin{figure}[!ht]
-  \centering
-\framebox{
-\begin{picture}(20,14)
-\put(4.5,1){before \texttt{imul}}
-\put(4.91,3){$\vdots$}
-\put(7.91,3){$\vdots$}
-\put(5,4){\vector(0,1){8}}
-\put(8,4){\vector(0,1){8}}
-\put(5,8){\line(1,0){3}}
-\put(5,9){\line(1,0){3}}
-\put(5,10){\line(1,0){3}}
-\put(2,9.3){\texttt{SP}}
-\put(3.2,9.5){\vector(1,0){1.5}}
-\put(6.3,9.3){$b$}
-\put(6.3,8.3){$a$}
-
-\put(13.8,1){after \texttt{imul}}
-\put(13.91,3){$\vdots$}
-\put(16.91,3){$\vdots$}
-\put(14,4){\vector(0,1){8}}
-\put(17,4){\vector(0,1){8}}
-\put(14,8){\line(1,0){3}}
-\put(14,9){\line(1,0){3}}
-\put(14,10){\line(1,0){3}}
-\put(11,8.3){\texttt{SP}}
-\put(12.2,8.5){\vector(1,0){1.5}}
-%\put(15.3,9.3){$b$}
-\put(14.7,8.3){$a * b$}
-
-\end{picture}}
-  \caption{The effect of \texttt{imul}.}
-  \label{fig:ijvm-mul}
-\end{figure}
 
 
 \paragraph{The instruction \squoted{\texttt{idiv}}}
 divides the integer value that is found on the position next to the  top of the stack by the value
-on top 
-of the stack. Figure \ref{fig:ijvm-div} on page \pageref{fig:ijvm-div} pictures this command.
-The left part of the figure shows the stack as it is before the command \texttt{idiv} is executed,
-while the right part of the figure depicts the situation after the execution of this command.  Note
-that after the command is executed, the stack pointer points to the position where formerly the
-first argument had been stored.
+on top of the stack. 
 
-\setlength{\unitlength}{0.5cm}
-\begin{figure}[!ht]
-  \centering
-\framebox{
-\begin{picture}(20,14)
-\put(4.5,1){before \texttt{idiv}}
-\put(4.91,3){$\vdots$}
-\put(7.91,3){$\vdots$}
-\put(5,4){\vector(0,1){8}}
-\put(8,4){\vector(0,1){8}}
-\put(5,8){\line(1,0){3}}
-\put(5,9){\line(1,0){3}}
-\put(5,10){\line(1,0){3}}
-\put(2,9.3){\texttt{SP}}
-\put(3.2,9.5){\vector(1,0){1.5}}
-\put(6.3,9.3){$b$}
-\put(6.3,8.3){$a$}
-
-\put(13.8,1){after \texttt{idiv}}
-\put(13.91,3){$\vdots$}
-\put(16.91,3){$\vdots$}
-\put(14,4){\vector(0,1){8}}
-\put(17,4){\vector(0,1){8}}
-\put(14,8){\line(1,0){3}}
-\put(14,9){\line(1,0){3}}
-\put(14,10){\line(1,0){3}}
-\put(11,8.3){\texttt{SP}}
-\put(12.2,8.5){\vector(1,0){1.5}}
-%\put(15.3,9.3){$b$}
-\put(14.7,8.3){$a / b$}
-
-\end{picture}}
-  \caption{The effect of \texttt{idiv}.}
-  \label{fig:ijvm-div}
-\end{figure}
 
 \paragraph{The instruction \squoted{\texttt{irem}}}
 computes the remainder $a \,\texttt{\%}\, b$ of the division of $a$ by $b$ where $a$ and $b$ are
 integer values found on top of the stack.
- Figure \ref{fig:ijvm-rem} on page \pageref{fig:ijvm-rem} pictures this command.
-The left part of the figure shows the stack as it is before the command \texttt{irem} is executed,
-while the right part of the figure depicts the situation after the execution of this command.  Note
-that after the command is executed, the stack pointer points to the position where formerly the
-first argument had been stored.
-
-\setlength{\unitlength}{0.5cm}
-\begin{figure}[!ht]
-  \centering
-\framebox{
-\begin{picture}(20,14)
-\put(4.5,1){before \texttt{irem}}
-\put(4.91,3){$\vdots$}
-\put(7.91,3){$\vdots$}
-\put(5,4){\vector(0,1){8}}
-\put(8,4){\vector(0,1){8}}
-\put(5,8){\line(1,0){3}}
-\put(5,9){\line(1,0){3}}
-\put(5,10){\line(1,0){3}}
-\put(2,9.3){\texttt{SP}}
-\put(3.2,9.5){\vector(1,0){1.5}}
-\put(6.3,9.3){$b$}
-\put(6.3,8.3){$a$}
-
-\put(13.8,1){after \texttt{irem}}
-\put(13.91,3){$\vdots$}
-\put(16.91,3){$\vdots$}
-\put(14,4){\vector(0,1){8}}
-\put(17,4){\vector(0,1){8}}
-\put(14,8){\line(1,0){3}}
-\put(14,9){\line(1,0){3}}
-\put(14,10){\line(1,0){3}}
-\put(11,8.3){\texttt{SP}}
-\put(12.2,8.5){\vector(1,0){1.5}}
-%\put(15.3,9.3){$b$}
-\put(14.7,8.3){$a \,\texttt{\%}\, b$}
-
-\end{picture}}
-  \caption{The effect of \texttt{idiv}.}
-  \label{fig:ijvm-rem}
-\end{figure}
 
 
 \paragraph{The instruction \squoted{\texttt{iand}}}
 computes the bitwise conjunction of the values on top of the stack.
 
-\setlength{\unitlength}{0.5cm}
-\begin{figure}[!ht]
-  \centering
-\framebox{
-\begin{picture}(20,14)
-\put(4.5,1){before \texttt{iand}}
-\put(4.91,3){$\vdots$}
-\put(7.91,3){$\vdots$}
-\put(5,4){\vector(0,1){8}}
-\put(8,4){\vector(0,1){8}}
-\put(5,8){\line(1,0){3}}
-\put(5,9){\line(1,0){3}}
-\put(5,10){\line(1,0){3}}
-\put(2,9.3){\texttt{SP}}
-\put(3.2,9.5){\vector(1,0){1.5}}
-\put(6.3,9.3){$b$}
-\put(6.3,8.3){$a$}
-
-\put(13.8,1){after \texttt{iand}}
-\put(13.91,3){$\vdots$}
-\put(16.91,3){$\vdots$}
-\put(14,4){\vector(0,1){8}}
-\put(17,4){\vector(0,1){8}}
-\put(14,8){\line(1,0){3}}
-\put(14,9){\line(1,0){3}}
-\put(14,10){\line(1,0){3}}
-\put(11,8.3){\texttt{SP}}
-\put(12.2,8.5){\vector(1,0){1.5}}
-%\put(15.3,9.3){$b$}
-\put(14.7,8.3){$a \,\texttt{\&}\, b$}
-
-\end{picture}}
-  \caption{The effect of \texttt{iand}.}
-  \label{fig:ijvm-and}
-\end{figure}
 
 \paragraph{The instruction \squoted{\texttt{ior}}}
 computes the bitwise disjunction of the integer values that are on top of the stack.
-As this command is very similar to the command \texttt{iand}, there is no need to picture it.
 
 
 \paragraph{The instruction \squoted{\texttt{ixor}}}
@@ -505,12 +354,12 @@ $b[4:0]$ denotes the natural number that results from the 5 lowest bits of $b$. 
 
 \put(13.8,1){after \texttt{ishl}}
 \put(13.91,3){$\vdots$}
-\put(16.91,3){$\vdots$}
+\put(18.91,3){$\vdots$}
 \put(14,4){\vector(0,1){8}}
-\put(17,4){\vector(0,1){8}}
-\put(14,8){\line(1,0){3}}
-\put(14,9){\line(1,0){3}}
-\put(14,10){\line(1,0){3}}
+\put(19,4){\vector(0,1){8}}
+\put(14,8){\line(1,0){5}}
+\put(14,9){\line(1,0){5}}
+\put(14,10){\line(1,0){5}}
 \put(11,8.3){\texttt{SP}}
 \put(12.2,8.5){\vector(1,0){1.5}}
 %\put(15.3,9.3){$b$}
@@ -1029,15 +878,15 @@ into assembler.  We discuss the implementation line by line.
 \item Line 22 declares the method sum.  This method takes one integer argument and returns an
       integer as result. 
 \item Line 23 specifies that the method \texttt{sum} has two local variables: The first local
-      variable is the parameter $n$ and the second local corresponds to the variable $s$ in the
+      variable is the parameter $n$ and the second local variable corresponds to the variable $s$ in the
       \texttt{C} program.
 \item The effect of lines 25 and 26 is to initialize this variable $s$ with the value $0$.
 \item Line 28 pushes the local variable $n$ on the stack so that line 29 is able to test whether $n$
       is already $0$.  If $n = 0$, the program branches to the label \texttt{finish} in line 39,
-      pushes the result $s$ onto the stack (line 40) and returns.  If $n$ is not yet $0$. the
+      pushes the result $s$ onto the stack (line 40) and returns.  If $n$ is not yet $0$, the
       execution proceeds normally to line 30.
 \item Line 30 and line 31 push the sum $s$ and the variable $n$ onto the stack.  These
-      values are then added and the result is then written to the locale variable $s$ in line 33.
+      values are then added and the result is written to the local variable $s$ in line 33.
       The combined effect of these instructions is therefore to perform the assignment
       \\[0.2cm]
       \hspace*{1.3cm}
