@@ -78,6 +78,17 @@ statementList ::= /* epsilon */ {: RESULT = new LinkedList<Statement>(); :}
                   :}
                ;
 
+boolExpr ::= expr:l EQUALS  expr:r     {: RESULT = new Equation(      l, r); :}
+          |  expr:l NEQUALS expr:r     {: RESULT = new Inequation(    l, r); :}
+          |  expr:l LE      expr:r     {: RESULT = new LessOrEqual(   l, r); :}
+          |  expr:l GE      expr:r     {: RESULT = new GreaterOrEqual(l, r); :}
+          |  expr:l LT      expr:r     {: RESULT = new LessThan(      l, r); :}
+          |  expr:l GT      expr:r     {: RESULT = new GreaterThan(   l, r); :}
+          |  NOT boolExpr:e            {: RESULT = new Negation(      e   ); :}
+          |  boolExpr:l AND boolExpr:r {: RESULT = new Conjunction(   l, r); :}
+          |  boolExpr:l OR  boolExpr:r {: RESULT = new Disjunction(   l, r); :}
+          ;
+
 expr ::= expr:l PLUS  expr:r                 {: RESULT = new Sum(       l, r); :}
       |  expr:l MINUS expr:r                 {: RESULT = new Difference(l, r); :}
       |  expr:l TIMES expr:r                 {: RESULT = new Product(   l, r); :}
@@ -99,14 +110,3 @@ neExprList ::= expr:e
                :}                  
             |  neExprList:l COMMA expr:e {: RESULT = l; RESULT.add(e); :}
             ;
-
-boolExpr ::= expr:l EQUALS  expr:r     {: RESULT = new Equation(      l, r); :}
-          |  expr:l NEQUALS expr:r     {: RESULT = new Inequation(    l, r); :}
-          |  expr:l LE      expr:r     {: RESULT = new LessOrEqual(   l, r); :}
-          |  expr:l GE      expr:r     {: RESULT = new GreaterOrEqual(l, r); :}
-          |  expr:l LT      expr:r     {: RESULT = new LessThan(      l, r); :}
-          |  expr:l GT      expr:r     {: RESULT = new GreaterThan(   l, r); :}
-          |  NOT boolExpr:e            {: RESULT = new Negation(      e   ); :}
-          |  boolExpr:l AND boolExpr:r {: RESULT = new Conjunction(   l, r); :}
-          |  boolExpr:l OR  boolExpr:r {: RESULT = new Disjunction(   l, r); :}
-          ;
