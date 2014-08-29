@@ -22,5 +22,5 @@ package count;
 %%
 
 0|[1-9][0-9]*  { mCount += new Integer(yytext()); }
-.|\n           { /* skip */                       }
+.|\R           { /* skip */                       }
 
