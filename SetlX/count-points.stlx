@@ -1,0 +1,21 @@
+// In calling the procedure, file is expected to be the name of a file
+// that contains substrings of the form
+//    \punkte{n}
+// where n is a natural number.  The procedure countPoints finds al these 
+// substrings and adds up the corresponding numbers.  It returns the sum 
+// of these numbers.
+
+countPoints := procedure(file) {
+    content := join(readFile(file), "\n");
+    sum     := 0;
+    scan (content) {
+        regex '\\punkte\{(0|[1-9][0-9]*)}' as [_, n]: sum += int(n);
+        regex '.|\n'                       as [ _  ]: // skip
+    }
+    return sum;
+};
+
+for (file in params) {
+    print("There are $countPoints(file)$ points in the file $file$.");
+}
+
