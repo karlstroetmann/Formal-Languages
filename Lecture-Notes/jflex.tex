@@ -1,8 +1,8 @@
-
 \chapter{Der Scanner-Generator \textsl{JFlex}}
 Ein \emph{Scanner} ist ein Werkzeug, das einen gegebenen Text in Gruppen einzelner
-\emph{Token} aufspaltet.  Beispielsweise spaltet der Scanner, der für einen
-\texttt{C}-Compiler eingesetzt wird, den Programmtext in die folgenden Token auf:
+\emph{Token} aufspaltet.  Ein Token ist dabei eine Gruppe logisch zusammenhängender Buchstaben.
+Beispielsweise spaltet der Scanner, der für einen \texttt{C}-Compiler eingesetzt wird, den
+Programmtext in die folgenden Token auf: 
 \begin{enumerate}
 \item Schlüsselwörter wie ``\texttt{if}'', ``\texttt{while}'', etc.
 \item Operator-Symbole wie ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'',
@@ -15,8 +15,7 @@ Ein \emph{Scanner} ist ein Werkzeug, das einen gegebenen Text in Gruppen einzeln
       \item einzelne Buchstaben, die in Quotes eingeschlossen sind, beispielsweise
             ``\texttt{\symbol{39}a\symbol{39}}''.
       \end{enumerate}
-\item Namen, die als Bezeichner für Variablen, Funktionen, oder Typ-Definitionen
-      fungieren.
+\item Namen, die als Bezeichner für Variablen, Funktionen, oder Typen fungieren.
 \item Kommentare.
 \item Sogenannte \emph{White-Space-Zeichen}.  Hierzu gehören Leerzeichen, horizontale und
       vertikale Tabulatoren, Zeilenumbrüche und Seitenvorschübe.
@@ -60,7 +59,7 @@ muss, von einander getrennt werden.
       erkennen und aufaddieren soll.  In diesem Fall besteht der Benutzer-Code nur aus der
       \texttt{package}-Deklaration in Zeile 1.
 \item Der zweite Teil ist \emph{Options-Teil}.  Dieser Teil enthält die Spezifikation 
-      verschiedener Optionen, sowie eventuell die Deklaration von Variablen und Methoden
+      verschiedener Optionen, sowie eventuell die Deklaration von Member-Variablen und Methoden 
       der erzeugten Scanner-Klasse.
 
       In Abbildung \ref{fig:count.jflex} erstreckt sich dieser Teil von Zeile 3 bis Zeile
@@ -143,7 +142,7 @@ die Spezifikation des Scanners aus Abbildung \ref{fig:count.jflex} jetzt Zeile f
       \texttt{Count} mit einer Methode $\texttt{main}()$ ausstatten.  Diese Methode wird alle
       Dateien, die ihr als Argument übergeben werden, scannen.
 
-      Einen Scanner, derselber mit einer $\texttt{main}$-Methode ausgestattet ist, werden wir im
+      Einen Scanner, der selber mit einer $\texttt{main}$-Methode ausgestattet ist, werden wir im
       Folgenden als \emph{Stand-Alone-Scanner} bezeichnen.
 \item Zeile 6 legt durch die Option ``\texttt{\%unicode} 
       fest, dass ein Scanner für Unicode erzeugt werden soll.  Zum Scannen von
@@ -176,23 +175,36 @@ die Spezifikation des Scanners aus Abbildung \ref{fig:count.jflex} jetzt Zeile f
       Hierbei ist \textsl{regexp} ein regulärer Ausdruck und \textsl{action} ist ein Fragment von
       \textsl{Java}-Code, das ausgeführt wird, wenn der Ausdruck \textsl{regexp} im Text erkannt
       wird.
-
-      In Zeile 18 spezifiziert der reguläre Ausdruck ``\texttt{[1-9][0-9]*}'' eine natürliche Zahl.
+\item In Zeile 18 spezifiziert der reguläre Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche Zahl.
       Der zu dieser Zahl korrespondierende String wird von der Funktion $\texttt{yytext}()$ zurück
       gegeben und mit Hilfe des Konstruktors für die Klasse \texttt{Integer} in eine Zahl
       umgewandelt.
 
-      In Zeile 19 spezifiziert der reguläre Ausdruck ``\texttt{.|\symbol{92}n}'' ein beliebiges
+\item In Zeile 19 spezifiziert der reguläre Ausdruck ``\texttt{.|\symbol{92}R}'' ein beliebiges
       Zeichen.  Der reguläre Ausdruck ``\texttt{.}'' spezifiziert dabei ein Zeichen, dass
-      von einem Zeilenumbruch verschieden ist, während ``\texttt{\symbol{92}n}'' für einen
-      Zeilenumbruch steht. Der Operator ``\texttt{|}'' steht für die Alternative.  Im
+      von einem Unicode-Zeilenumbruch verschieden ist, während ``\texttt{\symbol{92}R}'' für einen
+      beliebigen Unicode-Zeilenumbruch steht.   Es werden also sowohl die Zeichen
+      ``\texttt{\symbol{92}n}'' (line feed) und ``\texttt{\symbol{92}r}'' (carriage return), als
+      auch die Unicode-Zeichen
+      \\[0.2cm]
+      \hspace*{1.3cm}
+       ``\texttt{\symbol{92}u2028}'',
+       ``\texttt{\symbol{92}u2029}'',
+       ``\texttt{\symbol{92}u000B}'',
+       ``\texttt{\symbol{92}u000C}'' und
+       ``\texttt{\symbol{92}u0085}''
+      \\[0.2cm]
+      durch ``\texttt{\symbol{92}R}'' spezifiziert.
+
+      In dem Ausdruck  ``\texttt{.|\symbol{92}R}'' steht der Operator ``\texttt{|}''  für die
+      Alternative.  Im 
       letzten Kapitel hatten wir dafür den Operator ``$+$'' verwendet.
       Sie sehen, dass die Syntax, mit der reguläre Ausdrücke in \textsl{JFlex} spezifiziert
       werden können, von der im zweiten Kapitel gegebenen Darstellung abweicht.  Wir
       werden diese Syntax später im Detail diskutieren.
 
       Die Aktion besteht hier nur aus einem Kommentar.  Daher wird das durch den regulären
-      Ausdruck ``\texttt{.|\symbol{92}n}'' erkannte Zeichen einfach
+      Ausdruck ``\texttt{.|\symbol{92}R}'' erkannte Zeichen einfach
       überlesen.  Diese Regel ist notwendig, denn ein Stand-Alone-Scanner gibt jedes Zeichen, das
       nicht von einer Regel erkannt wird, auf der Standard-Ausgabe aus.  
 \end{enumerate}
@@ -220,7 +232,12 @@ können wir mit dem Befehl
 \hspace*{1.3cm}
 \texttt{java count.Count input.txt}
 \\[0.2cm]
-aufrufen, wobei \texttt{input.txt} den Namen der zu scannenden Datei angibt.
+aufrufen, wobei \texttt{input.txt} den Namen der zu scannenden Datei angibt.  Für die in Abbildung
+\ref{fig:input.txt} gezeigte Datei erhalten wir dann die Ausgabe
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{Total: 46}.
+
 
 \section{Reguläre Ausdrücke in \textsl{JFlex}}
 Im letzten Kapitel haben wir reguläre Ausdrücke mit einer minimalen Syntax definiert.
@@ -271,9 +288,19 @@ Ausdrücke induktiv definieren.
 \item ``\texttt{.}''$\in \textsl{Regexp}$
 
       Der reguläre Ausdruck ``\texttt{.}'' spezifiziert ein Zeichen, das von einem
-      Zeilenumbruch ``\texttt{\symbol{92}n}'' verschieden ist.
+      Unicode-Zeilenumbruch  verschieden ist.  Als Zeilenumbruch werden dabei die folgenden Zeichen
+      gewertet:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+       ``\texttt{\symbol{92}n}'', ``\texttt{\symbol{92}r}'',
+       ``\texttt{\symbol{92}u2028}'',
+       ``\texttt{\symbol{92}u2029}'',
+       ``\texttt{\symbol{92}u000B}'',
+       ``\texttt{\symbol{92}u000C}'' und
+       ``\texttt{\symbol{92}u0085}''.
 \item $\texttt{\symbol{92}}x \in \textsl{Regexp}$ \quad 
-      falls $x \in \{ \texttt{a}, \texttt{b}, \texttt{f}, \texttt{n}, \texttt{r}, \texttt{t}, \texttt{v} \}$ 
+      falls $x \in \{ \texttt{a}, \texttt{b}, \texttt{f}, \texttt{n}, \texttt{r}, \texttt{t},
+      \texttt{v}, \texttt{R} \}$. 
 
       Die Syntax $\texttt{\symbol{92}}x$ ermöglicht es, Steuerzeichen 
       zu spezifizieren.  Im einzelnen gilt:
@@ -285,6 +312,7 @@ Ausdrücke induktiv definieren.
       \item \texttt{\symbol{92}r} entspricht dem Steuerzeichen \texttt{Ctrl-M} (\emph{carriage return}).
       \item \texttt{\symbol{92}t} entspricht dem Steuerzeichen \texttt{Ctrl-I} (\emph{tabulator}).
       \item \texttt{\symbol{92}v} entspricht dem Steuerzeichen \texttt{Ctrl-K} (\emph{vertical tabulator}).
+      \item \texttt{\symbol{92}R} steht für einen beliebigen Unicode-Zeilenumbruch.
       \end{enumerate}
 \item $\texttt{\symbol{92}}abc \in \textsl{Regexp}$ \quad 
       falls $a,b,c \in \{ \texttt{0}, \cdots \texttt{7} \}$ 
@@ -316,8 +344,8 @@ Ausdrücke induktiv definieren.
       \hspace*{1.3cm}
       $a \cdot 16^3 + b \cdot 16^2 + c \cdot 16 + d$
       \\[0.2cm]
-      gegebene Position hat.  For example, \texttt{\symbol{92}u2200} specifies the unicode character
-      ``$\forall$''.
+      gegebene Position hat.  Beispielsweise spezifiziert \texttt{\symbol{92}u2200} das
+      Unicode-Zeichen ``$\forall$''.
 \item $\texttt{\symbol{92}}o \in \textsl{Regexp}$ \quad falls $o \in \textsl{OpSyms}$ 
       
       Die Operator-Symbole können durch Voranstellen eines Backslashs spezifiziert werden.
@@ -360,7 +388,7 @@ Ausdrücke induktiv definieren.
 \item $r\texttt{\{}m,n \texttt{\}} \in \textsl{Regexp}$ \quad falls $m,n \in \mathbb{N}$
   und $m \leq n$.
 
-      Der Ausdruck ``$r\texttt{\{}m,n\texttt{\}}$'' legt fest, dass $r$ mehrmal auftritt
+      Der Ausdruck ``$r\texttt{\{}m,n\texttt{\}}$'' legt fest, dass $r$ mehrmals auftritt
       und zwar mindestens $m$ mal und höchstens $n$ mal.
       Der reguläre Ausdruck ``\texttt{a\{3,5\}}'' beschreibt also die folgenden Strings:
       \\[0.2cm]
@@ -397,7 +425,7 @@ Ausdrücke induktiv definieren.
 \item $r_1\texttt{/}r_2$ \quad falls $r_1, r_2 \in \textsl{Regexp}$
   
       Der Ausdruck $r_1\texttt{/}r_2$ legt fest, dass auf den durch $r_1$ spezifizierten Text
-      ein Text folgen muss, der der Spezifikation $r_2$ genügt.  Im Unterschied zur einfachen
+      ein Text folgen muss, welcher der Spezifikation $r_2$ genügt.  Im Unterschied zur einfachen
       Konkatenation von $r_1$ und $r_2$ wird durch den regulären Ausdruck
       $r_1\texttt{/}r_2$ aber derselbe Text 
       spezifiziert, der durch $r_1$ spezifiziert wird.  Der Operator ``\texttt{/}'' liefert
@@ -463,7 +491,7 @@ Dazu ist es lediglich erforderlich, nach der öffnenden eckigen Klammer das Zeich
 \texttt{[\symbol{94}0-9]}
 \\[0.2cm]
 alle \textsc{Ascii}-Zeichen, die keine Ziffern sind.  
-\pagebreak
+
 
 \examples
 Um die Diskussion anschaulicher zu machen, präsentieren wir einige Beispiele regulärer Ausdrücke.
@@ -536,7 +564,7 @@ Unsere bisherige Diskussion regulärer Ausdrücke ist noch nicht vollständig.
             beschreibt dann genau das, was in einem Kommentar der Form \texttt{/*} $\cdots$
             \texttt{*/} innen drin stehen darf:  Beliebiger Text, der den String ``\texttt{*/}''
             nicht als Zeichenfolge enthält.
-      \item Am Ende wird der Kommentar dann durch den String ``\texttt{*/}'' abgeschlossen.
+      \item Am Ende wird der Kommentar durch den String ``\texttt{*/}'' abgeschlossen.
       \end{enumerate}
       Der Negations-Operator kann auch dazu benutzt werden, denn Durchschnitt zweier
       regulärer Ausdrücke $r_1$ und $r_2$ zu definieren, denn aufgrund des deMorgan'schen Gesetztes
@@ -644,8 +672,8 @@ In diesem Abschnitt wollen wir die wichtigsten Optionen vorstellen, die im Optio
 \item \texttt{\%ignorecase}
 
       Falls eine \textsl{JFlex}-Spezifikation  diese Option enthält, dann spielt Groß- und
-      Kleinschreibung keine Rolle.  Beispielsweise trifft der reguläre Ausdruck \texttt{[a-z]+}
-      dann auch auf den String ``\texttt{ABC}'' zu.
+      Kleinschreibung keine Rolle.  Beispielsweise spezifiziert der reguläre Ausdruck
+      ``\texttt{[a-z]+}'' dann auch auf den String ``\texttt{ABC}''.
 \end{enumerate}
 
 \section{Ein komplexeres Beispiel: Noten-Berechnung }
@@ -697,6 +725,7 @@ $\texttt{note} = 7 - 6 \cdot \bruch{\;\texttt{sumPoints}\;}{\texttt{maxPoints}}$
 die Note errechnet, wobei die Variable \texttt{maxPoints} die  Punktzahl
 angibt, die für die Note 1,0 benötigt wird.  Diese Zahl ist ein Argument, das dem Programm
 beim Start übergeben wird. 
+
 
 \begin{figure}[!ht]
 \centering
