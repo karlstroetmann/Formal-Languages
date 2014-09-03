@@ -98,9 +98,10 @@ muss, von einander getrennt werden.
     %eof}
     
     %%
-    
+
+    0[0-9]+        { /* skip strings like 007 */      }
     0|[1-9][0-9]*  { mCount += new Integer(yytext()); }
-    .|\n           { /* skip */                       }
+    .|\R           { /* skip anything else */         }
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Eine einfache Scanner-Spezifikation für \textsl{JFlex}}
@@ -118,7 +119,7 @@ muss, von einander getrennt werden.
                   xrightmargin  = 0.8cm,
                 ]
     Hier sind 3 Äpfel und 5 Birnen.
-    Und hier sind 8 Bananen.
+    Und hier sind 8 Bananen.  James Bond ist der Agent 007.
     Wieviel Stücke Obst sind in diesem Text versteckt?
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -167,7 +168,7 @@ die Spezifikation des Scanners aus Abbildung \ref{fig:count.jflex} jetzt Zeile f
       ``\texttt{\%eof\{}'' und
       ``\texttt{\%eof\}}'' 
       am Zeilen-Anfang stehen müssen.
-\item Die Zeilen 18 und 19 enthalten die Regeln unseres Scanners.  Eine Regel hat die Form
+\item Die Zeilen 18 bis 20 enthalten die Regeln unseres Scanners.  Eine Regel hat die Form
       \\[0.2cm]
       \hspace*{1.3cm}
       \textsl{regexp} $\quoted{\{}$ \textsl{action} $\quoted{\}}$
@@ -175,12 +176,22 @@ die Spezifikation des Scanners aus Abbildung \ref{fig:count.jflex} jetzt Zeile f
       Hierbei ist \textsl{regexp} ein regulärer Ausdruck und \textsl{action} ist ein Fragment von
       \textsl{Java}-Code, das ausgeführt wird, wenn der Ausdruck \textsl{regexp} im Text erkannt
       wird.
-\item In Zeile 18 spezifiziert der reguläre Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche Zahl.
+\item In Zeile 18 steht der reguläre Ausdruck ``\texttt{0[0-9]+}'' für solche Strings, die mit
+      der Ziffer ``\texttt{0}'' beginnen, auf die dann noch mindestens eine weitere dezimale Ziffer
+      folgen muss.  Hier beschreibt die Notation ``\texttt{[0-9]}'' einen sogenannten
+      \emph{Bereich}.  Der auf diesen Bereich folgende Postfix-Operator ``\texttt{+}'' ist analog
+      zum Kleene-Operator ``\texttt{*}'', verlangt aber zusätzlich, dass mindestens eine weitere
+      Ziffer aus dem Bereich ``\texttt{[0-9]}'' auftritt.  Wir werden die Syntax, mit der in
+      \textsl{JFlex} reguläre Ausdrücke beschrieben werden, später noch im Detail diskutieren.
+
+      Mit Hilfe dieser Zeile verarbeiten wir Strings der Form ``007'' und verhindern, dass diese in
+      der folgenden Zeile 19 erkannt werden.  
+\item In Zeile 19 spezifiziert der reguläre Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche Zahl.
       Der zu dieser Zahl korrespondierende String wird von der Funktion $\texttt{yytext}()$ zurück
       gegeben und mit Hilfe des Konstruktors für die Klasse \texttt{Integer} in eine Zahl
       umgewandelt.
 
-\item In Zeile 19 spezifiziert der reguläre Ausdruck ``\texttt{.|\symbol{92}R}'' ein beliebiges
+\item In Zeile 20 spezifiziert der reguläre Ausdruck ``\texttt{.|\symbol{92}R}'' ein beliebiges
       Zeichen.  Der reguläre Ausdruck ``\texttt{.}'' spezifiziert dabei ein Zeichen, dass
       von einem Unicode-Zeilenumbruch verschieden ist, während ``\texttt{\symbol{92}R}'' für einen
       beliebigen Unicode-Zeilenumbruch steht.   Es werden also sowohl die Zeichen

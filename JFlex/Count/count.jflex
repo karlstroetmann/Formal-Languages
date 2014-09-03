@@ -21,6 +21,6 @@ package count;
 
 %%
 
+0[0-9]+        { /* skip strings like 007 */      }
 0|[1-9][0-9]*  { mCount += new Integer(yytext()); }
-.|\R           { /* skip */                       }
-
+.|\R           { /* skip anything else */         }
