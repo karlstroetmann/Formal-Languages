@@ -11,9 +11,9 @@ package Converter;
 %%
 
 "<head>"            { yybegin(header);         }
-"<script"[^>\n]+">" { yybegin(script);         }
-"<"[^>\n]+">"       { /* skip html tags */     }
-[\n]+               { System.out.print("\n");  }
+"<script"[^>]+">"   { yybegin(script);         }
+"<"[^>]+">"         { /* skip html tags */     }
+\R+                 { System.out.print("\n");  }
 &nbsp;              { System.out.print(" ");   }
 &auml;              { System.out.print("ä");   }
 &ouml;              { System.out.print("ö");   }
@@ -24,8 +24,8 @@ package Converter;
 &szlig;             { System.out.print("ß");   }
 
 <header>"</head>"   { yybegin(YYINITIAL);      }
-<header>.|\n        { /* skip anything else */ }
+<header>.|\R        { /* skip anything else */ }
 
 <script>"</script>" { yybegin(YYINITIAL);      }
-<script>.|\n        { /* skip anything else */ }
+<script>.|\R        { /* skip anything else */ }
 
