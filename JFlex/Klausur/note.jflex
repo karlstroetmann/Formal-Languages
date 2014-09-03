@@ -39,15 +39,15 @@ ZAHL = 0|[1-9][0-9]*
 NAME = [A-Za-z‰ˆ¸ƒ÷‹ﬂ]+[ ][A-Za-z‰ˆ¸ƒ÷‹ﬂ\-]+
 %% 
 
-[A-Za-z]+:.*\n { /* skip header                         */ }
+[A-Za-z]+:.*\R { /* skip header                         */ }
 {NAME}/:       { System.out.print(yytext()); 
                  mSumPoints = 0;                           }
 :[ \t]+        { System.out.print(yytext());               }
 {ZAHL}         { mSumPoints += new Integer(yytext());      }
 -              { /* skip hyphens                        */ }
 [ \t]          { /* skip white space                    */ }
-^[ \t]*\n      { /* skip empty line                     */ }
-\n             { System.out.printf(" %3.1f\n", mark());    }
+^[ \t]*\R      { /* skip empty line                     */ }
+\R             { System.out.printf(" %3.1f\n", mark());    }
 .              { errorMsg();                               }
 
 
