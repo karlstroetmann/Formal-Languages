@@ -4,7 +4,6 @@ package Converter;
 
 %class Html2Txt
 %standalone
-%line
 %unicode
 
 %xstate header script
