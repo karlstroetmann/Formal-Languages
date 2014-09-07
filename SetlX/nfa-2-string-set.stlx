@@ -1,0 +1,55 @@
+// convert an NFA into a string
+nfa2string := procedure(nfa) {
+    [states, sigma, delta, q0, final] := nfa;
+    result := "";
+    n := 0;
+    result += "states: $states$\n\n";   
+    result += "start state: $q0$\n\n";
+    result += "transitions:\n";
+    for ([[q, c], p] in delta) {
+        if (c != "") {
+            result += "[$q$, $c$] |-> $p$\n";
+        } else {
+            result += "[$q$, \"\"] |-> $p$\n";
+        }
+    }
+    result += "\nset of accepting states: $final$\n";
+    return result;
+};
+
+// convert an NFA into a string
+nfa2dot := procedure(nfa, file) {
+    [states, sigma, delta, q0, final] := nfa;
+    result := "";
+    n := 0;
+    statesToNames := {}; // assigns a name to every state
+    for (q in states) {
+        statesToNames += { [q, "q" + n] };
+        n += 1;
+    }
+    result += "digraph G {\n";
+    result += "    size = \"5,7\";\n";
+    result += "    rankdir = LR;\n";
+    result += "    1 -> $q0$;\n";
+    result += "    1 [label=\"\",width=0.00001,height=0.00001];\n";
+    for (q in states) {
+        result += "    " + q;
+        if (q in final) {
+            result += " [peripheries=2]";
+        }
+        result += ";\n";
+    }
+    for ([[q, c], p] in delta) {
+        if (c == "") {
+            result += "    $q$ -> $p$";
+            result += " [weight = 0.1];\n";
+        } else {
+            result += "    $q$ -> $p$ ";
+            result += "[label = \" $c$\", weight = 10];\n";
+        }
+    }
+    result += "}\n";
+    writeFile("$file$.dot", [ result ]);
+    run("dot -Tps $file$.dot -o $file$.eps");
+    run("open $file$.eps");
+};
