@@ -834,7 +834,7 @@ Transformieren Sie den in Abbildung \ref{ab-or-ba-star.dot} auf Seite \pageref{a
 gezeigten endlichen Automaten in einen äquivalenten deterministischen endlichen
 Automaten. \eox
 
-
+\pagebreak
 
 \subsection{Implementing the Conversion of NFA to DFA}
 It is straightforward to implement the theory developed so far using the programming
@@ -902,7 +902,7 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
       The expression $\texttt{fixpoint}(\mathtt{s0},f)$ calculates a set of states $S$ such that
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mathtt{s0} \cup f(S) = S$ \quad holds, where \quad $f(S) := \{ f(x) \mid x \in S \}$.
+      $\mathtt{s0} \cup f(S) = S$ \quad holds, where \quad $f(S) := \bigcup\{ f(x) \mid x \in S \}$.
       \\[0.2cm]
       Hence, $\texttt{fixpoint}(\mathtt{s0},f)$ is a set $S$ such that the image of $S$ under $f$
       together with \texttt{s0} is again $S$.  The value of $S$ is computed by a so called 
@@ -924,24 +924,24 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
             $S_{n+1} := S_n \cup \bigcup \{ f(x) \mid x \in S_n \}$.
             \\[0.2cm]
             Remember that $f(x)$ is really a set of states and therefore $\{ f(x) \mid x \in S_n \}$
-            is a set of set of states.  Taking the union of these sets reduces the whole thing to a
-            set of states.  These states are united with the states already in $S_n$.  Since the set of
-            all states is finite, the sequence $(S_n)_n$ cannot grow indefinitely.  Therefore, there will be
-            a natural number $m \in \mathbb{N}$ such that 
+            is a set of set of states.  Taking the union of these sets reduces this set of sets of
+            states to a mere
+            set of states.  These states are combined with the states already in $S_n$.  Therefore,
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $S_{n} \subseteq S_{n+1}$ \quad for all $n \in \mathbb{N}$.
+            \\[0.2cm]
+            Since the set of all states is finite, the sequence $(S_n)_{n\in\mathbb{N}}$ cannot grow indefinitely.
+            Therefore, there will be a natural number $m \in \mathbb{N}$ such that 
             \\[0.2cm]
             \hspace*{1.3cm}
             $S_{m+1} = S_m$.
             \\[0.2cm]
-            At this point, the sequence $(S_n)_{n \in \mathbb{N}}$ has converged and if $f$ is
-            \emph{monotone} we can define $S := S_m$ and with this definition we will have 
+            At this point, the sequence $(S_n)_{n \in \mathbb{N}}$ has converged. Therefore, 
+            we can define $S := S_m$ and with this definition we have 
             \\[0.2cm]
             \hspace*{1.3cm}
-            $\mathtt{s0} \cup f(S) = S$.
-            \\[0.2cm]
-            Here, a function is \emph{monotone} if for any two sets $A$ and $B$ we have
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $A \subseteq B \Rightarrow f(A) \subseteq f(B)$.
+            $f(S) \subseteq S$.
       \end{enumerate}
 \item The function \texttt{epsilonClosure} computes the $\varepsilon$-closure of a given state
       \texttt{s}.  The transition function \texttt{delta} has to be provided as a second
@@ -951,7 +951,7 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
       a given state $q$ into the set $\delta(q, \varepsilon)$.  Hence, we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mathtt{epsilonClosure}(s, \mathtt{delta}) = \textsl{ec}(q)$.
+      $\mathtt{epsilonClosure}(\mathtt{s}, \mathtt{delta}) = \textsl{ec}(\mathtt{s})$.
 \item The function \texttt{deltaStar} takes a state $s$ of the non-deterministic finite
       automaton \texttt{nfa} and computes all states that can be reached from the state
       $s$ when the character $c$ is read.  This function satisfies the specification
@@ -990,12 +990,14 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
       \begin{enumerate}
       \item In line 22, this automaton is split up into its components.
       \item In line 23 we compute the start state of the deterministic automaton as the
-            $\varepsilon$-closure of the  state $q_0$.   This computation is done using the 
+            $\varepsilon$-closure of the  state $q_0$, where $q_0$ is the start state of the
+            non-deterministic finite automaton.   This computation is done using the 
             function \texttt{epsilonClosure} that is defined above.
       \item Line 24 defines a function that takes a set \texttt{m} of states and transforms this
             set of states into a new set of states that results from applying the transition
-            function $\Delta$ to this set for all possible characters from $\Sigma$.  This way, we
-            can compute the set of all possible sets of states.
+            function $\Delta$ to \texttt{m} for all possible characters from $\Sigma$.  This way, we
+            can compute the set of all sets of states that are reachable from the set
+            \texttt{newStart}.
       \item The new set of final states is defined in line 27 as the set of all those sets of
             states that have a non-empty intersection with the set \texttt{f} of final states of
             the non-deterministic  automaton.
@@ -1014,21 +1016,10 @@ Die Konstruktion von $A(r)$ erfolgt durch eine Induktion nach dem Aufbau des reg
 Ausdrucks $r$.  Der konstruierte Automat $A(r)$ wird die folgenden Eigenschaften
 haben, die wir bei der Konstruktion komplexerer Automaten ausnutzen werden:
 \begin{enumerate}
-\item $A(r)$ hat keine Transition in den Start-Zustand.  Bezeichnen wir den Start-Zustand
-      mit $\textsl{start}\bigl(A(r)\bigr)$, so gilt also:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\forall p \in Q: \Bigl(\textsl{start}\bigl(A(r)\bigr) \not\in \delta(p, \varepsilon)  \;\wedge\;
-       \forall c \in \Sigma: \textsl{start}\bigl(A(r)\bigr) \not\in \delta(p, c)  \Bigr)
-      $.
+\item $A(r)$ hat keine Transition in den Start-Zustand.  
 \item $A(r)$ hat genau einen akzeptierenden Zustand, den wir mit
       $\textsl{accept}\bigl(A(r)\bigr)$ bezeichnen.  Außerdem gibt es keine Übergänge, die
-      von diesem akzeptierenden Zustand ausgehen:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\delta\bigl(\textsl{accept}(A(r)), \varepsilon) = \{\}  \;\wedge\;
-       \forall c \in \Sigma: \delta\bigl(\textsl{accept}(A(r)), c) = \{\}
-      $.
+      von diesem akzeptierenden Zustand ausgehen.
 \end{enumerate}
 Im folgenden nehmen wir an, dass $\Sigma$ das Alphabet ist, das bei der
 Konstruktion des regulären Ausdrucks $r$ verwendet wurde.  Dann wird $A(r)$ wie folgt definiert.
@@ -1036,16 +1027,9 @@ Konstruktion des regulären Ausdrucks $r$ verwendet wurde.  Dann wird $A(r)$ wie 
 \item Den Automaten $A(\emptyset)$ definieren wir als
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A(\emptyset) = \langle \{ q_0, q_1 \}, \Sigma, \pair(q,c) \mapsto \{\}, q_0, \{ q_1 \} \rangle$
+      $A(\emptyset) = \langle \{ q_0, q_1 \}, \Sigma, \{\}, q_0, \{ q_1 \} \rangle$
       \\[0.2cm]
-      Beachten Sie, dass dieser Automat keinerlei Transitionen hat, für die
-      Zustands-Übergangs-Funktion $\delta$ gilt also sowohl
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\forall q \in Q: \forall c \in \Sigma: \delta(q, c) = \{\}$
-      \quad
-      als auch \quad
-      $\forall q \in Q: \delta(q, \varepsilon) = \{\}$.
+      Beachten Sie, dass dieser Automat keinerlei Transitionen hat.
 
       \begin{figure}[!ht]
         \centering
@@ -1141,7 +1125,9 @@ Konstruktion des regulären Ausdrucks $r$ verwendet wurde.  Dann wird $A(r)$ wie 
       Statt der $\varepsilon$-Transition von $q_2$ nach $q_3$ können wir die beiden
       Zustände $q_2$ und $q_3$ auch identifizieren.  Das hat den Vorteil, dass der
       resultierende Autmat dann etwas kleiner wird.  Bei den praktischen Übungen werden
-      wir diese Zustände daher identifizieren.
+      wir diese Zustände daher identifizieren.  Ich habe die Zustände $q_2$ und $q_3$ bei der obigen
+      Darstellung nur deswegen nicht identifiziert, weil dann sowohl die grafische Darstellung als
+      auch die formale Spezifikation schwieriger wird.
 \item Um den Automaten $A(r_1 + r_2)$ definieren zu können, nehmen wir wieder an, dass die
       Zustände der Automaten $A(r_1)$ und $A(r_2)$ verschieden sind.  
       Wir nehmen weiter an, dass $A(r_1)$ und $A(r_2)$ die folgende Formen haben:
@@ -1182,9 +1168,11 @@ Konstruktion des regulären Ausdrucks $r$ verwendet wurde.  Dann wird $A(r)$ wie 
              $A(r_1)$ und $A(r_2)$ gibt es jeweils eine $\varepsilon$-Transition zu dem
              akzeptierenden Zustand $q_5$.
       \end{enumerate}
-      Um den so definierten Automaten zu vereinfachen, können wir einerseits die drei
+      Um den so definierten Automaten zu vereinfachen, \emph{\textcolor{blue}{könnten}} wir einerseits die drei
       Zustände $q_0$, $q_1$ und $q_2$ und andererseits die drei Zustände 
-      $q_3$, $q_4$ und $q_5$ identifizieren.
+      $q_3$, $q_4$ und $q_5$ identifizieren.  Dies werden wir aber in den Anwendungen 
+      \underline{\textbf{\textcolor{red}{nicht}}} machen, weil die resultierenden Automaten dann
+      schwieriger zu verstehen sind. 
 \item Um den Automaten $A(r^*)$ für den Kleene-Abschluss $r^*$ 
       definieren zu können, schreiben wir $A(r)$ als
       \\[0.2cm]
@@ -1225,10 +1213,10 @@ Konstruktion des regulären Ausdrucks $r$ verwendet wurde.  Dann wird $A(r)$ wie 
       \item Von $q_2$ gibt es eine  $\varepsilon$-Transition zu dem
             Zustand $q_3$.
       \end{enumerate}
-      \textbf{Achtung}:  Wenn wir bei diesem Automaten versuchen würden, die Zustände
+      \textbf{\textcolor{red}{Achtung}}:  Wenn wir bei diesem Automaten versuchen würden, die Zustände
       $q_0$ und $q_1$ bzw.~$q_2$ und $q_3$ zu identifizieren, dann funktioniert das in 
       diesem Abschnitt beschriebene Verfahren in bestimmten  Fällen nicht mehr.  Diese
-      Zustände dürfen also \textbf{nicht} identifiziert werden!
+      Zustände \textbf{dürfen} also \underline{\textbf{\textcolor{red}{nicht}}} identifiziert werden!
 \end{enumerate}
 
 \exercise
@@ -1256,19 +1244,20 @@ dürfen.
 In this section, we develop a \textsc{SetlX} program that transforms a regular expression
 into a non-deterministic finite state machine.  In order to do so, we first have to decide
 how to represent regular expressions.  It is convenient to represent complex regular expressions as
-terms.  In \textsc{SetlX}, a term has the form
+\emph{terms}.  In \textsc{SetlX}, a term has the form
 \\[0.2cm]
 \hspace*{1.3cm}
 $F(t_1, \cdots, t_N)$.
 \\[0.2cm]
 Here, $F$ needs to be a \emph{functor}, which is just an uninterpreted function symbols.
-In \textsc{SetlX}, functors have to start with a capital letter.  The arguments $t_1$,
-$\cdots$, $t_n$ are either terms, strings, numbers, sets, or lists.  In general, we define a function
+In \textsc{SetlX}, functors have to start with a capital letter.  The arguments
+ $t_1$, $\cdots$, $t_n$ can be arbitrary \textsc{SetlX} values, i.e.~the can themselves be terms, or strings,
+ numbers, sets, lists, or objects.  In general, we define a function
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{rep}: \textsl{RegExp} \rightarrow \textsc{SetlX}$
 \\[0.2cm]
-that maps a regular expression $r$ into a value of the programming language
+that maps a regular expression $r$ into a term of the programming language
 \textsc{SetlX}.  The idea is that for a given regular expression $r$, $\textsl{rep}(r)$ is
 the \textsc{SetlX} term that represents the regular expression $r$.  
 We define $\textsl{rep}(r)$ by induction on the definition of the regular
@@ -1361,7 +1350,7 @@ class \texttt{regexp2NFA} that serves as this implementation.
 \item \texttt{getNewState} is an auxiliary function that increments the global variable \texttt{gStateCount} and returns a name
       for the corresponding state.
 \end{enumerate}
-We proceed to discuss the implementations of methods of the class \texttt{regexp2NFA} in detail.
+We proceed to discuss the implementations of the methods of the class \texttt{regexp2NFA} in detail.
 
 
 \begin{figure}[!ht]
@@ -1395,14 +1384,28 @@ We proceed to discuss the implementations of methods of the class \texttt{regexp
 \caption{Converting a regular expression into a non-deterministic finite state machine.}
 \label{fig:regexp-2-nfa.stlx:toNFA}
 \end{figure}
-%$
+%\$
 
 
 The implementation of the function \texttt{regexp2NFA} is shown in
 Figure \ref{fig:regexp-2-nfa.stlx:toNFA} on page \pageref{fig:regexp-2-nfa.stlx:toNFA}.
 The function \texttt{toNFA} takes a regular expression $r$ as its argument.  
 The implementation branches in line 2 on the form of the regular
-expression $r$.  Altogether, there are six different cases.
+expression $r$.  Altogether, there are six different cases.  In order to understand these cases, we
+need to discuss the representation of the transition function $\delta$.  In this program, we have
+decided to represent the transition function $\delta$ by a binary relation \texttt{delta}.
+The relation \texttt{delta} and the transition function  $\delta$ are connected via the formula
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta(q, c) = \{ p_1, \cdots, p_k \} \;\Leftrightarrow\; \bigl[ [q,c], \{ p_1, \cdots, p_k \} \bigr] \in \mathtt{delta}$
+\\[0.2cm]
+which holds true for all states $q$ and all characters $c$.  Furthermore, we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta(q, \varepsilon) = \{ p_1, \cdots, p_k \} \;\Leftrightarrow\; \bigl[ [q,\texttt{\symbol{34}\symbol{34}}], \{ p_1, \cdots, p_k \} \bigr] \in \mathtt{delta}$
+\\[0.2cm]
+for all states $q$.  Using this representation, the implementation of the methods of the class
+\texttt{regexp2NFA} is straightforward.
 \begin{enumerate}
 \item If $r= \texttt{0}$, then $r$ represents the regular expression  $\emptyset$.
       In this case, the function \texttt{genEmptyNFA} computes the finite state machine that
@@ -1410,15 +1413,17 @@ expression $r$.  Altogether, there are six different cases.
       
       The implementation of the function \texttt{genEmptyNFA} is shown in Figure
       \ref{fig:regexp-2-nfa.stlx:genEmptyNFA} on page \pageref{fig:regexp-2-nfa.stlx:genEmptyNFA}:
-      First, we generate two new states \texttt{q0} and \texttt{q1}.  The transition function
-      \texttt{delta} is defined in line 4 as the function mapping every pair $\pair(q,c)$ to the
-      empty set.  Finally, line 5 returns the 5-tuple
+      First, we generate two new states \texttt{q0} and \texttt{q1}.  
+      Finally, line 4 returns the 5-tuple
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\langle \{\texttt{q0}, \texttt{q1}\}, \Sigma, \delta, \texttt{q0}, \{\texttt{q1}\}\rangle$
+      $\langle \{\texttt{q0}, \texttt{q1}\}, \Sigma, \{\}, \texttt{q0}, \{\texttt{q1}\}\rangle$
       \\[0.2cm]
-      as the result.  This corresponds one-to-one with the finite state machine shown in Figure
-      \ref{fig:aLeer.eps}.
+      as the result.  This is correct, since the transition function $\delta$ has no transitions
+      as can be seen in Figure \ref{fig:aLeer.eps}.  Therefore,
+      \texttt{delta} is the empty  relation.
+
+
 
 \begin{figure}[!ht]
 \centering
@@ -1434,8 +1439,7 @@ expression $r$.  Altogether, there are six different cases.
     genEmptyNFA := procedure(sigma) {
         q0 := getNewState();
         q1 := getNewState();
-        delta := [q, c] |-> {};
-        return [ {q0, q1}, sigma, delta, q0, { q1 } ];
+        return [ {q0, q1}, mSigma, {}, q0, { q1 } ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1450,7 +1454,7 @@ expression $r$.  Altogether, there are six different cases.
       The implementation of the function \texttt{genEpsilonNFA} is shown in Figure
       \ref{fig:regexp-2-nfa.stlx:genEpsilonNFA} on page \pageref{fig:regexp-2-nfa.stlx:genEpsilonNFA}:
       First, we generate two new states \texttt{q0} and \texttt{q1}.  The transition function
-      \texttt{delta} is then defined in lines 4 -- 10.  There is exactly one
+      \texttt{delta} defined in line 4 contains exactly one
       $\varepsilon$-transition from the state $\mathtt{q0}$ to the state $\mathtt{q1}$.
       
 
@@ -1466,16 +1470,10 @@ expression $r$.  Altogether, there are six different cases.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-     genEpsilonNFA := procedure() {
+    genEpsilonNFA := procedure() {
         q0 := getNewState();
         q1 := getNewState();
-        delta := procedure(q, c) { 
-                     if (q == q0 && c == "") { 
-                         return { q1 };
-                     } else { 
-                         return {};
-                     }
-                 };
+        delta := { [ [q0, ""], {q1} ] };
         return [ {q0, q1}, mSigma, delta, q0, { q1 } ];
     };
 \end{Verbatim}
@@ -1491,7 +1489,8 @@ expression $r$.  Altogether, there are six different cases.
       The implementation of the function \texttt{genCharNFA} is shown in Figure
       \ref{fig:regexp-2-nfa.stlx:genCharNFA} on page \pageref{fig:regexp-2-nfa.stlx:genCharNFA}:
       After generating  two new states \texttt{q0} and \texttt{q1},   the transition function
-      \texttt{delta} is defined in lines 4--10.
+      \texttt{delta} contains the transition from state \texttt{q0} to the state \texttt{q1} on
+      reading the character $c$,
 
 
 
@@ -1509,14 +1508,8 @@ expression $r$.  Altogether, there are six different cases.
     genCharNFA := procedure(c) {
         q0 := getNewState();
         q1 := getNewState();
-        delta := procedure(q, d) { 
-                      if (q == q0 && d == c) { 
-                          return { q1 };
-                      } else { 
-                          return {};
-                      }
-                  };
-        return [ {q0, q1}, mSigma, delta, q0, { q1 } ];
+        delta := { [[q0, c], {q1}] };
+        return [ {q0, q1}, mSigma, delta, q0, q1 ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1536,19 +1529,14 @@ expression $r$.  Altogether, there are six different cases.
       \ref{fig:regexp-2-nfa.stlx:catenate} on page \pageref{fig:regexp-2-nfa.stlx:catenate}:
       The function \texttt{catenate} receives two finite state machines \texttt{f1} and \texttt{f2}
       as arguments.  These finite state machines are split into their components in line 2 and line
-      3.   The function $\texttt{arb}(s)$ extracts an arbitrary element from the set $s$.  
-      This function is called in line 4 and 5 to extract the accepting states \texttt{q2} and
-      \texttt{q4} of the finite state machines \texttt{f1} and \texttt{f2}.  This works since we
-      know that the sets of accepting states \texttt{f1} and \texttt{f2} contain exactly one state
-      each, so the function \texttt{arb} doesn't really have a choice which state to pick.  
-      
+      3.       
       The most important purpose of the function \texttt{catenate} is to construct a new transition 
       function $\delta$ such that 
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta = \delta_1 \cup \delta_2 \cup \{ \pair(q_2, \varepsilon) \mapsto \{ q_3 \} \}$
       \\[0.2cm]
-      holds.  This function is defined in lines 6 -- 16.
+      holds.  This function is defined in lines 4.
 
 
 \begin{figure}[!ht]
@@ -1563,22 +1551,10 @@ expression $r$.  Altogether, there are six different cases.
                   xrightmargin  = 0.8cm,
                 ]
     catenate := procedure(f1, f2) {
-        [m1, _, delta1, q1, a1] := f1;
-        [m2, _, delta2, q3, a2] := f2;
-        q2 := arb(a1);
-        q4 := arb(a2);
-        delta := procedure(q, c) {
-                     if (q == q2 && c == "") {
-                         return { q3 };
-                     } else if (q in m1) {
-                         return delta1(q, c);
-                     } else if (q in m2) {
-                         return delta2(q, c);
-                     } else {
-                         return {};
-                     }
-                 };
-        return [ m1 + m2, mSigma, delta, q1, a2 ];
+        [m1, sigma, delta1, q1, q2] := f1;
+        [m2, _    , delta2, q3, q4] := f2;
+        delta := { [[q2, ""], {q3}] } + delta1 + delta2; 
+        return [ m1 + m2, mSigma, delta, q1, q4 ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1602,26 +1578,13 @@ expression $r$.  Altogether, there are six different cases.
                   xrightmargin  = 0.8cm,
                 ]
     disjunction := procedure(f1, f2) {
-        [m1, _, delta1, q1, a1] := f1;
-        [m2, _, delta2, q2, a2] := f2;
-        q3 := arb(a1);
-        q4 := arb(a2);
+        [m1, sigma, delta1, q1, q3] := f1;
+        [m2, _    , delta2, q2, q4] := f2;
         q0 := getNewState(); 
         q5 := getNewState(); 
-        delta := procedure(q, c) {
-                     if (q == q0 && c == "") {
-                         return { q1, q2 };
-                     } else if (q in { q3, q4 } && c == "") {
-                         return { q5 };
-                     } else if (q in m1) {
-                         return delta1(q, c);
-                     } else if (q in m2) {
-                         return delta2(q, c);
-                     } else {
-                         return {};
-                     } 
-                 };
-        return [ { q0, q5 } + m1 + m2, mSigma, delta, q0, { q5 } ];
+        delta := delta1 + delta2;
+        delta += { [[q0, ""], {q1, q2}], [[q3, ""], {q5}], [[q4, ""], {q5}] };
+        return [ { q0, q5 } + m1 + m2, mSigma, delta, q0, q5 ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1641,22 +1604,11 @@ expression $r$.  Altogether, there are six different cases.
                   xrightmargin  = 0.8cm,
                 ]
     kleene := procedure(f) {
-        [m, _, delta0, q1, a] := f;
-        q2 := arb(a);
+        [m, sigma, delta0, q1, q2] := f;
         q0 := getNewState(); 
         q3 := getNewState(); 
-        delta := procedure(q, c) {
-                     if (q == q0 && c == "") {
-                         return { q1, q3 };
-                     } else if (q == q2 && c == "") {
-                         return { q1, q3 };
-                     } else if (q in m) {
-                         return delta0(q, c);
-                     } else {
-                         return {};
-                     } 
-                 };
-        return [ { q0, q3 } + m, mSigma, delta, q0, { q3 } ];
+        delta := { [[q0, ""], {q1, q3}], [[q2, ""], {q1, q3}] } + delta0;
+        return [ { q0, q3 } + m, mSigma, delta, q0, q3 ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1678,7 +1630,7 @@ expression $r$.  Altogether, there are six different cases.
                   xrightmargin  = 0.8cm,
                 ]
     getNewState := procedure() {
-        gStateCount += 1;
+        this.gStateCount += 1;
         return "q" + gStateCount;
     };
 \end{Verbatim}
@@ -1687,8 +1639,8 @@ expression $r$.  Altogether, there are six different cases.
 \label{fig:regexp-2-nfa.stlx:getNewState}
 \end{figure}
 
-%\vspace*{\fill}
-%\pagebreak
+\vspace*{\fill}
+\pagebreak
 
 
 
@@ -1753,7 +1705,7 @@ $p \stackrel{w}{\mapsto}_k q$ erfolgt durch Induktion nach der Länge des Wortes 
         in den Zustand $q$ übergeht, dann werden zwischendurch keine Zustände aus $Q_k$
         besucht, denn es werden überhaupt keine Zustände zwischendurch besucht.
   \end{enumerate}
-\item[I.S.:] $w = cv$.
+\item[I.S.:] $w = cv$ mit $|v| \geq 1$.
 
              \hspace*{1.3cm}
             $p \stackrel{c}{\mapsto} q \wedge q \not\in Q_k \wedge q \stackrel{v}{\mapsto}_k r
@@ -1820,7 +1772,7 @@ Die Definition der regulären Ausdrücke $r^{(k)}(p_1, p_2)$ erfolgt durch eine In
 
   Bei dem Übergang von $r^{(k)}(p_1, p_2)$ zu  $r^{(k+1)}(p_1, p_2)$ dürfen wir zusätzlich
   den Zustand $q_k$ benutzen, denn $q_k$ ist das einzige Element der Menge $Q_k$, das
-  nicht in der Menge $q_{k+1}$ enthalten ist.  Wird ein String $w$ gelesen, der
+  nicht in der Menge $Q_{k+1}$ enthalten ist.  Wird ein String $w$ gelesen, der
   den Zustand $p_1$ in den Zustand $p_2$ überführt, ohne dabei zwischendurch in einen
   Zustand aus der Menge $Q_{k+1}$ zu wechseln, so gibt es zwei Möglichkeiten:
   \begin{enumerate}
@@ -1850,8 +1802,8 @@ Die Definition der regulären Ausdrücke $r^{(k)}(p_1, p_2)$ erfolgt durch eine In
          r^{(k)}(p_1,q_k) \cdot \bigl(r^{(k)}(q_k,q_k)\bigr)^* \cdot r^{(k)}(q_k,p_2)$.
         \\[0.2cm]
         Dieser Ausdruck kann wie folgt gelesen werden:  Um von $p_1$ nach $p_2$ zu kommen,
-        ohne den Zustand $q_{k}$ zu benutzen, kann der Automat entweder direkt
-        von $p_1$ nach $p_2$ gelangen, ohne $q_k$ zu benutzen, was dem Ausdruck 
+        ohne dabei zwischendurch Zustände aus $Q_{k+1}$ zu benutzen, kann der Automat entweder direkt
+        von $p_1$ nach $p_2$ gelangen, ohne zwischendurch Zustände aus  $Q_k$ zu benutzen, was dem Ausdruck 
         $r^{(k)}(p_1,p_2)$ entspricht, oder aber der Automat wechselt von $p_1$ ein erstes Mal
         in den Zustand $q_k$, was den Ausdruck $r^{(k)}(p_1,q_k)$ erklärt, wechselt dann beliebig oft
         von $q_k$ nach $q_k$,  was den Ausdruck  $\bigl(r^{(k)}(q_k,q_k)\bigr)^*$ erklärt und wechselt

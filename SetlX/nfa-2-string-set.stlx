@@ -6,11 +6,10 @@ nfa2string := procedure(nfa) {
     result += "states: $states$\n\n";   
     result += "start state: $q0$\n\n";
     result += "transitions:\n";
-    for (q in states) {
-        for (c in sigma, p in delta(q, c)) {
+    for ([[q, c], p] in delta) {
+        if (c != "") {
             result += "[$q$, $c$] |-> $p$\n";
-        }
-        for (p in delta(q, "")) {
+        } else {
             result += "[$q$, \"\"] |-> $p$\n";
         }
     }
@@ -28,28 +27,24 @@ nfa2dot := procedure(nfa, file) {
         statesToNames += { [q, "q" + n] };
         n += 1;
     }
-    startName := statesToNames[q0];
     result += "digraph G {\n";
     result += "    size = \"5,7\";\n";
     result += "    rankdir = LR;\n";
-    result += "    1 -> $startName$;\n";
+    result += "    1 -> $q0$;\n";
     result += "    1 [label=\"\",width=0.00001,height=0.00001];\n";
     for (q in states) {
-        result += "    " + statesToNames[q];
+        result += "    " + q;
         if (q in final) {
             result += " [peripheries=2]";
         }
         result += ";\n";
     }
-    for (q in states) {
-        for (p in delta(q, "")) {
-            result += "    $statesToNames[q]$ -> $statesToNames[p]$";
+    for ([[q, c], p] in delta) {
+        if (c == "") {
+            result += "    $q$ -> $p$";
             result += " [weight = 0.1];\n";
-        }
-    }
-    for (q in states) {
-        for (c in sigma, p in delta(q, c)) {
-            result += "    $statesToNames[q]$ -> $statesToNames[p]$ ";
+        } else {
+            result += "    $q$ -> $p$ ";
             result += "[label = \" $c$\", weight = 10];\n";
         }
     }

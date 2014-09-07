@@ -1,14 +1,30 @@
 load("fixpoint.stlx");
+
+// Given a transition function delta and a state s, this function
+// computes the set of all those states that can be reached from the state
+// s via epsilon transitions.
 epsClosure := procedure(s, delta) {
     result := fixpoint({s}, q |-> delta(q, ""));
     return result;
 };
+
+// Given a transition function delta, a state q, and a character c,
+// this function computes the set of all those states that can be reached 
+// from q when we first have a transition from q to some other state  p 
+// on reading the character c followed by any number of epsilon transitions
+// starting in p.
 deltaStar := procedure(s, c, delta) {
     return {} +/ { epsClosure(q, delta) : q in delta(s, c) };
 };
+
+// This function extends the function deltaStar from a single state
+// q to a set of states m.
 capitalDelta := procedure(m, c, delta) {
     return {} +/ { deltaStar(q, c, delta) : q in m };
 };
+
+// This function takes a non-deterministic finite state machine and converts it 
+// into an equivalent deterministic finite state machine.
 nfa2dfa := procedure(nfa) {
     [states, sigma, delta, q0, final] := nfa;
     newStart   := epsClosure(q0, delta);
