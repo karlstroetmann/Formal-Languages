@@ -868,22 +868,26 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
         }
     };
     epsClosure := procedure(s, delta) {
-        result := fixpoint({s}, q |-> delta(q, ""));
+        result := fixpoint({s}, q |-> delta[[q, ""]]);
         return result;
     };
     deltaStar := procedure(s, c, delta) {
-        return {} +/ { epsClosure(q, delta) : q in delta(s, c) };
+        if (delta[[s, c]] != om) {
+            return {} +/ { epsClosure(q, delta) : q in delta[[s, c]] };
+        } else {
+            return {};
+        }
     };
     capitalDelta := procedure(m, c, delta) {
         return {} +/ { deltaStar(q, c, delta) : q in m };
     };
     nfa2dfa := procedure(nfa) {
-        [states, sigma, delta, q0, f] := nfa;
+        [states, sigma, delta, q0, final] := nfa;
         newStart   := epsClosure(q0, delta);
         nextStates := m |-> { capitalDelta(m, c, delta) : c in sigma };
         newStates  := fixpoint({newStart}, nextStates);
-        newDelta   := [m, c] |-> capitalDelta(m, c, delta);
-        newFinal   := { m : m in newStates | m * f != {} };
+        newDelta := { [[m,c], capitalDelta(m,c,delta)] : m in newStates, c in sigma };
+        newFinal := { m : m in newStates | m * final != {} };
         return [newStates, sigma, newDelta, newStart, newFinal];
     };
 \end{Verbatim}
@@ -943,9 +947,25 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
             \hspace*{1.3cm}
             $f(S) \subseteq S$.
       \end{enumerate}
-\item The function \texttt{epsilonClosure} computes the $\varepsilon$-closure of a given state
+\item The function \texttt{epsClosure} computes the $\varepsilon$-closure of a given state
       \texttt{s}.  The transition function \texttt{delta} has to be provided as a second
-      argument.  The idea of the computation is to use a fixpoint iteration that starts with the set
+      argument.  In this function we assume that \texttt{delta} is represented as a binary relation.
+      For example, the transition function $\delta$ of the non-deterministic finite state
+      shown in Figure \ref{fig:ab-or-ba-star.dot} can be represented in \textsc{SetlX} as the
+      following binary relation:
+\begin{verbatim}
+    delta45 := { [ [0, "" ], {1, 2} ],
+                 [ [1, "b"], {3} ],
+                 [ [2, "a"], {4} ],
+                 [ [3, "a"], {5} ],
+                 [ [4, "b"], {6} ],
+                 [ [5, "" ], {7} ],
+                 [ [6, "" ], {7} ],
+                 [ [7, "" ], {0} ]
+               };
+\end{verbatim}
+      \\[0.2cm]
+      The idea of the computation is to use a fixpoint iteration that starts with the set
       $\{ \mathtt{s} \}$ and adds successively all those states that can be reached by $\varepsilon$
       transitions.  The second argument for \texttt{fixpoint} is a function that maps
       a given state $q$ into the set $\delta(q, \varepsilon)$.  Hence, we have
@@ -988,17 +1008,19 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
 \item The function \texttt{nfa2dfa} takes as input a non-deterministic finite automaton
       \texttt{nfa}.  It works as follows:
       \begin{enumerate}
-      \item In line 22, this automaton is split up into its components.
-      \item In line 23 we compute the start state of the deterministic automaton as the
+      \item In line 26, this automaton is split up into its components.
+      \item In line 27 we compute the start state of the deterministic automaton as the
             $\varepsilon$-closure of the  state $q_0$, where $q_0$ is the start state of the
             non-deterministic finite automaton.   This computation is done using the 
             function \texttt{epsilonClosure} that is defined above.
-      \item Line 24 defines a function that takes a set \texttt{m} of states and transforms this
+      \item Line 28 defines a function that takes a set \texttt{m} of states and transforms this
             set of states into a new set of states that results from applying the transition
             function $\Delta$ to \texttt{m} for all possible characters from $\Sigma$.  This way, we
             can compute the set of all sets of states that are reachable from the set
             \texttt{newStart}.
-      \item The new set of final states is defined in line 27 as the set of all those sets of
+      \item The transition function of the deterministic finite state machine is the defined in line
+            30 as a binary relation using the function \texttt{capitalDelta}
+      \item The new set of final states is defined in line 31 as the set of all those sets of
             states that have a non-empty intersection with the set \texttt{f} of final states of
             the non-deterministic  automaton.
       \end{enumerate} 
