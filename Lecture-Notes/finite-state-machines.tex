@@ -599,11 +599,11 @@ der Menge $\textsl{ec}(q)$ enthalten sind.
  \epsfig{file=Abbildungen/ab-or-ba-star.eps, scale=0.7}
 
    \caption{Nicht-deterministischer Automat mit $\varepsilon$-Transitionen.}
-  \label{ab-or-ba-star.dot}
+  \label{fig:ab-or-ba-star.dot}
 \end{figure}
 
 \example
-Abbildung \ref{ab-or-ba-star.dot} zeigt einen nicht-deterministischen endlichen Automaten mit
+Abbildung \ref{fig:ab-or-ba-star.dot} zeigt einen nicht-deterministischen endlichen Automaten mit
 $\varepsilon$-Transitionen.  Die $\varepsilon$-Transitionen sind in der Abbildung die
 Pfeile, die nicht mit einem Buchstaben beschriftet sind. Wir berechnen für alle Zustände
 den $\varepsilon$-Abschluss. 
@@ -830,7 +830,8 @@ Anzahl halbiert wird.
 
 
 \exercise
-Transformieren Sie den in Abbildung \ref{ab-or-ba-star.dot} auf Seite \pageref{ab-or-ba-star.dot}
+Transformieren Sie den in Abbildung \ref{fig:ab-or-ba-star.dot} auf Seite
+\pageref{fig:ab-or-ba-star.dot} 
 gezeigten endlichen Automaten in einen äquivalenten deterministischen endlichen
 Automaten. \eox
 
@@ -964,7 +965,6 @@ state machine (also known as \textsc{Nfa}, which is short for \underline{n}on-de
                  [ [7, "" ], {0} ]
                };
 \end{verbatim}
-      \\[0.2cm]
       The idea of the computation is to use a fixpoint iteration that starts with the set
       $\{ \mathtt{s} \}$ and adds successively all those states that can be reached by $\varepsilon$
       transitions.  The second argument for \texttt{fixpoint} is a function that maps
@@ -1426,8 +1426,29 @@ which holds true for all states $q$ and all characters $c$.  Furthermore, we hav
 \hspace*{1.3cm}
 $\delta(q, \varepsilon) = \{ p_1, \cdots, p_k \} \;\Leftrightarrow\; \bigl[ [q,\texttt{\symbol{34}\symbol{34}}], \{ p_1, \cdots, p_k \} \bigr] \in \mathtt{delta}$
 \\[0.2cm]
-for all states $q$.  Using this representation, the implementation of the methods of the class
-\texttt{regexp2NFA} is straightforward.
+for all states $q$.  However, in order to save space we do not want to store the pairs
+\\[0.2cm]
+\hspace*{1.3cm}
+$\bigl[ [p, c], \delta(p,c) \bigr]$ \quad and \quad $\bigl[ [p, \varepsilon], \delta(p,\varepsilon) \bigr]$
+\\[0.2cm]
+where either $\delta(p,c)$ or $\delta(p,\varepsilon)$ is the empty set.
+
+In order to ease the implementation we make use of the fact that all the finite
+state machines shown in 
+the previous section have exactly one accepting state.  Therefore, instead of representing a
+non-deterministic finite state machine as a tuple of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle Q, \Sigma, \delta, q_0, F \rangle$
+\\[0.2cm]
+where $F$ is the set of accepting states, we instead represent a finite state machine as a tuple of
+the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle Q, \Sigma, \delta, q_0, q_f \rangle$
+\\[0.2cm]
+where $q_f$ is the single accepting state.  Then, it is straightforward to transform the finite
+state machines shown in the previous section into \textsc{SetlX} code.
 \begin{enumerate}
 \item If $r= \texttt{0}$, then $r$ represents the regular expression  $\emptyset$.
       In this case, the function \texttt{genEmptyNFA} computes the finite state machine that
@@ -1439,7 +1460,7 @@ for all states $q$.  Using this representation, the implementation of the method
       Finally, line 4 returns the 5-tuple
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\langle \{\texttt{q0}, \texttt{q1}\}, \Sigma, \{\}, \texttt{q0}, \{\texttt{q1}\}\rangle$
+      $\langle \{\texttt{q0}, \texttt{q1}\}, \Sigma, \{\}, \texttt{q0}, \texttt{q1} \rangle$
       \\[0.2cm]
       as the result.  This is correct, since the transition function $\delta$ has no transitions
       as can be seen in Figure \ref{fig:aLeer.eps}.  Therefore,
@@ -1461,7 +1482,7 @@ for all states $q$.  Using this representation, the implementation of the method
     genEmptyNFA := procedure(sigma) {
         q0 := getNewState();
         q1 := getNewState();
-        return [ {q0, q1}, mSigma, {}, q0, { q1 } ];
+        return [ {q0, q1}, mSigma, {}, q0, q1 ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1496,7 +1517,7 @@ for all states $q$.  Using this representation, the implementation of the method
         q0 := getNewState();
         q1 := getNewState();
         delta := { [ [q0, ""], {q1} ] };
-        return [ {q0, q1}, mSigma, delta, q0, { q1 } ];
+        return [ {q0, q1}, mSigma, delta, q0, q1 ];
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
