@@ -13,22 +13,22 @@ regExpEquiv := procedure(r1, r2, sigma) {
 };
 regexp2DFA := procedure(r, sigma) {
     converter := regexp2NFA(sigma);
-    nfa       := converter.toNFA(r);    
-    return nfa2dfa(nfa);    
+    [states, sigma, delta, q0, final] := converter.toNFA(r);    
+    return nfa2dfa([states, sigma, delta, q0, { final }]);    
 };
 // Return a DFA that recognizes the language L(f1) \ L(f2).
 fsmComplement := procedure(f1, f2) {
     [states1, sigma, delta1, q1, a1] := f1;
     [states2,     _, delta2, q2, a2] := f2;
     states := states1 >< states2;
-    delta  := procedure(q, c) {
-                  [q1, q2] := q;
-                  return [delta1(q1, c), delta2(q2, c)];
-              };
+    delta  := {};
+    for ([q1, q2] in states, c in sigma) {
+        delta += { [[[q1, q2], c],[delta1[[q1, c]], delta2[[q2, c]]]] };
+    }
     return [states, sigma, delta, [q1, q2], a1 >< (states2 - a2)];
 };
 isEmpty := procedure(fsm) {
     [states, sigma, delta, q0, accepting] := fsm;
-    reachable := fixpoint({q0}, q |-> { delta(q, c) : c in sigma });
+    reachable := fixpoint({q0}, q |-> { delta[[q, c]] : c in sigma });
     return reachable * accepting == {};
 };

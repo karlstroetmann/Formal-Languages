@@ -1,9 +1,26 @@
+load("regexp-parser.stlx");
 load("regexp-2-nfa.stlx");
-load("nfa-2-string.stlx");
+load("nfa-2-string-set.stlx");
+
+// The input s is a string representing a regular expression.  This string is 
+// parsed into a term representing the regular expression. Then, the resulting
+// regular expression is transformed into an equivalent non-deterministic 
+// finite state
+testRegexp2NFA := procedure(s, sigma, file) {
+    regexp  := myParse(s);
+    print("regular expression: $regexp$");
+    cnvrtr  := regexp2NFA(sigma);
+    nfa     := cnvrtr.toNFA(regexp);
+    print("The regular expression $s$ is recognized by the following NFA:");
+    print(nfa2string(nfa));
+    nfa2dot(nfa, file);
+};
 
 sigma  := { "a", "b" };
-regexp := Cat(Cat(Star(Or("a", "b")), "a"), Star("b")); // (a + b)* . a . b*
-cnvrtr := regexp2NFA(sigma);
-nfa    := cnvrtr.toNFA(regexp);
-//print(nfa2string(nfa));
-nfa2dot(nfa, "nfa");
+testRegexp2NFA("(a+b)"        , sigma, "fsm1"); 
+testRegexp2NFA("a*"           , sigma, "fsm2"); 
+testRegexp2NFA("(ab)*"        , sigma, "fsm3"); 
+testRegexp2NFA("(a+b)*(a*b*)*", sigma, "fsm4"); 
+
+
+
