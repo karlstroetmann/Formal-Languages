@@ -44,7 +44,7 @@ gilt.  Wir definieren $r := r_1 + r_2$.  Offenbar gilt
 \hspace*{1.3cm}
 $L(r) = L(r_1 + r_2) = L(r_1) \cup L(r_2) = L_1 \cup L_2$.
 \\[0.2cm]
-Damit ist klar, dass $L_1 \cup L_2$ eine reguläre Sprache ist. \qed
+Damit ist klar, dass auch $L_1 \cup L_2$ eine reguläre Sprache ist. \qed
 
 \begin{Satz} \label{satz:schnitt}
   Sind $L_1$ und $L_2$ reguläre Sprachen, so ist auch der Durchschnitt $L_1 \cap L_2$ 
@@ -78,7 +78,7 @@ verwenden wir natürlich die Automaten $A_1$ und $A_2$.  Wir nehmen an, dass
 $A_1 = \langle Q_1, \Sigma, \delta_1, q_1, F_1 \rangle$ \quad und \quad
 $A_2 = \langle Q_2, \Sigma, \delta_2, q_2, F_2 \rangle$
 \\[0.2cm]
-gilt und definieren $A$ als eine Art kartesisches Produkt von $A_1$ und $A_2$:
+gilt und definieren $A$ als ein verallgemeinertes kartesisches Produkt der Automaten $A_1$ und $A_2$:
 \\[0.2cm]
 \hspace*{1.3cm}
 $A := \langle Q_1 \times Q_2, \Sigma, \delta, \pair(q_1,q_2), F_1 \times F_2 \rangle$,
@@ -215,7 +215,7 @@ For example, if $s = \mathtt{abc}$, then $s^R = \mathtt{cba}$. The reversal $L^R
 \hspace*{1.3cm}
 $L^R := \{ s^R \mid s \in L \}$.
 \\[0.2cm]
-Assume now that the language $L \subseteq \Sigma^*$ is regular.  Prove that then $L^R$ is a regular
+Next, assume that the language $L \subseteq \Sigma^*$ is regular.  Prove that then $L^R$ is a regular
 language, too. \eox
 
 \section{Erkennung leerer Sprachen \label{section:leer}}
@@ -281,6 +281,7 @@ $r_1 \doteq r_2 \stackrel{\mbox{\scriptsize def}}{\Longleftrightarrow} L(r_1) = 
 \\[0.2cm]
 Wir werden in diesem Abschnitt eine Verfahren vorstellen, mit dem wir für zwei reguläre
 Ausdrücke $r_1$ und $r_2$ entscheiden können, ob $r_1 \doteq r_2$ gilt. 
+\pagebreak
 
 \begin{Satz}
   Es seien $r_1$ und $r_2$ zwei reguläre Ausdrücke.  Dann ist die Frage, ob $r_1 \doteq r_2$
@@ -349,22 +350,22 @@ below.
     };
     regexp2DFA := procedure(r, sigma) {
         converter := regexp2NFA(sigma);
-        nfa       := converter.toNFA(r);    
-        return nfa2dfa(nfa);    
+        [states, sigma, delta, q0, final] := converter.toNFA(r);    
+        return nfa2dfa([states, sigma, delta, q0, { final }]);    
     };
     fsmComplement := procedure(f1, f2) {
         [states1, sigma, delta1, q1, a1] := f1;
         [states2,     _, delta2, q2, a2] := f2;
         states := states1 >< states2;
-        delta  := procedure(q, c) {
-                      [q1, q2] := q;
-                      return [delta1(q1, c), delta2(q2, c)];
-                  };
+        delta  := {};
+        for ([q1, q2] in states, c in sigma) {
+            delta += { [[[q1, q2], c],[delta1[[q1, c]], delta2[[q2, c]]]] };
+        }
         return [states, sigma, delta, [q1, q2], a1 >< (states2 - a2)];
     };
     isEmpty := procedure(fsm) {
         [states, sigma, delta, q0, accepting] := fsm;
-        reachable := fixpoint({q0}, q |-> { delta(q, c) : c in sigma });
+        reachable := fixpoint({q0}, q |-> { delta[[q, c]] : c in sigma });
         return reachable * accepting == {};
     };
 \end{Verbatim}
@@ -417,9 +418,25 @@ below.
       $r$ into a non-deterministic finite state machine \texttt{nfa} via the function
       \texttt{regexp2NFA}.  The non-deterministic finite state machine \texttt{nfa} is then
       converted into a deterministic finite state machine with the help of the function
-      \texttt{nfa2dfa}. 
+      \texttt{nfa2dfa}.  However, there is one minor problem to solve:  The function
+      \texttt{toNFA} returns a finite state machine that has exactly one accepting state.
+      For this reason this function does return a 5-tuple of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\langle Q, \Sigma, \delta, q_0, q_f \rangle$
+      \\[0.2cm]
+      where $q_f$ is the single accepting state.  However, the function \texttt{nfa2dfa} expects its argument
+      to be a 5-tuple of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\langle Q, \Sigma, \delta, q_0, F \rangle$
+      \\[0.2cm]
+      where $F$ is the set of accepting states.  Therefore, we had to extract the components of 
+      NFA returned by \texttt{toNFA} and turn the single accepting state $q_f$ into the set 
+      $\{ q_f \}$ in order to call the function \texttt{nfa2dfa}.
 
-      The function \texttt{regexp2NFA} has already been shown in
+
+      The function \texttt{toNFA} has already been shown in
       Figure \ref{fig:regexp-2-nfa.stlx:toNFA} on page
       \pageref{fig:regexp-2-nfa.stlx:toNFA}, while the function \texttt{nfa2dfa}
       is shown in Figure \ref{fig:nfa2dfa.stlx} on page \pageref{fig:nfa2dfa.stlx}.
@@ -449,7 +466,6 @@ below.
       iteration.  The function \texttt{fixpoint} that is used here has already been discussed in
       Figure \ref{fig:nfa2dfa.stlx} on page \pageref{fig:nfa2dfa.stlx}.
 \end{enumerate}
-\pagebreak
 
 \section{Grenzen regulärer Sprachen}
 Wir haben im letzten Kapitel bereits das Theorem von Nerode kennengelernt und konnten mit
@@ -502,7 +518,7 @@ Wir betrachten die Berechnung, die der Automat $A$ bei der Eingabe $s$ durchführ
 die Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_0 \stackrel{c_1}{\mapsto} q_1 \stackrel{c_2}{\mapsto} q_2 \stackrel{c_3}{\mapsto} \cdots \stackrel{c_m}{\mapsto} q_m$
+$q_0 \stackrel{c_1}{\longmapsto} q_1 \stackrel{c_2}{\longmapsto} q_2 \stackrel{c_3}{\longmapsto} \cdots \stackrel{c_m}{\longmapsto} q_m$
 \\[0.2cm]
 und da $s \in L$ ist, gilt $q_m \in F$.
 Die Länge $m$ des Wortes $s$ hat nach Voraussetzung mindestens den Wert $n$.  Daher können in der Liste
@@ -538,35 +554,35 @@ Weiter wissen wir das Folgende:
 \item Beim Lesen von $u$ geht der Automat vom Zustand $q_0$ in den Zustand $q_k$ über, es gilt
       \begin{equation}
         \label{eq:pumping1}
-        q_0 \stackrel{u}{\mapsto} q_k.    
+        q_0 \stackrel{u}{\longmapsto} q_k.    
       \end{equation}
 \item Beim Lesen von $v$ geht der Automat vom Zustand $q_k$ in den Zustand $q_l$ über.  Da aber 
-      $q_l = q_k$ ist, gilt also
+      $q_l = q_k$ ist, gilt 
       \begin{equation}
         \label{eq:pumping2}
-      q_k \stackrel{v}{\mapsto} q_k.        
+      q_k \stackrel{v}{\longmapsto} q_k.        
       \end{equation}
 \item Beim Lesen von $w$ geht der Automat vom Zustand $q_l = q_k$   in den akzeptierenden Zustand
       $q_m$ über:
       \begin{equation}
         \label{eq:pumping3}
-        q_k \stackrel{w}{\mapsto} q_m.        
+        q_k \stackrel{w}{\longmapsto} q_m.        
       \end{equation}
 \end{enumerate}
-Aus $q_k \stackrel{v}{\mapsto} q_k$ folgt
+Aus $q_k \stackrel{v}{\longmapsto} q_k$ folgt
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_k \stackrel{v}{\mapsto} q_k \stackrel{v}{\mapsto} q_k$, \quad also \quad $q_k \stackrel{v^2}{\mapsto} q_k$
+$q_k \stackrel{v}{\longmapsto} q_k \stackrel{v}{\longmapsto} q_k$, \quad also \quad $q_k \stackrel{v^2}{\longmapsto} q_k$
 \\[0.2cm]
 Da wir dieses Spiel beliebig of wiederholen können, haben wir für alle $h \in \mathbb{N}$
 \begin{equation}
   \label{eq:pumping4}
-  q_k \stackrel{v^h}{\mapsto} q_k  
+  q_k \stackrel{v^h}{\longmapsto} q_k  
 \end{equation}
 Aus den Gleichungen (\ref{eq:pumping1}), (\ref{eq:pumping3}) und \ref{eq:pumping4})  folgt nun
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_0 \stackrel{uv^hw}{\mapsto} q_m$
+$q_0 \stackrel{uv^hw}{\longmapsto} q_m$
 \\[0.2cm]
 und da $q_m$ ein akzeptierender Zustand ist, haben wir damit $uv^hw \in L$ gezeigt. \qed
 \vspace*{0.3cm}
@@ -638,7 +654,8 @@ Andererseits gilt
 \textsl{count}(uw,\squoted{)}) & = & \textsl{count}(uvw,\squoted{)}) - \textsl{count}(v,\squoted{)}) \\
                                & = & \textsl{count}(s,\squoted{)}) - \textsl{count}(v,\squoted{)}) \\
  & = & \textsl{count}(\mathtt{(}^n\mathtt{)}^n,\squoted{)}) - \textsl{count}(\mathtt{(}^k,\squoted{)}) \\
-                               & = & n  \\
+                               & = & n  - 0\\
+                               & = & n  
 \end{array}
 \]
 Insgesamt sehen wir
