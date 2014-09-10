@@ -1,38 +1,24 @@
-load("dfa-2-string.stlx");
+load("dfa-2-string-set.stlx");
 load("minimize.stlx");
 
-delta := procedure(q, c) {
-    match ([q, c]) {
-        case [0, "a"]: return 1;
-        case [0, "b"]: return 6;
-        case [1, "a"]: return 2;
-        case [1, "b"]: return 7;
-        case [2, "a"]: return 3;
-        case [2, "b"]: return 6;
-        case [3, "a"]: return 0;
-        case [3, "b"]: return 7;
-        case [4, "a"]: return 5;
-        case [4, "b"]: return 2;
-        case [5, "a"]: return 6;
-        case [5, "b"]: return 8;
-        case [6, "a"]: return 7;
-        case [6, "b"]: return 2;
-        case [7, "a"]: return 0;
-        case [7, "b"]: return 3;
-        case [8, "a"]: return 4;
-        case [8, "b"]: return 8;
-    }
-};
-
-contract := procedure(fa) {
-    [states, sigma, delta, q0, final] := fa;
-    newStates := { min(s) : s in states };
-    newDelta := procedure(q, c) {
-        return min(delta(arb({ m : m in states | q in m }), c));
-    };
-    newQ0 := min(q0);
-    newFinal := { min(m) : m in final };
-    return [newStates, sigma, newDelta, newQ0, newFinal];
+delta := { [ [0, "a"], 1 ],
+           [ [0, "b"], 6 ],
+           [ [1, "a"], 2 ],
+           [ [1, "b"], 7 ],
+           [ [2, "a"], 3 ],
+           [ [2, "b"], 6 ],
+           [ [3, "a"], 0 ],
+           [ [3, "b"], 7 ],
+           [ [4, "a"], 5 ],
+           [ [4, "b"], 2 ],
+           [ [5, "a"], 6 ],
+           [ [5, "b"], 8 ],
+           [ [6, "a"], 7 ],
+           [ [6, "b"], 2 ],
+           [ [7, "a"], 0 ],
+           [ [7, "b"], 3 ],
+           [ [8, "a"], 4 ],
+           [ [8, "b"], 8 ]
 };
 
 prettyPrintFA := procedure(fa) {
@@ -43,7 +29,7 @@ prettyPrintFA := procedure(fa) {
     print("transition function:" );
     for (p in states) {
         for (c in sigma) {
-            print("$p$ |-\"$c$\"-> $delta(p, c)$");
+            print("$p$ |-\"$c$\"-> $delta[[p, c]]$");
         }
     }
     print("accepting states:    $final$" );
@@ -52,8 +38,7 @@ prettyPrintFA := procedure(fa) {
 fa := [ [0..8], {"a", "b"}, delta, 0, {2,3,6,7} ];
 dfa2dot(fa, "dfa-old");
 fm := minimize(fa);
+print(fm);
 prettyPrintFA(fm);
-fc := contract(fm);
-print(fc);
-dfa2dot(fc, "dfa");
+dfa2dot(fm, "dfa");
 

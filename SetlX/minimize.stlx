@@ -11,27 +11,35 @@ load("fixpoint.stlx");
 
 minimize := procedure(fa) {
     [states, sigma, delta, q0, accepting] := fa;
-    states    := fixpoint( {q0}, q |-> { delta(q, c) : c in sigma });
+    states    := fixpoint( {q0}, q |-> { delta[[q, c]] : c in sigma });
     separable := (states-accepting) >< accepting + accepting >< (states-accepting);
     moreSep   := 
         procedure(knownSep) {
             return { [q1, q2] : [q1, q2] in states >< states
-                   | exists (c in sigma | [delta(q1, c), delta(q2, c)] == knownSep)
+                   | exists (c in sigma | [delta[[q1, c]], delta[[q2, c]]] == knownSep)
                    };
         };
     allSeparable := fixpoint(separable, moreSep);
     equivalent   := states >< states - allSeparable;
     equivClasses := { { p : p in states | [p, q] in equivalent }: q in states };
-    newQ0     := arb({ m : m in equivClasses | q0 in m });
-    newAccept := { m : m in equivClasses | arb(m) in accepting };
-    newDelta  := procedure(m, c) {
-                     q := delta(arb(m), c);
-                     return arb({ x : x in equivClasses | q in x });
-                 };
+    newQ0        := arb({ m : m in equivClasses | q0 in m });
+    newAccept    := { m : m in equivClasses | arb(m) in accepting };   
+    newDelta     := {};
+    for (q in states, c in sigma) {
+        p := delta[[q, c]];
+        if (p != om) {
+            classOfP := findEquiv(p, equivClasses);
+            classOfQ := findEquiv(q, equivClasses);
+            newDelta += { [[classOfQ, c], classOfP] };
+        }
+    }
     return [equivClasses, sigma, newDelta, newQ0, newAccept];
 };
 
-
+// Given a state p, find the equivalence class of p.
+findEquiv := procedure(p, eqClasses) {
+    return first({ cl : cl in eqClasses | p in cl });
+};
 
 
 
