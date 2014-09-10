@@ -53,13 +53,13 @@ einen String $w \in \Sigma^*$ gibt, so dass
 \hspace*{1.3cm}
 $\delta(q_0, w) = p$
 \\[0.2cm]
-gilt.  Wir wollen im folgenden daher voraussetzen, dass alle Zustände des betrachten
+gilt.  Wir wollen im Folgenden daher voraussetzen, dass alle Zustände des betrachten
 endlichen Automaten vom Start-Zustand aus erreichbar sind.
 
 
 \begin{figure}[!ht]
   \centering
-  \epsfig{file=Abbildungen/nicht-gleichwertig.eps, scale=0.5}
+  \epsfig{file=Abbildungen/nicht-gleichwertig.eps, scale=0.6}
    \caption{Ein endlicher Automat mit äquivalenten Zuständen.}
   \label{fig:nicht-gleichwertig.dot}
 \end{figure}
@@ -246,7 +246,7 @@ fügen wir außerdem in der $j$-ten Zeile und der $i$-ten Spalte ebenfalls eine $1
 
 \begin{figure}[!ht]
   \centering
-  \epsfig{file=Abbildungen/gleichwertig.eps, scale=0.5}
+  \epsfig{file=Abbildungen/gleichwertig.eps, scale=0.6}
    \caption{Der reduzierte endliche Automat.}
   \label{fig:gleichwertig.dot}
 \end{figure}
@@ -285,28 +285,36 @@ discussed below.
                 ]
     minimize := procedure(fa) {
         [states, sigma, delta, q0, accepting] := fa;
-        states    := fixpoint( {q0}, q |-> { delta(q, c) : c in sigma });
+        states    := fixpoint( {q0}, q |-> { delta[[q, c]] : c in sigma });
         separable := (states-accepting) >< accepting + accepting >< (states-accepting);
         moreSep   := 
             procedure(knownSep) {
                 return { [q1, q2] : [q1, q2] in states >< states
-                       | exists (c in sigma | [delta(q1, c), delta(q2, c)] == knownSep)
+                       | exists (c in sigma | [delta[[q1, c]], delta[[q2, c]]] == knownSep)
                        };
             };
         allSeparable := fixpoint(separable, moreSep);
         equivalent   := states >< states - allSeparable;
         equivClasses := { { p : p in states | [p, q] in equivalent }: q in states };
-        newQ0     := arb({ m : m in equivClasses | q0 in m });
-        newAccept := { m : m in equivClasses | arb(m) in accepting };
-        newDelta  := procedure(m, c) {
-                         q := delta(arb(m), c);
-                         return arb({ x : x in equivClasses | q in x });
-                     };
+        newQ0        := arb({ m : m in equivClasses | q0 in m });
+        newAccept    := { m : m in equivClasses | arb(m) in accepting };   
+        newDelta     := {};
+        for (q in states, c in sigma) {
+            p := delta[[q, c]];
+            if (p != om) {
+                classOfP := findEquiv(p, equivClasses);
+                classOfQ := findEquiv(q, equivClasses);
+                newDelta += { [[classOfQ, c], classOfP] };
+            }
+        }
         return [equivClasses, sigma, newDelta, newQ0, newAccept];
+    };
+    findEquiv := procedure(p, eqClasses) {
+        return first({ cl : cl in eqClasses | p in cl });
     };
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Minimizing a finite state machine.}
+\caption{A procedure to minimize a finite state machine.}
 \label{fig:minimize.stlx}
 \end{figure}
 
@@ -314,6 +322,7 @@ discussed below.
 \item First, all states \emph{reachable} from the start state $q_0$ are computed.
       Here, a state $p$ is \emph{reachable} from the state $q_0$ iff there is a string $s$
       such that $\delta(q_0, s) = p$.
+      The computation of the reachable states is done via a fixpoint computation:
       \begin{enumerate}
       \item Since $\delta(q_0, \varepsilon) = q_0$, the state $q_0$ is reachable from $q_0$
             and therefore we initialize the set \texttt{reachable} with the 
@@ -391,12 +400,16 @@ discussed below.
            equals the pair \texttt{knownSep}, because then $\langle q_1, q_2 \rangle$ is separable,
            too.  Using this function, the set of all separable pairs can then be computed via a
            straightforward fixpoint iteration in line 11.
+
+           I have to admit that the current implementation of the separable states could be done 
+           more efficiently.  However, this would have complicated the program and for the purpose 
+           of the examples presented in this lecture the efficiency is sufficient.
       \end{enumerate}
-\item Next, we identify those states that are \emph{equivalent}: Two states
+\item Next, we \emph{identify} those states that are \emph{equivalent}: Two states
       $p$ and $q$ are called \emph{equivalent} if and only if they are
       \underline{not} separable.  
  
-      There are several way to identify equivalent states.  The easiest way is to collect
+      There are several way to identify equivalent states.  The easiest way is to compute
       the associated \emph{equivalence classes}, where an equivalence class contains all
       thoses states that are equivalent to each other.
       \begin{enumerate}
@@ -417,41 +430,31 @@ discussed below.
             This set of equivalence classes is the new set of states.
       \item Of course, the new start state is the set of equivalent states that contains
             the start state $q_0$ of the given finite state machine \texttt{fa}.
+            In line 14 we collect the set of all equivalence classes that contain \texttt{q0}.
+            Of course, there can be just one equivalence class.  Hence we can extract this one
+            class using the function \texttt{arb}.
       \item A set of equivalent states is accepting if any of its member states is an
             accepting state.  Of course, if a set of equivalent states contains an
             accepting state, then the other states in this equivalence class have to be
             accepting also, since otherwise these states would be separable from the
             accepting state and therefore could not be equivalent.
-      \item In order to compute the new state transition function, we have to construct a
-            function that takes a set of equivalent states of the old finite state machine
-            \texttt{fa} and turns this set into a new set of states that are again
-            equivalent.  If $M$ is a set of equivalent states and $c$ is a character from
-            $\Sigma$, in order to define $\Delta(M,c)$ we proceed as follows:
-            \begin{itemize}
-            \item We pick an arbitrary state $q$ from $M$ and compute $\delta(q,c)$.
-            \item We return the set of all states that are equivalent to the state $\delta(q,c)$.
-                  \vspace*{0.3cm}
-
-                  We have to check that this is well defined and does not depend on the
-                  choice of the state $q$.  The reasoning is as follows:  If both $q_1$ and $q_2$ are
-                  elements of $M$, then these two states have to be equivalent.  But then
-                  the states $\delta(q_1,c)$ and $\delta(q_2,c)$ have to be equivalent
-                  also.  After all, if $\delta(q_1,c)$ and $\delta(q_2,c)$ are separable,
-                  then $q_1$ and $q_2$ are separable too and therefore can not be equivalent.
-            \end{itemize}
-            In order to ease our notation, let us write $p_1 \sim p_2$ if the states $p_1$
-            and $p_2$ are equivalent.  Then $\Delta(M,c)$ can be defined as follows:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\Delta(M,c) = \{ p \in Q \mid p \sim \delta(\mathtt{arb}(M),c) \}$.
-            \\[0.2cm]
-            Here, $\texttt{arb}(M)$ returns an arbitrary state from the set $M$.  This
-            definition of $\Delta(M,c)$ is implemented in the definition of
-            \texttt{newDelta}. However, instead of checking whether $p$ is equivalent to
-            $\delta(\mathtt{arb}(M),c)$ we pick the  equivalence class $x$ that contains 
-            $\delta(\mathtt{arb}(M),c)$ since this equivalence class will automatically
-            contain all those states $p$ that are equivalent to $\delta(\mathtt{arb}(M),c)$.
       \end{enumerate}
+\item In order to compute the new state transition function, we have to construct a
+      function that takes a set of equivalent states of the old finite state machine
+      \texttt{fa} and turns this set into a new set of states that are again
+      equivalent.  This is done by taking all states \texttt{q} and all characters \texttt{c} 
+      in \texttt{sigma} and computing 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mathtt{p} = \delta(\mathtt{q}, \mathtt{c})$.
+      \\[0.2cm]
+      Now, if \texttt{classOfQ} is the equivalence class containing \texttt{q} and likewise 
+      \texttt{classOfP} is the equivalence class containing \texttt{p}, then we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{classOfP} = \texttt{newDelta}(\texttt{classOfQ}, \texttt{c})$.
+      \\[0.2cm]
+      Here, \texttt{newDelta} is the transition function of the minimized finite state machine.
 \end{enumerate}
 
 \section{The Theorem of Nerode}
