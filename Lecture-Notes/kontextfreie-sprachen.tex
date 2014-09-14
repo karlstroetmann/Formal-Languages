@@ -1,16 +1,17 @@
 \chapter{Kontextfreie Sprachen \label{chap:kontextfrei}}
 Im letzten Kapitel haben wir mit Hilfe des Pumping-Lemmas gesehen, dass reguläre Sprachen nicht in der Lage
 sind, Klammern zu zählen.  Damit ist klar, dass reguläre Sprachen nicht ausdrucksstark genug sind,
-um die Syntax arithmetischer Ausdrücke beschreiben zu können.  Damit sind reguläre Sprachen dann
-erst recht nicht geeignet, die Syntax von Programmier-Sprachen zu beschreiben.  Hierfür ist ein
+um die Syntax arithmetischer Ausdrücke beschreiben zu können.  Folglich sind reguläre Sprachen 
+nicht dazu geeignet, die Syntax von Programmier-Sprachen zu beschreiben.  Hierfür ist ein
 ausdrucksstärkeres Konzept erforderlich.
 In diesem Kapitel stellen wir ein solches ausdrucksstärkeres Konzept vor.  Es handelt sich dabei um
-die \href{http://en.wikipedia.org/wiki/Context-free_language}{\emph{kontextfreien}} Sprachen.  Diese basieren auf
+das Konzept der \href{http://en.wikipedia.org/wiki/Context-free_language}{\emph{kontextfreien}}
+Sprachen.  Dieses Konzept basiert auf 
 dem Konzept der \emph{kontextfreien Grammatik}, das wir gleich besprechen.
 
 \section{Kontextfreie Grammatiken \label{kontextfreie}}
 Kontextfreie Sprachen dienen zur Beschreibung von Programmier-Sprachen, insofern handelt
-es sich bei den kontextfreien Sprachen genau wie bei den regulären Sprachen auch um
+es sich bei den kontextfreien Sprachen genau wie bei den regulären Sprachen ebenfalls um
 formale Sprachen.  Allerdings wollen wir später beim Einlesen eines Programms nicht nur
 entscheiden, ob das Programm korrekt ist, sondern wir wollen darüber hinaus den
 Programm-Text \emph{strukturieren}.  Den Vorgang des \emph{Strukturierens} bezeichnen wir
@@ -18,7 +19,7 @@ auch als \emph{parsen} und das Programm, das diese Strukturierung vornimmt, wird
 \emph{Parser} bezeichnet.  Als Eingabe erhält ein Parser üblicherweise nicht den
 Text eines Programms, sondern statt dessen eine Folge sogenannter \emph{Token}.  Diese
 Token werden von einem Scanner erzeugt, der mit Hilfe regulärer Ausdrücke den Programmtext
-in einzelne Wörter aufspaltet, die wir in diesem Zusammenhang als ``Token'' bezeichnen.
+in einzelne Wörter aufspaltet, die wir in diesem Zusammenhang als Token bezeichnen.
 Beispielsweise spaltet der Scanner des \texttt{C}-Compilers ein \texttt{C}-Programm in die
 folgenden Token auf:
 \begin{itemize}
@@ -37,8 +38,8 @@ folgenden Token auf:
 \item Kommentare,
 \item \emph{White-Space-Zeichen}, (Leerzeichen, Tabulatoren, Zeilenumbrüche).
 \end{itemize}
-Der Parser bekommt dann vom Scanner eine Folge solcher Token und hat die Aufgabe, daraus
-einen sogenannten \emph{Syntax-Baum} zu bauen.  Dazu bedient sich der Parser einer
+Der Parser erhält vom Scanner eine Folge solcher Token und hat die Aufgabe, daraus
+einen sogenannten \emph{Syntax-Baum} zu konstruieren.  Dazu bedient sich der Parser einer
 \emph{Grammatik}, die mit Hilfe von \emph{Grammatik-Regeln} angibt, wie die Eingabe zu
 strukturieren ist.  Betrachten wir als Beispiel das Parsen arithmetischer Ausdrücke.  Die
 Menge \textsl{ArithExpr} der arithmetischen Ausdrücke können wir induktiv definieren.  
@@ -102,21 +103,24 @@ Die oben angegebenen Regeln definieren die Mengen \textsl{Factor}, \textsl{Produ
 Diese Definition können  wir in Form von sogenannten \emph{Grammatik-Regeln} wesentlich
 kompakter schreiben:
 \begin{eqnarray*}
-  \textsl{ArithExpr} & \rightarrow & \textsl{ArithExpr} \quoted{+} \textsl{Product}  \\
-  \textsl{ArithExpr} & \rightarrow & \textsl{ArithExpr} \quoted{-} \textsl{Product}  \\
-  \textsl{ArithExpr} & \rightarrow & \textsl{Product}                                \\[0.1cm]
-  \textsl{Product}   & \rightarrow & \textsl{Product} \quoted{*} \textsl{Factor}     \\
-  \textsl{Product}   & \rightarrow & \textsl{Product} \quoted{/} \textsl{Factor}     \\
-  \textsl{Product}   & \rightarrow & \textsl{Factor}                                 \\[0.1cm]
-  \textsl{Factor}    & \rightarrow & \quoted{(} \textsl{ArithExpr} \quoted{)}        \\
-  \textsl{Factor}    & \rightarrow & \textsl{Variable}                               \\
-  \textsl{Factor}    & \rightarrow & \textsl{Number} 
+  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
+  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
+  \textsl{arithExpr} & \rightarrow & \textsl{product}                                \\[0.1cm]
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{*} \textsl{factor}     \\
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{/} \textsl{factor}     \\
+  \textsl{product}   & \rightarrow & \textsl{factor}                                 \\[0.1cm]
+  \textsl{factor}    & \rightarrow & \quoted{(} \textsl{arithExpr} \quoted{)}        \\
+  \textsl{factor}    & \rightarrow & \textsc{Variable}                               \\
+  \textsl{factor}    & \rightarrow & \textsc{Number} 
 \end{eqnarray*}
 Die Ausdrücke auf der linken Seite einer Grammatik-Regel bezeichnen wir als
-\emph{syntaktische Variablen} oder auch als \emph{Nicht-Terminale}.  In der Literatur
-finden Sie hierfür auch den Begriff \emph{syntaktische Kategorie}.
-In dem Beispiel sind \textsl{ArithExpr}, \textsl{Product} und \textsl{Factor} die 
-syntaktischen Variablen.  Die restlichen Ausdrücke, in unserem Fall also \textsl{Number} und
+\emph{syntaktische Variablen} oder auch als \emph{Nicht-Terminale}.  
+Variablen werden wir üblicherweise klein schreiben.
+In der Literatur
+finden Sie an Stelle des Begriffs der syntaktischen Variablen auch den Begriff der
+\emph{syntaktische Kategorie}. 
+In dem Beispiel sind \textsl{arithExpr}, \textsl{product} und \textsl{factor} die 
+syntaktischen Variablen.  Die restlichen Ausdrücke, in unserem Fall also \textsc{Number}, \textsc{Variable} und
 die Zeichen 
 ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{(}'' und ``\texttt{)}''
 bezeichnen wir als \emph{Terminale} oder auch \emph{Token}.  Dies sind also genau die
@@ -127,22 +131,24 @@ Bei den Nicht-Terminalen gibt es zwei Arten:
       ``\texttt{(}''.  
 
       Solche Nicht-Terminalen stehen für sich selbst.
-\item Token wie \textsl{Number} oder \textsl{Variable} ist zusätzlich ein Wert zugeordnet.
-      Im Falle von \textsl{Number} ist dies eine Zahl, im Falle von \textsl{Variable}
-      ist dies ein String, der den Namen der Variablen wiedergibt.
+\item Token wie \textsc{Number} oder \textsc{Variable} ist zusätzlich ein Wert zugeordnet.
+      Im Falle von \textsc{Number} ist dies eine Zahl, im Falle von \textsc{Variable}
+      ist dies ein String, der den Namen der Variablen wiedergibt.  Diese Art von Token werden wir
+      zur besseren Unterscheidung von den Variablen immer mit Großbuchstaben schreiben.
+      Damit folgen wir der Praxis von Parser-Generatoren wie \textsc{Antlr} und \textsl{JavaCup}.
 \end{enumerate}
 Üblicherweise werden Grammatik-Regeln in einer kompakteren Notation als der oben vorgestellten
 wiedergegeben, indem alle Regeln für ein Nicht-Terminal zusammengefasst werden.  Für unser Beispiel
 sieht das dann wie folgt aus:
 \begin{eqnarray*}
-  \textsl{ArithExpr} & \rightarrow & \textsl{ArithExpr} \quoted{+} \textsl{Product} \;\mid\;
-                                     \textsl{ArithExpr} \quoted{-} \textsl{Product} \;\mid\; 
-                                     \textsl{Product}                                            \\
-  \textsl{Product}   & \rightarrow & \textsl{Product} \quoted{*} \textsl{Factor} \;\mid\;
-                                     \textsl{Product} \quoted{/} \textsl{Factor} \;\mid\;
-                                     \textsl{Factor}                                             \\
-  \textsl{Factor}    & \rightarrow & \squoted{(}\, \textsl{ArithExpr} \quoted{)} \;\mid\; 
-                                     \textsl{Number} 
+  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product} \;\mid\;
+                                     \textsl{arithExpr} \quoted{-} \textsl{product} \;\mid\; 
+                                     \textsl{product}                                            \\
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{*} \textsl{factor} \;\mid\;
+                                     \textsl{product} \quoted{/} \textsl{factor} \;\mid\;
+                                     \textsl{factor}                                             \\
+  \textsl{factor}    & \rightarrow & \squoted{(}\, \textsl{arithExpr} \quoted{)} \;\mid\; 
+                                     \textsc{Number} 
 \end{eqnarray*}
 Hier werden also die einzelnen Alternativen einer Regel durch das Metazeichen $\mid$
 getrennt.  Nach dem obigen Beispiel geben wir jetzt die formale Definition für den Begriff der
@@ -161,16 +167,17 @@ so dass folgendes gilt:
       In dem obigen Beispiel gilt 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $V = \{ \textsl{ArithExpr}, \textsl{Product}, \textsl{Factor} \}$.
+      $V = \{ \textsl{arithExpr}, \textsl{product}, \textsl{factor} \}$.
 \item $T$ ist eine Menge von Namen, die wir als \emph{Terminale} bezeichnen.  
       Die Mengen $T$ und $V$ sind disjunkt, es gilt also
       \\[0.2cm]
       \hspace*{1.3cm}
       $T \cap V = \emptyset$.
+      \\[0.2cm]
       In dem obigen Beispiel gilt
       \\[0.2cm]
       \hspace*{1.3cm}
-      $T = \{ \textsl{Number}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}$
+      $T = \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}$
 \item $R$ ist die Menge der Regeln.  Formal ist eine Regel ein Paar $\langle A, \alpha \rangle$:
       \begin{enumerate}
       \item Die erste Komponente dieses Paares ist eine syntaktische Variable:
@@ -196,14 +203,14 @@ so dass folgendes gilt:
       Beispielsweise haben wir oben die erste Regel als
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{ArithExpr} \rightarrow \textsl{ArithExpr} \quoted{+} \textsl{Product}$
+      $\textsl{arithExpr} \rightarrow \textsl{arithExpr} \quoted{+} \textsl{product}$
       \\[0.2cm]
       geschrieben.  Formal steht diese Regel für das Paar
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\bigl\langle \textsl{ArithExpr}, [\textsl{ArithExpr}, \squoted{+}, \textsl{Product}] \bigr\rangle$. 
+      $\bigl\langle \textsl{arithExpr}, [\textsl{arithExpr}, \squoted{+}, \textsl{product}] \bigr\rangle$. 
 \item $S$ ist ein Element der Menge $V$, das wir als das \emph{Start-Symbol} bezeichnen. 
-      In dem obigen Beispiel ist \textsl{ArithExpr} das Start-Symbol.
+      In dem obigen Beispiel ist \textsl{arithExpr} das Start-Symbol.
       \qed
 \end{enumerate}
 \end{Definition}
@@ -237,27 +244,27 @@ $A \Rightarrow^n w$.
 \\[0.2cm]  
 Wir geben ein Beispiel:
 \begin{eqnarray*}
-\textsl{ArithExpr} 
-& \Rightarrow & \textsl{ArithExpr} \quoted{+} \textsl{Product}  \\
-& \Rightarrow & \textsl{Product} \quoted{+} \textsl{Product}  \\
-& \Rightarrow & \textsl{Product} \quoted{*} \textsl{Factor} \quoted{+} \textsl{Product} \\
-& \Rightarrow & \textsl{Factor} \quoted{*} \textsl{Factor} \quoted{+} \textsl{Product}  \\
-& \Rightarrow & \textsl{Number} \quoted{*} \textsl{Factor} \quoted{+} \textsl{Product}  \\
-& \Rightarrow & \textsl{Number} \quoted{*} \textsl{Number} \quoted{+} \textsl{Product}  \\
-& \Rightarrow & \textsl{Number} \quoted{*} \textsl{Number} \quoted{+} \textsl{Factor}   \\
-& \Rightarrow & \textsl{Number} \quoted{*} \textsl{Number} \quoted{+} \textsl{Number}   
+\textsl{arithExpr} 
+& \Rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsl{product} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsl{product} \quoted{*} \textsl{factor} \quoted{+} \textsl{product} \\
+& \Rightarrow & \textsl{factor} \quoted{*} \textsl{factor} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{*} \textsl{factor} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsl{factor}   \\
+& \Rightarrow & \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsc{Number}   
 \end{eqnarray*}
 Damit haben wir also gezeigt, dass
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{ArithExpr} \Rightarrow^* \textsl{Number} \quoted{*} \textsl{Number} \quoted{+} \textsl{Number}$
+$\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsc{Number}$
 \\[0.2cm]
 oder genauer
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{ArithExpr} \Rightarrow^8 \textsl{Number} \quoted{*} \textsl{Number} \quoted{+} \textsl{Number}$
+$\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsc{Number}$
 \\[0.2cm]
-gilt.  Ersetzen wir hier das Terminal \textsl{Number} durch verschiedene Zahlen, so haben wir damit
+gilt.  Ersetzen wir hier das Terminal \textsc{Number} durch verschiedene Zahlen, so haben wir damit
 beispielsweise gezeigt, dass der String
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -275,7 +282,7 @@ $L(G) := \bigl\{ w \in T^* \mid S \Rightarrow^* w \bigr\}$.
 Die Sprache
 \\[0.2cm]
 \hspace*{1.3cm}
-$L = \{ (^n )^n \mid n \in \mathbb{N} \}$ 
+$L = \{ (^n )^n \mid n \in \mathbb{N}_0 \}$ 
 \\[0.2cm]
 wird von der Grammatik 
 \\[0.2cm]
@@ -350,7 +357,7 @@ Ableitungs-Schritte:
             \hspace*{1.3cm}
             $w = \quoted{(}v\quoted{)} \;\wedge\; S \Rightarrow^n v$.
             \\[0.2cm]
-            Nach I.V.~gilt dann $v \in L$.  Damit gibt es $k \in \mathbb{N}$ mit $v = (^k)^k$.
+            Nach I.V.~gilt dann $v \in L$.  Damit gibt es $k \in \mathbb{N}_0$ mit $v = (^k)^k$.
             Also haben wir
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -429,7 +436,7 @@ Dann gilt
 \item Hat ein Wort $s \in \Sigma^*$ eine ungerade Länge, gilt also
       \\[0.2cm]
       \hspace*{1.3cm}
-      $|s| = 2 \cdot n +1$ \quad für ein $n \in \mathbb{N}$,
+      $|s| = 2 \cdot n +1$ \quad für ein $n \in \mathbb{N}_0$,
       \\[0.2cm]
       so liegt der Buchstabe $s[n + 1]$ in der Mitte von $s$.  Um dies einzusehen,
       betrachten wir die Teilstrings $s[1:n]$ und $s[n+2:2\cdot n+1]$, die links und rechts
@@ -534,7 +541,7 @@ gilt.  Spalten wir $s$ in zwei gleich lange Teile $u$ und $v$ auf, definieren al
 $u := s[1:m+n+1]$ \quad und \quad
 $v := s[m+n+2: 2\cdot(m+n+1)]$, 
 \\[0.2cm]
-so werden wir gelich sehen, dass
+so werden wir gleich sehen, dass
 \\[0.2cm]
 \hspace*{1.3cm}
 $u[m+1] = s[m+1] \not= s[(m+n+1) + (m+1)] = v[m+1]$,
@@ -685,39 +692,40 @@ in welcher Reihenfolge die Operatoren ausgewertet werden müssen.
 \end{figure}
 \subsection{Mehrdeutige Grammatiken}
 Die zu Anfang des Abschnitts \ref{kontextfreie} angegebene Grammatik erscheint durch ihre Unterscheidung
-der syntaktischen Kategorien \textsl{ArithExpr}, \textsl{Product} und \textsl{Factor}
+der syntaktischen Kategorien \textsl{arithExpr}, \textsl{product} und \textsl{factor}
 unnötig kompliziert.  Wir stellen eine einfachere Grammatik $G$ vor, welche dieselbe
 Sprache beschreibt:
 \\[0.2cm]
 \hspace*{1.3cm}
-$G = \bigl\langle \{\textsl{Expr}\}, \{ \textsl{Number}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{Expr} \bigr\rangle$,
+$G = \bigl\langle \{\textsl{expr}\}, \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
 \\[0.2cm]
 wobei die Regeln $R$ wie folgt gegeben sind:
 \begin{eqnarray*}
-  \textsl{Expr} & \rightarrow & \textsl{Expr} \quoted{+} \textsl{Expr}  \\
-                & \mid        & \textsl{Expr} \quoted{-} \textsl{Expr}  \\
-                & \mid        & \textsl{Expr} \quoted{*} \textsl{Expr}  \\
-                & \mid        & \textsl{Expr} \quoted{/} \textsl{Expr}  \\
-                & \mid        & \quoted{(} \textsl{Expr} \quoted{)}     \\
-                & \mid        & \textsl{Number}                         
+  \textsl{expr} & \rightarrow & \textsl{expr} \quoted{+} \textsl{expr}  \\
+                & \mid        & \textsl{expr} \quoted{-} \textsl{expr}  \\
+                & \mid        & \textsl{expr} \quoted{*} \textsl{expr}  \\
+                & \mid        & \textsl{expr} \quoted{/} \textsl{expr}  \\
+                & \mid        & \quoted{(} \textsl{expr} \quoted{)}     \\
+                & \mid        & \textsc{Number}                         \\
+                & \mid        & \textsc{Variable}                         
 \end{eqnarray*}
 Um zu zeigen, dass der String ``\texttt{2*3+4}'' in der von dieser Sprache erzeugten
 Grammatik liegt, geben wir die folgende Ableitung an:
 \begin{eqnarray*}
-\textsl{Expr} & \Rightarrow & \textsl{Expr} \quoted{+} \textsl{Expr}                           \\
-              & \Rightarrow & \textsl{Expr} \quoted{*} \textsl{Expr} \quoted{+} \textsl{Expr}  \\
-              & \Rightarrow & \texttt{2} \quoted{*} \textsl{Expr} \quoted{+} \textsl{Expr}     \\
-              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \textsl{Expr}        \\
+\textsl{expr} & \Rightarrow & \textsl{expr} \quoted{+} \textsl{expr}                           \\
+              & \Rightarrow & \textsl{expr} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}  \\
+              & \Rightarrow & \texttt{2} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}     \\
+              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \textsl{expr}        \\
               & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \texttt{4}           
 \end{eqnarray*}
 Diese Ableitung entspricht dem abstrakten Syntax-Baum, der in Abbildung
 \ref{fig:abstract-syntax-tree.dot}
 gezeigt ist.  Es gibt aber noch eine andere Ableitung des Strings ``\texttt{2*3+4}'' mit dieser Grammatik:
 \begin{eqnarray*}
-\textsl{Expr} & \Rightarrow & \textsl{Expr} \quoted{*} \textsl{Expr}                           \\
-              & \Rightarrow & \textsl{Expr} \quoted{*} \textsl{Expr} \quoted{+} \textsl{Expr}  \\
-              & \Rightarrow & \texttt{2} \quoted{*} \textsl{Expr} \quoted{+} \textsl{Expr}     \\
-              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \textsl{Expr}        \\
+\textsl{expr} & \Rightarrow & \textsl{expr} \quoted{*} \textsl{expr}                           \\
+              & \Rightarrow & \textsl{expr} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}  \\
+              & \Rightarrow & \texttt{2} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}     \\
+              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \textsl{expr}        \\
               & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \texttt{4}           
 \end{eqnarray*}
 Dieser Ableitung entspricht der abstrakte Syntax-Baum, der in Abbildung
@@ -929,7 +937,7 @@ Damit sehen wir, dass die durch das Nicht-Terminal $A$ beschriebene Sprache $L(A
 Strings besteht, die sich aus dem Ausdruck $\gamma \beta^n$ ableiten lassen:
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(A) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}: \gamma \beta^n \Rightarrow^* w \bigr\}$.
+$L(A) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}_0: \gamma \beta^n \Rightarrow^* w \bigr\}$.
 \\[0.2cm]
 Diese Sprache kann offenbar auch durch die folgenden Regeln für $A$ beschrieben werden:
 \\[0.2cm]
@@ -950,12 +958,12 @@ ausgehen, haben die Form
 \\[0.2cm]
 Folglich beschreibt das Nicht-Terminal $B$ die Sprache
 \\[0.2cm]
-\hspace*{1.3cm} $L(B) = \bigl\{ w \in \Sigma \mid \exists n \in \mathbb{N}: \beta^n \Rightarrow w
+\hspace*{1.3cm} $L(B) = \bigl\{ w \in \Sigma \mid \exists n \in \mathbb{N}_0: \beta^n \Rightarrow w
 \bigr\}$.
 \\[0.2cm]
 Damit ist klar, dass auch mit der oben angegeben Grammatik
 \\[0.2cm]
-\hspace*{1.3cm} $L(A) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}: \gamma \beta^n
+\hspace*{1.3cm} $L(A) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}_0: \gamma \beta^n
 \Rightarrow^* w \bigr\}$
 \\[0.2cm]
 gilt.  Um die Links-Rekursion aus der in Abbildung \ref{fig:Expr} auf Seite \pageref{fig:Expr}
@@ -1013,14 +1021,14 @@ $
   \framebox{
   \begin{minipage}[t]{8cm}
   \begin{eqnarray*}
-  \textsl{Expr}    & \rightarrow & \;\textsl{Expr} \quoted{+} \textsl{Product}  \\
-                   & \mid        & \;\textsl{Expr} \quoted{-} \textsl{Product}  \\
-                   & \mid        & \;\textsl{Product}                           \\[0.2cm]
-  \textsl{Product} & \rightarrow & \;\textsl{Product} \quoted{*} \textsl{Factor}\\
-                   & \mid        & \;\textsl{Product} \quoted{/} \textsl{Factor}\\
-                   & \mid        & \;\textsl{Factor}                            \\[0.2cm]
-  \textsl{Factor}  & \rightarrow &   \quoted{(} \textsl{Expr} \quoted{)}        \\
-                   & \mid        & \;\textsl{Number} 
+  \textsl{expr}    & \rightarrow & \;\textsl{expr} \quoted{+} \textsl{product}  \\
+                   & \mid        & \;\textsl{expr} \quoted{-} \textsl{product}  \\
+                   & \mid        & \;\textsl{product}                           \\[0.2cm]
+  \textsl{product} & \rightarrow & \;\textsl{product} \quoted{*} \textsl{factor}\\
+                   & \mid        & \;\textsl{product} \quoted{/} \textsl{factor}\\
+                   & \mid        & \;\textsl{factor}                            \\[0.2cm]
+  \textsl{factor}  & \rightarrow &   \quoted{(} \textsl{expr} \quoted{)}        \\
+                   & \mid        & \;\textsc{Number} 
   \end{eqnarray*}
   \vspace*{-0.5cm}
   \end{minipage}}}
@@ -1040,15 +1048,15 @@ Ausdrücke an, so erhalten wir die in Abbildung \ref{fig:Expr2} gezeigte Grammati
   \framebox{
   \begin{minipage}[t]{9cm}
   \begin{eqnarray*}
-  \textsl{Expr}        & \rightarrow & \;\textsl{Product}\;\;\textsl{ExprRest}            \\[0.2cm]
-  \textsl{ExprRest}    & \rightarrow & \quoted{+} \textsl{Product}\;\;\textsl{ExprRest}   \\
-                       & \mid        & \quoted{-} \textsl{Product}\;\;\textsl{ExprRest}   \\
+  \textsl{expr}        & \rightarrow & \;\textsl{product}\;\;\textsl{exprRest}            \\[0.2cm]
+  \textsl{exprRest}    & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest}   \\
                        & \mid        & \;\varepsilon                                      \\[0.2cm]
-  \textsl{Product}     & \rightarrow & \;\textsl{Factor}\;\;\textsl{ProductRest}          \\[0.2cm]
-  \textsl{ProductRest} & \rightarrow & \quoted{*} \textsl{Factor}\;\;\textsl{ProductRest} \\
-                       & \mid        & \quoted{/} \textsl{Factor}\;\;\textsl{ProductRest} \\
+  \textsl{product}     & \rightarrow & \;\textsl{factor}\;\;\textsl{productRest}          \\[0.2cm]
+  \textsl{productRest} & \rightarrow & \quoted{*} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest} \\
                        & \mid        & \;\varepsilon                                      \\[0.2cm]
-  \textsl{Factor}      & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)}                \\
+  \textsl{factor}      & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}                \\
                        & \mid        & \;\textsc{Number} 
   \end{eqnarray*}
   \vspace*{-0.5cm}
@@ -1059,18 +1067,18 @@ Ausdrücke an, so erhalten wir die in Abbildung \ref{fig:Expr2} gezeigte Grammati
 \end{figure}
 
 \noindent
-Die Variablen \textsl{ExprRest} und \textsl{ProductRest} können wie folgt interpretiert werden:
+Die Variablen \textsl{exprRest} und \textsl{productRest} können wie folgt interpretiert werden:
 \begin{enumerate}
-\item \textsl{ExprRest} beschreibt eine Liste der Form
+\item \textsl{exprRest} beschreibt eine Liste der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{op} \;\textsl{Product} \;\cdots \;\textsl{op}\; \textsl{Product}$,
+      $\textsl{op} \;\textsl{product} \;\cdots \;\textsl{op}\; \textsl{product}$,
       \\[0.2cm]
       wobei $\textsl{op} \in \{ \quoted{+}, \quoted{-} \}$ gilt.
-\item \textsl{ProductRest} beschreibt eine Liste der Form
+\item \textsl{productRest} beschreibt eine Liste der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{op} \;\textsl{Factor} \;\cdots \;\textsl{op} \;\textsl{Factor}$,
+      $\textsl{op} \;\textsl{factor} \;\cdots \;\textsl{op} \;\textsl{factor}$,
       \\[0.2cm]
       wobei $\textsl{op} \in \{ \quoted{*}, \quoted{/} \}$ gilt. 
 \end{enumerate}
@@ -1411,7 +1419,7 @@ Figure \ref{fig:rd-parser.stlx} on page
 \item The function \texttt{parseExpr} implements the grammar rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Expr} \;\rightarrow\;\textsl{Product}\;\;\textsl{ExprRest}$. 
+      $\textsl{expr} \;\rightarrow\;\textsl{product}\;\;\textsl{exprRest}$. 
       \\[0.2cm]
       It takes a token list \texttt{tl} as input.  It will return a pair of the form
       \\[0.2cm]
@@ -1434,9 +1442,9 @@ Figure \ref{fig:rd-parser.stlx} on page
       processed.
 
       In order to parse an arithmetic expression, the function first parses a
-      \textsl{Product} and then it tries to parse the remaining tokens as an
-      \textsl{ExprRest}.   The function \texttt{parseExprRest} that is used to parse an
-      \textsl{ExprRest} needs two arguments:
+      \textsl{product} and then it tries to parse the remaining tokens as an
+      \textsl{exprRest}.   The function \texttt{parseExprRest} that is used to parse an
+      \textsl{exprRest} needs two arguments:
       \begin{enumerate}
       \item The first argument is the value of the product that has been parsed 
             by the function \texttt{parseProduct}.
@@ -1460,12 +1468,12 @@ Figure \ref{fig:rd-parser.stlx} on page
       It implements the grammar rule
       \hspace*{1.3cm}
       \begin{eqnarray*}
-        \textsl{ExprRest} & \rightarrow & \quoted{+} \textsl{Product}\;\;\textsl{ExprRest} \\
-                          & \mid        & \quoted{-} \textsl{Product}\;\;\textsl{ExprRest} \\
+        \textsl{exprRest} & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest} \\
+                          & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest} \\
                           & \mid        & \;\varepsilon                                    
       \end{eqnarray*}
       Therefore, it checks whether the first token is either \squoted{+} or \squoted{-}.
-      If the token is \squoted{+}, it parses a \textsl{Product}, adds the result of this 
+      If the token is \squoted{+}, it parses a \textsl{product}, adds the result of this 
       product to the \texttt{sum} of values parsed already and proceeds to parse the rest
       of the tokens.  
 
@@ -1475,26 +1483,26 @@ Figure \ref{fig:rd-parser.stlx} on page
       exhausted.  In either case, the rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{ExprRest} \;\rightarrow\; \varepsilon$
+      $\textsl{exprRest} \;\rightarrow\; \varepsilon$
       \\[0.2cm]
       is used.  Therefore, in that case we have not consumed any tokens and therefore 
       the input arguments are already the result.
 \item The function \texttt{parseProduct} implements the rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Product} \;\rightarrow\; \textsl{Factor} \;\; \textsl{ExprRest}$.
+      $\textsl{product} \;\rightarrow\; \textsl{factor} \;\; \textsl{exprRest}$.
       \\[0.2cm]
       The implementation is similar to the implementation of \textsl{parseExpr}.
 \item The function \texttt{parseProductRest} implements the rules
       \begin{eqnarray*}
-      \textsl{ProductRest} & \rightarrow & \quoted{*} \textsl{Factor}\;\;\textsl{ProductRest} \\
-                       & \mid        & \quoted{/} \textsl{Factor}\;\;\textsl{ProductRest}     \\
+      \textsl{productRest} & \rightarrow & \quoted{*} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest}     \\
                        & \mid        & \;\varepsilon                                      
       \end{eqnarray*}
       The implementation is similar to the implementation of \textsl{parseExprRest}.
 \item The function \texttt{parseProductRest} implements the rules
       \begin{eqnarray*}
-      \textsl{Factor} & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)} \\
+      \textsl{factor} & \rightarrow & \quoted{(} \textsl{expr} \quoted{)} \\
                       & \mid        & \;\textsc{Number} 
       \end{eqnarray*}
       Therefore, we first check whether the next token is \squoted{(} because in that case,
@@ -1581,16 +1589,16 @@ shows an recursive decent parser for arithmetic expressions that works backwards
 
 \noindent
 \begin{enumerate}
-\item The function function \texttt{parseArithExpr} implements the following grammar rules:
+\item The function function \texttt{parsearithExpr} implements the following grammar rules:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{ArithExpr} \;\rightarrow\; \textsl{ArithExpr} \quoted{+} \textsl{Product} 
-                          \;\mid\;        \textsl{ArithExpr} \quoted{-} \textsl{Product}  
-                          \;\mid\;        \textsl{Product}                           
+      $\textsl{arithExpr} \;\rightarrow\; \textsl{arithExpr} \quoted{+} \textsl{product} 
+                          \;\mid\;        \textsl{arithExpr} \quoted{-} \textsl{product}  
+                          \;\mid\;        \textsl{product}                           
       $.
       \\[0.2cm]
-      According to these rules, an \textsl{ArithExpr} always ends with a \textsl{Product}.
-      Therefore, the first thing to do is to parse a \textsl{Product} from the end of the
+      According to these rules, an \textsl{arithExpr} always ends with a \textsl{product}.
+      Therefore, the first thing to do is to parse a \textsl{product} from the end of the
       token list.  This is done using the procedure \texttt{parseProduct}.  Invoking this
       procedure consumes some of the tokens from the end of the token list \texttt{tl} and returns 
       the list \texttt{fp} of those tokens that have not been consumed together with the
@@ -1611,9 +1619,9 @@ shows an recursive decent parser for arithmetic expressions that works backwards
       \end{enumerate}      
 \item The function \texttt{parseProduct} tries to parse a product using the following rules:
       \begin{eqnarray*}
-        \textsl{Product} & \rightarrow & \;\textsl{Product} \quoted{*} \textsl{Factor}\\
-                         & \mid        & \;\textsl{Product} \quoted{/} \textsl{Factor}\\
-                         & \mid        & \;\textsl{Factor}. 
+        \textsl{product} & \rightarrow & \;\textsl{product} \quoted{*} \textsl{factor}\\
+                         & \mid        & \;\textsl{product} \quoted{/} \textsl{factor}\\
+                         & \mid        & \;\textsl{factor}. 
       \end{eqnarray*}
       This time, the parser tries to recognize a \texttt{factor} at the end of the token
       list \texttt{tl}.  If this \texttt{factor} is preceded by either the token
@@ -1628,8 +1636,8 @@ shows an recursive decent parser for arithmetic expressions that works backwards
       yet been parsed.       
 \item The function \texttt{parseFactor} implements the following grammar rules:
             \begin{eqnarray*}
-        \textsl{Factor}  & \rightarrow &   \quoted{(} \textsl{ArithExpr} \quoted{)}        \\
-                         & \mid        & \;\textsl{Number}. 
+        \textsl{factor}  & \rightarrow &   \quoted{(} \textsl{arithExpr} \quoted{)}        \\
+                         & \mid        & \;\textsc{Number}. 
       \end{eqnarray*}
       If the token list \texttt{tl} ends with a closing parenthesis, the first of these rules has to
       be used to parse \texttt{tl}.  Therefore in this case we parse an expression and expect an
