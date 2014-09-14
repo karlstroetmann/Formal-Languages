@@ -17,7 +17,8 @@ entscheiden, ob das Programm korrekt ist, sondern wir wollen darüber hinaus den
 Programm-Text \emph{strukturieren}.  Den Vorgang des \emph{Strukturierens} bezeichnen wir
 auch als \emph{parsen} und das Programm, das diese Strukturierung vornimmt, wird als
 \emph{Parser} bezeichnet.  Als Eingabe erhält ein Parser üblicherweise nicht den
-Text eines Programms, sondern statt dessen eine Folge sogenannter \emph{Token}.  Diese
+Text eines Programms, sondern statt dessen eine Folge sogenannter \emph{Terminale}, die auch
+als \emph{Token} bezeichnet werden.  Diese 
 Token werden von einem Scanner erzeugt, der mit Hilfe regulärer Ausdrücke den Programmtext
 in einzelne Wörter aufspaltet, die wir in diesem Zusammenhang als Token bezeichnen.
 Beispielsweise spaltet der Scanner des \texttt{C}-Compilers ein \texttt{C}-Programm in die
@@ -115,10 +116,12 @@ kompakter schreiben:
 \end{eqnarray*}
 Die Ausdrücke auf der linken Seite einer Grammatik-Regel bezeichnen wir als
 \emph{syntaktische Variablen} oder auch als \emph{Nicht-Terminale}.  
-Variablen werden wir üblicherweise klein schreiben.
-In der Literatur
-finden Sie an Stelle des Begriffs der syntaktischen Variablen auch den Begriff der
-\emph{syntaktische Kategorie}. 
+Wir werden syntaktische Variablen üblicherweise klein schreiben, denn das ist die Konvention
+bei den  Parser-Generatoren \textsc{Antlr} und \textsl{JavaCup}, die wir später vorstellen werden. 
+In der Literatur ist es allerdings oft anders herum.  Dort werden die syntaktischen Variablen groß und
+die \emph{Terminale}  klein geschrieben.  Gelegentlich wird eine
+syntaktische Variable auch als \emph{syntaktische Kategorie} bezeichnet.
+ 
 In dem Beispiel sind \textsl{arithExpr}, \textsl{product} und \textsl{factor} die 
 syntaktischen Variablen.  Die restlichen Ausdrücke, in unserem Fall also \textsc{Number}, \textsc{Variable} und
 die Zeichen 
@@ -150,7 +153,7 @@ sieht das dann wie folgt aus:
   \textsl{factor}    & \rightarrow & \squoted{(}\, \textsl{arithExpr} \quoted{)} \;\mid\; 
                                      \textsc{Number} 
 \end{eqnarray*}
-Hier werden also die einzelnen Alternativen einer Regel durch das Metazeichen $\mid$
+Hier werden also die einzelnen Alternativen einer Regel durch das Metazeichen \squoted{|}
 getrennt.  Nach dem obigen Beispiel geben wir jetzt die formale Definition für den Begriff der
 \href{http://en.wikipedia.org/wiki/Context-free_grammar}{kontextfreien Grammatik}.
 
@@ -214,33 +217,34 @@ so dass folgendes gilt:
       \qed
 \end{enumerate}
 \end{Definition}
+
 \subsection{Ableitungen}
 Als nächstes wollen wir festlegen, welche Sprache durch eine gegebene Grammatik $G$ definiert wird.
 Dazu definieren wir zunächst den Begriff eines \emph{Ableitungs-Schrittes}.  Es sei
 \begin{enumerate}
 \item $G = \langle V, T, R, S \rangle$ eine Grammatik,
-\item $A \in V$ eine syntaktische Variable,
-\item $\alpha A \beta \in (V \cup T)^*$ ein String aus Terminalen und syntaktischen Variablen,
-      der die Variable $A$ enthält,
-\item $(A \rightarrow \gamma) \in R$ eine Regel.
+\item $a \in V$ eine syntaktische Variable,
+\item $\alpha a \beta \in (V \cup T)^*$ ein String aus Terminalen und syntaktischen Variablen,
+      der die Variable $a$ enthält,
+\item $(a \rightarrow \gamma) \in R$ eine Regel.
 \end{enumerate}
-Dann kann der String $\alpha A \beta$ durch einen Ableitungs-Schritt in den String 
+Dann kann der String $\alpha a \beta$ durch einen Ableitungs-Schritt in den String 
 $\alpha \gamma \beta$ überführt werden, wir ersetzen also ein Auftreten der syntaktische Variable
-$A$ durch die rechte Seite der Regel $A \rightarrow \gamma$.  Diesen Ableitungs-Schritt schreiben
+$a$ durch die rechte Seite der Regel $a \rightarrow \gamma$.  Diesen Ableitungs-Schritt schreiben
 wir als
 \\[0.2cm]
 \hspace*{1.3cm}
-$\alpha A \beta \Rightarrow_G \alpha \gamma \beta$.
+$\alpha a \beta \Rightarrow_G \alpha \gamma \beta$.
 \\[0.2cm]
 Geht die verwendete Grammatik $G$ aus dem Zusammenhang klar hervor, so wird der Index $_G$
 weggelassen und wir schreiben kürzer $\Rightarrow$ an Stelle von $\Rightarrow_G$.
 Der transitive und reflexive Abschluss der Relation $\Rightarrow_G$ wird mit $\Rightarrow_G^*$
 bezeichnet.  Wollen wir ausdrücken, dass die Ableitung des Strings $w$ aus dem
-Nicht-Terminal $A$ aus $n$ Ableitungs-Schritten
+Nicht-Terminal $a$ aus $n$ Ableitungs-Schritten
 besteht, so schreiben wir 
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \Rightarrow^n w$.
+$a \Rightarrow^n w$.
 \\[0.2cm]  
 Wir geben ein Beispiel:
 \begin{eqnarray*}
@@ -276,7 +280,7 @@ andererseits aus dem Start-Symbol $S$ der Grammatik ableiten lassen:
 \\[0.2cm]
 \hspace*{1.3cm}
 $L(G) := \bigl\{ w \in T^* \mid S \Rightarrow^* w \bigr\}$.
-\pagebreak
+
 
 \example
 Die Sprache
@@ -287,32 +291,32 @@ $L = \{ (^n )^n \mid n \in \mathbb{N}_0 \}$
 wird von der Grammatik 
 \\[0.2cm]
 \hspace*{1.3cm}
-$G = \bigl\langle \{S\}, \{ \squoted{(}, \squoted{)} \}, R, S\bigr\rangle$
+$G = \bigl\langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \bigr\rangle$
 \\[0.2cm]
 erzeugt, wobei die Regeln $R$ wie folgt gegeben sind:
 \begin{eqnarray*}
-  \textsl{S} & \rightarrow & \quoted{(} S \quoted{)}             \\
+  \textsl{s} & \rightarrow & \quoted{(} \textsl{s} \quoted{)}             \\
              & \mid        & \varepsilon
 \end{eqnarray*}
 
 
 \proof
 Wir zeigen zunächst, dass sich jedes Wort $w \in L$ aus dem
-Start-Symbol $S$ ableiten lässt:
+Start-Symbol $\textsl{s}$ ableiten lässt:
 \\[0.2cm]
 \hspace*{1.3cm}
-$w \in L \;\Longrightarrow\; S \Rightarrow^* w$.
+$w \in L \;\Longrightarrow\; \textsl{s} \Rightarrow^* w$.
 \\[0.2cm]
-Es sei also $w_n = (^n)^n$.  Wir zeigen durch Induktion über $n$, dass $w_n \in L(G)$ ist.
+Es sei also $w_n = (^n)^n$.  Wir zeigen durch Induktion über $n \in \mathbb{N}_0$, dass $w_n \in L(G)$ ist.
 \begin{enumerate}
 \item[I.A.:] $n=0$.
   
             Es gilt $w_0 = \varepsilon$.  Offenbar haben wir
             \\[0.2cm]
             \hspace*{1.3cm}
-            $S \Rightarrow \varepsilon$,
+            $\textsl{s} \Rightarrow \varepsilon$,
             \\[0.2cm]
-            denn die Grammatik enthält die Regel $S \rightarrow \varepsilon$.
+            denn die Grammatik enthält die Regel $s \rightarrow \varepsilon$.
             Also gilt $w_0 \in L(G)$.
 \item[I.S.:] $n \mapsto n + 1$. 
 
@@ -321,17 +325,17 @@ Es sei also $w_n = (^n)^n$.  Wir zeigen durch Induktion über $n$, dass $w_n \in 
             Also gibt es nach I.V.~eine Ableitung von $w_n$:
             \\[0.2cm]
             \hspace*{1.3cm}
-            $S \Rightarrow^* w_n$.
+            $\textsl{s} \Rightarrow^* w_n$.
             \\[0.2cm]
             Insgesamt haben wir dann die Ableitung
             \\[0.2cm]
             \hspace*{1.3cm}
-            $S \Rightarrow \quoted{(}S\quoted{)} \Rightarrow^* \quoted{(} w_n \quoted{)} = w_{n+1}$.
+            $\textsl{s} \Rightarrow \quoted{(}\textsl{s}\quoted{)} \Rightarrow^* \quoted{(} w_n \quoted{)} = w_{n+1}$.
             \\[0.2cm]
             Also gilt  $w_{n+1} \in L(G)$.
 \end{enumerate}
-Als nächstes zeigen wir, dass jedes Wort $w$, dass sich aus $S$ ableiten lässt, ein Element
-der Sprache $L$ ist.  Wir führen den Beweis durch Induktion über die Anzahl $n$ der
+Als nächstes zeigen wir, dass jedes Wort $w$, dass sich aus $\textsl{s}$ ableiten lässt, ein Element
+der Sprache $L$ ist.  Wir führen den Beweis durch Induktion über die Anzahl $n \in \mathbb{N}$ der
 Ableitungs-Schritte:
 \begin{enumerate}
 \item[I.A.:] $n = 1$.
@@ -340,7 +344,7 @@ Ableitungs-Schritte:
             einem Schritt besteht, ist
             \\[0.2cm]
             \hspace*{1.3cm}
-            $S \Rightarrow \varepsilon$.
+            $\textsl{s} \Rightarrow \varepsilon$.
             \\[0.2cm]
             Folglich muss $w = \varepsilon$ gelten und wegen $\varepsilon = (^0)^0 \in L$
             haben wir $w \in L$.
@@ -350,12 +354,12 @@ Ableitungs-Schritte:
             die folgende Form haben:
             \\[0.2cm]
             \hspace*{1.3cm}
-            $S \Rightarrow \quoted{(} S \quoted{)} \Rightarrow^n w$
+            $\textsl{s} \Rightarrow \quoted{(} \textsl{s} \quoted{)} \Rightarrow^n w$
             \\[0.2cm]
             Daraus folgt
             \\[0.2cm]
             \hspace*{1.3cm}
-            $w = \quoted{(}v\quoted{)} \;\wedge\; S \Rightarrow^n v$.
+            $w = \quoted{(}v\quoted{)} \;\wedge\; \textsl{s} \Rightarrow^n v$.
             \\[0.2cm]
             Nach I.V.~gilt dann $v \in L$.  Damit gibt es $k \in \mathbb{N}_0$ mit $v = (^k)^k$.
             Also haben wir
@@ -392,18 +396,18 @@ die zählt, wie oft der Buchstabe $c$ in dem Wort $w$ vorkommt, durch Induktion ü
              \end{array}\right.
             $ \eox
 \end{enumerate}
-Wir setzen nun $\Sigma = \{ \texttt{a}, \texttt{b} \}$ und definieren die Sprache $L$ als die
-Menge der Wörter $w\in\Sigma^*$, in denen die Buchstaben \texttt{a} und \texttt{b} mit der
+Wir setzen nun $\Sigma = \{ \texttt{A}, \texttt{B} \}$ und definieren die Sprache $L$ als die
+Menge der Wörter $w\in\Sigma^*$, in denen die Buchstaben \texttt{A} und \texttt{B} mit der
 selben Häufigkeit vorkommen:
 \\[0.2cm]
 \hspace*{1.3cm}
-$L := \bigl\{ w \in \Sigma^* \mid \textsl{count}(w,\texttt{a}) = \textsl{count}(w,\texttt{b})\bigr\}$
+$L := \bigl\{ w \in \Sigma^* \mid \textsl{count}(w,\texttt{A}) = \textsl{count}(w,\texttt{B})\bigr\}$
 \\[0.2cm]
 Geben Sie eine Grammatik $G$ an, so dass $L = L(G)$ gilt und beweisen Sie Ihre Behauptung!
 \eox
 
-\homework
-Wieder sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$.  Wir definieren die Menge $L$ als die
+\exerciseStar
+Es sei $\Sigma = \{ \texttt{A}, \texttt{B} \}$.  Wir definieren die Menge $L$ als die
 Menge der Strings $s$, die sich \underline{nicht} in der Forms $s = ww$ schreiben lassen:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -464,32 +468,48 @@ Dann gilt
 \textbf{Vorüberlegung \texttt{II}}:
 Zunächst ist klar, dass alle Strings deren Länge ungerade sind, in der Sprache $L$ liegen,
 denn jeder String der Form $s=ww$ hat offenbar die Länge 
-\[ |s| = |w| + |w| = 2\cdot |w| \]
+\\[0.2cm]
+\hspace*{1.3cm}
+$|s| = |w| + |w| = 2\cdot |w|$
+\\[0.2cm]
 und das ist eine gerade Zahl.
-
 
 Gilt nun $s \in L$ mit $|s| = 2 \cdot n$, so lässt sich $s$ in zwei Teile $u$ und $v$ gleicher
 Länge zerlegen:
-\[  
-   s = uv \quad \mbox{mit} \quad u = s[1\!:\!n], \quad v = s[n+1\!:\!2 \cdot n]
-   \quad \mbox{und} \quad u \not= v.
-\]
+\\[0.2cm]
+\hspace*{1.3cm}
+$s = uv \quad \mbox{mit} \quad u = s[1\!:\!n], \quad v = s[n+1\!:\!2 \cdot n]
+  \quad \mbox{und} \quad u \not= v
+$.
+\\[0.2cm]
 Aus der Ungleichung $u \not= v$ folgt, dass es mindestens einen Index $k \in \{1,\cdots,n\}$ gibt,
 so dass sich die Strings $u$ und $v$ an diesem Index unterscheiden:
-\[ u[k] \not= v[k]. \]
+\\[0.2cm]
+\hspace*{1.3cm}
+$u[k] \not= v[k]$. 
+\\[0.2cm]
 Der Trick besteht jetzt darin, den String $s$ in zwei Teilstrings $x$ und $y$ aufzuteilen,
 von denen der eine 
 Teilstring in der Mitte den Buchstaben $u[k]$ enthält, während der andere Teilstring in der Mitte den
 Buchstaben $v[k]$ enthält.  Wir definieren
-\[ x := s[1\!:\!2 \cdot k - 1] \quad \mbox{und} \quad y := s[2 \cdot k\!:\! 2 \cdot n]. \]
+\\[0.2cm]
+\hspace*{1.3cm}
+$x := s[1\!:\!2 \cdot k - 1] \quad \mbox{und} \quad y := s[2 \cdot k\!:\! 2 \cdot n]$.
+\\[0.2cm]
 Für die Längen von $x$ und $y$ folgt daraus
-\[ |x| = 2 \cdot k - 1 \quad \mbox{und} \quad |y| = 2 \cdot (n - k) + 1. \]
+\\[0.2cm]
+\hspace*{1.3cm}
+$|x| = 2 \cdot k - 1 \quad \mbox{und} \quad |y| = 2 \cdot (n - k) + 1$. 
+\\[0.2cm]
 Dann gilt einerseits
-\[ 
-   x[k] = s[k] = u[k]
-\]
+\\[0.2cm]
+\hspace*{1.3cm}
+$x[k] = s[k] = u[k]$
+\\[0.2cm]
 und andererseits haben wir
-\[ 
+\\[0.2cm]
+\hspace*{1.3cm}
+$
 \begin{array}[t]{lcl}
     y[n - k + 1] & = & s[2 \cdot k\!:\! 2 \cdot n][n - k + 1] \\[0.1cm]
                  & = & s[2 \cdot k + (n - k + 1) - 1]     \\[0.1cm]
@@ -497,7 +517,8 @@ und andererseits haben wir
                  & = & s[n+1\!:\! 2 \cdot n][k]               \\[0.1cm]
                  & = & v[k]               
 \end{array}
-\]
+$
+\\[0.2cm]
 Die beiden Buchstaben $u[k]$ und $v[k]$, die dafür verantwortlich sind, dass $u$ und $v$ verschieden
 sind, befinden sich also genau in der Mitte der Strings $x$ und $y$.
 \vspace{0.3cm}
@@ -550,7 +571,7 @@ gilt, woraus  $u \not= v$ und damit $s = uv \in L$ folgt.
 \vspace{0.3cm}
 
 \noindent
-Es bleibt der Nachweis von  $s[m+1] \not= s[(m+n+1) + (m+1)$ zu erledigen:
+Es bleibt der Nachweis von  $s[m+1] \not= s[(m+n+1) + (m+1)]$ zu erledigen:
 \\[0.2cm]
 \hspace*{1.3cm}
 $
@@ -573,56 +594,62 @@ Fassen wir die letzten beiden Vorüberlegungen zusammen, so stellen wir fest, das
 Sprache $L$ aus genau den Wörtern besteht, die entweder 
 eine ungerade Länge haben, oder die aus Paaren von Strings ungerader Länge bestehen, die
 in der Mitte unterschiedliche Buchstaben haben:
-\[ 
-\begin{array}[t]{lcl}
-L & =    & \bigl\{ s \in \Sigma^* \big|\; |s| \,\%\, 2 = 1 \bigr\}  \\[0.1cm]
-  & \cup & \bigl\{ s \in \Sigma^* \big|\; \exists x,y \in \Sigma^*: 
-                             s = xy \wedge |x| \,\%\, 2 = 1 
-                                    \wedge |y| \,\%\, 2 = 1  \wedge \hat{x} \not= \hat{y} \bigr\} 
-\end{array}
-\]
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{lcl}
+  L & =    & \bigl\{ s \in \Sigma^* \big|\; |s| \,\texttt{\%}\, 2 = 1 \bigr\}  \\[0.1cm]
+    & \cup & \bigl\{ s \in \Sigma^* \big|\; \exists x,y \in \Sigma^*: 
+                             s = xy \wedge |x| \,\texttt{\%}\, 2 = 1 
+                                    \wedge |y| \,\texttt{\%}\, 2 = 1  \wedge \hat{x} \not= \hat{y} \bigr\} 
+ \end{array}$
+\\[0.2cm]
 Damit lässt sich die Menge $L$ durch die folgende Grammatik beschreiben
-\[ G = \langle \{ S, A, B, X, U \}, \{ a, b \}, R, S \rangle, \] 
+\\[0.2cm]
+\hspace*{1.3cm}
+$G = \langle \{ s, a, b, x, u \}, \{ A, B \}, R, s \rangle$,
+\\[0.2cm]
 wobei die Menge der Regeln wie folgt gegeben ist:
-\[ 
+\\[0.2cm]
+\hspace*{1.3cm}
+$ 
 \begin{array}[t]{lcl}
-  S & \rightarrow & U \mid A B \mid  B A \\[0.3cm]
-  A & \rightarrow & a \mid X A X         \\[0.3cm]
-  B & \rightarrow & b \mid X B X         \\[0.3cm]
-  U & \rightarrow & X \mid U X X         \\[0.3cm]
-  X & \rightarrow & a \mid b            
-\end{array}
-\]
+  s & \rightarrow & u \mid a b \mid  b a \\[0.3cm]
+  a & \rightarrow & A \mid x a x         \\[0.3cm]
+  b & \rightarrow & B \mid x b x         \\[0.3cm]
+  u & \rightarrow & x \mid u x x         \\[0.3cm]
+  x & \rightarrow & A \mid B            
+\end{array}$
+\\[0.2cm]
 Wir diskutieren die verschiedenen syntaktischen Variablen.
 \begin{enumerate}
-\item $L(X) = \{ a, b \}$.
-\item $L(U) = \{ s \in \Sigma^* \mid \;|s| \,\%\, 2 = 1 \}$,
+\item $L(x) = \{ A, B \}$.
+\item $L(u) = \{ w \in \Sigma^* \mid \;|w| \,\texttt{\%}\, 2 = 1 \}$,
 
       denn ein String ungerader Länge hat entweder die Länge 1 oder er kann aus einem String ungerader Länge
       durch Anfügen zweier Buchstaben erzeugt werden.
-\item $L(A) = \{ s \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |s| = 2 \cdot k - 1 \wedge s[k] = a \}$,
+\item $L(a) = \{ w \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |w| = 2 \cdot k - 1 \wedge w[k] = a \}$,
   
-      denn wenn wir an einen String, bei dem der Buchstabe $a$ in der Mitte steht, vorne
+      denn wenn wir an einen String, bei dem der Buchstabe $A$ in der Mitte steht, vorne
       und hinten jeweils einen Buchstaben anfügen, erhalten wir wieder einen String, in
-      dessen Mitte der Buchstabe $a$ steht
-\item $L(B) = \{ s \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |s| = 2 \cdot k - 1 \wedge s[k] = b \}$,
+      dessen Mitte der Buchstabe $A$ steht
+\item $L(b) = \{ w \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |w| = 2 \cdot k - 1 \wedge w[k] = b \}$,
 
-      denn die Variable $B$ ist analog zur Variablen $A$ definiert worden.  Der einzige
-      Unterschied ist der, dass nun der Buchstabe $b$ in der Mitte liegt.
+      denn die Variable $b$ ist analog zur Variablen $a$ definiert worden.  Der einzige
+      Unterschied ist der, dass nun der Buchstabe $B$ in der Mitte liegt.
 \item $
   \begin{array}[t]{lcl}    
-L(S) & = & \quad \bigl\{ s \in \Sigma^* \big|\; |s| \,\%\, 2 = 1 \bigr\} \\[0.1cm] 
-     &   & \cup\; \bigl\{ s \in \Sigma^* \big|\; \exists x,y \in \Sigma^*: 
-                          s = xy \wedge |x| \,\%\, 2 = 1 
-                                 \wedge |y| \,\%\, 2 = 1  \wedge \hat{x} \not= \hat{y} \bigr\} \\[0.2cm]
-     & = & \quad \bigl\{ s \in \Sigma^* \mid \neg (\exists w \in \Sigma^*: s = ww) \bigr\}
+L(s) & = & \quad \bigl\{ w \in \Sigma^* \big|\; |w| \,\texttt{\%}\, 2 = 1 \bigr\} \\[0.1cm] 
+     &   & \cup\; \bigl\{ w \in \Sigma^* \big|\; \exists x,y \in \Sigma^*: 
+                          w = xy \wedge |x| \,\texttt{\%}\, 2 = 1 
+                                 \wedge |y| \,\texttt{\%}\, 2 = 1  \wedge \hat{x} \not= \hat{y} \bigr\} \\[0.2cm]
+     & = & \quad \bigl\{ w \in \Sigma^* \mid \neg (\exists v \in \Sigma^*: w = vv) \bigr\}
   \end{array}
 $
       \\[0.2cm]
       denn wir haben oben argumentiert, dass alle Strings der Sprache $L$ entweder eine
       ungerade Länge haben oder in zwei Teile ungerader Länge zerlegt werden können, so dass in der Mitte
-      dieser Teile verschiedene Buchstaben stehen: Entweder steht im ersten Teil ein $a$
-      und im zweiten Teil steht ein $b$ oder es ist umgekehrt.
+      dieser Teile verschiedene Buchstaben stehen: Entweder steht im ersten Teil ein $A$
+      und im zweiten Teil steht ein $B$ oder es ist umgekehrt.
 \end{enumerate}
 Um die obigen Behauptungen formal zu beweisen müssten wir nun einerseits noch durch eine Induktion
 nach der Länge der Herleitung zeigen, dass die von den Grammatik-Symbolen erzeugten
@@ -647,28 +674,30 @@ Bedingungen genügt:
 \item Jeder innere Knoten (also jeder Knoten, der kein Blatt ist),
       ist mit einer Variablen beschriftet.
 \item Jedes Blatt ist mit einem Terminal oder mit einer Variablen beschriftet.
-\item Falls ein Blatt mit einer Variablen $A$ beschriftet ist, dann enthält die Grammatik eine 
+\item Falls ein Blatt mit einer Variablen $a$ beschriftet ist, dann enthält die Grammatik eine 
       Regel der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A \rightarrow \varepsilon$.
-\item Ist ein innerer Knoten mit einer Variablen $A$ beschriftet und sind die Kinder
+      $a \rightarrow \varepsilon$.
+\item Ist ein innerer Knoten mit einer Variablen $a$ beschriftet und sind die Kinder
       dieses Knotens mit den Symbolen $X_1$, $X_2$, $\cdots$, $X_n$ beschriftet, so
       enthält die Grammatik $G$ eine Regel der Form 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A \rightarrow X_1 X_2 \cdots X_n$.
+      $a \rightarrow X_1 X_2 \cdots X_n$.
 \end{enumerate}
 Die Blätter des Parse-Baums ergeben dann, wenn wir sie von links nach rechts lesen, ein Wort,
 das von der Grammatik $G$ abgeleitet wird.  Abbildung \ref{fig:parse-tree.dot} zeigt einen
 Parse-Baum für das Wort ``\texttt{2*3+4}'', der mit der oben angegebenen Grammatik für
 arithmetische Ausdrücke abgeleitet worden ist.
+
 \begin{figure}[!ht]
   \centering
-      \epsfig{file=Abbildungen/parse-tree.eps, scale=0.6}
+      \epsfig{file=Abbildungen/parse-tree.eps, scale=0.7}
   \caption{Ein Parse-Baum für den String ``\texttt{2*3+4}''.}
   \label{fig:parse-tree.dot}
 \end{figure}
+
 Da Bäume der in Abbildung \ref{fig:parse-tree.dot} gezeigten Art sehr schnell zu groß
 werden, vereinfachen wir diese Bäume mit Hilfe der folgenden Regeln:
 \begin{enumerate}
@@ -684,12 +713,14 @@ erhalten, wenn wir den in Abbildung \ref{fig:parse-tree.dot} gezeigten Parse-Bau
 diesen Regeln vereinfachen.  Die in diesem Baum gespeicherte Struktur ist genau das, was
 wir brauchen um den arithmetischen Ausdruck ``\texttt{2*3+4}'' auszuwerten, denn der Baum zeigt uns,
 in welcher Reihenfolge die Operatoren ausgewertet werden müssen.
+
 \begin{figure}[!ht]
   \centering
-      \epsfig{file=Abbildungen/abstract-syntax-tree.eps, scale=0.6}
+      \epsfig{file=Abbildungen/abstract-syntax-tree.eps, scale=0.7}
   \caption{Ein abstrakter Syntax-Baum für den String ``\texttt{2*3+4}''.}
   \label{fig:abstract-syntax-tree.dot}
 \end{figure}
+
 \subsection{Mehrdeutige Grammatiken}
 Die zu Anfang des Abschnitts \ref{kontextfreie} angegebene Grammatik erscheint durch ihre Unterscheidung
 der syntaktischen Kategorien \textsl{arithExpr}, \textsl{product} und \textsl{factor}
@@ -753,97 +784,117 @@ Ullman \cite{hopcroft:06}.
 
 
 \example
-Es sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$.  Die Sprache $L$ enthalte alle die Wörter
-aus $\Sigma^*$, bei denen die Buchstaben \texttt{a} and \texttt{b} mit der gleichen
+Es sei $\Sigma = \{ \texttt{A}, \texttt{B} \}$.  Die Sprache $L$ enthalte alle die Wörter
+aus $\Sigma^*$, bei denen die Buchstaben \texttt{A} and \texttt{B} mit der gleichen
 Häufigkeit auftreten, es gilt also
 \\[0.2cm]
 \hspace*{1.3cm}
-$L = \bigl\{ w \in \Sigma^* \mid \textsl{count}(w, \mathtt{a}) = \textsl{count}(w, \mathtt{b}) \bigr\}$.
+$L = \bigl\{ w \in \Sigma^* \mid \textsl{count}(w, \mathtt{A}) = \textsl{count}(w, \mathtt{B}) \bigr\}$.
 \\[0.2cm]
-Dann wird die Sprache $L$ durch die kontextfreie Grammatik $G_1 = \langle \{S\}, \Sigma, R_1, S \rangle$ beschrieben,
+Dann wird die Sprache $L$ durch die kontextfreie Grammatik $G_1 = \langle \{s\}, \Sigma, R_1, s \rangle$ beschrieben,
 deren Regeln wie folgt gegeben sind:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{S} \;\rightarrow\; \mathtt{a} S \mathtt{b} S \;\mid\; \textsl{b} S \mathtt{a} S \;\mid\; \varepsilon$
+$\textsl{s} \;\rightarrow\; \mathtt{A} s \mathtt{B} s \;\mid\; \textsl{B} s \mathtt{A} s \;\mid\; \varepsilon$
 \\[0.2cm]
+Der Grund ist, dass ein String $w \in L$ entweder mit einem \texttt{A} oder mit einem \texttt{B}
+beginnt.  Im ersten Fall muss es zu diesem \texttt{A} ein korrespondierendes \texttt{B} geben, denn
+die Anzahl der Auftreten von \texttt{A} und \texttt{B} sind gleich.  Fassen wir den Buchstaben
+\texttt{A} wie eine öffnende Klammer auf und interpretieren den Buchstaben \texttt{B} als die zu
+\texttt{A} korrespondierende schließende Klammer, so ist klar, dass der String, der zwischen diesen
+beiden Auftreten von \texttt{A} und \texttt{B} liegt, ebenfalls gleich viele Auftreten von
+\texttt{A} wie von \texttt{B} hat.  Genauso muss dies dann für den Rest des Strings gelten, der nach
+dem \texttt{B} folgt.  Diese Überlegung erklärt die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{s} \;\rightarrow\; \mathtt{A} s \mathtt{B} s$
+\\[0.2cm]
+Die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{s} \;\rightarrow\; \mathtt{B} s \mathtt{A} s$
+\\[0.2cm]
+lässt sich in analoger Weise erklären,  wenn wir den Buchstaben \texttt{B} als öffnende Klammer und
+\texttt{A} als schließende Klammer interpretieren. 
+
 Diese Grammatik ist allerdings mehrdeutig: Betrachten wir beispielsweise den String 
 ``\texttt{abab}'', so stellen wir fest, dass sich dieser prinzipiell auf zwei Arten ableiten lässt:
 \begin{eqnarray*}
-  S & \Rightarrow & \mathtt{a} S \mathtt{b} S                       \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} S                         \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} \mathtt{a} S \mathtt{b} S \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} \mathtt{a} \mathtt{b} S   \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} \mathtt{a} \mathtt{b} 
+  s & \Rightarrow & \mathtt{A} s \mathtt{B} s                       \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} s                         \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} \mathtt{A} s \mathtt{B} s \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} \mathtt{A} \mathtt{B} s   \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} \mathtt{A} \mathtt{B} 
 \end{eqnarray*}
 Eine andere Ableitung des selben Strings ergibt sich, wenn wir im zweiten Ableitungs-Schritt nicht das erste
 $S$ durch $\varepsilon$ ersetzen sondern statt dessen das zweite $S$ durch $\varepsilon$ ersetzen:
 \begin{eqnarray*}
-  S & \Rightarrow & \mathtt{a} S \mathtt{b} S                       \\
-    & \Rightarrow & \mathtt{a} S \mathtt{b}                         \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} S \mathtt{a} S \mathtt{b} \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} \mathtt{a} S \mathtt{b}   \\
-    & \Rightarrow & \mathtt{a} \mathtt{b} \mathtt{a} \mathtt{b}     \\
+  S & \Rightarrow & \mathtt{A} s \mathtt{B} s                       \\
+    & \Rightarrow & \mathtt{A} s \mathtt{B}                         \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} s \mathtt{A} s \mathtt{B} \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} \mathtt{A} s \mathtt{B}   \\
+    & \Rightarrow & \mathtt{A} \mathtt{B} \mathtt{A} \mathtt{B}     \\
 \end{eqnarray*}
 Abbildung \ref{fig:ambiguous-a.dot} zeigt die Parse-Bäume, die sich aus den beiden Ableitungen ergeben.
 Wir können erkennen, dass die Struktur dieser Bäume unterschiedlich ist:  Im ersten Fall gehört das erste
-``\texttt{a}'' zu dem ersten ``\texttt{b}'', im zweiten Fall gehört das erste ``\texttt{a}'' zu dem letzten
-``\texttt{b}''.
+``\texttt{A}'' zu dem ersten ``\texttt{B}'', im zweiten Fall gehört das erste ``\texttt{A}'' zu dem letzten
+``\texttt{B}''.
 
 \begin{figure}[!ht]
-      \epsfig{file=Abbildungen/ambiguous-a.eps, scale=0.5}
+      \epsfig{file=Abbildungen/ambiguous-a.eps, scale=0.6}
 \quad
-      \epsfig{file=Abbildungen/ambiguous-b.eps, scale=0.5}
-  \caption{Zwei strukturell verschiedene Parse-Bäume für den String ``\texttt{abab}''.}
+      \epsfig{file=Abbildungen/ambiguous-b.eps, scale=0.6}
+  \caption{Zwei strukturell verschiedene Parse-Bäume für den String ``\texttt{ABAB}''.}
   \label{fig:ambiguous-a.dot}
 \end{figure}
 
-Wir definieren nun eine  kontextfreie Grammatik $G_2 = \langle \{S, U, V, X, Y\}, \Sigma, R_2, S \rangle$,
+Wir definieren nun eine  kontextfreie Grammatik $G_2 = \langle \{s, u, v, x, y\}, \Sigma, R_2, s \rangle$,
 deren Regeln wie folgt gegeben sind:
 \hspace*{1.3cm}
 \begin{eqnarray*}
-\textsl{S} & \rightarrow & U S \;\mid\; V S  \;\mid\; \varepsilon \\[0.2cm]
-\textsl{U} & \rightarrow & \mathtt{a} X \mathtt{b}                \\[0.2cm]
-\textsl{V} & \rightarrow & \mathtt{b} Y \mathtt{a}                \\[0.2cm]
-\textsl{X} & \rightarrow & U X \;\mid\; \varepsilon               \\[0.2cm]
-\textsl{Y} & \rightarrow & V Y \;\mid\; \varepsilon          
+\textsl{s} & \rightarrow & u s \;\mid\; v s  \;\mid\; \varepsilon \\[0.2cm]
+\textsl{u} & \rightarrow & \mathtt{A} x \mathtt{B}                \\[0.2cm]
+\textsl{v} & \rightarrow & \mathtt{B} y \mathtt{A}                \\[0.2cm]
+\textsl{x} & \rightarrow & \textsl{u} \textsl{x} \;\mid\; \varepsilon \\[0.2cm]
+\textsl{y} & \rightarrow & \textsl{v} \textsl{y} \;\mid\; \varepsilon          
 \end{eqnarray*}
 Um die Sprachen, die von den einzelnen Variablen erzeugt werden, klarer beschreiben zu
-können, definieren wir für zwei Strings $u$ und $w$ die Relation $u \preceq w$ (lese: $u$ ist ein
-Präfix von $w$) wie folgt:
+können, definieren wir für zwei Strings $\sigma$ und $\omega$ die Relation $\sigma \preceq \omega$ (lese: $\sigma$ ist ein
+Präfix von $\omega$) wie folgt:
 \\[0.2cm]
 \hspace*{1.3cm}
-$u \preceq w \quad \stackrel{\rm{def}}{\Longleftrightarrow} \exists v \in \Sigma^*: u v = w$
+$\sigma \preceq \omega \quad \stackrel{\rm{def}}{\Longleftrightarrow} \exists \tau \in \Sigma^*: \sigma \tau = \omega$
 \\[0.2cm]
-Sodann bemerken wir, dass von den syntaktischen Variablen $X$ und $Y$ die folgenden
+Sodann bemerken wir, dass von den syntaktischen Variablen $x$ und $y$ die folgenden
 Sprachen erzeugt werden:
 \\[0.2cm]
 \hspace*{1.3cm} 
-$L(X) = \bigl\{ w \in \Sigma^* \mid w \in L \;\wedge\; \forall u \preceq w : 
-                  \textsl{count}(u,\mathtt{b}) \leq \textsl{count}(u, \mathtt{a}) \bigr\}$
+$L(x) = \bigl\{ \omega \in \Sigma^* \mid \omega \in L \;\wedge\; \forall \sigma \preceq \omega : 
+                  \textsl{count}(\sigma,\mathtt{B}) \leq \textsl{count}(\sigma, \mathtt{A}) \bigr\}$
 \quad und \\[0.2cm]
 \hspace*{1.3cm}
-$L(Y) = \bigl\{ w \in \Sigma^* \mid w \in L \;\wedge\; \forall u \preceq w : 
-                  \textsl{count}(u,\mathtt{a}) \leq \textsl{count}(u, \mathtt{b}) \bigr\}$.
+$L(y) = \bigl\{ \omega \in \Sigma^* \mid \omega \in L \;\wedge\; \forall \sigma \preceq \omega : 
+                  \textsl{count}(\sigma,\mathtt{A}) \leq \textsl{count}(\sigma, \mathtt{B}) \bigr\}$.
 \\[0.2cm]
-Ein String der Sprache $L(X)$ kann also kein ``\texttt{b}'' enthalten, dass zu einem
-``\texttt{a}'' gehört, das vor diesem String steht und analog kann 
-ein String der Sprache $L(Y)$  kein ``\texttt{a}'' enthalten, dass zu einem
-``\texttt{b}'' gehört, das vor diesem String steht.
+Ein String der Sprache $L(x)$ kann also kein ``\texttt{B}'' enthalten, dass zu einem
+``\texttt{A}'' gehört, das vor diesem String steht und analog kann 
+ein String der Sprache $L(y)$  kein ``\texttt{A}'' enthalten, dass zu einem
+``\texttt{B}'' gehört, das vor diesem String steht.
 
-Ein String der Sprache $L$ fängt nun entweder mit ``\texttt{a}'' oder mit ``\texttt{b}''
-an.  Im ersten Fall interpretieren wir das ``\texttt{a}'' als öffnende Klammer und 
-das ``\texttt{b}'' als schließende Klammer und suchen nun das ``\texttt{b}'', das dem
-``\texttt{a}'' am Anfang des Strings zugeordnet ist.  Der String, der mit dem
-``\texttt{a}'' anfängt und dem ``\texttt{b}'' endet, liegt in der Sprache $L(U)$.
-Auf dieses ``\texttt{b}'' kann dann noch ein weiterer Teilstring folgen, der
-gleich viele ``\texttt{a}''s und ``\texttt{b}''s enthält.  Ein solcher Teilstring liegt
-offensichtlich ebenfalls in der Sprache $L$ und kann daher von $S$ mittels der Regel
+Ein String der Sprache $L$ fängt nun entweder mit ``\texttt{A}'' oder mit ``\texttt{B}''
+an.  Im ersten Fall interpretieren wir das ``\texttt{A}'' als öffnende Klammer und 
+das ``\texttt{B}'' als schließende Klammer und suchen nun das ``\texttt{B}'', das dem
+``\texttt{A}'' am Anfang des Strings zugeordnet ist.  Der String, der mit dem
+``\texttt{A}'' anfängt und dem ``\texttt{B}'' endet, liegt in der Sprache $L(u)$.
+Auf dieses ``\texttt{B}'' kann dann noch ein weiterer Teilstring folgen, der
+gleich viele ``\texttt{A}''s und ``\texttt{B}''s enthält.  Ein solcher Teilstring liegt
+offensichtlich ebenfalls in der Sprache $L$ und kann daher von $s$ mittels der Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$S \rightarrow US$
+$\textsl{s} \rightarrow \textsl{u}\textsl{s}$
 \\[0.2cm]
 erzeugt werden.
-Im zweiten Fall fängt der String mit einem ``\texttt{b}''an.  Dieser Fall ist
+Im zweiten Fall fängt der String mit einem ``\texttt{B}'' an.  Dieser Fall ist
 analog zum ersten Fall.    \qed
 \vspace*{0.3cm}
 
@@ -851,12 +902,12 @@ In dem obigen Beispiel hatten wir Glück und konnten eine Grammatik finden, mit d
 die Sprache eindeutig parsen lässt.  Es  gibt allerdings auch kontextfreie Sprachen, die 
 \href{http://en.wikipedia.org/wiki/Ambiguous_grammar#Inherently_ambiguous_languages}{inhärent mehrdeutig}
 sind: Es lässt sich beispielsweise zeigen, dass für das Alphabet 
-$\Sigma =  \{ \mathtt{a}, \texttt{b}, \mathtt{c}, \mathtt{d} \}$
+$\Sigma =  \{ \mathtt{A}, \texttt{B}, \mathtt{C}, \mathtt{D} \}$
 die Sprache
 \\[0.2cm]
 \hspace*{1.3cm}
-$L =  \bigl\{ \mathtt{a}^m \mathtt{b}^m \mathtt{c}^n \mathtt{d}^n \mid m, n \in \mathbb{N} \bigr\}
- \cup \bigl\{ \mathtt{a}^m \mathtt{b}^n \mathtt{c}^n \mathtt{d}^m \mid m, n \in \mathbb{N} \bigr\}
+$L =  \bigl\{ \mathtt{A}^m \mathtt{B}^m \mathtt{C}^n \mathtt{D}^n \mid m, n \in \mathbb{N} \bigr\}
+ \cup \bigl\{ \mathtt{A}^m \mathtt{B}^n \mathtt{C}^n \mathtt{D}^m \mid m, n \in \mathbb{N} \bigr\}
 $
 \\[0.2cm]
 kontextfrei ist, aber jede Grammatik $G$ mit der Eigenschaft $L = L(G)$ ist
@@ -864,7 +915,7 @@ notwendigerweise mehrdeutig.  Das Problem ist, dass für gewisse große Zahlen $n\
 String der Form 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mathtt{a}^n \mathtt{b}^n \mathtt{c}^n \mathtt{d}^n$
+$\mathtt{A}^n \mathtt{B}^n \mathtt{C}^n \mathtt{D}^n$
 \\[0.2cm]
 immer zwei strukturell verschiedene Parse-Bäume besitzt.  Ein Beweis dieser Behaupung
 findet sich in dem Buch von  Hopcroft und Ullman auf Seite 100 \cite{hopcroft:79}.   
@@ -875,7 +926,7 @@ Grammatiken leicht parsen lassen.  Die Grundidee ist einfach:  Um einen String $
 Hilfe einer Grammatik-Regel der Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \rightarrow X_1 X_2 \cdots X_n$
+$\textsl{a} \rightarrow \textsl{X}_1 \textsl{X}_2 \cdots \textsl{X}_n$
 \\[0.2cm]
 zu parsen, versuchen wir, zunächst ein $X_1$ zu parsen.  Dabei zerlegen wir den String in
 $w = w_1 r_1$ so, dass $w_1 \in L(X_1)$ liegt.  Dann versuchen wir, in dem Rest-String
@@ -889,10 +940,10 @@ Leider funktioniert dieses Verfahren dann nicht, wenn die Grammatik
 \emph{links-rekursiv} ist, dass heißt, dass eine Regel die Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \rightarrow A \beta$
+$\textsl{a} \rightarrow \textsl{a} \beta$
 \\[0.2cm]
-hat, denn dann würden wir um ein $A$ zu parsen sofort wieder rekursiv versuchen, 
-ein $A$ zu parsen und wären damit in einer Endlos-Schleife.  Es gibt mehrere Möglichkeiten, um mit
+hat, denn dann würden wir um ein $\textsl{a}$ zu parsen sofort wieder rekursiv versuchen, 
+ein $a$ zu parsen und wären damit in einer Endlos-Schleife.  Es gibt mehrere Möglichkeiten, um mit
 diesem Problem umzugehen:
 \begin{enumerate}
 \item Wir können die Grammatik so umschreiben, dass sie danach nicht mehr links-rekursiv
@@ -901,7 +952,7 @@ diesem Problem umzugehen:
       Regel der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A \rightarrow X_1 X_2 \cdots X_n$
+      $\textsl{a} \rightarrow \textsl{X}_1 \textsl{X}_2 \cdots \textsl{X}_n$
       \\[0.2cm]
       versuchen wir als erstes, ein $X_n$ am Ende eines zu parsenden Strings $w$ zu
       entdecken und arbeiten den String $w$ dann von hinten ab.  
@@ -915,104 +966,106 @@ diesem Problem umzugehen:
 Im Rahmen dieses Kapitels werden wir alle oben genannten Verfahren an Hand der Grammatik für
 arithmetische Ausdrücke ausführlich diskutieren.  
 
-\subsection{Umschreiben der Grammatik \label{links-rekursion}}
-Ist $A$ ein Nicht-Terminal, das durch die beiden Regeln
+\subsection{Umschreiben der Grammatik$^*$ \label{links-rekursion}}
+In der folgenden Grammatik ist $a$ eine syntaktische Variable und die griechischen Buchstaben $\beta$ und
+$\gamma$ stehen für irgendwelche Strings, die aus syntaktischen Variablen und Tokens bestehen.
+Wird die syntaktische Variable $a$ durch die beiden Regeln
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-A & \rightarrow & A \beta \\
+a & \rightarrow & a \beta \\
   & \mid        & \gamma
 \end{array}
 $
 \\[0.2cm]
-beschrieben wird, so hat eine Ableitung von $A$, bei der zunächst immer die Variable $A$ ersetzt
+definiert, so hat eine Ableitung von $a$, bei der zunächst immer die Variable $a$ ersetzt
 wird, die Form 
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \Rightarrow A \beta \Rightarrow A \beta \beta \Rightarrow A \beta \beta \beta
- \Rightarrow \cdots \Rightarrow A \beta^n \Rightarrow \gamma \beta^n$.
+$a \Rightarrow a \beta \Rightarrow a \beta \beta \Rightarrow a \beta \beta \beta
+ \Rightarrow \cdots \Rightarrow a \beta^n \Rightarrow \gamma \beta^n$.
 \\[0.2cm]
-Damit sehen wir, dass die durch das Nicht-Terminal $A$ beschriebene Sprache $L(A)$ aus alle den
+Damit sehen wir, dass die durch das Nicht-Terminal $a$ beschriebene Sprache $L(a)$ aus alle den
 Strings besteht, die sich aus dem Ausdruck $\gamma \beta^n$ ableiten lassen:
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(A) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}_0: \gamma \beta^n \Rightarrow^* w \bigr\}$.
+$L(a) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}_0: \gamma \beta^n \Rightarrow^* w \bigr\}$.
 \\[0.2cm]
-Diese Sprache kann offenbar auch durch die folgenden Regeln für $A$ beschrieben werden:
+Diese Sprache kann offenbar auch durch die folgenden Regeln für $a$ beschrieben werden:
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-A & \rightarrow & \gamma B \\[0.2cm]
-B & \rightarrow & \beta B  \\
+a & \rightarrow & \gamma b \\[0.2cm]
+b & \rightarrow & \beta b  \\
   & \mid        & \varepsilon 
 \end{array}
 $
 \\[0.2cm]
-Hier haben wir die Hilfs-Variable $B$ eingeführt.  Die Ableitungen, die von dem Nicht-Terminal $B$
+Hier haben wir die Hilfs-Variable $b$ eingeführt.  Die Ableitungen, die von dem Nicht-Terminal $b$
 ausgehen, haben die Form
 \\[0.2cm]
-\hspace*{1.3cm} $B \Rightarrow \beta B \Rightarrow \beta \beta B \Rightarrow \cdots \Rightarrow
-\beta^n B \Rightarrow \beta^n$.
+\hspace*{1.3cm} $b \Rightarrow \beta b \Rightarrow \beta \beta b \Rightarrow \cdots \Rightarrow
+\beta^n b \Rightarrow \beta^n$.
 \\[0.2cm]
-Folglich beschreibt das Nicht-Terminal $B$ die Sprache
+Folglich beschreibt das Nicht-Terminal $b$ die Sprache
 \\[0.2cm]
-\hspace*{1.3cm} $L(B) = \bigl\{ w \in \Sigma \mid \exists n \in \mathbb{N}_0: \beta^n \Rightarrow w
+\hspace*{1.3cm} $L(b) = \bigl\{ w \in \Sigma \mid \exists n \in \mathbb{N}_0: \beta^n \Rightarrow w
 \bigr\}$.
 \\[0.2cm]
 Damit ist klar, dass auch mit der oben angegeben Grammatik
 \\[0.2cm]
-\hspace*{1.3cm} $L(A) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}_0: \gamma \beta^n
+\hspace*{1.3cm} $L(a) = \bigl\{ w \in \Sigma^* \mid \exists n \in \mathbb{N}_0: \gamma \beta^n
 \Rightarrow^* w \bigr\}$
 \\[0.2cm]
 gilt.  Um die Links-Rekursion aus der in Abbildung \ref{fig:Expr} auf Seite \pageref{fig:Expr}
 gezeigten Grammatik zu entfernen, müssen wir das obige Beispiel verallgemeinern.  Wir betrachten
-jetzt den allgemeinen Fall und nehmen an, dass ein Nicht-Terminal $A$ durch Regeln der Form
+jetzt den allgemeinen Fall und nehmen an, dass ein Nicht-Terminal $a$ durch Regeln der Form
 \\[0.2cm]
 \hspace*{1.3cm} $
 \begin{array}[t]{lcl}
-A & \rightarrow & A \beta_1 \\
-  & \mid        & A \beta_2 \\
+a & \rightarrow & a \beta_1 \\
+  & \mid        & a \beta_2 \\
   & \vdots      & \vdots    \\
-  & \mid        & A \beta_k \\[0.2cm]
+  & \mid        & a \beta_k \\[0.2cm]
   & \mid        & \gamma_1  \\
   & \vdots      & \vdots    \\
   & \mid        & \gamma_l
 \end{array}
 $
 \\[0.2cm]
-beschrieben wird.  Wir können diesen Fall durch Einführung zweier Hilfs-Variablen $B$ und $C$ auf
+beschrieben wird.  Wir können diesen Fall durch Einführung zweier Hilfs-Variablen $b$ und $c$ auf
 den ersten Fall zurückführen:
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-A & \rightarrow & A B \mid C                         \\[0.2cm]
-B & \rightarrow & \beta_1 \mid \cdots \mid \beta_k   \\[0.2cm]
-C & \rightarrow & \gamma_1 \mid \cdots \mid \gamma_l
+a & \rightarrow & a b \mid C                         \\[0.2cm]
+b & \rightarrow & \beta_1 \mid \cdots \mid \beta_k   \\[0.2cm]
+c & \rightarrow & \gamma_1 \mid \cdots \mid \gamma_l
 \end{array}
 $
 \\[0.2cm]
-Dann können wir die Grammatik umschreiben, indem wir eine neue Hilfs-Variablen, nennen wir sie $L$
+Dann können wir die Grammatik umschreiben, indem wir eine neue Hilfs-Variablen, nennen wir sie $l$
 für Liste, einführen und erhalten
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-A & \rightarrow & C\;L                   \\[0.2cm]
-L & \rightarrow & B\;L \mid \varepsilon.  
+a & \rightarrow & c\;l                   \\[0.2cm]
+l & \rightarrow & b\;l \mid \varepsilon.  
 \end{array}
 $
 \\[0.2cm]
-Die Hilfs-Variablen $B$ und $C$ können nun wieder eliminiert werden und dann bekommen wir die folgende
+Die Hilfs-Variablen $b$ und $C$ können nun wieder eliminiert werden und dann bekommen wir die folgende
 Grammatik: 
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-A & \rightarrow & \gamma_1\;L \;\mid\; \gamma_2\;L \;\mid\; \cdots \;\mid\; \gamma_l\;L  \\[0.2cm]
-L & \rightarrow & \beta_1 \;L \;\mid\; \beta_2 \;L \;\mid\; \cdots \;\mid\; \beta_k \;L \;\mid\; \varepsilon
+a & \rightarrow & \gamma_1\;l \;\mid\; \gamma_2\;l \;\mid\; \cdots \;\mid\; \gamma_l\;l  \\[0.2cm]
+l & \rightarrow & \beta_1 \;l \;\mid\; \beta_2 \;l \;\mid\; \cdots \;\mid\; \beta_k \;l \;\mid\; \varepsilon
 \end{array}
 $
 \begin{figure}[htbp]
@@ -1091,16 +1144,16 @@ Die Variablen \textsl{exprRest} und \textsl{productRest} können wie folgt interp
           \framebox{
             \begin{minipage}[t]{9cm}
               \begin{eqnarray*}
-                \textsl{RegExp} & \rightarrow & \;\textsl{RegExp} \quoted{+} \textsl{RegExp}    \\
-                                & \mid        & \;\textsl{RegExp} \;\;\textsl{RegExp}           \\
-                                & \mid        & \;\textsl{RegExp}\quoted{*}                     \\
-                                & \mid        & \quoted{(} \textsl{RegExp} \quoted{)}           \\
+                \textsl{regExp} & \rightarrow & \;\textsl{regExp} \quoted{+} \textsl{regExp}    \\
+                                & \mid        & \;\textsl{regExp} \;\;\textsl{regExp}           \\
+                                & \mid        & \;\textsl{regExp}\quoted{*}                     \\
+                                & \mid        & \quoted{(} \textsl{regExp} \quoted{)}           \\
                                 & \mid        & \;\textsc{Letter}                               
               \end{eqnarray*}
               \vspace*{-0.5cm}
             \end{minipage}}
       \end{center}
-      Diese Grammatik verwendet nur die  syntaktische Variable $\{ \textsl{RegExp} \}$ und die folgenden 
+      Diese Grammatik verwendet nur die  syntaktische Variable $\{ \textsl{regExp} \}$ und die folgenden 
       Terminale
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1122,11 +1175,11 @@ Die Variablen \textsl{exprRest} und \textsl{productRest} können wie folgt interp
   \framebox{
   \begin{minipage}[t]{9cm}
   \begin{eqnarray*}
-  \textsl{S}  & \rightarrow & \textsl{A} \quoted{x}  \\
-              & \mid        & \squoted{y}            \\[0.2cm]
-  \textsl{A}  & \rightarrow & \textsl{B} \quoted{y}  \\
+  \textsl{s}  & \rightarrow & \textsl{a} \quoted{X}  \\
+              & \mid        & \squoted{Y}            \\[0.2cm]
+  \textsl{a}  & \rightarrow & \textsl{b} \quoted{Y}  \\
               & \mid        & \quoted{x}             \\[0.2cm]
-  \textsl{B}  & \rightarrow & \textsl{S} \quoted{z}  
+  \textsl{b}  & \rightarrow & \textsl{s} \quoted{Z}  
   \end{eqnarray*}
   \vspace*{-0.5cm}
   \end{minipage}}}
@@ -1140,28 +1193,28 @@ Es gibt allerdings Fälle, in denen die Links-Rekursion ihren Ursprung in
 \emph{wechselseitiger Rekursion} hat.
 Abbildung \ref{fig:mutual-left-recursion} auf Seite \pageref{fig:mutual-left-recursion} zeigt ein
 solches Beispiel: Bei der dort angegebenen Grammatik erstreckt sich die Links-Rekursion über drei Stufen:
-Ein $S$ kann mit einem $A$ beginnen, das mit einem $B$ beginnen kann, welches dann wieder mit einem
-$S$ beginnt.  Eine Links-Rekursion der Form
+Ein $s$ kann mit einem $a$ beginnen, das mit einem $b$ beginnen kann, welches dann wieder mit einem
+$s$ beginnt.  Eine Links-Rekursion der Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \rightarrow A \beta$
+$a \rightarrow a \beta$
 \\[0.2cm]
 bezeichnen wir als \emph{unmittelbare Links-Rekursion},  jede kompliziertere Form der
 Links-Rekursion wird als \emph{allgemeine Links-Rekursion} bezeichnet.
 Um im allgemeine Links-Rekursion zu eliminieren, gehen wir wie folgt vor:
 \begin{enumerate}
 \item Zunächst numerieren wir die syntaktischen Variablen der Grammatik in willkürlicher Weise durch.
-      Im Folgenden seien die Variablen mit $A_1$, $\cdots$, $A_n$ bezeichnet.  Durch diese
+      Im Folgenden seien die Variablen mit $a_1$, $\cdots$, $a_n$ bezeichnet.  Durch diese
       Numerierung wird implizit eine Ordnung $\succ$ auf den syntaktischen Variablen
       definiert, wir setzen
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A_1 \succ A_2 \succ \cdots \succ A_i \succ A_{i+1} \succ \cdots \succ A_n$.
+      $a_1 \succ a_2 \succ \cdots \succ a_i \succ a_{i+1} \succ \cdots \succ a_n$.
 \item Das Ziel ist nun, die Grammatik so umzuschreiben, dass für jede
       Grammatik-Regel der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A \rightarrow B \gamma$ \quad die Ungleichung \quad $A \succ B$
+      $a \rightarrow b \gamma$ \quad die Ungleichung \quad $a \succ b$
       \\[0.2cm]
       gilt.  Dieses Ziel wird durch den folgenden Algorithmus erreicht:
       \\[0.2cm]
@@ -1170,17 +1223,17 @@ Um im allgemeine Links-Rekursion zu eliminieren, gehen wir wie folgt vor:
       \hspace*{1.8cm}
       \texttt{for (j = 1; j < i; ++j) \{} \\[0.1cm]
       \hspace*{2.3cm}
-      \texttt{forall $(A_i \rightarrow A_j\gamma) \in R$ \{} \\[0.1cm]
+      \texttt{forall $(a_i \rightarrow a_j\gamma) \in R$ \{} \\[0.1cm]
       \hspace*{2.8cm}
-      \texttt{let $A_j \rightarrow \delta_1 \;|\; \cdots \;|\; \delta_k$ be all $A_j$-productions } \\[0.1cm]
+      \texttt{let $a_j \rightarrow \delta_1 \;|\; \cdots \;|\; \delta_k$ be all $a_j$-productions } \\[0.1cm]
       \hspace*{2.8cm}
-      \texttt{replace $A_i \rightarrow A_j\gamma$ by $A_i \rightarrow \delta_1 \gamma \;|\;\cdots\;|\;\delta_k \gamma$} \\[0.1cm]
+      \texttt{replace $a_i \rightarrow a_j\gamma$ by $a_i \rightarrow \delta_1 \gamma \;|\;\cdots\;|\;\delta_k \gamma$} \\[0.1cm]
       \hspace*{2.3cm} 
       \texttt{\}}  \\[0.1cm]
       \hspace*{1.8cm} 
       \texttt{\}}  \\[0.1cm]
       \hspace*{1.8cm} 
-      \texttt{eliminate immediate left recursion for variable $A_i$}  \\
+      \texttt{eliminate immediate left recursion for variable $a_i$}  \\
       \hspace*{1.3cm} 
       \texttt{\}}  
 \end{enumerate}
@@ -1188,33 +1241,33 @@ Um den Algorithmus zu verstehen, führen wir zunächst einen neuen Begriff ein:  F
 eine Regel der Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \rightarrow B \gamma$
+$a \rightarrow b \gamma$
 \\[0.2cm]
-enthält, wobei $B$ eine syntaktische Variable ist, dann sagen wir, dass $A$ unmittelbar von $B$
+enthält, wobei $b$ eine syntaktische Variable ist, dann sagen wir, dass $a$ unmittelbar von $b$
 abhängt.  Die Idee bei dem oben angegebenen Algorithmus ist nun, dass nach dem $i$-ten
-Durchlaufen der äußeren \texttt{for}-Schleife die Variablen $A_1$, $\cdots$, $A_i$ nur noch unmittelbar
-von solchen Variablen abhängen, die in der Aufzählung $A_1$, $\cdots$, $A_n$ auf diese  Variablen
+Durchlaufen der äußeren \texttt{for}-Schleife die Variablen $a_1$, $\cdots$, $a_i$ nur noch unmittelbar
+von solchen Variablen abhängen, die in der Aufzählung $a_1$, $\cdots$, $a_n$ auf diese  Variablen
 folgen.  Formal gilt nach dem $i$-ten Durchlauf der äußeren \texttt{for}-Schleife für alle Indizes 
 $k \in \{ 1, \cdots, i \}$:  Falls die Grammatik eine Regel der Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$A_k \rightarrow A_l \beta$ 
+$a_k \rightarrow a_l \beta$ 
 \\[0.2cm]
 enthält, dann muss $l > k$ gelten.  Es ist leicht zu sehen, dass diese Invariante tatsächlich gilt:
 Vor dem $i$-ten Durchlauf gilt die Invariante für die Indizes der Menge $\{1, \cdots, i-1\}$.  Die
-Variable $A_i$ selber kann dann noch unmittelbar von den Variablen $A_1$, $\cdots$, $A_n$ abhängen.
+Variable $a_i$ selber kann dann noch unmittelbar von den Variablen $a_1$, $\cdots$, $a_n$ abhängen.
 In der inneren \texttt{for}-Schleife erreichen wir, dass nacheinander die unmittelbaren
-Abhängigkeiten von $A_1$, $\cdots$, $A_{i-1}$ aufgelöst werden.  Anschließend kann $A_i$ höchstens
-noch unmittelbar von $A_i$ abhängen.  Um diese Abhängigkeit gegebenenfalls aufzulösen, führen wir
+Abhängigkeiten von $a_1$, $\cdots$, $a_{i-1}$ aufgelöst werden.  Anschließend kann $a_i$ höchstens
+noch unmittelbar von $a_i$ abhängen.  Um diese Abhängigkeit gegebenenfalls aufzulösen, führen wir
 die bereits früher diskutierte Transformation zur Elimination unmittelbarer Links-Rekursion durch.
-Anschließend hängt $A_i$ höchstens noch 
-unmittelbar von $A_{i+1}$, $\cdots$, $A_n$ ab.  Läuft die Schleife bis zum Ende durch, ist damit
-dann die Links-Rekursion vollständig eliminiert, denn dann kann jede Variable nur von solchen
-Variablen abhängen, die in der Aufzählung $A_1$ $\cdots$, $A_n$ hinter ihr stehen.  Folglich ist 
+Anschließend hängt $a_i$ höchstens noch 
+unmittelbar von $a_{i+1}$, $\cdots$, $a_n$ ab.  Läuft die Schleife bis zum Ende durch, ist damit
+die Links-Rekursion vollständig eliminiert, denn dann kann jede Variable nur von solchen
+Variablen abhängen, die in der Aufzählung $a_1$ $\cdots$, $a_n$ hinter ihr stehen.  Folglich ist 
 kein Zyklus der Form 
 \\[0.2cm]
 \hspace*{1.3cm}
-$A_i \Rightarrow A_j\beta \Rightarrow \cdots \Rightarrow A_i\gamma$
+$a_i \Rightarrow a_j\beta \Rightarrow \cdots \Rightarrow a_i\gamma$
 \\[0.2cm]
 mehr möglich.
 
@@ -1223,64 +1276,64 @@ Wir demonstrieren das Verfahren an der in Abbildung \ref{fig:mutual-left-recursi
 Grammatik.  Dazu ordnen wir zunächst die Variablen in der Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$S, A, B$
+$s, a, b$
 \\[0.2cm]
-an, mit der Notation des oben angegebenen Algorithmus gilt also $A_1 := S$, $A_2 := A$ und 
-$A_3 := B$.
+an, mit der Notation des oben angegebenen Algorithmus gilt also $a_1 := s$, $a_2 := a$ und 
+$a_3 := b$.
 \begin{enumerate}
 \item $i = 1$:  Da $\{1, \cdots, i-1 \} = \{\}$ gilt,  wird in diesem Fall die innere
       \texttt{for}-Schleife nicht ausgeführt.  Wir müssen lediglich
-      die unmittelbare Links-Rekursion in der Variablen $S$ entfernen.  Da die Grammatik aber für
-      $S$ keine unmittelbare Links-Rekursion enthält, ist in diesem Fall nichts zu tun.
+      die unmittelbare Links-Rekursion in der Variablen $s$ entfernen.  Da die Grammatik aber für
+      $s$ keine unmittelbare Links-Rekursion enthält, ist in diesem Fall nichts zu tun.
 \item $i = 2$:  In diesem Schritt müssen wir in der inneren \texttt{for}-Schleife sicherstellen,
-      dass $A$ nicht unmittelbar von $S$ abhängt.  Da $A$ in der gegebenen Grammatik nicht
-      unmittelbar von $S$ abhängt, ist bei der inneren \texttt{for}-Schleife wieder nichts zu tun.
+      dass $a$ nicht unmittelbar von $s$ abhängt.  da $a$ in der gegebenen Grammatik nicht
+      unmittelbar von $s$ abhängt, ist bei der inneren \texttt{for}-Schleife wieder nichts zu tun.
 
-      Weiter müssen wir die unmittelbare Rekursion aus allen Regeln für $A$ eliminieren.  Da 
-      es für die Variable $A$ keine unmittelbare Rekursion gibt, ist an dieser Stelle wieder nichts
+      Weiter müssen wir die unmittelbare Rekursion aus allen Regeln für $a$ eliminieren.  Da 
+      es für die Variable $A$ keine unmittelbare Rekursion gibt, ist an dieser Stelle ebenfalls nichts
       zu tun.
 \item $i = 3$:  In diesem Fall kommen für die innere \texttt{for}-Schleife zwei Werte von $j$
       in Frage, die wir nacheinander behandeln müssen:
       \begin{enumerate}
-      \item $j = 1$:  Hier müssen wir sicherstellen, dass $B$ nicht unmittelbar von $S$ abhängt.
+      \item $j = 1$:  Hier müssen wir sicherstellen, dass $b$ nicht unmittelbar von $s$ abhängt.
             Bei der Regel
             \\[0.2cm]
             \hspace*{1.3cm}
-            $B \rightarrow S \quoted{z}$
+            $b \rightarrow s \quoted{Z}$
             \\[0.2cm]
-            ist dies aber der Fall.  Wir ersetzen daher das $S$ auf der rechten Seite dieser Regel
-            durch die beiden rechten Seiten der Regeln für $S$ und erhalten für $B$ nun die Regeln
+            ist dies aber der Fall.  Wir ersetzen daher das $s$ auf der rechten Seite dieser Regel
+            durch die beiden rechten Seiten der Regeln für $s$ und erhalten für $b$ nun die Regeln
             \\[0.2cm]
             \hspace*{1.3cm}
-            $B \rightarrow A \quoted{x} \squoted{z}$ \quad und \quad
-            $B \rightarrow \quoted{y} \squoted{z}$.
-      \item $j = 2$:  Nun müssen wir sicherstellen, dass $B$ nicht unmittelbar von $A$ abhängt.
+            $b \rightarrow a \quoted{X} \squoted{Z}$ \quad und \quad
+            $b \rightarrow \quoted{Y} \squoted{Z}$.
+      \item $j = 2$:  Nun müssen wir sicherstellen, dass $b$ nicht unmittelbar von $a$ abhängt.
             Bei der Regel
             \\[0.2cm]
             \hspace*{1.3cm}
-            $B \rightarrow A \quoted{x} \squoted{z}$ 
+            $b \rightarrow a \quoted{X} \squoted{Z}$ 
             \\[0.2cm]
-            ist dies aber der Fall.  Wir ersetzen daher das $A$ auf der rechten Seite dieser Regel
-            durch die beiden rechten Seiten der Regeln für $A$ und erhalten für $B$ nun insgesamt
-            die folgenden Regeln für $B$:
+            ist dies aber der Fall.  Wir ersetzen daher das $a$ auf der rechten Seite dieser Regel
+            durch die beiden rechten Seiten der Regeln für $a$ und erhalten für $b$ nun insgesamt
+            die folgenden Regeln:
             \\[0.2cm]
             \hspace*{1.3cm}
-            $B \rightarrow B \quoted{y} \squoted{x}\; \squoted{z}$, \quad 
-            $B \rightarrow \quoted{x} \squoted{x}\; \squoted{z}$ \quad und \quad
-            $B \rightarrow \quoted{y} \squoted{z}$.
+            $b \rightarrow b \quoted{Y} \squoted{X}\; \squoted{Z}$, \quad 
+            $b \rightarrow \quoted{X} \squoted{X}\; \squoted{Z}$ \quad und \quad
+            $b \rightarrow \quoted{Y} \squoted{Z}$.
       \end{enumerate}
       Diese Regeln enthalten nun nur noch ummittelbare Links-Rekursion, die wir mit dem früher
-      beschriebenen Verfahren eliminieren.  Wir erhalten dann für $B$ die Regeln
+      beschriebenen Verfahren eliminieren.  Wir erhalten dann für $b$ die Regeln
       \\[0.2cm]
       \hspace*{1.3cm}
-      $B \rightarrow \quoted{x} \squoted{x} \; \squoted{z}\; L$ \quad und \quad
-      $B \rightarrow \squoted{y} \quoted{z} L$,
+      $b \rightarrow \quoted{X} \squoted{X} \; \squoted{Z}\; l$ \quad und \quad
+      $b \rightarrow \squoted{Y} \quoted{Z} l$,
       \\[0.2cm]
-      wobei die neu eingeführte Variable $L$ durch die Regeln
+      wobei die neu eingeführte Variable $l$ durch die Regeln
       \\[0.2cm]
       \hspace*{1.3cm}
-      $L \rightarrow \quoted{y} \squoted{x}\; \squoted{z}\; L$ \quad und \quad 
-      $L \rightarrow \varepsilon$
+      $l \rightarrow \quoted{Y} \squoted{X}\; \squoted{Z}\; l$ \quad und \quad 
+      $l \rightarrow \varepsilon$
       \\[0.2cm]
       definiert ist.
 \end{enumerate}
@@ -1293,13 +1346,13 @@ Abbildung \ref{fig:mutual-left-recursion-2} zeigt die resultierende Grammatik.
   \framebox{
   \begin{minipage}[t]{9cm}
   \begin{eqnarray*}
-  \textsl{S}  & \rightarrow & \textsl{A} \quoted{x}  \\
-              & \mid        & \squoted{y}            \\[0.2cm]
-  \textsl{A}  & \rightarrow & \textsl{B} \quoted{y}  \\
-              & \mid        & \squoted{x}             \\[0.2cm]
-  \textsl{B}  & \rightarrow & \squoted{x} \quoted{x} \squoted{z}\; L \\
-              & \mid        & \squoted{y} \quoted{z} L               \\[0.2cm]
-  \textsl{L}  & \rightarrow & \squoted{y} \quoted{x} \squoted{z}\; L \\
+  \textsl{s}  & \rightarrow & \textsl{a} \quoted{X}  \\
+              & \mid        & \squoted{Y}            \\[0.2cm]
+  \textsl{a}  & \rightarrow & \textsl{b} \quoted{Y}  \\
+              & \mid        & \squoted{X}             \\[0.2cm]
+  \textsl{b}  & \rightarrow & \squoted{X} \quoted{X} \squoted{Z}\; \textsl{l} \\
+              & \mid        & \squoted{Y} \quoted{Z} \textsl{l}               \\[0.2cm]
+  \textsl{l}  & \rightarrow & \squoted{Y} \quoted{X} \squoted{Z}\; \textsl{l} \\
               & \mid        & \varepsilon      
   \end{eqnarray*}
   \vspace*{-0.5cm}
