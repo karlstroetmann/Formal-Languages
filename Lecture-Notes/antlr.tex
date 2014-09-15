@@ -13,7 +13,9 @@ Sie finden dieses Werkzeug im Internet unter der folgenden Adresse
 \hspace*{1.3cm}
 \href{http://www.antlr.org}{\texttt{http://www.antlr.org}}.
 \\[0.2cm]
-In dieser Vorlesung werden wir die Version 4.1 verwenden.
+In dieser Vorlesung werden wir die Version 4.4 verwenden.  Das Werkzeug \textsc{Antlr} ist in der
+Lage, Parser in den Sprachen \textsl{Java}, \texttt{C\#} und \textsl{Python} zu erzeugen.
+
 Zunächst führen wir \textsc{Antlr} an Hand verschiedener Beispiele ein, durch die wir die 
 wichtigsten Eigenschaften des Werkzeugs demonstrieren können.  In späteren Kapiteln werden wir
 die Theorie von Top-Down-Parsern untersuchen.
@@ -53,8 +55,8 @@ Diese Grammatik lässt sich nun mit Hilfe von \textsc{Antlr} wie in Abbildung
             | NUMBER
             ;
     
-    NUMBER: '0'|[1-9][0-9]*;
-    WS    : [ \v\t\n\r] -> skip;
+    NUMBER  : '0'|[1-9][0-9]*;
+    WS      : [ \v\t\n\r] -> skip;
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{\textsc{Antlr}-Spezifikation eines Parsers für arithmetische Ausdrücke.}
@@ -123,9 +125,9 @@ Um aus der in Abbildung \ref{fig:Expr.g4} gezeigten Grammatik einen Parser erzeu
 können,  übersetzen wir diese Datei mit dem folgenden Befehl:
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{java -jar /usr/local/lib/antlr-4.1-complete.jar Expr.g4}
+\texttt{java -jar /usr/local/lib/antlr-4.4-complete.jar Expr.g4}
 \\[0.2cm]
-Das setzt natürlich voraus, dass die angegebene Datei \texttt{antlr-4.1-complete.jar} auch
+Das setzt natürlich voraus, dass die angegebene Datei \texttt{antlr-4.4-complete.jar} auch
 tatsächlich in dem Verzeichnis \texttt{/usr/local/lib/} zu finden ist.
 \textsc{Antlr} erzeugt die folgenden Dateien:
 \begin{enumerate}
@@ -138,9 +140,7 @@ tatsächlich in dem Verzeichnis \texttt{/usr/local/lib/} zu finden ist.
 \item Zusätzlich werden noch die Dateien \texttt{ExprListener.java},
       \texttt{ExprBaseListener.java}, \texttt{Expr.tokens} sowie \texttt{ExprLexer.tokens} erzeugt,
       auf die wir aber nicht weiter eingehen.
-  
 \end{enumerate}
-
 Um den erzeugten Parser aufrufen zu können, benötigen wir noch ein Treiber-Programm.
 Abbildung \ref{fig:ParseExpr.java} zeigt ein solches Programm.
 
@@ -176,7 +176,11 @@ Abbildung \ref{fig:ParseExpr.java} zeigt ein solches Programm.
 
 \begin{enumerate}
 \item In den Zeilen 1 und 2 importieren wir die \textsc{Antlr}-Runtime-Pakete.
-      Dort sind u.a.~die Klassen  \texttt{ANTLRInputStream} und \texttt{CommonTokenStream}, 
+      Dort sind u.a.~die Klassen  
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{ANTLRInputStream} \quad und \quad \texttt{CommonTokenStream}, 
+      \\[0.2cm]
       auf deren Verwendung wir angewiesen sind, definiert.
 \item In Zeile 7 wandeln wir die Standard-Eingabe in einen \texttt{ANTLRInputStream} um,
       der dann in Zeile 8 dazu benutzt werden kann, einen Scanner zu erzeugen. 
@@ -189,7 +193,7 @@ Abbildung \ref{fig:ParseExpr.java} zeigt ein solches Programm.
 Übersetzen wir dieses Programm, so können wir den Parser durch den Befehl
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{echo  \symbol{34}1 + 2 * 3 - 4\symbol{34} | java -cp /usr/local/lib/antlr-4.1-complete.jar ParseExpr}
+\texttt{echo  \symbol{34}1 + 2 * 3 - 4\symbol{34} | java -cp /usr/local/lib/antlr-4.4-complete.jar ParseExpr}
 \\[0.2cm]
 testen.  Wir erhalten die Ausgabe
 \\[0.2cm]
@@ -213,10 +217,10 @@ definiert haben, so können wir den Syntax-Baum auch einfacher mit Hilfe des Befe
 \hspace*{1.3cm}
 \texttt{echo \symbol{34}1 + 2 * 3 - 4\symbol{34} | grun Expr start -gui}
 \\[0.2cm]
-anzeigen lassen.  Zum Aufruf von \textsc{Antlr} bietet such der Alias
+anzeigen lassen.  Zum Aufruf von \textsc{Antlr} bietet sich der Alias
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{alias antlr4='java -jar /usr/local/lib/antlr-4.1-complete.jar'}
+\texttt{alias antlr4='java -jar /usr/local/lib/antlr-4.4-complete.jar'}
 \\[0.2cm]
 an, denn damit können wir \textsc{Antlr}  dann über den Befehl
 \\[0.2cm]
@@ -441,7 +445,9 @@ Interpreters mit \textsc{Antlr}.
       das Ergebnis der jeweiligen Berechnung zuweisen.
 \item In den Zeilen 34 und 35 greifen wir auf die Strings, die den Token
       \texttt{ID} und \texttt{INT} entsprechen, mit Hilfe der für Token vordefinierten
-      Variable \texttt{text} zurück.
+      Variable \texttt{text} zurück.  Beachten Sie, dass wir in Zeile 34 den Wert, der zu einer
+      Variablen in der Tabelle \texttt{varTable} gespeichert ist, auslesen und als Ergebnis zurück
+      geben. 
 \end{enumerate}
 
 \section{Erzeugung abstrakter Syntax-Bäume}
@@ -470,8 +476,8 @@ Abbildung \ref{fig:Expr-exp-ln} zeigt die entsprechend erweiterte EBNF-Grammatik
   \begin{minipage}[t]{9cm}
 
   \begin{eqnarray*}
-  \textsl{Expr}   & \rightarrow & \;\textsl{Product}\;\;((\quoted{+}|\quoted{-})  \;\; \textsl{Product})* \\[0.2cm]
-  \textsl{Product} & \rightarrow & \;\textsl{Factor}\;\;\;\;((\quoted{*}|\quoted{/}) \;\; \textsl{Factor})* \\[0.2cm]
+  \textsl{Expr}   & \rightarrow & \;\textsl{Product}\;\;((\quoted{+}|\quoted{-})  \;\; \textsl{Product})^* \\[0.2cm]
+  \textsl{Product} & \rightarrow & \;\textsl{Factor}\;\;\;\;((\quoted{*}|\quoted{/}) \;\; \textsl{Factor})^* \\[0.2cm]
   \textsl{Factor} & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)}              \\
                   & \mid        & \quoted{exp} \quoted{(} \textsl{Expr} \quoted{)} \\
                   & \mid        & \quoted{log} \quoted{(} \textsl{Expr} \quoted{)} \\

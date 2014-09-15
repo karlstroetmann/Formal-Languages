@@ -15,5 +15,5 @@ factor  : '(' expr ')'
         | NUMBER
         ;
 
-NUMBER: '0'|[1-9][0-9]*;
-WS    : [ \v\t\n\r] -> skip;
+NUMBER  : '0'|[1-9][0-9]*;
+WS      : [ \v\t\n\r] -> skip;
