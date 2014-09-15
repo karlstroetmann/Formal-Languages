@@ -1,13 +1,14 @@
 \chapter{Kontextfreie Sprachen \label{chap:kontextfrei}}
 Im letzten Kapitel haben wir mit Hilfe des Pumping-Lemmas gesehen, dass reguläre Sprachen nicht in der Lage
 sind, Klammern zu zählen.  Damit ist klar, dass reguläre Sprachen nicht ausdrucksstark genug sind,
-um die Syntax arithmetischer Ausdrücke beschreiben zu können.  Folglich sind reguläre Sprachen 
-nicht dazu geeignet, die Syntax von Programmier-Sprachen zu beschreiben.  Hierfür ist ein
-ausdrucksstärkeres Konzept erforderlich.
-In diesem Kapitel stellen wir ein solches ausdrucksstärkeres Konzept vor.  Es handelt sich dabei um
-das Konzept der \href{http://en.wikipedia.org/wiki/Context-free_language}{\emph{kontextfreien}}
-Sprachen.  Dieses Konzept basiert auf 
-dem Konzept der \emph{kontextfreien Grammatik}, das wir gleich besprechen.
+um die Syntax arithmetischer Ausdrücke beschreiben zu können.  Allgemeiner lässt sich sagen, 
+dass reguläre Sprachen nicht dazu geeignet sind, rekursiv aufgebaute Sprachen zu definieren. 
+Folglich sind reguläre Sprachen nicht dazu geeignet, die Syntax von Programmier-Sprachen zu
+beschreiben.  Hierfür ist ein ausdrucksstärkeres Konzept erforderlich.
+In diesem Kapitel stellen wir ein solches Konzept vor.  Es handelt sich dabei um
+die \href{http://en.wikipedia.org/wiki/Context-free_language}{\emph{kontextfreien}}
+Sprachen, die mit Hilfe von \emph{kontextfreien Grammatik} definiert werden.  Letztere werden wir
+nun einführen.
 
 \section{Kontextfreie Grammatiken \label{kontextfreie}}
 Kontextfreie Sprachen dienen zur Beschreibung von Programmier-Sprachen, insofern handelt
@@ -27,7 +28,7 @@ folgenden Token auf:
 \item Operator-Symbole wie ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'',
       ``\texttt{<=}'' etc.,
 \item Klammer-Symbole wie ``\texttt{(}'', ``\texttt{[}'', ``\texttt{\{}''  oder
-      die entsprechenden schließenden Klammern,
+      die schließenden Klammern ``\texttt{]}'', ``\texttt{]}'', ``\texttt{\}}'',
 \item vordefinierte Schlüsselwörter wie ``\texttt{if}'', ``\texttt{while}'',
       ``\texttt{typedef}'', ``\texttt{struct}'', etc.,
 \item Variablen- und Funktions-Namen wie ``\texttt{x}'', ``\texttt{y}'',
@@ -120,7 +121,7 @@ Wir werden syntaktische Variablen üblicherweise klein schreiben, denn das ist di
 bei den  Parser-Generatoren \textsc{Antlr} und \textsl{JavaCup}, die wir später vorstellen werden. 
 In der Literatur ist es allerdings oft anders herum.  Dort werden die syntaktischen Variablen groß und
 die \emph{Terminale}  klein geschrieben.  Gelegentlich wird eine
-syntaktische Variable auch als \emph{syntaktische Kategorie} bezeichnet.
+syntaktische Variable auch als eine \emph{syntaktische Kategorie} bezeichnet.
  
 In dem Beispiel sind \textsl{arithExpr}, \textsl{product} und \textsl{factor} die 
 syntaktischen Variablen.  Die restlichen Ausdrücke, in unserem Fall also \textsc{Number}, \textsc{Variable} und
@@ -198,10 +199,10 @@ so dass folgendes gilt:
       \hspace*{1.3cm}
       $R \subseteq V \times (V \cup T)^*$
       
-      Ist $\langle X, \alpha \rangle$ eine Regel, so schreiben wir diese Regel als
+      Ist $\langle x, \alpha \rangle$ eine Regel, so schreiben wir diese Regel als
       \\[0.2cm]
       \hspace*{1.3cm}
-      $X \rightarrow \alpha$.
+      $x \rightarrow \alpha$.
       \\[0.2cm]
       Beispielsweise haben wir oben die erste Regel als
       \\[0.2cm]
@@ -294,10 +295,12 @@ wird von der Grammatik
 $G = \bigl\langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \bigr\rangle$
 \\[0.2cm]
 erzeugt, wobei die Regeln $R$ wie folgt gegeben sind:
-\begin{eqnarray*}
-  \textsl{s} & \rightarrow & \quoted{(} \textsl{s} \quoted{)}             \\
-             & \mid        & \varepsilon
-\end{eqnarray*}
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{s} \rightarrow \quoted{(} \textsl{s} \quoted{)}  \mid  \varepsilon$.
+
+
+
 
 
 \proof
@@ -322,7 +325,7 @@ Es sei also $w_n = (^n)^n$.  Wir zeigen durch Induktion über $n \in \mathbb{N}_0
 
             Der String $w_{n+1}$ hat die Form $w_{n+1} = \quoted{(}w_n\quoted{)}$, wobei
             der String $w_n$ natürlich ebenfalls in $L$ liegt.
-            Also gibt es nach I.V.~eine Ableitung von $w_n$:
+            Also gibt es nach IV eine Ableitung von $w_n$:
             \\[0.2cm]
             \hspace*{1.3cm}
             $\textsl{s} \Rightarrow^* w_n$.
@@ -368,7 +371,7 @@ Ableitungs-Schritte:
             $w = \quoted{(}v\quoted{)} = 
 ((^k)^k) = (^{k+1})^{k+1} \in L$. \qed
 \end{enumerate}
-\pagebreak
+
 
 \exercise
 Wir definieren für $w \in \Sigma^*$ und $c \in \Sigma$ die Funktion
@@ -606,7 +609,7 @@ $\begin{array}[t]{lcl}
 Damit lässt sich die Menge $L$ durch die folgende Grammatik beschreiben
 \\[0.2cm]
 \hspace*{1.3cm}
-$G = \langle \{ s, a, b, x, u \}, \{ A, B \}, R, s \rangle$,
+$G = \langle \{ s, a, b, x, u \}, \{ \squoted{A}, \squoted{B} \}, R, s \rangle$,
 \\[0.2cm]
 wobei die Menge der Regeln wie folgt gegeben ist:
 \\[0.2cm]
@@ -622,17 +625,17 @@ $
 \\[0.2cm]
 Wir diskutieren die verschiedenen syntaktischen Variablen.
 \begin{enumerate}
-\item $L(x) = \{ A, B \}$.
+\item $L(x) = \{ \squoted{A}, \squoted{B} \}$.
 \item $L(u) = \{ w \in \Sigma^* \mid \;|w| \,\texttt{\%}\, 2 = 1 \}$,
 
       denn ein String ungerader Länge hat entweder die Länge 1 oder er kann aus einem String ungerader Länge
       durch Anfügen zweier Buchstaben erzeugt werden.
-\item $L(a) = \{ w \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |w| = 2 \cdot k - 1 \wedge w[k] = a \}$,
+\item $L(a) = \{ w \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |w| = 2 \cdot k - 1 \wedge w[k] = \squoted{A} \}$,
   
-      denn wenn wir an einen String, bei dem der Buchstabe $A$ in der Mitte steht, vorne
+      denn wenn wir an einen String, bei dem der Buchstabe $\squoted{A}$ in der Mitte steht, vorne
       und hinten jeweils einen Buchstaben anfügen, erhalten wir wieder einen String, in
-      dessen Mitte der Buchstabe $A$ steht
-\item $L(b) = \{ w \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |w| = 2 \cdot k - 1 \wedge w[k] = b \}$,
+      dessen Mitte der Buchstabe $\squoted{A}$ steht
+\item $L(b) = \{ w \in \Sigma^* \mid\; \exists k \in \mathbb{N}: |w| = 2 \cdot k - 1 \wedge w[k] = \squoted{B} \}$,
 
       denn die Variable $b$ ist analog zur Variablen $a$ definiert worden.  Der einzige
       Unterschied ist der, dass nun der Buchstabe $B$ in der Mitte liegt.
@@ -648,8 +651,8 @@ $
       \\[0.2cm]
       denn wir haben oben argumentiert, dass alle Strings der Sprache $L$ entweder eine
       ungerade Länge haben oder in zwei Teile ungerader Länge zerlegt werden können, so dass in der Mitte
-      dieser Teile verschiedene Buchstaben stehen: Entweder steht im ersten Teil ein $A$
-      und im zweiten Teil steht ein $B$ oder es ist umgekehrt.
+      dieser Teile verschiedene Buchstaben stehen: Entweder steht im ersten Teil ein $\squoted{A}$
+      und im zweiten Teil steht ein $\squoted{B}$ oder es ist umgekehrt.
 \end{enumerate}
 Um die obigen Behauptungen formal zu beweisen müssten wir nun einerseits noch durch eine Induktion
 nach der Länge der Herleitung zeigen, dass die von den Grammatik-Symbolen erzeugten
@@ -660,10 +663,20 @@ einzelnen Strings geführt werden.  Da diese Nachweise einfach sind und keine
 Überraschungen mehr bietet, verzichten wir hier darauf.
 \qed
 
+\remark
+Wir werden später sehen, dass das Komplement der in der letzten Aufgabe definierten Sprache $L$,
+also die Sprache
+\\[0.2cm]
+\hspace*{1.3cm}
+$L^\mathtt{c} := \Sigma^* \backslash L = \bigl\{ ww \mid  w\in\Sigma^* \bigr\}$
+\\[0.2cm]
+keine kontextfreie Sprache ist.  Damit sehen wir dann, dass die Menge der kontextfreien Sprachen
+nicht unter Komplementbildung abgeschlossen sind. \eox
+
 \subsection{Parse-Bäume}
 Mit Hilfe einer Grammatik $G$ können wir nicht nur erkennen, ob ein gegebener String $s$ ein
 Element der von der Grammatik erzeugten Sprache $L(G)$ ist, wir können den String auch
-strukturieren indem wir einen \emph{Parse-Baum} aufbauen.  Ist eine Grammatik
+\emph{strukturieren} indem wir einen \emph{Parse-Baum} aufbauen.  Ist eine Grammatik
 \\[0.2cm]
 \hspace*{1.3cm}
 $G = \langle V, T, R, S \rangle$
@@ -703,7 +716,7 @@ werden, vereinfachen wir diese Bäume mit Hilfe der folgenden Regeln:
 \begin{enumerate}
 \item Ist $n$ ein innerer Knoten, der mit der Variablen $A$ beschriftet ist
       und gibt es unter den Kindern dieses Knotens genau ein Kind, dass mit einem Terminal $o$
-      beschriftet ist,  so entfernen wir dieses Kind und beschriften den Knoten statt dessen mit dem
+      beschriftet ist,  so entfernen wir dieses Kind und beschriften den Knoten $n$ statt dessen mit dem
       Terminal $o$.
 \item Hat ein innerer Knoten nur ein Kind, so ersetzen wir diesen Knoten durch sein Kind.
 \end{enumerate}
@@ -722,10 +735,10 @@ in welcher Reihenfolge die Operatoren ausgewertet werden müssen.
 \end{figure}
 
 \subsection{Mehrdeutige Grammatiken}
-Die zu Anfang des Abschnitts \ref{kontextfreie} angegebene Grammatik erscheint durch ihre Unterscheidung
-der syntaktischen Kategorien \textsl{arithExpr}, \textsl{product} und \textsl{factor}
-unnötig kompliziert.  Wir stellen eine einfachere Grammatik $G$ vor, welche dieselbe
-Sprache beschreibt:
+Die zu Anfang des Abschnitts \ref{kontextfreie} angegebene Grammatik zur Beschreibung arithmetischer
+Ausdrücke erscheint durch ihre Unterscheidung der syntaktischen Kategorien \textsl{arithExpr},
+\textsl{product} und \textsl{factor} unnötig kompliziert.  Wir stellen eine einfachere Grammatik $G$
+vor, welche dieselbe Sprache beschreibt:
 \\[0.2cm]
 \hspace*{1.3cm}
 $G = \bigl\langle \{\textsl{expr}\}, \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
@@ -928,15 +941,16 @@ Hilfe einer Grammatik-Regel der Form
 \hspace*{1.3cm}
 $\textsl{a} \rightarrow \textsl{X}_1 \textsl{X}_2 \cdots \textsl{X}_n$
 \\[0.2cm]
-zu parsen, versuchen wir, zunächst ein $X_1$ zu parsen.  Dabei zerlegen wir den String in
+zu parsen, versuchen wir, zunächst ein $X_1$ zu parsen.  Dabei zerlegen wir den String $w$ in die
+Form
 $w = w_1 r_1$ so, dass $w_1 \in L(X_1)$ liegt.  Dann versuchen wir, in dem Rest-String
 $r_1$ ein $X_2$ zu parsen und zerlegen dabei $r_1$ so, dass $r_1 = w_2 r_2$ mit 
-$w_2 \in L(X_2)$ gilt.  Zum Schluss haben wir dann den String $w$ aufgespaltet in
+$w_2 \in L(X_2)$ gilt.  Setzen wir diesen Prozess fort, so haben wir zum Schluss den String $w$ in
 \\[0.2cm]
 \hspace*{1.3cm}
-$w = w_1 w_2 \cdots w_n$ \quad mit $w_i \in L(X_i)$ für alle $i=1,\cdots,n$.
+$w = w_1 w_2 \cdots w_n$ \quad mit $w_i \in L(X_i)$ für alle $i=1,\cdots,n$
 \\[0.2cm]
-Leider funktioniert dieses Verfahren dann nicht, wenn die Grammatik
+aufgespaltet.  Leider funktioniert dieses Verfahren dann nicht, wenn die Grammatik
 \emph{links-rekursiv} ist, dass heißt, dass eine Regel die Form
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -955,13 +969,16 @@ diesem Problem umzugehen:
       $\textsl{a} \rightarrow \textsl{X}_1 \textsl{X}_2 \cdots \textsl{X}_n$
       \\[0.2cm]
       versuchen wir als erstes, ein $X_n$ am Ende eines zu parsenden Strings $w$ zu
-      entdecken und arbeiten den String $w$ dann von hinten ab.  
-\item Die einfachste Lösung erhalten wir, wenn wir uns klar machen, dass kontext-freie
+      entdecken und arbeiten dann den String $w$ von hinten  nach vorne ab.  
+\item Die einfachste Lösung erhalten wir, wenn wir uns klar machen, dass kontextfreie
       Grammatiken nicht unbedingt die bequemste Art darstellen, eine Sprache 
-      zu beschreiben.  Wir werden daher den Begriff der \emph{erweiterten Backus-Naur-Form}
-      \textsc{Ebnf} einführen.  Hierbei handelt es sich um eine Verallgemeinerung des
-      Begriffs der kontext-freien Grammatik, mit dem es in der Praxis leichter ist,
-      Parser zu implementieren.
+      zu beschreiben.  Wir werden daher den Begriff der \emph{erweiterten Backus-Naur-Form}-Grammatik
+      (abgekürzt \textsc{Ebnf}-Grammatik) einführen.  Hierbei handelt es sich um eine Verallgemeinerung des
+      Begriffs der kontextfreien Grammatik.  Theoretisch ist die Ausdrucksstärke der
+      \textsc{Ebnf}-Grammatiken die selbe wie die Ausdrucksstärke der kontextfreien Grammatiken.
+      In der Praxis zeigt sich aber, dass die Konstruktion von Top-Down-Parsern für
+      \textsc{Ebnf}-Grammatiken einfacher ist, weil dort die Links-Rekursion durch eine Iteration ersetzt
+      werden kann.
 \end{enumerate}
 Im Rahmen dieses Kapitels werden wir alle oben genannten Verfahren an Hand der Grammatik für
 arithmetische Ausdrücke ausführlich diskutieren.  
@@ -979,14 +996,14 @@ a & \rightarrow & a \beta \\
 \end{array}
 $
 \\[0.2cm]
-definiert, so hat eine Ableitung von $a$, bei der zunächst immer die Variable $a$ ersetzt
+definiert, so hat eine Ableitung von $a$, bei der zunächst immer die syntaktische Variable $a$ ersetzt
 wird, die Form 
 \\[0.2cm]
 \hspace*{1.3cm}
 $a \Rightarrow a \beta \Rightarrow a \beta \beta \Rightarrow a \beta \beta \beta
  \Rightarrow \cdots \Rightarrow a \beta^n \Rightarrow \gamma \beta^n$.
 \\[0.2cm]
-Damit sehen wir, dass die durch das Nicht-Terminal $a$ beschriebene Sprache $L(a)$ aus alle den
+Damit sehen wir, dass die durch die syntaktische Variable $a$ beschriebene Sprache $L(a)$ aus alle den
 Strings besteht, die sich aus dem Ausdruck $\gamma \beta^n$ ableiten lassen:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1041,7 +1058,7 @@ den ersten Fall zurückführen:
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-a & \rightarrow & a b \mid C                         \\[0.2cm]
+a & \rightarrow & a b \mid c                         \\[0.2cm]
 b & \rightarrow & \beta_1 \mid \cdots \mid \beta_k   \\[0.2cm]
 c & \rightarrow & \gamma_1 \mid \cdots \mid \gamma_l
 \end{array}
@@ -1058,7 +1075,7 @@ l & \rightarrow & b\;l \mid \varepsilon.
 \end{array}
 $
 \\[0.2cm]
-Die Hilfs-Variablen $b$ und $C$ können nun wieder eliminiert werden und dann bekommen wir die folgende
+Die Hilfs-Variablen $b$ und $c$ können nun wieder eliminiert werden und dann bekommen wir die folgende
 Grammatik: 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1201,7 +1218,7 @@ $a \rightarrow a \beta$
 \\[0.2cm]
 bezeichnen wir als \emph{unmittelbare Links-Rekursion},  jede kompliziertere Form der
 Links-Rekursion wird als \emph{allgemeine Links-Rekursion} bezeichnet.
-Um im allgemeine Links-Rekursion zu eliminieren, gehen wir wie folgt vor:
+Um allgemeine Links-Rekursion zu eliminieren, gehen wir wie folgt vor:
 \begin{enumerate}
 \item Zunächst numerieren wir die syntaktischen Variablen der Grammatik in willkürlicher Weise durch.
       Im Folgenden seien die Variablen mit $a_1$, $\cdots$, $a_n$ bezeichnet.  Durch diese
@@ -1461,7 +1478,7 @@ Figure \ref{fig:rd-parser.stlx} on page
       \hspace*{1.3cm}
       \verb|["(", 1, "+", 2, ")", "*", 3]|.
       \\[0.2cm]
-      The list of tokens is then parsed by the function \texttt{parseExpr}.
+      This list of tokens is then parsed by the function \texttt{parseExpr}.
       That function returns a pair: 
       \begin{enumerate}
       \item The first  component is the value of the arithmetic expression.
@@ -1516,9 +1533,9 @@ Figure \ref{fig:rd-parser.stlx} on page
       where $2$ is the result of parsing the token list \verb|[1, "*", 2]|, while
       \verb|["+", 3]| is the part of the input token list that is not used by
       \texttt{parseProduct}.  Next, the list \verb|["+", 3]| needs to be parsed as 
-      the rest of an expression and $3$ needs to be added to $2$.      
+      the rest of an expression and then $3$ needs to be added to $2$.      
 \item The function \texttt{parseExprRest} takes a number and a list of tokens.
-      It implements the grammar rule
+      It implements the following grammar rules:
       \hspace*{1.3cm}
       \begin{eqnarray*}
         \textsl{exprRest} & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest} \\
@@ -1538,7 +1555,7 @@ Figure \ref{fig:rd-parser.stlx} on page
       \hspace*{1.3cm}
       $\textsl{exprRest} \;\rightarrow\; \varepsilon$
       \\[0.2cm]
-      is used.  Therefore, in that case we have not consumed any tokens and therefore 
+      is used.  Therefore, in that case we have not consumed any tokens and hence
       the input arguments are already the result.
 \item The function \texttt{parseProduct} implements the rule
       \\[0.2cm]
@@ -1553,7 +1570,7 @@ Figure \ref{fig:rd-parser.stlx} on page
                        & \mid        & \;\varepsilon                                      
       \end{eqnarray*}
       The implementation is similar to the implementation of \textsl{parseExprRest}.
-\item The function \texttt{parseProductRest} implements the rules
+\item The function \texttt{parseFactor} implements the rules
       \begin{eqnarray*}
       \textsl{factor} & \rightarrow & \quoted{(} \textsl{expr} \quoted{)} \\
                       & \mid        & \;\textsc{Number} 
@@ -1574,14 +1591,14 @@ Figure \ref{fig:rd-parser.stlx} on page
       Line 45 is needed to skip white space.
 \end{enumerate}
 The parser shown in Figure \ref{fig:rd-parser.stlx} does not contain any error handling. 
-Appropriate error handling will be discussed once we have covered the theory of top down parsers.
+Appropriate error handling will be discussed once we have covered the theory of top-down parsing.
 
 
 \subsection{Implementing a  Backward Recursive Decent Parser}
 If a grammar is left recursive but not right recursive then, instead of rewriting the
-grammar, we can just try to read the grammar rules backwards.
+grammar, we can just try to process the grammar rules backwards.
 Figure \ref{fig:rd-backward-parser.stlx} on page \pageref{fig:rd-backward-parser.stlx}
-shows an recursive decent parser for arithmetic expressions that works backwards.
+shows an recursive decent parser for arithmetic expressions that works in this way.
 
 \begin{figure}[!ht]
 \centering
@@ -1680,7 +1697,7 @@ shows an recursive decent parser for arithmetic expressions that works backwards
       list \texttt{tl}.  If this \texttt{factor} is preceded by either the token
       \squoted{*} or \squoted{/}, the parser tries to recognize the \texttt{product} that
       must be preceding this operator.  In that case, depending on the operator, the
-      parser either returns $\mathtt{product} * \mathtt{factor}$ or
+      parser either returns $\mathtt{product} \mathtt{*} \mathtt{factor}$ or
       $\mathtt{product} / \mathtt{factor}$.
       
       If the factor is not preceded by either \squoted{*} or \squoted{/} it must either be preceded 

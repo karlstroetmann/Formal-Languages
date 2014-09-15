@@ -1,4 +1,4 @@
-AntlrPath = /usr/local/lib/antlr-4.1-complete.jar
+AntlrPath = /usr/local/lib/antlr-4.4-complete.jar
 CP        = .:${AntlrPath}
 
 run: Differentiate.class Difference.class Exponential.class Expr.class Logarithm.class \
