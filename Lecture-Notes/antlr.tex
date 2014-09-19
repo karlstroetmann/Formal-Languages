@@ -266,9 +266,13 @@ Grammatik für arithmetische Ausdrücke gibt es die folgenden Änderungen:
             | expr ';'
             ;    
     
-    expr    : product (('+'|'-') product)* ;
+    expr    : expr ('+'|'-') product
+            | product
+            ;
     
-    product : factor (('*'|'/') factor)* ;
+    product : product ('*'|'/') factor
+            | factor
+            ;
     
     factor  : '(' expr ')'
             | ID
@@ -296,17 +300,16 @@ Grammatik für arithmetische Ausdrücke gibt es die folgenden Änderungen:
       arithmetischer Ausdruck.
 \item \texttt{stmnt} bezeichnet eine Zuweisung oder einen einzelnen Ausdruck.
 \item Wir haben die Regeln für die syntaktischen Variablen \textsl{expr} und \textsl{product}
-      vereinfacht.  Ein arithmetischer Ausdruck ist nichts anderes als eine Folge von Produkten,
-      wobei die einzelnen Produkte durch die Operatoren ``\texttt{+}'' oder ``\texttt{-}'' getrennt
-      werden.  Da \textsc{Antlr} \textsc{Ebnf}-Grammatiken unterstützt, können wir für \textsl{expr}
-      daher die Grammatik-Regel
+      vereinfacht, in dem wir jeweils die beiden Operatoren ``\texttt{+}'' und ``\texttt{-}'' bzw.
+      \squoted{*} und \squoted{/} zusammengefasst habe.
+      Da \textsc{Antlr} \textsc{Ebnf}-Grammatiken unterstützt, können wir für \textsl{expr}
+      beispielsweise die Regel
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{expr : product (('+'|'-') product)* ;}
+      \texttt{expr : expr ('+'|'-') product | product ;}
       \\[0.2cm]
-      verwenden.  Die Grammatik-Regel für \textsl{product} folgt in ähnlicher Weise aus der
-      Feststellung,  dass ein Produkt eine Folge von Faktoren ist, wobei die einzelnen Faktoren
-      durch die Operatoren ``\texttt{*}'' und ``\texttt{/}'' getrennt werden.
+      verwenden.  Die Grammatik-Regel für \textsl{product} haben wir in ähnlicher Weise
+      geändert.
 \item Das Terminal \texttt{ID} bezeichnet den Namen einer Variablen.  Ein solcher Name
       besteht aus einer beliebigen Folge von Buchstaben und Ziffern, die mit einem Buchstaben 
       beginnen muss.
@@ -350,18 +353,20 @@ Interpreters mit \textsc{Antlr}.
           ;    
     
     expr returns [int result]
-        : p = product { $result = $p.result; }
-          (   ('+' q = product) { $result += $q.result; }
-            | ('-' q = product) { $result -= $q.result; }
-          )*
+        : e = expr { $result = $e.result; }
+          (   '+' p = product { $result += $p.result; }
+            | '-' p = product { $result -= $p.result; }
+          )
+        | p = product { $result = $p.result; }
         ;
     
     product returns [int result]
-        : f = factor { $result = $f.result; }
+        : p = product { $result = $p.result; }
           (
-              ('*' g = factor) { $result *= $g.result; }
-            | ('/' g = factor) { $result /= $g.result; }
-          )* 
+              '*' f = factor { $result *= $f.result; }
+            | '/' f = factor { $result /= $f.result; }
+          )
+        | f = factor { $result = $f.result; }
         ;
     
     factor returns [int result]
@@ -428,17 +433,11 @@ Interpreters mit \textsc{Antlr}.
 \item In der Grammatik-Regel
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{expr : product (('+'|'-') product)* ;}
+      \texttt{expr : expr ('+'|'-') product | product ;}
       \\[0.2cm]
-      taucht die syntaktische Variable \textsl{product} zweimal auf. Deswegen wäre ein
-      Notation der Form 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{\symbol{36}product.result} 
-      \\[0.2cm]
-      nicht eindeutig. Daher haben wir in Zeile 18 -- 20 den verschiedenen Auftreten dieser syntaktische
-      Variablen die Namen $p$ und $q$ zugeordnet, auf die wir dann in den Aktionen
-      zugreifen können.  In den Aktionen muss diesen Variablen allerdings ein Dollar-Zeichen
+      haben wir in Zeile 18 -- 20 den verschiedenen Auftreten der syntaktischen Variablen
+      \texttt{expr} und \texttt{product} die Namen $e$ und $p$ zugeordnet, auf die wir dann in den
+      Aktionen zugreifen können.  In den Aktionen muss diesen Variablen allerdings ein Dollar-Zeichen
       vorgestellt werden.
 
       Die Aktionen selber bestehen nun darin, dass wir der Variablen \texttt{result}
@@ -476,11 +475,13 @@ Abbildung \ref{fig:Expr-exp-ln} zeigt die entsprechend erweiterte EBNF-Grammatik
   \begin{minipage}[t]{9cm}
 
   \begin{eqnarray*}
-  \textsl{Expr}   & \rightarrow & \;\textsl{Product}\;\;((\quoted{+}|\quoted{-})  \;\; \textsl{Product})^* \\[0.2cm]
-  \textsl{Product} & \rightarrow & \;\textsl{Factor}\;\;\;\;((\quoted{*}|\quoted{/}) \;\; \textsl{Factor})^* \\[0.2cm]
-  \textsl{Factor} & \rightarrow & \quoted{(} \textsl{Expr} \quoted{)}              \\
-                  & \mid        & \quoted{exp} \quoted{(} \textsl{Expr} \quoted{)} \\
-                  & \mid        & \quoted{log} \quoted{(} \textsl{Expr} \quoted{)} \\
+  \textsl{expr}   & \rightarrow & \;\textsl{expr}\;\;(\quoted{+}|\quoted{-})  \;\; \textsl{product}  \\
+                  & \mid        & \textsl{product}                                 \\[0.2cm]
+  \textsl{product} & \rightarrow & \;\textsl{product}\;\;\;\;(\quoted{*}|\quoted{/}) \;\; \textsl{factor} \\
+                  & \mid        & \textsl{factor}  \\[0.2cm]
+  \textsl{factor} & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}              \\
+                  & \mid        & \quoted{exp} \quoted{(} \textsl{expr} \quoted{)} \\
+                  & \mid        & \quoted{log} \quoted{(} \textsl{expr} \quoted{)} \\
                   & \mid        & \;\textsc{Variable}                              \\
                   & \mid        & \;\textsc{Number} 
   \end{eqnarray*}
@@ -509,18 +510,15 @@ aus Abbildung \ref{fig:Expr-exp-ln}.
     grammar Expr;
     
     expr returns [Expr result]
-        : p = product { $result = $p.result; }
-          (   ('+' q = product) { $result = new Sum(       $result, $q.result); }
-            | ('-' q = product) { $result = new Difference($result, $q.result); }
-          )*
+        : e = expr '+' p = product { $result = new Sum(       $e.result, $p.result); }
+        | e = expr '-' p = product { $result = new Difference($e.result, $p.result); }
+        | p = product              { $result = $p.result; }    
         ;
     
     product returns [Expr result]
-        : f = factor { $result = $f.result; }
-          (
-              ('*' g = factor) { $result = new Product( $result, $g.result); }
-            | ('/' g = factor) { $result = new Quotient($result, $g.result); }
-          )* 
+        : p = product '*' f = factor { $result = new Product( $p.result, $f.result); }
+        | p = product '/' f = factor { $result = new Quotient($p.result, $f.result); }
+        | f = factor                 { $result = $f.result; }
         ;
     
     factor returns [Expr result]
@@ -705,9 +703,10 @@ eine Grammatik für die Sprache \texttt{C}.
 \item[(b)] Entwickeln Sie mit Hilfe von \textsc{Antlr} ein Programm, dass die angegebene
            Grammatik liest und als \textsc{Html}-Datei ausgibt.  
 
+           \textbf{Hinweis}:
            Zur Darstellung der Grammatik-Regeln finden Sie in dem Verzeichnis
            \\[0.2cm]
-           \hspace*{-0.3cm}
+           \hspace*{0.3cm}
            \href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/Grammar2HTML/}{
            \texttt{http://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/Formal-Languages/Exercises/Grammar2HTML/}}
            \\[0.2cm]

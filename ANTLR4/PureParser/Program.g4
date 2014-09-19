@@ -6,9 +6,13 @@ stmnt   : ID ':=' expr ';'
         | expr ';'
         ;    
 
-expr    : product (('+'|'-') product)* ;
+expr    : expr ('+'|'-') product
+        | product
+        ;
 
-product : factor (('*'|'/') factor)* ;
+product : product ('*'|'/') factor
+        | factor
+        ;
 
 factor  : '(' expr ')'
         | ID
