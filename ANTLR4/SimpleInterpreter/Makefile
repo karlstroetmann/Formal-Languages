@@ -5,7 +5,7 @@ run: RunProgram.class input.txt
 	java -cp ${CP} RunProgram input.txt
 
 RunProgram.class: RunProgram.java ProgramParser.java
-	javac -cp ${CP} RunProgram.java  
+	javac *.java   
 
 ProgramParser.java ProgramLexer: Program.g4
 	java -jar ${AntlrPath} Program.g4
@@ -13,7 +13,7 @@ ProgramParser.java ProgramLexer: Program.g4
 clean:
 	rm *.class
 	rm *.tokens
-	rm ProgramBaseListener.java ProgramLexer.java ProgramListener.java ExprParser.java
+	rm ProgramBaseListener.java ProgramLexer.java ProgramListener.java 
 
 
 

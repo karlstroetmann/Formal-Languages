@@ -15,18 +15,20 @@ stmnt : ID ':=' expr ';' { varTable.put($ID.text, $expr.result); }
       ;    
 
 expr returns [int result]
-    : p = product { $result = $p.result; }
-      (   ('+' q = product) { $result += $q.result; }
-        | ('-' q = product) { $result -= $q.result; }
-      )*
+    : e = expr { $result = $e.result; }
+      (   '+' p = product { $result += $p.result; }
+        | '-' p = product { $result -= $p.result; }
+      )
+    | p = product { $result = $p.result; }
     ;
 
 product returns [int result]
-    : f = factor { $result = $f.result; }
+    : p = product { $result = $p.result; }
       (
-          ('*' g = factor) { $result *= $g.result; }
-        | ('/' g = factor) { $result /= $g.result; }
-      )* 
+          '*' f = factor { $result *= $f.result; }
+        | '/' f = factor { $result /= $f.result; }
+      )
+    | f = factor { $result = $f.result; }
     ;
 
 factor returns [int result]
