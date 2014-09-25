@@ -1,10 +1,5 @@
 \chapter{Interpreter \label{chapter:interpreter}}
-In diesem Kapitels erstellen wir mit Hilfe des Parser-Generators \textsc{Antlr} einen
-Interpreter für eine einfache Programmiersprache. 
-Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Ebnf}-Grammatik dieser
-Programmier-Sprache.  Die Befehle dieser Sprache sind Zuweisungen, Print-Befehle,
-\texttt{if}-Abfragen, sowie \texttt{while}-Schleifen.  Abbildung \ref{fig:sum.sl} zeigt
-ein Beispiel-Programm, das dieser Grammatik entspricht.
+
 
 \begin{figure}[!ht]
 \centering
@@ -19,39 +14,55 @@ ein Beispiel-Programm, das dieser Grammatik entspricht.
                 ]
     grammar Pure;
     
-    program
-        : statement+
-        ;
-    
-    statement
-        : VAR ':=' expr ';'
-        | VAR ':=' 'read' '(' ')' ';'
-        | 'print' '(' expr ')' ';'
-        | 'if' '(' boolExpr ')' '{' statement* '}'
-        | 'while' '(' boolExpr  ')' '{' statement* '}'
-        ;
-    
-    boolExpr
-        : expr ('==' expr | '<' expr)
-        ;
-    
-    expr: product (('+' product | '-' product))*
-        ;
-    
-    product
-        : factor (('*' factor | '/' factor))*
-        ;
-    
-    factor
-        : '(' expr ')'
-        | VAR
-        | NUMBER
-        ;
+    program  : statement+
+             ;  
+    statement: VAR ':=' expr ';'
+             | VAR ':=' 'read' '(' ')' ';'
+             | 'print' '(' expr ')' ';'
+             | 'if'    '(' boolExpr ')' '{' statement* '}'
+             | 'while' '(' boolExpr ')' '{' statement* '}'
+             ;
+    boolExpr : expr '==' expr
+             | expr '<'  expr
+             ;
+    expr     : expr '+' product
+             | expr '-' product
+             | product
+             ;
+    product  : product '*' factor
+             | product '/' factor
+             | factor
+             ;
+    factor   : '(' expr ')'
+             | VAR
+             | NUMBER
+             ;
+    VAR      : [a-zA-Z][a-zA-Z_0-9]*;
+    NUMBER   : '0'|[1-9][0-9]*;
+    MULTI_COMMENT : '/*' .*? '*/' -> skip;
+    LINE_COMMENT  : '//' ~('\n')* -> skip;
+    WS            : [ \t\v\n\r]   -> skip; 
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{\textsc{Ebnf}-Grammatik für eine einfache Programmier-Sprache.}
+\caption{\textsc{Antlr}-Grammatik für eine einfache Programmier-Sprache.}
 \label{fig:Pure.g4}
 \end{figure}
+
+In diesem Kapitels erstellen wir mit Hilfe des Parser-Generators \textsc{Antlr} einen
+Interpreter für eine einfache Programmiersprache.  Erfreulicherweise akzeptiert
+\textsc{Antlr} seit der Version \texttt{4.0} auch Grammatiken, die einfache Links-Rekursion
+enthalten.  Auch eine Links-Faktorisierung der Grammatik ist nicht mehr notwendig.
+Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Antlr}-Grammatik der Programmier-Sprache, für die wir
+in diesem Abschnitt einen Interpreter entwickeln.  Die Befehle dieser Sprache sind Zuweisungen, Print-Befehle,
+\texttt{if}-Abfragen, sowie \texttt{while}-Schleifen.  Abbildung \ref{fig:sum.sl} zeigt
+ein Beispiel-Programm, das dieser Grammatik entspricht.  Dieses Programm liest zunächst eine Zahl
+ein, die in der Variablen \texttt{n} gespeichert wird.  Anschließend wird die Summe
+\\[0.2cm]
+\hspace*{1.3cm}
+$\sum\limits_{i=1}^{n^2} i$
+\\[0.2cm]
+in der Variablen \texttt{s} akkumuliert und am Ende des Programms ausgegeben.
+
 
 \begin{figure}[!ht]
 \centering
@@ -73,7 +84,7 @@ ein Beispiel-Programm, das dieser Grammatik entspricht.
     print(s);
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Ein Programm zur Berechnung der Summe $\sum\limits_{i=0}^n i$.}
+\caption{Ein Programm zur Berechnung der Summe $\sum\limits_{i=0}^{n^2} i$.}
 \label{fig:sum.sl}
 \end{figure}
 
@@ -561,11 +572,14 @@ deren Aufgabe es ist, die einzelnen Befehle zu erkennen und auszuführen.
         import java.util.List;
         import java.util.ArrayList;
     }
+    
     program 
         : (s = statement { $s.stmnt.execute(); Statement.prompt(); })+
         ;
     statement returns [Statement stmnt]
-        @init { List<Statement> stmnts = new ArrayList<Statement>(); }
+        @init { 
+            List<Statement> stmnts = new ArrayList<Statement>(); 
+        }
         : v = VAR ':=' e = expr ';'     
           { $stmnt = new Assignment(new Variable($v.text), $e.result); }
         | v = VAR ':=' 'read' '(' ')' ';'     
@@ -573,30 +587,28 @@ deren Aufgabe es ist, die einzelnen Befehle zu erkennen und auszuführen.
         | 'print' '(' r = expr ')' ';' 
           { $stmnt = new Print($r.result); }
         | 'if' '(' b = boolExpr ')' '{' 
-          (l = statement { stmnts.add($l.stmnt); })* '}' 
+              (l = statement { stmnts.add($l.stmnt); })*
+          '}' 
           { $stmnt = new IfThen($b.result, stmnts); }
         | 'while' '(' b = boolExpr ')' '{' 
-          (l = statement { stmnts.add($l.stmnt); })* '}' 
+              (l = statement { stmnts.add($l.stmnt); })*
+          '}' 
           { $stmnt = new While($b.result, stmnts); }
         ;
     boolExpr returns [BoolExpr result]
-        : l = expr ( '==' r = expr { $result = new Equal(   $l.result, $r.result); } 
-                   | '<'  r = expr { $result = new LessThan($l.result, $r.result); }
-                   )
+        : l = expr '==' r = expr { $result = new Equal(   $l.result, $r.result); } 
+        | l = expr '<'  r = expr { $result = new LessThan($l.result, $r.result); }
         ;
     expr returns [Expr result]
-        : p = product { $result = $p.result; }
-          (   ('+' q = product) { $result = new Sum(       $result, $q.result); }
-            | ('-' q = product) { $result = new Difference($result, $q.result); }
-          )*
+        : e = expr '+' p = product { $result = new Sum(       $e.result, $p.result); }
+        | e = expr '-' p = product { $result = new Difference($e.result, $p.result); }
+        | p = product              { $result = $p.result;                            }
         ;
     product returns [Expr result]
-        : f = factor { $result = $f.result; }
-          (
-              ('*' g = factor) { $result = new Product( $result, $g.result); }
-            | ('/' g = factor) { $result = new Quotient($result, $g.result); }
-          )* 
-        ;
+        : p = product '*' f = factor { $result = new Product( $p.result, $f.result); }
+        | p = product '/' f = factor { $result = new Quotient($p.result, $f.result); }
+        | f = factor                 { $result = $f.result;                          }
+        ;    
     factor returns [Expr result]
         : '(' expr ')' { $result = $expr.result;          }
         | v = VAR      { $result = new Variable($v.text); }
@@ -643,7 +655,7 @@ wird als Rückgabewert ein Objekt der Klasse \texttt{While} erzeugt und zurückgeg
     VAR    : [a-zA-Z][a-zA-Z_0-9]*;
     NUMBER : '0'|[1-9][0-9]*;
     
-    MULTI_COMMENT : '/*' .*? '/'  -> channel(HIDDEN);
+    MULTI_COMMENT : '/*' .*? '*/' -> channel(HIDDEN);
     LINE_COMMENT  : '//' ~('\n')* -> channel(HIDDEN);
     WS            : [ \t\v\n\r]   -> channel(HIDDEN);
 \end{Verbatim}
@@ -658,7 +670,21 @@ Unterstrich folgen können.  Folgen von Ziffern werden als Zahlen interpretiert. 
 Folge mehr als ein Zeichen, so darf die erste Ziffer nicht 0 sein.  Darüber hinaus entfernt der
 Scanner Whitespace und Kommentare.  Beachten Sie, dass Whitespace und Kommentare an den
 \texttt{channel}  mit den Namen \texttt{HIDDEN} weitergereicht werden.  Dadurch werden sie vom
-Parser ignoriert, stehen aber noch für Fehlermeldungen zur Verfügung.
+Parser ignoriert, stehen aber noch für Fehlermeldungen zur Verfügung.  Außerdem haben wir bei der
+Spezifikation von mehrzeiligen Kommentaren die sogenannte \emph{non-greedy}-Version des Operators
+``\texttt{*}'' benutzt.  Die non-greedy-Version des Operators ``\texttt{*}'' wird als
+``\texttt{*?}'' geschrieben und matched sowenig wie möglich.  Daher steht der reguläre Ausdruck
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{'/*' .*? '*/'}
+\\[0.2cm]
+für einen String, der mit der Zeichenkette ``\texttt{/*}'', mit der Zeichenkette ``\texttt{*/}''
+endet und außerdem so kurz wie möglich ist.  Dadurch werden in einer Zeile der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{/* Hugo */ i := i + 1; /* Anton */}
+\\[0.2cm] 
+zwei getrennte Kommentare erkannt.
 
 
 \begin{figure}[!ht]
@@ -716,12 +742,13 @@ Interpreter erkennen soll, dass der Benutzer ein Kommando eingegeben hat.  Ein A
 Parser nach jedem Zeilenumbruch überprüft, ob der Benutzer ein vollständiges Kommando eingegeben
 hat.  Dieser Ansatz scheitert aber daran, dass manche Kommandos sich über mehrere Zeilen
 erstrecken.  Daher wartet der Interpreter darauf, dass nacheinander zwei Zeilenumbrüche eingegeben
-werden.  Dann wird die bis dahin gelesene Eingabe in Zeile 20 in einem Feld von Bytes
+werden.  Dann wird die bis dahin gelesene Eingabe in Zeile 23 in einem Feld von Bytes
 zusammengefasst und als Objekt der Klasse \texttt{ByteArrayInputStream} zurück gegeben.
-
+\pagebreak
 
  \exercise
 \begin{enumerate}
+\renewcommand{\labelenumi}{(\alph{enumi})}
 \item Erweitern Sie den oben diskutierten Interpreter um \texttt{for}-Schleifen und
       reichern  Sie die Beispiel-Programmier-Sprache um die logischen Operatoren
       ``\texttt{\&\&}'' für das logische \emph{Und}, ``\texttt{||}'' für das logische \emph{Oder}
@@ -740,8 +767,9 @@ zusammengefasst und als Objekt der Klasse \texttt{ByteArrayInputStream} zurück g
       \textbf{Hinweis}: Jetzt müssen Sie zwischen lokalen und globalen Variablen
       unterscheiden.
       Daher reicht es nicht mehr, die Belegungen der Variablen in einer
-      global definierten Hashtabelle zu verwalten. 
+      global definierten Hashtabelle zu verwalten. \eox
 \end{enumerate}
+\renewcommand{\labelenumii}{\arabic{enumii}.}
 
 
 %%% Local Variables: 
