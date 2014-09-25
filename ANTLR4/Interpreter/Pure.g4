@@ -1,23 +1,38 @@
 grammar Pure;
 
-program  : statement+ ;
+program  : statement+
+         ;
+
 statement: VAR ':=' expr ';'
          | VAR ':=' 'read' '(' ')' ';'
          | 'print' '(' expr ')' ';'
          | 'if'    '(' boolExpr ')' '{' statement* '}'
          | 'while' '(' boolExpr ')' '{' statement* '}'
          ;
-boolExpr : expr ('==' expr | '<' expr) ;
-expr     : product (('+' product | '-' product))* ;
-product  : factor  (('*' factor  | '/' factor ))* ;
+
+boolExpr : expr '==' expr
+         | expr '<'  expr
+         ;
+
+expr     : expr '+' product
+         | expr '-' product
+         | product
+         ;
+
+product  : product '*' factor
+         | product '/' factor
+         | factor
+         ;
+
 factor   : '(' expr ')'
          | VAR
          | NUMBER
          ;
+
 VAR      : [a-zA-Z][a-zA-Z_0-9]*;
 NUMBER   : '0'|[1-9][0-9]*;
 
-MULTI_COMMENT : '/*' .*? '*/' -> channel(HIDDEN);
-LINE_COMMENT  : '//' ~('\n')* -> channel(HIDDEN);
-WS            : [ \t\v\n\r]   -> channel(HIDDEN);
+MULTI_COMMENT : '/*' .*? '*/' -> skip;
+LINE_COMMENT  : '//' ~('\n')* -> skip;
+WS            : [ \t\v\n\r]   -> skip;
 
