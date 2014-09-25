@@ -9,12 +9,6 @@ program
     : (s = statement { $s.stmnt.execute(); Statement.prompt(); })+
     ;
 
-// statement : VAR ':=' expr ";"
-//           | VAR ':=' 'read' '(' ')' ';'
-//           | "print" "(" expr ")" ";"
-//           | "if"    "(" boolExpr ")" "{" stmntList "}"
-//           | "while" "(" boolExpr ")" "{" stmntList "}"
-//           ;
 statement returns [Statement stmnt]
     @init { 
         List<Statement> stmnts = new ArrayList<Statement>(); 
@@ -26,35 +20,30 @@ statement returns [Statement stmnt]
     | 'print' '(' r = expr ')' ';' 
       { $stmnt = new Print($r.result); }
     | 'if' '(' b = boolExpr ')' '{' 
-      (l = statement { stmnts.add($l.stmnt); })* '}' 
+          (l = statement { stmnts.add($l.stmnt); })*
+      '}' 
       { $stmnt = new IfThen($b.result, stmnts); }
     | 'while' '(' b = boolExpr ')' '{' 
-      (l = statement { stmnts.add($l.stmnt); })* '}' 
+          (l = statement { stmnts.add($l.stmnt); })*
+      '}' 
       { $stmnt = new While($b.result, stmnts); }
     ;
 
-// boolExpr : expr "==" expr
-//          | expr "<"  expr
-//          ;            
 boolExpr returns [BoolExpr result]
-    : l = expr ( '==' r = expr { $result = new Equal(   $l.result, $r.result); } 
-               | '<'  r = expr { $result = new LessThan($l.result, $r.result); }
-               )
+    : l = expr '==' r = expr { $result = new Equal(   $l.result, $r.result); } 
+    | l = expr '<'  r = expr { $result = new LessThan($l.result, $r.result); }
     ;
 
 expr returns [Expr result]
-    : p = product { $result = $p.result; }
-      (   ('+' q = product) { $result = new Sum(       $result, $q.result); }
-        | ('-' q = product) { $result = new Difference($result, $q.result); }
-      )*
+    : e = expr '+' p = product { $result = new Sum(       $e.result, $p.result); }
+    | e = expr '-' p = product { $result = new Difference($e.result, $p.result); }
+    | p = product              { $result = $p.result;                            }
     ;
 
 product returns [Expr result]
-    : f = factor { $result = $f.result; }
-      (
-          ('*' g = factor) { $result = new Product( $result, $g.result); }
-        | ('/' g = factor) { $result = new Quotient($result, $g.result); }
-      )* 
+    : p = product '*' f = factor { $result = new Product( $p.result, $f.result); }
+    | p = product '/' f = factor { $result = new Quotient($p.result, $f.result); }
+    | f = factor                 { $result = $f.result;                          }
     ;
 
 factor returns [Expr result]
