@@ -20,8 +20,8 @@ SimpleLexer.java: Simple.g4
 	java -jar ${AntlrPath} Simple.g4
 
 test: PureParser.class
-	java org.antlr.v4.runtime.misc.TestRig Pure program -gui < factorial.sl
-	java org.antlr.v4.runtime.misc.TestRig Pure program -gui < sum.sl
+	grun Pure program -gui < factorial.sl
+	grun Pure program -gui < sum.sl
 
 PureParser.class: PureParser.java 
 	javac -cp ${CP} Pure*.java
