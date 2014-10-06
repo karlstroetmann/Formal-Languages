@@ -13,7 +13,7 @@ class srParser(actionTable, gotoTable, stateTable) {
             print("states:  [ $join(states, \", \")$ ]");
             print("symbols: $join(symbols, \" \")$ | $join(tl[index ..], \" \")$");
             print("state:   { $join(mStateTable[q], \", \")$ }");
-            p := mActionTable[[q,t]];
+            p := mActionTable[q,t];
             match (p) {
             case om: 
                  print("action($q$, $t$) undefined.");
@@ -32,8 +32,8 @@ class srParser(actionTable, gotoTable, stateTable) {
                  states  := states[.. -(n+1)]; 
                  symbols := symbols + [head];
                  state   := states[-1];
-                 states  := states + [ mGotoTable[[state, head]] ];
-                 print("state:   { $join(mStateTable[mGotoTable[[state, head]]], \", \")$ }\n");
+                 states  := states + [ mGotoTable[state, head] ];
+                 print("state:   { $join(mStateTable[mGotoTable[state, head]], \", \")$ }\n");
             case Accept():
                  print("accepting\n");
                  return true;
@@ -44,7 +44,7 @@ class srParser(actionTable, gotoTable, stateTable) {
 
 load("parse-table.stlx");
 
-myParse := procedure(s) {
+myParse := closure(s) {
     parser := srParser(actionTable, gotoTable, stateTable);
     tl := tokenizeString(s);
     print("tokenlist: $tl$\n");
