@@ -1,7 +1,7 @@
-\chapter{LR-Parser}
+\chapter{Bottom-Up-Parser}
 Bei der Konstruktion eines Parsers gibt es generell zwei Möglichkeiten:  Wir können
 \emph{Top-Down} oder \emph{Bottom-Up} vorgehen.  Den Top-Down-Ansatz haben wir bereits
-ausführlich diskutiert.  In diesem Kapitel beleuchten wir nun den Bottom-Up-Ansatz.
+ausführlich diskutiert.  In diesem Kapitel erläutern wir nun den Bottom-Up-Ansatz.
 Dazu stellen wir im nächsten Abschnitt das allgemeine Konzept vor, das einem
 \textsl{Bottom-Up-Parser} zu Grunde liegt.  
 Im darauf folgenden Abschnitt zeigen wir, wie Bottom-Up-Parser implementiert werden können
@@ -159,10 +159,11 @@ beschrieben.  Dabei gilt:
 \begin{enumerate}
 \item $Q$ ist die Menge der \emph{Zustände} des Shift-Reduce-Parsers.  
 
-      Zunächst werden wir die einzelnen Zustände rein abstrakt sehen.  Später, wenn wir
-      die Theorie der SLR-Parser diskutieren, werden wir sehen, dass ein Zustand
-      die Information speichert, welche Variable der Parser gerade zu erkennen versucht
-      und welcher Teil der rechten Seite einer Regel bereits erkannt worden ist.
+      Zunächst werden wir die einzelnen Zustände rein abstrakt sehen und ihre Natur nicht näher
+      analysieren.  Später, wenn wir 
+      die Theorie der SLR-Parser diskutieren, werden wir erkennen, dass ein Zustand
+      die Information speichert, mit welcher Grammatik-Regel der Parser gerade zu parsen versucht
+      und welcher Teil der rechten Seite der Regel bereits erkannt worden ist.
 \item $q_0 \in Q$ ist der Start-Zustand.
 \item $\textsl{action}$ ist eine Funktion, die als Argumente einen Zustand $q \in Q$
       und ein Terminal $t \in T$ erhält.  Das Ergebnis ist ein Element der Menge
@@ -221,11 +222,11 @@ Strings spezifiziert aber sonst in dem String nicht auftritt.
         parseSR := procedure(tl) {
             index   := 1;      // point to next token
             symbols := [];     // stack of symbols
-            states  := ["s0"]; // stack of states, 0 is start state
+            states  := ["s0"]; // stack of states, "s0" is the start state
             while (true) {            
                 q := states[-1];
                 t := tl[index];
-                p := mActionTable[[q,t]];
+                p := mActionTable[q,t];
                 match (p) {
                 case om: 
                      return false;
@@ -239,7 +240,7 @@ Strings spezifiziert aber sonst in dem String nicht auftritt.
                      states  := states[.. -(n+1)]; 
                      symbols := symbols + [head];
                      state   := states[-1];
-                     states  := states + [ mGotoTable[[state, head]] ];
+                     states  := states + [ mGotoTable[state, head] ];
                 case Accept():
                      return true;
                 } 
@@ -284,7 +285,9 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
       \begin{enumerate}
       \item $\textsl{action}(q,t)$ is undefined.
 
-            If $\textsl{action}(q,t)$ is undefined, the parser has found a syntax error
+            If $\textsl{action}(q,t)$ is undefined, then we really have $\textsl{action}(q, t) = \mathtt{error}$.
+            However, for reasons of space efficiency, the action table does not store
+            error entries.  Therefore, in this case the parser has found a syntax error
             and returns \texttt{false}.
       \item $\textsl{action}(q,t) = \pair(\texttt{shift}, s)$.
         
@@ -328,14 +331,14 @@ have baptized as $s_0$, $s_1$, $\cdots$, $s_{15}$.  The tables use two different
 \item \rdc{i} is short for  $\pair(\texttt{reduce}, r_i)$, where $r_i$ denothes the
       grammar rule number $i$.  Here, we have numbered the rules as follows:
       \begin{enumerate}
-      \item $r_1 = (\textsl{Expr} \rightarrow \textsl{Expr} \quoted{+} \textsl{Product})$
-      \item $r_2 = (\textsl{Expr} \rightarrow \textsl{Expr} \quoted{-} \textsl{Product})$
-      \item $r_3 = (\textsl{Expr} \rightarrow \textsl{Product})$
-      \item $r_4 = (\textsl{Product} \rightarrow \textsl{Product} \quoted{*} \textsl{Factor})$
-      \item $r_5 = (\textsl{Product} \rightarrow \textsl{Product} \quoted{/} \textsl{Factor})$
-      \item $r_6 = (\textsl{Product} \rightarrow \textsl{Factor})$
-      \item $r_7 = (\textsl{Factor} \rightarrow  \quoted{(} \textsl{Expr} \quoted{)})$
-      \item $r_8 = (\textsl{Factor} \rightarrow  \textsc{Number})$
+      \item $r_1 = (\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{product})$
+      \item $r_2 = (\textsl{expr} \rightarrow \textsl{expr} \quoted{-} \textsl{product})$
+      \item $r_3 = (\textsl{expr} \rightarrow \textsl{product})$
+      \item $r_4 = (\textsl{product} \rightarrow \textsl{product} \quoted{*} \textsl{factor})$
+      \item $r_5 = (\textsl{product} \rightarrow \textsl{product} \quoted{/} \textsl{factor})$
+      \item $r_6 = (\textsl{product} \rightarrow \textsl{factor})$
+      \item $r_7 = (\textsl{factor} \rightarrow  \quoted{(} \textsl{expr} \quoted{)})$
+      \item $r_8 = (\textsl{factor} \rightarrow  \textsc{Number})$
       \end{enumerate}
 \end{enumerate}
 The corresponding grammar is shown in Figure \ref{fig:Expr.grammar}.  The coding of the
@@ -350,13 +353,13 @@ functions \textsl{action} and \textsl{goto} is shown in the Figures
   \framebox{
   \begin{minipage}[t]{8cm}
   \begin{eqnarray*}
-  \textsl{Expr}    & \rightarrow & \;\textsl{Expr} \quoted{+} \textsl{Product}  \\
-                   & \mid        & \;\textsl{Expr} \quoted{-} \textsl{Product}  \\
-                   & \mid        & \;\textsl{Product}                           \\[0.2cm]
-  \textsl{Product} & \rightarrow & \;\textsl{Product} \quoted{*} \textsl{Factor}\\
-                   & \mid        & \;\textsl{Product} \quoted{/} \textsl{Factor}\\
-                   & \mid        & \;\textsl{Factor}                            \\[0.2cm]
-  \textsl{Factor}  & \rightarrow &   \quoted{(} \textsl{Expr} \quoted{)}        \\
+  \textsl{expr}    & \rightarrow & \;\textsl{expr} \quoted{+} \textsl{product}  \\
+                   & \mid        & \;\textsl{expr} \quoted{-} \textsl{product}  \\
+                   & \mid        & \;\textsl{product}                           \\[0.2cm]
+  \textsl{product} & \rightarrow & \;\textsl{product} \quoted{*} \textsl{factor}\\
+                   & \mid        & \;\textsl{product} \quoted{/} \textsl{factor}\\
+                   & \mid        & \;\textsl{factor}                            \\[0.2cm]
+  \textsl{factor}  & \rightarrow &   \quoted{(} \textsl{expr} \quoted{)}        \\
                    & \mid        & \;\textsc{Number} 
   \end{eqnarray*}
   \vspace*{-0.5cm}
@@ -417,7 +420,7 @@ $s_{15}$ & \rdc{1}     & \rdc{1}    & \rdc{1}    & \shft{12}  & \shft{11}  &    
 \framebox{
 \begin{tabular}{|r|r|r|r|}
 \hline
-State   & \textsl{Expr} & \textsl{Product} & \textsl{Factor} \\
+State   & \textsl{expr} & \textsl{product} & \textsl{factor} \\
 \hline
 \hline
 $s_{0}$ & $s_{4}$       & $s_{3}$          & $s_{1}$         \\
@@ -477,41 +480,41 @@ $s_{15}$ &              &                  &                 \\
     r7 := Rule("F", ["(", "E", ")"]);
     r8 := Rule("F", ["int"]);
     
-    actionTable[["s0", "("  ]] := Shift("s5");
-    actionTable[["s0", "int"]] := Shift("s2");
+    actionTable["s0", "("  ] := Shift("s5");
+    actionTable["s0", "int"] := Shift("s2");
     
-    actionTable[["s1", "EOF"]] := r6;    actionTable[["s2", "EOF"]] := r8;
-    actionTable[["s1", "+"  ]] := r6;    actionTable[["s2", "+"  ]] := r8;
-    actionTable[["s1", "-"  ]] := r6;    actionTable[["s2", "-"  ]] := r8;
-    actionTable[["s1", "*"  ]] := r6;    actionTable[["s2", "*"  ]] := r8;
-    actionTable[["s1", "/"  ]] := r6;    actionTable[["s2", "/"  ]] := r8;
-    actionTable[["s1", ")"  ]] := r6;    actionTable[["s2", "("  ]] := r8;
-                                         actionTable[["s2", ")"  ]] := r8;
+    actionTable["s1", "EOF"] := r6;    actionTable["s2", "EOF"] := r8;
+    actionTable["s1", "+"  ] := r6;    actionTable["s2", "+"  ] := r8;
+    actionTable["s1", "-"  ] := r6;    actionTable["s2", "-"  ] := r8;
+    actionTable["s1", "*"  ] := r6;    actionTable["s2", "*"  ] := r8;
+    actionTable["s1", "/"  ] := r6;    actionTable["s2", "/"  ] := r8;
+    actionTable["s1", ")"  ] := r6;    actionTable["s2", "("  ] := r8;
+                                       actionTable["s2", ")"  ] := r8;
 
-    actionTable[["s3", "EOF"]] := r3;
-    actionTable[["s3", "+"  ]] := r3;
-    actionTable[["s3", "-"  ]] := r3;
-    actionTable[["s3", "*"  ]] := Shift("s12");
-    actionTable[["s3", "/"  ]] := Shift("s11");
-    actionTable[["s3", ")"  ]] := r3;
+    actionTable["s3", "EOF"] := r3;
+    actionTable["s3", "+"  ] := r3;
+    actionTable["s3", "-"  ] := r3;
+    actionTable["s3", "*"  ] := Shift("s12");
+    actionTable["s3", "/"  ] := Shift("s11");
+    actionTable["s3", ")"  ] := r3;
     
-    actionTable[["s4", "EOF"]] := Accept();
-    actionTable[["s4", "+"  ]] := Shift("s8");
-    actionTable[["s4", "-"  ]] := Shift("s9");
+    actionTable["s4", "EOF"] := Accept();
+    actionTable["s4", "+"  ] := Shift("s8");
+    actionTable["s4", "-"  ] := Shift("s9");
     
-    actionTable[["s5", "("  ]] := Shift("s5");
-    actionTable[["s5", "int"]] := Shift("s2");
+    actionTable["s5", "("  ] := Shift("s5");
+    actionTable["s5", "int"] := Shift("s2");
     
-    actionTable[["s6", "+"  ]] := Shift("s8");
-    actionTable[["s6", "-"  ]] := Shift("s9");
-    actionTable[["s6", ")"  ]] := Shift("s7");
+    actionTable["s6", "+"  ] := Shift("s8");
+    actionTable["s6", "-"  ] := Shift("s9");
+    actionTable["s6", ")"  ] := Shift("s7");
     
-    actionTable[["s7", "EOF"]] := r7;
-    actionTable[["s7", "+"  ]] := r7;
-    actionTable[["s7", "-"  ]] := r7;
-    actionTable[["s7", "*"  ]] := r7;
-    actionTable[["s7", "/"  ]] := r7;
-    actionTable[["s7", ")"  ]] := r7;   
+    actionTable["s7", "EOF"] := r7;
+    actionTable["s7", "+"  ] := r7;
+    actionTable["s7", "-"  ] := r7;
+    actionTable["s7", "*"  ] := r7;
+    actionTable["s7", "/"  ] := r7;
+    actionTable["s7", ")"  ] := r7;   
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Action table coded in \textsc{SetlX}, first part.}
@@ -530,45 +533,45 @@ $s_{15}$ &              &                  &                 \\
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    actionTable[["s8", "("  ]] := Shift("s5");
-    actionTable[["s8", "int"]] := Shift("s2");
+    actionTable["s8", "("  ] := Shift("s5");
+    actionTable["s8", "int"] := Shift("s2");
     
-    actionTable[["s9", "("  ]] := Shift("s5");
-    actionTable[["s9", "int"]] := Shift("s2");
+    actionTable["s9", "("  ] := Shift("s5");
+    actionTable["s9", "int"] := Shift("s2");
     
-    actionTable[["s10", "EOF"]] := r2;
-    actionTable[["s10", "+" ]] := r2;
-    actionTable[["s10", "-" ]] := r2;
-    actionTable[["s10", "*" ]] := Shift("s12");
-    actionTable[["s10", "/" ]] := Shift("s11");
-    actionTable[["s10", ")" ]] := r2;
+    actionTable["s10", "EOF"] := r2;
+    actionTable["s10", "+" ] := r2;
+    actionTable["s10", "-" ] := r2;
+    actionTable["s10", "*" ] := Shift("s12");
+    actionTable["s10", "/" ] := Shift("s11");
+    actionTable["s10", ")" ] := r2;
     
-    actionTable[["s11", "("  ]] := Shift("s5");
-    actionTable[["s11", "int"]] := Shift("s2");
+    actionTable["s11", "("  ] := Shift("s5");
+    actionTable["s11", "int"] := Shift("s2");
     
-    actionTable[["s12", "("  ]] := Shift("s5");
-    actionTable[["s12", "int"]] := Shift("s2");
+    actionTable["s12", "("  ] := Shift("s5");
+    actionTable["s12", "int"] := Shift("s2");
     
-    actionTable[["s13", "EOF"]] := r4;
-    actionTable[["s13", "+"  ]] := r4;
-    actionTable[["s13", "-"  ]] := r4;
-    actionTable[["s13", "*"  ]] := r4;
-    actionTable[["s13", "/"  ]] := r4;
-    actionTable[["s13", ")"  ]] := r4;
+    actionTable["s13", "EOF"] := r4;
+    actionTable["s13", "+"  ] := r4;
+    actionTable["s13", "-"  ] := r4;
+    actionTable["s13", "*"  ] := r4;
+    actionTable["s13", "/"  ] := r4;
+    actionTable["s13", ")"  ] := r4;
     
-    actionTable[["s14", "EOF"]] := r5;
-    actionTable[["s14", "+"  ]] := r5;
-    actionTable[["s14", "-"  ]] := r5;
-    actionTable[["s14", "*"  ]] := r5;
-    actionTable[["s14", "/"  ]] := r5;
-    actionTable[["s14", ")"  ]] := r5;
+    actionTable["s14", "EOF"] := r5;
+    actionTable["s14", "+"  ] := r5;
+    actionTable["s14", "-"  ] := r5;
+    actionTable["s14", "*"  ] := r5;
+    actionTable["s14", "/"  ] := r5;
+    actionTable["s14", ")"  ] := r5;
     
-    actionTable[["s15", "EOF"]] := r1;
-    actionTable[["s15", "+"  ]] := r1;
-    actionTable[["s15", "-"  ]] := r1;
-    actionTable[["s15", "*"  ]] := Shift("s12");
-    actionTable[["s15", "/"  ]] := Shift("s11");
-    actionTable[["s15", ")"  ]] := r1;
+    actionTable["s15", "EOF"] := r1;
+    actionTable["s15", "+"  ] := r1;
+    actionTable["s15", "-"  ] := r1;
+    actionTable["s15", "*"  ] := Shift("s12");
+    actionTable["s15", "/"  ] := Shift("s11");
+    actionTable["s15", ")"  ] := r1;
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Action table coded in \textsc{SetlX}, second part.}
@@ -588,22 +591,22 @@ $s_{15}$ &              &                  &                 \\
                 ]
     gotoTable   := {};
 
-    gotoTable[["s0", "E"]] := "s4";
-    gotoTable[["s0", "P"]] := "s3";
-    gotoTable[["s0", "F"]] := "s1";
+    gotoTable["s0", "E"] := "s4";
+    gotoTable["s0", "P"] := "s3";
+    gotoTable["s0", "F"] := "s1";
     
-    gotoTable[["s5", "E"]] := "s6";
-    gotoTable[["s5", "P"]] := "s3";
-    gotoTable[["s5", "F"]] := "s1";
+    gotoTable["s5", "E"] := "s6";
+    gotoTable["s5", "P"] := "s3";
+    gotoTable["s5", "F"] := "s1";
     
-    gotoTable[["s8", "P"]] := "s15";
-    gotoTable[["s8", "F"]] := "s1";
+    gotoTable["s8", "P"] := "s15";
+    gotoTable["s8", "F"] := "s1";
     
-    gotoTable[["s9", "P"]] := "s10";
-    gotoTable[["s9", "F"]] := "s1";
+    gotoTable["s9", "P"] := "s10";
+    gotoTable["s9", "F"] := "s1";
     
-    gotoTable[["s11", "F"]] := "s14";
-    gotoTable[["s12", "F"]] := "s13";
+    gotoTable["s11", "F"] := "s14";
+    gotoTable["s12", "F"] := "s13";
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Goto table coded in \textsc{SetlX}.}
