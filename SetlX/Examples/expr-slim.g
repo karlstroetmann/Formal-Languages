@@ -2,7 +2,11 @@ expr : expr '+' prod
      | prod
      ;
 
-prod : prod '*' NUMBER
+prod : prod '*' fact
+     | fact
+     ;
+
+fact : '(' expr ')'
      | NUMBER
      ;
 
