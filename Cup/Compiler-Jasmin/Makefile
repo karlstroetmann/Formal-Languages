@@ -1,4 +1,4 @@
-CLASSPATH = "/usr/local/lib/java-cup-11a.jar:/usr/local/lib/java-cup-11a-runtime.jar:.:.." 
+CLASSPATH = "/usr/local/lib/java-cup-11a.jar:/usr/local/lib/java-cup-11b-runtime.jar:.:.." 
 
 run: Examples/MySum.class 
 	cd Examples; java -cp . MySum
@@ -25,3 +25,4 @@ clean:
 	rm -f *.class
 	rm -f parser.java
 	rm -f Yylex.java
+	rm -f Yylex.java~

@@ -1,17 +1,26 @@
+CLASSPATH=.:/usr/local/lib/java-cup-11b-runtime.jar:/usr/local/lib/java-cup-11b.jar
+
 run: Calculator.class
 	echo "a | b & b | !c" | java Calculator
 
-Calculator.class: Calculator.java Lexer.class parser.class
-	javac Calculator.java
+Calculator.class: Calculator.java Yylex.class parser.class
+	javac -cp $(CLASSPATH) Calculator.java
 
-parser.class: parser.java Lexer.java
-	javac parser.java
+parser.class: parser.java Yylex.java 
+	javac -cp $(CLASSPATH) parser.java
 
-parser.java: calc.cup
-	java java_cup.Main -dump calc.cup
+parser.java sym.java: calc.cup calc.jflex
+	cup -dump calc.cup 2> parse-table.txt
 
-Lexer.class: Lexer.java
-	javac Lexer.java
+Yylex.class: Yylex.java sym.java
+	javac -cp $(CLASSPATH) Yylex.java
 
-Lexer.java: calc.jflex
+Yylex.java: calc.jflex
 	jflex calc.jflex
+
+clean:
+	rm -f *.class
+	rm -f parser.java
+	rm -f sym.java
+	rm -f Yylex.java
+	rm -f Yylex.java~

@@ -6,6 +6,7 @@ import java_cup.runtime.*;
 %line
 %column
 %cup
+%unicode
    
 %{   
     private Symbol symbol(int type) {
