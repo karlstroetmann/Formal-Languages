@@ -5,9 +5,9 @@ möchte ich Ihnen in diesem Kapitel einen LALR-Parser-Generator vorstellen, der e
 Programmiersprache \textsl{Java} erzeugt.  Dieses Kapitel gibt daher eine
 Einführung in die Verwendung des Parser-Generators \textsc{Cup} \cite{hudson:1999}, der auch
 unter dem Namen \textsl{JavaCup} bekannt ist.
-Folgenden der Kürze halber mit \textsc{Cup} bezeichnen.  \textsc{Cup} selber ist nur ein Parser-Generator.  Da wir
+\textsc{Cup} selber ist nur ein Parser-Generator.  Da wir
 zusätzlich einen Scanner benötigen, werden wir diesen in unseren Beispielen von \textsl{JFlex}
-erzeugen lassen.  Wir werden die Version 0.11b des Parser-Generator \textsc{Cup} 
+erzeugen lassen.  Wir werden die Version 0.11b des Parser-Generators \textsc{Cup} 
 verwenden.  Sie finden diese Version im Netz unter 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -20,14 +20,18 @@ Sie finden dort eine komprimierte ``\texttt{.tar}''-Datei, in der sich zwei
 \item Die Datei \texttt{java-cup-11b-runtime.jar} enthält die Klassen, die Sie beim Übersetzen des
       von \textsc{Cup} erzeugten Parsers benötigen.
 \end{enumerate}
-Eine \textsl{Cup}-Spezifikation besteht aus fünf Teilen.
+
+\section{Spezifikation einer Grammatik für  \textsc{Cup}}
+Eine \textsc{Cup}-Spezifikation besteht aus vier Teilen.
 \begin{enumerate}
-\item Der erste Teil ist optional und enthält gegebenenfalls eine Paket-Deklaration.  
-\item Der zweite Teil enthält die benötigten Import-Deklarationen.
-\item Der dritte Teil deklariert die verwendeten Symbole.  Hier werden also die Terminale
+\item Der erste Teil enthält eine (optionale) Paket-Deklaration sowie die benötigten
+      Import-Deklarationen.  Außerdem können wir hier den Namen der Klasse spezifizieren, die den
+      von \textsc{Cup} erzeugten Parser enthält.
+\item Der zweite Teil deklariert die verwendeten Symbole.  Hier werden also die Terminale
       und die syntaktischen Variablen spezifiziert.
-\item Der vierte Teil ist wieder optional und spezifiziert  die Präzedenzen von Operator-Symbolen.
-\item Der fünfte Teil enthält die Grammatik-Regeln.
+\item Der dritte Teil ist wieder optional und spezifiziert die Präzedenzen und Assoziativitäten 
+      der verwendeten Operator-Symbolen.
+\item Der vierte Teil enthält die Grammatik-Regeln.
 \end{enumerate}
 Abbildung \ref{fig:calc.cup} auf Seite \pageref{fig:calc.cup} zeigt eine \textsl{Cup}-Spezifikation,
 mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
@@ -45,6 +49,7 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
                   commandchars  = \\\{\}
                 ]
     import java_cup.runtime.*;
+    \underline{class} ExprParser;
     
     \underline{terminal}            SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD;
     \underline{terminal}            LPAREN, RPAREN;
@@ -53,6 +58,8 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
     \underline{nonterminal}         expr_list, expr_part;
     \underline{nonterminal} Integer expr, prod, fact;
     
+    \underline{start} \underline{with} expr_list;
+
     expr_list ::= expr_list expr_part 
                |  expr_part
                ;
@@ -60,20 +67,20 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
     expr_part ::= expr:e \{: System.out.println("result = " + e); :\} SEMI 
                ;
     
-    expr ::= expr:e PLUS  prod:p \{: RESULT = e + p; :\} 
-          |  expr:e MINUS prod:p \{: RESULT = e - p; :\} 
-          |  prod:p              \{: RESULT = p;     :\}
+    expr ::= expr:e PLUS  prod:p \{: \underline{RESULT} = e + p; :\} 
+          |  expr:e MINUS prod:p \{: \underline{RESULT} = e - p; :\} 
+          |  prod:p              \{: \underline{RESULT} = p;     :\}
           ;
     
-    prod ::= prod:p TIMES  fact:f \{: RESULT = p * f; :\}
-          |  prod:p DIVIDE fact:f \{: RESULT = p / f; :\} 
-          |  prod:p MOD    fact:f \{: RESULT = p % f; :\} 
-          |  fact:f               \{: RESULT = f;     :\}
+    prod ::= prod:p TIMES  fact:f \{: \underline{RESULT} = p * f; :\}
+          |  prod:p DIVIDE fact:f \{: \underline{RESULT} = p / f; :\} 
+          |  prod:p MOD    fact:f \{: \underline{RESULT} = p % f; :\} 
+          |  fact:f               \{: \underline{RESULT} = f;     :\}
           ;
     
-    fact ::= LPAREN expr:e RPAREN \{: RESULT = e;   :\} 
-          |  MINUS  fact:e        \{: RESULT = - e; :\} 
-          |  NUMBER:n             \{: RESULT = n;   :\} 
+    fact ::= LPAREN expr:e RPAREN \{: \underline{RESULT} = e;   :\} 
+          |  MINUS  fact:e        \{: \underline{RESULT} = - e; :\} 
+          |  NUMBER:n             \{: \underline{RESULT} = n;   :\} 
           ;
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -90,7 +97,9 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
       verwenden werden.
 
       Würden noch weitere Pakete benötigt, so könnten diese hier ebenfalls importiert werden.
-\item In den Zeilen 3 bis 5 werden die Terminale deklariert.  Es gibt zwei Arten von Terminalen:
+\item In Zeile 2 spezifizieren wir, dass die erzeugte Parser-Klasse den Namen \texttt{ExprParser}
+      haben soll.
+\item In den Zeilen 4 bis 6 werden die Terminale deklariert.  Es gibt zwei Arten von Terminalen:
       \begin{enumerate}
       \item Terminale, die keinen zusätzlichen Wert haben.  Hierbei handelt es sich 
             um die Operator-Symbole, die beiden Klammer-Symbole und das Semikolon.  Die Syntax zur
@@ -101,7 +110,7 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
             \\[0.2cm]
             Durch diese Deklaration werden die Symbole $t_1$, $\cdots$, $t_n$ als Terminale
             deklariert.
-      \item Terminale mit einem zusätzlichen Wert.  In diesem Fall muss der Typ
+      \item Terminale, denen ein Wert zugeordnet ist.  In diesem Fall muss der Typ
             dieses Wertes deklariert werden.  Die Syntax dafür ist 
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -114,20 +123,21 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
             dem ersten Terminal kein Komma steht, denn sonst würde der Typ ebenfalls als Terminal
             interpretiert.  
             
-            In Zeile 5 spezifizieren wir beispielsweise, dass das Terminal \texttt{NUMBER} einen
-            Wert vom Typ \texttt{Integer} hat.  Damit das funktioniert, muss der Scanner jedesmal,
+            In Zeile 6 spezifizieren wir beispielsweise, dass dem Terminal \texttt{NUMBER} ein
+            Wert vom Typ \texttt{Integer} zugeordnet ist.  Damit das funktioniert, muss der Scanner
+            jedes Mal,
             wenn er ein Terminal \texttt{NUMBER} an den Parser zurück geben soll, ein Objekt der
             Klasse  \texttt{Symbol} erzeugen, dass die entsprechende Zahl als Wert beinhaltet.
             In dem auf Seite \pageref{fig:calc.jflex}
             in Abbildung \ref{fig:calc.jflex} gezeigten Scanner geschieht dies beispielsweise
-            in Zeile 31 dadurch, dass mit Hilfe der Methode $\texttt{symbol}()$ der Konstruktor der
+            in dadurch, dass mit Hilfe der Methode $\texttt{symbol}()$ der Konstruktor der
             Klasse \texttt{Symbol} aufgerufen wird, dem als zusätzliches Argument der Wert der Zahl
             übergeben wird.
       \end{enumerate}
-\item In den Zeilen 7 und 8 werden die syntaktischen Variablen, die wir auch als Nicht-Terminale
+\item In den Zeilen 8 und 9 werden die syntaktischen Variablen, die wir auch als Nicht-Terminale
       bezeichnen, deklariert.  Die Syntax ist dieselbe wie bei der Deklaration der Terminale, nur
       dass wir jetzt das Schlüsselwort ``\texttt{nonterminal}'' an Stelle von ``\texttt{terminal}''
-      verwenden.  Auch hier gibt es wieder zwei Fälle:  Den in Zeile 7 deklarierten Nicht-Terminalen
+      verwenden.  Auch hier gibt es wieder zwei Fälle:  Den in Zeile 8 deklarierten Nicht-Terminalen
       \texttt{expr\_list} und \texttt{expr\_part} wird kein Wert zugeordnet, während wir dem
       Nicht-Terminal \textsl{expr} einen Wert vom Typ \texttt{Integer} zuordnen, der sich aus der
       Auswertung des entsprechenden arithmetischen Ausdrucks ergibt.
@@ -163,7 +173,7 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
             dessen Wert wir verwenden wollen, eine eigene Variable zuordnen, deren Namen wir
             getrennt von einem Doppelpunkt hinter das Symbol schreiben.  Um der durch die
             Grammatik-Regel definierten syntaktischen Variablen einen Wert zuzuweisen, verwenden wir
-            das Schlüsselwort ``\texttt{RESULT}''.  Betrachten wir als Beispiel die Regel
+            das Schlüsselwort ``\texttt{RESULT}''.  Betrachten wir als Beispiel die folgende Regel:
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{expr ::= expr:e PLUS prod:p \{: RESULT = e + p; :\};}
@@ -181,48 +191,56 @@ mit deren Hilfe arithmetische Ausdrücke ausgewertet werden können.  In dieser
             dass Nicht-Terminale nicht mehr durch den ihnen zugeordneten String repräsentiert werden
             können.  Daher können wir den String ``\texttt{PLUS}'' nicht durch den String
             ``\texttt{'+'}'' ersetzen.  
-            An dieser Stelle sind \textsc{Cup}-Grammatiken leider
-            nicht ganz so gut lesbar wie \textsc{Antlr}-Grammatiken.
+            An dieser Stelle sind \textsc{Cup}-Grammatiken leider nicht so gut lesbar wie die
+            entsprechenden \textsc{Antlr}-Grammatiken.
             Der Grund dafür ist, dass bei  \textsc{Cup} zum Scannen ein separates
             Werkzeug, nämlich \textsl{JFlex}, zum Scannen verwendet wird.  Demgegenüber
             wird bei \textsc{Antlr} der Scanner zusammen mit dem Parser in derselben
             Datei spezifiziert und das Werkzeug \textsc{Antlr} erzeugt aus dieser Datei
             sowohl einen Parser als auch einen Scanner.
+      \item Ein weiterer wichtiger Unterschied zwischen \textsc{Cup} und \textsc{Antlr} besteht
+            darin, dass \textsc{Cup} im Gegensatz zu \textsc{Antlr} keine \textsc{Ebnf}-Grammatiken
+            akzeptiert sondern nur gewöhnliche kontextfreie Grammatiken verarbeiten kann.  Damit stehen
+            uns die Operatoren ``\texttt{*}'', ``\texttt{+}'' und ``\texttt{?}'' bei der
+            Spezifikation der Grammatik nicht zur Verfügung.
       \end{enumerate}
 \end{enumerate}
 Um aus der in Abbildung \ref{fig:calc.cup} gezeigten \textsc{Cup}-Spezifikation einen Parser zu
 erzeugen, müssen wir diese zunächst mit dem Befehl
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{java java\_cup.Main calc.cup}
+\texttt{java -jar /usr/local/lib/java-cup-11b.jar calc.cup}
 \\[0.2cm]
-übersetzen.  Damit dies funktioniert müssen Sie die Variable \texttt{CLASSPATH} so setzen, dass die
-Klasse \texttt{java\_cup.Main} gefunden
-werden kann.  Eine Möglichkeit, den Aufruf zu vereinfachen, besteht unter Unix darin, dass Sie sich
+übersetzen.  Damit dies funktioniert müssen Sie die Datei
+\\[0.2cm]
+\hspace*{1.3cm}
+ \texttt{java-cup-11b.jar} 
+\\[0.2cm]
+in dem Verzeichnis 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{/usr/local/lib}
+\\[0.2cm]
+ablegen.  Sollten Sie unter \textsl{Windows} arbeiten, müssen Sie statt dessen ein geeignetes anderes
+Verzeichnis wählen.  Eine Möglichkeit, den Aufruf zu vereinfachen, besteht unter Unix darin, dass Sie sich
 eine Datei \texttt{cup} mit folgendem Inhalt irgendwo in Ihrem Pfad ablegen:
 \begin{verbatim}
     #!/bin/bash 
-    CLASSPATH=/usr/local/lib/java-cup-11a.jar
-    java -cp $CLASSPATH java_cup.Main $@
-\end{verbatim}
-In dieser Datei müssen Sie die Variable \texttt{CLASSPATH} natürlich so anpassen, dass die
-Datei 
+    java -jar /usr/local/lib/java-cup-11b.jar  $@
+\end{verbatim} %$
+Unter \textsl{Windows} können Sie sich statt dessen eine entsprechende \texttt{.bat}-Datei anlegen.
+Danach können Sie \textsc{Cup} einfacher mit dem Befehl
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{java-cup-11a.jar}
-\\[0.2cm]
-gefunden werden kann.  Danach können Sie \textsc{Cup} einfacher mit dem Befehl
-\\[0.2cm]
-\hspace*{1.3cm}
-\textsl{cup calc.cup}
+\texttt{cup} \textsl{calc.cup}
 \\[0.2cm]
 aufrufen.  Dieser Befehl erzeugt verschiedene \textsl{Java}-Dateien.
 \begin{enumerate}
-\item Die Datei \texttt{parser.java} enthält die Klasse \texttt{parser}, die den eigentlichen
+\item Die Datei \texttt{ExprParser.java} enthält die Klasse \texttt{ExprParser}, die den eigentlichen
       Parser enthält.  Wenn Sie diese Klassse später übersetzen wollen, müssen Sie dafür
       sorgen, dass die Datei \texttt{java-cup-11a-runtime.jar} im \texttt{CLASSPATH} liegt.
-\item Die Datei \texttt{sym.java} enthält die Klasse \texttt{sym}, welche die verschiedenen
-      Symbole als statische Konstanten einer Klasse \texttt{sym} definiert.  
+\item Die Datei \texttt{ExprParserSym.java} enthält die Klasse \texttt{ExprParserSym}, welche die verschiedenen
+      Symbole als statische Konstanten  der  Klasse \texttt{ExprParserSym} definiert.  
       Diese Konstanten werden später im von \textsl{JFlex} erzeugten Scanner verwendet. Abbildung
       \ref{fig:sym.java} auf Seite \pageref{fig:sym.java} zeigt diese Klasse.
 \end{enumerate}
@@ -237,23 +255,36 @@ aufrufen.  Dieser Befehl erzeugt verschiedene \textsl{Java}-Dateien.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    public class sym {
-      public static final int MINUS  = 4;
-      public static final int DIVIDE = 6;
-      public static final int UMINUS = 8;
-      public static final int NUMBER = 11;
-      public static final int MOD    = 7;
-      public static final int SEMI   = 2;
-      public static final int EOF    = 0;
-      public static final int PLUS   = 3;
-      public static final int error  = 1;
-      public static final int RPAREN = 10;
-      public static final int TIMES  = 5;
-      public static final int LPAREN = 9;
+    public class ExprParserSym {
+      /* terminals */
+      public static final int MINUS   = 4;
+      public static final int DIVIDE  = 6;
+      public static final int NUMBER  = 10;
+      public static final int MOD     = 7;
+      public static final int SEMI    = 2;
+      public static final int EOF     = 0;
+      public static final int PLUS    = 3;
+      public static final int error   = 1;
+      public static final int RPAREN  = 9;
+      public static final int TIMES   = 5;
+      public static final int LPAREN  = 8;
+      public static final String[] terminalNames = new String[] {
+          "EOF",
+          "error",
+          "SEMI",
+          "PLUS",
+          "MINUS",
+          "TIMES",
+          "DIVIDE",
+          "MOD",
+          "LPAREN",
+          "RPAREN",
+          "NUMBER"
+      };
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{sym}.}
+\caption{Die Klasse \texttt{ExprParserSym}.}
 \label{fig:sym.java}
 \end{figure}
 
@@ -262,15 +293,15 @@ Neben dem Parser wird noch ein Scanner benötigt.  Diesen werden wir im nächsten 
 Um mit dem Parser arbeiten zu können, brauchen wir eine Klasse, welche die Methode
 $\texttt{main}()$ enthält.  Abbildung \ref{fig:Calculator.java} auf Seite
 \pageref{fig:Calculator.java} zeigt eine solche Klasse.  Wir
-erzeugen dort in Zeile 6 einen Parser, indem wir den Konstruktor der in dem Paket
-\texttt{java\_cup.runtime} definierten Klasse \texttt{parser} mit
-einem Scanner als Argument initialsieren.  Die per Default von \textsl{JFlex} erzeugte Scanner-Klasse hat den
-Namen \texttt{Yylex} und bekommt als Argument entweder ein Objekt vom Typ \texttt{java.io.Reader}
-oder ein Objekt vom Typ \texttt{java.io.InputStream}.  Der Parser wird dann durch Aufruf der Methode
-$\texttt{parse}()$ gestartet, wobei eventuelle Ausnahmen noch abgefangen werden müssen.
+erzeugen dort in Zeile 7 einen \texttt{InputStream}, der aus der Datei liest, deren Name wir als
+erstes Argument übergeben.   In der darauf folgenden Zeile wird der \texttt{InputStream} in einen
+\texttt{Reader} verwandelt.  Aus dem \texttt{Reader} erzeugen wir einen \texttt{Scanner}.  Mit
+diesem \texttt{Scanner} können wir schließlich den Parser erzeugen, den wir dann in Zeile 11 mit
+Hilfe der Methode \texttt{parse()} starten, wobei eventuelle Ausnahmen noch abgefangen werden müssen.
 Falls mit dem Start-Symbol der Grammatik ein Wert assoziert ist, so wird dieser Wert von
-der Methode $\texttt{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der Wert
-\texttt{null} zurück gegeben.
+der Methode $\texttt{parse}()$ als Ergebnis zurück gegeben, andernfalls gibt die Methode den Wert
+\texttt{null} zurück.
+
 
 \begin{figure}[!ht]
 \centering
@@ -283,12 +314,16 @@ der Methode $\texttt{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der
                   xrightmargin  = 0.8cm,
                 ]
     import java_cup.runtime.*;
-
+    import java.io.*;
+    
     public class Calculator {
         public static void main(String[] args) {
-            try { 
-                parser p = new parser(new Yylex(System.in)); 
-                p.parse(); 
+            try {
+                InputStream fileStream = new FileInputStream(args[0]);
+                Reader      reader     = new InputStreamReader(fileStream);
+                Scanner     scanner    = new Yylex(reader);
+                ExprParser  parser     = new ExprParser(scanner); 
+                parser.parse(); 
             } catch (Exception e) {}
         }
     }
@@ -297,8 +332,14 @@ der Methode $\texttt{parse}()$ als Ergebnis zurück gegeben, andernfalls wird der
 \caption{Die Klasse \texttt{Calculator}.}
 \label{fig:Calculator.java}
 \end{figure}
+\vspace*{\fill}
+\pagebreak
 
-\subsection{Generierung eines \textsc{Cup}-Scanner mit Hilfe von \textsl{Flex}}
+\vspace*{\fill}
+\pagebreak
+
+
+\section{Generierung eines \textsc{Cup}-Scanner mit Hilfe von \textsl{Flex}}
 Wir zeigen in diesem Abschnitt, wie wir mit Hilfe von \textsl{JFlex} einen Scanner
 für den im letzten Abschnitt erzeugten Parser erstellen können.
 Der Scanner, den wir benötigen, muss in der Lage sein, Zahlen und arithmetische
@@ -322,7 +363,9 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
     %char
     %line
     %column
+    %cupsym ExprParserSym
     %cup
+    %unicode
        
     %{   
         private Symbol symbol(int type) {
@@ -333,19 +376,23 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
             return new Symbol(type, yychar, yychar + yylength(), value);
         }
     %}
+    
+    %eofval{
+        return new Symbol(ExprParserSym.EOF);
+    %eofval}
        
     %%
        
-    ";"           { return symbol( sym.SEMI   ); } 
-    "+"           { return symbol( sym.PLUS   ); }
-    "-"           { return symbol( sym.MINUS  ); }
-    "*"           { return symbol( sym.TIMES  ); }
-    "/"           { return symbol( sym.DIVIDE ); }
-    "%"           { return symbol( sym.MOD    ); }
-    "("           { return symbol( sym.LPAREN ); }
-    ")"           { return symbol( sym.RPAREN ); }
+    ";"           { return symbol( ExprParserSym.SEMI   ); } 
+    "+"           { return symbol( ExprParserSym.PLUS   ); }
+    "-"           { return symbol( ExprParserSym.MINUS  ); }
+    "*"           { return symbol( ExprParserSym.TIMES  ); }
+    "/"           { return symbol( ExprParserSym.DIVIDE ); }
+    "%"           { return symbol( ExprParserSym.MOD    ); }
+    "("           { return symbol( ExprParserSym.LPAREN ); }
+    ")"           { return symbol( ExprParserSym.RPAREN ); }
     
-    0|[1-9][0-9]* { return symbol(sym.NUMBER, new Integer(yytext())); }
+    0|[1-9][0-9]* { return symbol(ExprParserSym.NUMBER, new Integer(yytext())); }
     
     [ \t\v\n\r]   { /* skip white space */ }   
     
@@ -368,9 +415,15 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
       gelesenen Zeichen, die Anzahl der gelesenen Zeilen und die Anzahl der in der aktuellen Zeile
       gelesenen Zeichen automatisch berechnen soll.  Dadurch können wir später im Parser
       Syntax-Fehler präzise lokalisieren.
-\item Zeile 8 spezifiziert mit dem Schlüsselwort ``\texttt{\%cup}'', 
+\item Zeile 8 spezifiziert mit dem Schlüsselwort ``\texttt{\%cupsym}'', 
+      dass die vom Scanner zurückzugebenden Symbole in der Klasse \texttt{ExprParserSym} definiert
+      werden.  Diese Klasse wurde von \textsc{Cup} erzeugt.  Der Name dieser Klasse ergibt sich aus
+      dem Namen der Klasse des Parsers durch Anhängen von ``\texttt{Sym}'', das für \emph{Symbol} steht.
+      Die Klasse des Parsers hatten wir seinerzeit in der Datei ``\texttt{calc.cup}''  mit Hilfe 
+      des Schlüsselworts ``\texttt{class}'' spezifiziert.
+\item Zeile 9 spezifiziert mit dem Schlüsselwort ``\texttt{\%cup}'', 
       dass der Scanner an einen \textsc{Cup}-Parser angeschlossen  werden soll.
-\item In den Zeilen 11 bis 17 definieren wir zwei Hilfs-Methoden, die Objekte vom Typ 
+\item In den Zeilen 12 bis 20 definieren wir zwei Hilfs-Methoden, die Objekte vom Typ 
       \texttt{Symbol} erzeugen.  Der Scanner muss Objekte von diesem Typ an den Parser zurück
       liefern.  Die in dem Paket \texttt{java\_cup.runtime} definierte Klasse \texttt{Symbol} stellt
       verschiedene Konstruktoren für diese Klasse zur Verfügung.  Wir stellen die wichtigsten 
@@ -383,7 +436,7 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
             definiert werden soll.  Diese Zahl bezeichnen wir als \emph{Symbol-Nummer}.
             Jedem Terminal und jeder syntaktische Variablen entspricht genau Symbol-Nummer. 
             Die Kodierung der Symbol-Nummern wird von dem Parser-Generator \textsc{Cup} 
-            in der Klasse \texttt{sym} festgelegt.  Abbildung \ref{fig:sym.java}
+            in der Klasse \texttt{ExprParserSym} festgelegt.  Abbildung \ref{fig:sym.java}
             auf Seite \pageref{fig:sym.java} zeigt diese von \textsc{Cup} erzeugte Klasse.
       \item \texttt{public Symbol(int \textsl{symbolID}, Object \textsl{value});}
 
@@ -406,12 +459,12 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
             den Wert, der diesem Token zugeordnet ist.
       \end{enumerate}
       Bei der Implementierung der beiden Hilfs-Methoden mit dem Namen $\texttt{symbol}()$ verwenden
-      wir die Funktion $\texttt{yylength}()$.  Diese Funktion wird von \textsl{JFLEX} zur Verfügung
+      wir die Funktion $\texttt{yylength}()$.  Diese Funktion wird von \textsl{jflex} zur Verfügung
       gestellt und gibt die Länge des Strings zurück, der dem zuletzt erkannten Tokens entspricht.
-\item In den Zeilen 22 bis 29 erkennen wir die arithmetischen Operatoren und die Klammer-Symbole.
-      Zur Spezifikation des zurückgegebenen Token verwenden wir dabei die in der Klasse \texttt{sym}
+\item In den Zeilen 28 bis 35 erkennen wir die arithmetischen Operatoren und die Klammer-Symbole.
+      Zur Spezifikation des zurückgegebenen Token verwenden wir dabei die in der Klasse \texttt{ExprParserSym}
       definierten Konstanten \texttt{SEMI}, \texttt{PLUS}, etc. 
-\item In Zeile 31 erkennen wir mit dem regulären Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche
+\item In Zeile 37 erkennen wir mit dem regulären Ausdruck ``\texttt{0|[1-9][0-9]*}'' eine natürliche
       Zahl.  Diese wandeln wir durch den Konstruktor-Aufruf 
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -420,10 +473,10 @@ Operatoren zu erkennen.  Abbildung \ref{fig:calc.jflex} auf Seite
       in ein Objekt vom Typ \texttt{Integer} um, wobei der String, der in eine Zahl umgewandelt wird, von der
       Funktion $\texttt{yytext}()$ geliefert wird.  Anschließend geben wir ein Objekt der Klasse \texttt{Symbol} zurück,
       in dem diese Zahl als mit dem Symbol assoziierter Wert abgespeichert wird.
-\item In Zeile 33 überlesen wir Leerzeichen, Tabulatoren und Zeilen-Umbrüche.
+\item In Zeile 39 überlesen wir Leerzeichen, Tabulatoren und Zeilen-Umbrüche.
       Das Überlesen geschieht dadurch, dass wir in diesem Fall kein Symbol an den Parser zurück
       geben, denn die semantische Aktion enthält keinen \texttt{return}-Befehl.
-\item Falls ein beliebiges anderes Zeichen gelesen wird, geben wir mit der Regel, die in Zeile 35 
+\item Falls ein beliebiges anderes Zeichen gelesen wird, geben wir mit der Regel, die in Zeile 41 
       beginnt, eine Fehlermeldung aus.  Dabei greifen wir auf die Variablen 
       \texttt{yyline} und \texttt{yycolumn} zurück, damit der Fehler lokalisiert werden kann.
 \end{enumerate}
@@ -517,14 +570,14 @@ einen Shift/Reduce-Konflikt gibt:  Die beiden markierten  Regeln $R_1$ und $R_2$
 sind Elemente eines Zustands, der von \textsc{Cup} intern mit der Nummer 12 versehen
 worden ist.  Der Zustand mit der Nummer 12 hat folgende Form:
 \begin{verbatim}
-  lalr_state [12]: {
-    [expr ::= expr (*) MOD expr ,    {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
-    [expr ::= expr (*) MINUS expr ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
-    [expr ::= expr (*) DIVIDE expr , {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
-    [expr ::= expr TIMES expr (*) ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
-    [expr ::= expr (*) TIMES expr ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
-    [expr ::= expr (*) PLUS expr ,   {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN}]
-  }
+    lalr_state [12]: {
+      [expr ::= expr (*) MOD expr ,    {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+      [expr ::= expr (*) MINUS expr ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+      [expr ::= expr (*) DIVIDE expr , {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+      [expr ::= expr (*) TIMES expr ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+      [expr ::= expr (*) PLUS expr ,   {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+      [expr ::= expr MINUS expr (*) ,  {EOF PLUS MINUS TIMES DIVIDE MOD RPAREN }]
+    }
 \end{verbatim}
 Damit können wir jetzt den
 Shift/Reduce-Konflikt interpretieren: Im Zustand 12 ist der Parser entweder dabei, die
@@ -553,7 +606,11 @@ Es ist mit   \textsc{Cup} möglich, Shift/Reduce-Konflikte durch die Angabe von
 aufzulösen.  Abbildung \ref{fig:calc-precedence.cup} zeigt die Spezifikation einer Grammatik zur
 Erkennung arithmetischer Ausdrücke, die aus Zahlen und den binären Operatoren ``\texttt{+}'',
 ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'' und ``\texttt{\symbol{94}}'' aufgebaut sind.   Mit
-Hilfe der Schlüsselwörter ``\texttt{precedence left}'' und ``\texttt{precedence right}'' 
+Hilfe der Schlüsselwörter 
+\\[0.2cm]
+\hspace*{1.3cm}
+``\texttt{precedence left}'' \quad und \quad ``\texttt{precedence right}'' 
+\\[0.2cm]
 haben wir festgelegt, dass die Operatoren ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'' und
 ``\texttt{/}'' \emph{links-assoziativ} sind, ein Ausdruck der Form 
 \\[0.2cm]
@@ -561,7 +618,7 @@ haben wir festgelegt, dass die Operatoren ``\texttt{+}'', ``\texttt{-}'', ``\tex
 $3 - 2 - 1$ \quad wird also als \quad $(3 - 2) - 1$ \quad und nicht als \quad $3 - (2-1)$
 \\[0.2cm]
 gelesen.  Demgegenüber ist der Operator ``\texttt{\symbol{94}}'', der in der \textsc{Cup}-Grammatik
-mit ``\texttt{POW}'' bezeichnet wir und die Potenzbildung bezeichnet,
+mit ``\texttt{POW}'' bezeichnet wird und die Potenzbildung bezeichnet,
 \emph{rechts-assoziativ}, der Ausdruck 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -606,9 +663,11 @@ Operator       & Bindungsstärke & Assoziativität \\
                   xrightmargin  = 0.8cm,
                 ]
     import java_cup.runtime.*;
+    class  ExprParser;
     
     terminal         SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD, POW;
     terminal         UMINUS, LPAREN, RPAREN;
+    
     terminal Double  NUMBER;
     
     nonterminal        expr_list, expr_part;
@@ -617,6 +676,8 @@ Operator       & Bindungsstärke & Assoziativität \\
     precedence left   PLUS, MINUS;
     precedence left   TIMES, DIVIDE, MOD;
     precedence right  UMINUS, POW;
+    
+    start with expr_list;
     
     expr_list ::= expr_list expr_part 
                |  expr_part
@@ -674,7 +735,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
         \end{tabular}
       \end{center}
       Für die Regeln, die keinen Operator enthalten, für den eine Bindungsstärke spezifiziert ist,
-      bleibt die Präzedenz unspezifiziert.
+      haben die Präzedenz 0.
 \item Ist $s$ ein Zustand, in dem zwei Regeln $r_1$ und $r_2$ der Form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -992,6 +1053,7 @@ der Datei, die für die in Abbildung \ref{fig:calc-precedence.cup} gezeigte Gramm
       Operators ``\texttt{+}'' wird dieser Konflikt dadurch aufgelöst, dass mit der Regel 
       $E \rightarrow E \quoted{\symbol{94}} E$ reduziert wird. 
 \end{enumerate}    
+\vspace*{\fill} \pagebreak
 
 \exercise
 Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
@@ -1001,7 +1063,7 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
       In dem Verzeichnis 
       \\[0.2cm]
       \hspace*{1.3cm}
-      \href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/GrammarParser/}{http://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/Formal-Languages/Exercises/GrammarParser/}
+      \href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/Formal-Languages/Exercises/Grammar2HTML/}{http://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/Formal-Languages/Exercises/Grammar2HTML/}
       \\[0.2cm]
       finden Sie verschiedene \textsl{Java}-Klassen, mit denen Sie einen solchen Syntax-Baum
       darstellen können.  Diese Klassen implementieren eine Methode \texttt{toString()}, mit deren
@@ -1028,11 +1090,15 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
+    class Dangling;
+
     terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
     terminal NUMBER, ID;
     
     nonterminal stmnt, stmntList, expr;
     
+    start with stmnt;
+
     stmnt ::= IF LPAREN expr RPAREN stmnt
            |  IF LPAREN expr RPAREN stmnt ELSE stmnt
            |  WHILE LPAREN expr RPAREN stmnt
@@ -1182,11 +1248,15 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
+    class Dangling;
+
     terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
     terminal NUMBER, ID;
     
     nonterminal stmnt, matchedStmnt, unmatchedStmnt, stmntList, expr;
     
+    start with stmnt;
+
     stmnt ::= matchedStmnt
            |  unmatchedStmnt
            ;
@@ -1263,6 +1333,8 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
                   xleftmargin   = 0.3cm,
                   xrightmargin  = 0.3cm,
                 ]
+    class Dangling;
+
     terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
     terminal NUMBER, ID;
     
@@ -1271,6 +1343,8 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
     precedence nonassoc IF;
     precedence nonassoc ELSE;
     
+    start with stmnt;
+
     stmnt ::= IF LPAREN expr RPAREN stmnt            %prec IF
            |  IF LPAREN expr RPAREN stmnt ELSE stmnt
            |  WHILE LPAREN expr RPAREN stmnt
@@ -1363,24 +1437,24 @@ Berechnen wir die LR-Zustände dieser Grammatik,
 so finden wir unter anderem den folgenden Zustand:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\{ B \rightarrow \;\squoted{x} \bullet: \squoted{u},\; C \rightarrow \;\squoted{x} \bullet: \squoted{u} \}$
+$\{ b \rightarrow \;\squoted{X} \bullet: \squoted{U},\; c \rightarrow \;\squoted{X} \bullet: \squoted{U} \}$
 \\[0.2cm]
 Da die Menge der Folge-Token für beide Regeln gleich sind, haben wir hier einen Reduce/Reduce-Konflikt.
 Dieser Konflikt hat seine Ursache darin, dass der Parser mit einem Look-Ahead von nur einem Token nicht
-entscheiden kann, ob ein $\quoted{x}$ als ein $B$ oder als ein $C$ zu interpretieren ist, denn dies
-entscheidet sich erst, wenn das auf $\quoted{u}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
-um ein $\quoted{v}$, so wird insgesamt die Regel
+entscheiden kann, ob ein $\quoted{X}$ als ein $b$ oder als ein $c$ zu interpretieren ist, denn dies
+entscheidet sich erst, wenn das auf $\quoted{U}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
+um ein $\quoted{V}$, so wird insgesamt die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \rightarrow B\; \squoted{u} \squoted{v}$
+$a \rightarrow b\; \squoted{U} \squoted{V}$
 \\[0.2cm]
-verwendet werden und folglich ist das $\quoted{x}$ als ein $B$ zu interpretieren. Ist das zweite Token
-hinter dem $\quoted{x}$ hingegen ein  $\quoted{w}$, so ist die zu verwendende Regel
+verwendet werden und folglich ist das $\quoted{X}$ als ein $b$ zu interpretieren. Ist das zweite Token
+hinter dem $\quoted{X}$ hingegen ein  $\quoted{W}$, so ist die zu verwendende Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$A \rightarrow C \;\squoted{u} \squoted{w}$
+$a \rightarrow c \;\squoted{U} \squoted{W}$
 \\[0.2cm]
-und folglich ist das $\quoted{x}$ als  $C$ zu lesen.
+und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
 
 
 \begin{figure}[!ht]
@@ -1394,12 +1468,12 @@ und folglich ist das $\quoted{x}$ als  $C$ zu lesen.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    A : B 'v'
-      | C 'w'
+    a : b 'V'
+      | c 'W'
       ;
-    B : 'x' 'u'
+    b : 'X' 'U'
       ;
-    C : 'x' 'u'
+    c : 'X' 'U'
       ;
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1407,9 +1481,9 @@ und folglich ist das $\quoted{x}$ als  $C$ zu lesen.
 \label{fig:lr-conflict-resolved.g}
 \end{figure}
 
-Das Problem bei dieser Grammatik ist, dass sie versucht, abhängig vom Kontext ein $\squoted{x}$ wahlweise
-als ein $B$ oder als ein $C$ zu interpretieren.  Es ist offensichtlich, wie das Problem gelöst werden
-kann:  Wenn der Kontext ``\texttt{u}'', der sowohl auf $B$ als auch auf $C$ folgt, mit in
+Das Problem bei dieser Grammatik ist, dass sie versucht, abhängig vom Kontext ein $\squoted{X}$ wahlweise
+als ein $b$ oder als ein $c$ zu interpretieren.  Es ist offensichtlich, wie das Problem gelöst werden
+kann:  Wenn der Kontext ``\texttt{U}'', der sowohl auf $b$ als auch auf $c$ folgt, mit in
 die Regeln für $B$ und $C$ aufgenommen wird, dann verschwindet der Konflikt.  Abbildung
 \ref{fig:lr-conflict-resolved.g} zeigt die modifizierte Grammatik.
 
@@ -1417,7 +1491,9 @@ die Regeln für $B$ und $C$ aufgenommen wird, dann verschwindet der Konflikt.  Ab
 Wir sprechen dann von einem \emph{mysteriösen Reduce/Reduce-Konflikt}, wenn die gegebene Grammatik eine
 LR(1)-Grammatik ist, sich aber beim Übergang von LR-Zuständen zu LALR-Zuständen Reduce/Reduce-Konflikte
 ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik habe ich dem \textsl{Bison}-Handbuch
-entnommen. (\textsl{Bison} ist ein LALR-Parser-Generator für die Sprachen \texttt{C} und \texttt{C++}.)
+entnommen. (\textsl{Bison} ist ein LALR-Parser-Generator für die Sprachen \texttt{C} und
+\texttt{C++}.  Er kann mittlerweile auch Parser in der Sprache \textsl{Java} erzeugen, allerdings
+ist dieses Feature bisher noch als experimentell deklariert.)
 
 \begin{figure}[!ht]
 \centering

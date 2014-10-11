@@ -34,7 +34,7 @@ import java_cup.runtime.*;
 "("           { return symbol( ExprParserSym.LPAREN ); }
 ")"           { return symbol( ExprParserSym.RPAREN ); }
 
-[1-9][0-9]*|0 { return symbol(ExprParserSym.NUMBER, new Integer(yytext())); }
+0|[1-9][0-9]* { return symbol(ExprParserSym.NUMBER, new Integer(yytext())); }
 
 [ \t\v\n\r]   { /* skip white space */ }   
 

@@ -1,5 +1,9 @@
-CLASSPATH=.:/usr/local/lib/java-cup-11a.jar
+conflicts.txt: dangling.cup
+	cup -expect 1 dangling.cup 2> conflicts.txt
 
-conficts.txt: dangling.cup
-	java -jar /usr/local/lib/java-cup-11a.jar -expect 1 dangling.cup 
+clean:
+	rm -f *.class
+	rm -f Dangling.java
+	rm -f DanglingSym.java
+
 
