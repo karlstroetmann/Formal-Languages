@@ -1,22 +1,21 @@
-CLASSPATH=.:/usr/local/lib/java-cup-11b-runtime.jar:/usr/local/lib/java-cup-11b.jar
+CLASSPATH=.:/usr/local/lib/java-cup-11b-runtime.jar
 
 run: Calculator.class
-	echo "1 + 2 * 3 - 4 * 1;" | java -cp $(CLASSPATH) Calculator
+	cat input.txt
+	java -cp $(CLASSPATH) Calculator input.txt
 
-Calculator.class: Calculator.java Yylex.java parser.java sym.java
+Calculator.class: Calculator.java Yylex.java ExprParser.java ExprParserSym.java
 	javac -cp $(CLASSPATH) Calculator.java
 
-parser.java sym.java: calc.cup calc.jflex
-	cup -dump calc.cup 2> parse-table.txt
-
-Yylex.class: Yylex.java sym.java
-	javac -cp $(CLASSPATH) Yylex.java
+ExprParser.java ExprParserSym.java: calc.cup calc.jflex
+	cup calc.cup 
 
 Yylex.java: calc.jflex
 	jflex calc.jflex
 
 clean:
 	rm -f *.class
-	rm -f parser.java
-	rm -f sym.java
+	rm -f ExprParser.java
+	rm -f ExprParserSym.java
 	rm -f Yylex.java
+	rm -f Yylex.java~

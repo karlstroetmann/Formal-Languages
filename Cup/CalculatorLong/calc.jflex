@@ -5,6 +5,7 @@ import java_cup.runtime.*;
 %char
 %line
 %column
+%cupsym ExprParserSym
 %cup
 %unicode
    
@@ -17,19 +18,23 @@ import java_cup.runtime.*;
         return new Symbol(type, yychar, yychar + yylength(), value);
     }
 %}
+
+%eofval{
+  return new Symbol(ExprParserSym.EOF);
+%eofval}
    
 %%
    
-";"           { return symbol( sym.SEMI   ); } 
-"+"           { return symbol( sym.PLUS   ); }
-"-"           { return symbol( sym.MINUS  ); }
-"*"           { return symbol( sym.TIMES  ); }
-"/"           { return symbol( sym.DIVIDE ); }
-"%"           { return symbol( sym.MOD    ); }
-"("           { return symbol( sym.LPAREN ); }
-")"           { return symbol( sym.RPAREN ); }
+";"           { return symbol( ExprParserSym.SEMI   ); } 
+"+"           { return symbol( ExprParserSym.PLUS   ); }
+"-"           { return symbol( ExprParserSym.MINUS  ); }
+"*"           { return symbol( ExprParserSym.TIMES  ); }
+"/"           { return symbol( ExprParserSym.DIVIDE ); }
+"%"           { return symbol( ExprParserSym.MOD    ); }
+"("           { return symbol( ExprParserSym.LPAREN ); }
+")"           { return symbol( ExprParserSym.RPAREN ); }
 
-[1-9][0-9]*|0 { return symbol(sym.NUMBER, new Integer(yytext())); }
+[1-9][0-9]*|0 { return symbol(ExprParserSym.NUMBER, new Integer(yytext())); }
 
 [ \t\v\n\r]   { /* skip white space */ }   
 

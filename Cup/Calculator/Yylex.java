@@ -34,7 +34,7 @@ class Yylex implements java_cup.runtime.Scanner {
    */
   private static final String ZZ_CMAP_PACKED = 
     "\11\0\2\15\25\0\1\15\4\0\1\6\2\0\1\10\1\11\1\4"+
-    "\1\2\1\0\1\3\1\14\1\5\1\13\11\12\1\0\1\1\42\0"+
+    "\1\2\1\0\1\3\1\14\1\5\1\12\11\13\1\0\1\1\42\0"+
     "\1\7\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffb1\0";
 
   /** 
@@ -105,8 +105,8 @@ class Yylex implements java_cup.runtime.Scanner {
 
   private static final String ZZ_TRANS_PACKED_0 =
     "\1\2\1\3\1\4\1\5\1\6\1\7\1\10\1\11"+
-    "\1\12\1\13\1\14\1\15\1\2\1\16\30\0\2\14"+
-    "\1\17\15\0\1\17\13\0\2\20\2\0";
+    "\1\12\1\13\1\14\1\15\1\2\1\16\32\0\1\17"+
+    "\13\0\2\15\1\17\13\0\2\20\2\0";
 
   private static int [] zzUnpackTrans() {
     int [] result = new int[70];
@@ -619,43 +619,43 @@ class Yylex implements java_cup.runtime.Scanner {
           }
         case 13: break;
         case 2: 
-          { return symbol( sym.SEMI   );
+          { return symbol( ExprParserSym.SEMI   );
           }
         case 14: break;
         case 3: 
-          { return symbol( sym.PLUS   );
+          { return symbol( ExprParserSym.PLUS   );
           }
         case 15: break;
         case 4: 
-          { return symbol( sym.MINUS  );
+          { return symbol( ExprParserSym.MINUS  );
           }
         case 16: break;
         case 5: 
-          { return symbol( sym.TIMES  );
+          { return symbol( ExprParserSym.TIMES  );
           }
         case 17: break;
         case 6: 
-          { return symbol( sym.DIVIDE );
+          { return symbol( ExprParserSym.DIVIDE );
           }
         case 18: break;
         case 7: 
-          { return symbol( sym.MOD    );
+          { return symbol( ExprParserSym.MOD    );
           }
         case 19: break;
         case 8: 
-          { return symbol( sym.POW    );
+          { return symbol( ExprParserSym.POW    );
           }
         case 20: break;
         case 9: 
-          { return symbol( sym.LPAREN );
+          { return symbol( ExprParserSym.LPAREN );
           }
         case 21: break;
         case 10: 
-          { return symbol( sym.RPAREN );
+          { return symbol( ExprParserSym.RPAREN );
           }
         case 22: break;
         case 11: 
-          { return symbol(sym.NUMBER, new Double(yytext()));
+          { return symbol(ExprParserSym.NUMBER, new Double(yytext()));
           }
         case 23: break;
         case 12: 
@@ -666,7 +666,8 @@ class Yylex implements java_cup.runtime.Scanner {
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;
             zzDoEOF();
-              { return new java_cup.runtime.Symbol(sym.EOF); }
+              {   return new Symbol(ExprParserSym.EOF);
+ }
           } 
           else {
             zzScanError(ZZ_NO_MATCH);
