@@ -10,5 +10,5 @@ mysterious-solved.txt: mysterious-solved.cup
 
 clean:
 	rm -f *.class
-	rm -f parser.java
-	rm -f sym.java
+	rm -f Mysterious.java
+	rm -f MysteriousSym.java
