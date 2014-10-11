@@ -1,4 +1,4 @@
-CLASSPATH=.:/usr/local/lib/java-cup-11a-runtime.jar:/usr/local/lib/java-cup-11a.jar
+CLASSPATH=.:/usr/local/lib/java-cup-11b-runtime.jar:/usr/local/lib/java-cup-11b.jar
 
 run: Calculator.class
 	echo "1 + 2 * 3 - 4 * 1;" | java -cp $(CLASSPATH) Calculator

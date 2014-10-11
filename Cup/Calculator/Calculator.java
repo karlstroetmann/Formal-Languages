@@ -1,8 +1,13 @@
+import java_cup.runtime.*;
+import java.io.*;
+
 public class Calculator {
     public static void main(String[] args) {
         try { 
-            parser p = new parser(new Yylex(System.in)); 
-            p.parse(); 
+	    Reader  reader  = new InputStreamReader(System.in);
+	    Scanner scanner = new Yylex(reader);
+            parser  parser  = new parser(scanner); 
+            parser.parse(); 
         } catch (Exception e) {}
     }
 }
