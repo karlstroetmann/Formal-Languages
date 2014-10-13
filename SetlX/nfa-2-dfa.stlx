@@ -35,7 +35,11 @@ nfa2dfa := procedure(nfa) {
     nextStates := closure(m) { return { capitalDelta(m, c, delta) : c in sigma }; };
     newStates  := fixpoint({newStart}, nextStates);
     newDelta   := { [[m, c], capitalDelta(m, c, delta)] : m in newStates, c in sigma };
-    newFinal   := { m : m in newStates | m * final != {} };
+    if (isSet(final)) {
+        newFinal := { m : m in newStates | m * final != {} };
+    } else {
+        newFinal := { final };
+    }
     return [newStates, sigma, newDelta, newStart, newFinal];
 };
 
