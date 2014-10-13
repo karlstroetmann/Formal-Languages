@@ -11,10 +11,10 @@ load("fixpoint.stlx");
 
 minimize := procedure(fa) {
     [states, sigma, delta, q0, accepting] := fa;
-    states    := fixpoint( {q0}, q |-> { delta[[q, c]] : c in sigma });
+    states    := fixpoint({q0}, closure(q) { return { delta[[q, c]] : c in sigma }; });
     separable := (states-accepting) >< accepting + accepting >< (states-accepting);
     moreSep   := 
-        procedure(knownSep) {
+        closure(knownSep) {
             return { [q1, q2] : [q1, q2] in states >< states
                    | exists (c in sigma | [delta[[q1, c]], delta[[q2, c]]] == knownSep)
                    };
