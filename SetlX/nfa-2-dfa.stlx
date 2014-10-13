@@ -4,7 +4,7 @@ load("fixpoint.stlx");
 // computes the set of all those states that can be reached from the state
 // s via epsilon transitions.
 epsClosure := procedure(s, delta) {
-    result := fixpoint({s}, q |-> delta[[q, ""]]);
+    result := fixpoint({s}, closure(q) { return delta[q, ""]; });
     return result;
 };
 
@@ -13,9 +13,9 @@ epsClosure := procedure(s, delta) {
 // from q when we first have a transition from q to some other state  p 
 // on reading the character c followed by any number of epsilon transitions
 // starting in p.
-deltaStar := procedure(s, c, delta) {
-    if (delta[[s, c]] != om) {
-        return {} +/ { epsClosure(q, delta) : q in delta[[s, c]] };
+deltaStar := closure(s, c, delta) {
+    if (delta[s, c] != om) {
+        return {} +/ { epsClosure(q, delta) : q in delta[s, c] };
     } else {
         return {};
     }
@@ -23,7 +23,7 @@ deltaStar := procedure(s, c, delta) {
 
 // This function extends the function deltaStar from a single state
 // q to a set of states m.
-capitalDelta := procedure(m, c, delta) {
+capitalDelta := closure(m, c, delta) {
     return {} +/ { deltaStar(q, c, delta) : q in m };
 };
 
@@ -32,7 +32,7 @@ capitalDelta := procedure(m, c, delta) {
 nfa2dfa := procedure(nfa) {
     [states, sigma, delta, q0, final] := nfa;
     newStart   := epsClosure(q0, delta);
-    nextStates := m |-> { capitalDelta(m, c, delta) : c in sigma };
+    nextStates := closure(m) { return { capitalDelta(m, c, delta) : c in sigma }; };
     newStates  := fixpoint({newStart}, nextStates);
     newDelta   := { [[m, c], capitalDelta(m, c, delta)] : m in newStates, c in sigma };
     newFinal   := { m : m in newStates | m * final != {} };
