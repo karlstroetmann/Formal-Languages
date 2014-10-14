@@ -735,12 +735,12 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
         \end{tabular}
       \end{center}
       Für die Regeln, die keinen Operator enthalten, für den eine Bindungsstärke spezifiziert ist,
-      haben die Präzedenz 0.
+      bleibt die Präzedenz unspezifiziert.
 \item Ist $s$ ein Zustand, in dem zwei Regeln $r_1$ und $r_2$ der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $r_1 = (A \rightarrow \alpha \bullet o \;\beta:L_1)$ \quad und \quad
-      $r_2 = (B \rightarrow \gamma \bullet : L_2)$ \quad mit \quad $o \in L_2$
+      $r_1 = (a \rightarrow \beta \bullet o \;\delta:L_1)$ \quad und \quad
+      $r_2 = (c \rightarrow \gamma \bullet : L_2)$ \quad mit \quad $o \in L_2$
       \\[0.2cm]
       vorkommen, so gibt es bei der Berechnung von 
       \\[0.2cm]
@@ -752,7 +752,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
       Präzedenz  $p(r_2)$ hat, so wird der Shift/Reduce-Konflikt in Abhängigkeit von der relativen
       Größe   der beiden Zahlen $p(o)$ und $p(r_2)$ aufgelöst.  Hier werden fünf Fälle unterschieden:
       \begin{enumerate}
-      \item $p(o) > p(B \rightarrow \gamma)$: 
+      \item $p(o) > p(c \rightarrow \gamma)$: 
             In diesem Fall bindet der Operator $o$ stärker.  Daher wird das Token $o$  
             in diesem Fall auf den Stack geschoben:
             \hspace*{1.3cm}
@@ -791,7 +791,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             $E \rightarrow E \squoted{+} E$ reduziert werden, denn wir wollen die 2 ja zunächst mit 3 
             multiplizieren.  Statt dessen muss also das Zeichen 
             ``\texttt{*}'' auf den Stack geschoben werden.
-      \item $p(o) < p(B \rightarrow \gamma)$: 
+      \item $p(o) < p(c \rightarrow \gamma)$: 
             Jetzt bindet der Operator, der in der Regel $r_2$ auftritt, stärker als der
             Operator $o$.  Daher wird in diesem Fall zunächst mit der Regel $r_2$ reduziert, wir haben 
             also 
@@ -830,7 +830,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             der bisher gelesene String ``\texttt{1*2}''  mit der Regel 
             $E \rightarrow E \squoted{*} E$ reduziert werden, denn wir wollen die 1 ja zunächst mit 2 
             multiplizieren.  
-      \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ ist links-assoziativ:
+      \item $p(o) = p(c \rightarrow \gamma)$ und der Operator $o$ ist links-assoziativ:
             Dann wird zunächst mit der Regel $r_2$ reduziert, wir haben
             also 
             \\[0.2cm]
@@ -868,7 +868,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             der bisher gelesene String ``\texttt{1-2}'' mit der Regel 
             $E \rightarrow E \squoted{-} E$ reduziert werden, denn wir wollen von der Zahl 1 ja
             zunächst die Zahl 2 subtrahieren.  
-      \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ ist rechts--assoziativ:
+      \item $p(o) = p(c \rightarrow \gamma)$ und der Operator $o$ ist rechts--assoziativ:
             In diesem Fall wird $o$ auf den
             Stack geschoben:
             \\[0.2cm]
@@ -900,7 +900,7 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             \\[0.2cm]
             Hier muss als nächstes das Token \quoted{\texttt{\symbol{94}}} auf den Stack geschoben
             werden, denn wir wollen ja zunächst den Ausdruck ``$3 \texttt{\symbol{94}} 4$'' berechnen.
-      \item $p(o) = p(B \rightarrow \gamma)$ und der Operator $o$ hat keine Assoziativität:
+      \item $p(o) = p(c \rightarrow \gamma)$ und der Operator $o$ hat keine Assoziativität:
             In diesem Fall liegt ein Syntax-Fehler vor:
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -932,11 +932,22 @@ Wie erläutern nun, wie diese Bindungsstärken benutzt werden, um Shift/Reduce-Kon
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{precedence nonassoc $o$}
+      \item $p(o)$ ist undefiniert oder $p(c \rightarrow \gamma)$ ist undefiniert.
+
+            In diesem Fall erzeugt \textsc{Cup} einen Shift/Reduce-Konflikt und gibt bei der
+            Erzeugung des Parsers eine entsprechende Warnung aus.  Diese Warnung wird als Fehler
+            gewertet,  wenn sie nicht durch Angabe der Option 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{-expect} $n$
+            \\[0.2cm]
+            beim Aufruf von \textsc{Cup} unterdrückt wird.  Bei dieser Option ist $n$ die Anzahl der
+            vom Benutzer erwarteten Konflikte. In diesem Fall wird der Konflikt dann per Default
+            dadurch aufgelöst,  dass das betreffende Token auf den Stack geschoben wird. 
+            Wir werden dieses Verhalten im nächsten Abschnitt an Hand eines Beispiels im Detail 
+            diskutieren. 
       \end{enumerate}
-      In den Fällen, in denen ein Shift/Reduce-Konflikt nicht mit den oben angegebenen Regeln aufgelöst
-      werden kann, wird eine Warnung ausgegeben.  In diesem Fall wird der Konflikt dann per Default
-      dadurch aufgelöst,  dass das betreffende Token auf den Stack geschoben wird.
-      Wir werden später sehen, dass dies manchmal sehr nützlich sein kann.
+
 \end{enumerate}
 Die von \textsc{Cup} mit der Option ``\texttt{-dump}'' erzeugte Ausgabe zeigt im Detail, wie die
 Shift/Reduce-Konflikt Konflikte aufgelöst worden sind.  Wir betrachten exemplarisch zwei Zustände in
@@ -1079,7 +1090,7 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
 \end{enumerate}
 
 
-\subsection{Das \emph{Dangling-Else}-Problem}
+\section{Das \emph{Dangling-Else}-Problem}
 \begin{figure}[!ht]
 \centering
 \begin{Verbatim}[ frame         = lines, 
