@@ -1102,14 +1102,14 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
                   xrightmargin  = 0.8cm,
                 ]
     class Dangling;
-
+    
     terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
-    terminal NUMBER, ID;
+    terminal EQUAL, ID;
     
     nonterminal stmnt, stmntList, expr;
     
     start with stmnt;
-
+    
     stmnt ::= IF LPAREN expr RPAREN stmnt
            |  IF LPAREN expr RPAREN stmnt ELSE stmnt
            |  WHILE LPAREN expr RPAREN stmnt
@@ -1121,7 +1121,8 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
                |  /* epsilon */
                ;
     
-    expr ::= NUMBER
+    expr ::= ID EQUAL ID
+           | ID
            ;
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1135,7 +1136,7 @@ tritt bei der Behandlung
 von \emph{if-then-else} Konstrukten ein Shift/Reduce-Konflikt auf, den wir jetzt analysieren wollen.
 Abbildung \ref{fig:dangling-else.y} zeigt eine Grammatik, die einen Teil der Syntax von Befehlen der
 Sprache \texttt{C} beschreibt.  Um uns auf das wesentliche konzentrieren zu können, sind dort die Ausdrücke
-einfach nur Zahlen.  Das Token ``\texttt{ID}'' steht
+nur Gleichungen und Variablen.  Das Token ``\texttt{ID}'' (Abkürzung für \textsl{Identifier}) steht
 für eine Variable, die Grammatik beschreibt also Befehle, die aus Zuweisungen, \emph{If-Abfragen},
 \emph{If-Else-Abfragen} und \emph{While-Schleifen} aufgebaut sind.  Übersetzen wir diese Grammatik mit
 \textsc{Cup}, so erhalten wir den in Abbildung \ref{fig:dangling-else.output} ausschnittsweise gezeigten
@@ -1163,31 +1164,32 @@ Shift/Reduce-Konflikt.
 \end{figure}
 %$
 
-Der Konflikt entsteht bei der Berechnung von $\textsl{action}(\texttt{state \#10}, \texttt{else})$ zwischen den
+Der Konflikt entsteht bei der Berechnung von
+ $\texttt{action}(\mbox{``\texttt{state \#10}''}, \mbox{``\texttt{else}''})$ zwischen den
 beiden markierten Regeln
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Statement} \rightarrow \quoted{if} \quoted{(} \texttt{EXPR} \quoted{)} \textsl{Statement}\;\; \bullet$ 
+$\textsl{stmnt} \rightarrow \quoted{if} \quoted{(} \textsl{expr} \quoted{)} \textsl{stmnt}\;\; \bullet$ 
 \quad und
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Statement} \rightarrow 
-\quoted{if} \quoted{(} \texttt{EXPR} \quoted{)} \textsl{Statement} \;\bullet \quoted{else} \textsl{Statement}$.
+$\textsl{stmnt} \rightarrow 
+\quoted{if} \quoted{(} \textsl{expr} \quoted{)} \textsl{stmnt} \;\bullet \quoted{else} \textsl{stmnt}$.
 \\[0.2cm]
 Die erste Regel verlangt nach einer Reduktion, die zweite Regel sagt, dass das Token 
 \texttt{else} geshiftet werden soll.  Das dem Konflikt zu Grunde liegende Problem ist, dass die in Abbildung
-\ref{fig:dangling-else.y} gezeigte Grammatik mehrdeutig ist, denn ein \textsl{Statement} der Form
+\ref{fig:dangling-else.y} gezeigte Grammatik mehrdeutig ist, denn ein \textsl{stmnt} der Form
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{if (a = b) if (c = d) s = t; else u = v;}
+\texttt{if (a == b) if (c == d) s = t; else u = v;}
 \\[0.2cm]
 kann auf die folgenden beiden Arten gelesen werden:
 \begin{enumerate}
 \item Die erste (und nach der Spezifikation der Sprache \texttt{C} auch korrekte) Interpretation 
       besteht darin, dass wir den Befehl wie folgt klammern:
       \begin{verbatim}
-      if (a = b) {
-          if (c = d) {
+      if (a == b) {
+          if (c == d) {
               s = t; 
           } else {
               u = v;
@@ -1199,8 +1201,8 @@ kann auf die folgenden beiden Arten gelesen werden:
       \ref{fig:dangling-else.y} gezeigten Grammatik ebenfalls zulässig wäre,
       würde den Befehl in der folgenden Form interpretieren:
       \begin{verbatim}
-      if (a = b) {
-          if (c = d) {
+      if (a == b) {
+          if (c == d) {
               s = t; 
           }
       } else {
@@ -1209,14 +1211,15 @@ kann auf die folgenden beiden Arten gelesen werden:
       \end{verbatim}
       \vspace*{-0.5cm}
 
-      Diese Interpretation entspricht nicht der Spezifikation der Sprache \texttt{C}.
+      Hier wird das ``\texttt{else}'' dem äußeren ``\texttt{if}'' zugeordnet, was nicht der
+      Spezifikation der Sprache \texttt{C} entspricht. 
 \end{enumerate}
-Es gibt drei Möglichkeiten, das Problem zu lösen.
+Es gibt vier Möglichkeiten, das Problem zu lösen.
 \begin{enumerate}
 \item Tritt ein Shift/Reduce-Konflikt auf, der nicht durch Operator-Präzedenzen gelöst wird,
       so ist der Default, dass das nächste Token auf den Stack geschoben wird.  In dem konkreten
-      Fall ist dies genau das, was wir wollen, weil dadurch das \texttt{else} immer mit dem letzten
-      \texttt{if} assoziert wird.  Um die normalerweise bei Konfliken von \textsc{Cup}
+      Fall ist dies genau das, was wir wollen, weil dadurch das ``\texttt{else}'' immer mit dem letzten
+      ``\texttt{if}'' assoziert wird.  Um die normalerweise bei Konfliken von \textsc{Cup}
       ausgelöste Fehlermeldung zu unterdrücken, müssen wir \textsc{Cup} mit der Option
       ``\texttt{-expect}'' wie folgt aufrufen:
       \\[0.2cm]
@@ -1230,7 +1233,7 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
       verschwindet.   Die grundsätzliche Idee ist hier, zwischen zwei Arten von Befehlen zu
       unterscheiden.
       \begin{enumerate}
-      \item Einerseits gibt es Befehle, bei denen jedem ``\texttt{if}'' auch ein ``\texttt{else}''
+      \item[(a)] Einerseits gibt es Befehle, bei denen jedem ``\texttt{if}'' auch ein ``\texttt{else}''
             zugeordnet ist.  Zwischen einem ``\texttt{if}'' und einem ``\texttt{else}'' dürfen nur
             solche Befehle auftreten.
 
@@ -1238,16 +1241,18 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
             Sprechweise besteht darin, dass ``\texttt{if}'' als öffnende Klammer zu interpretieren,
             während das ``\texttt{else}'' einer schließenden Klammer entspricht.  Bei einem
             geschlossenen Befehl entspricht jeder öffnenden Klammer eine schließende Klammer.
-     \item Andererseits gibt es Befehle, bei denen dem letzten ``\texttt{if}'' kein
+     \item[(b)] Andererseits gibt es Befehle, bei denen dem letzten ``\texttt{if}'' kein
             ``\texttt{else}'' zugeordnet ist.  Solche Befehle bezeichnen wir als \emph{offene Befehle}.
             Offene Befehle dürfen nicht zwischen einem ``\texttt{if}'' und einem ``\texttt{else}''
             auftreten, denn dann müsste das ``\texttt{else}'' dem ``\texttt{if}'' des offenen
             Befehls zugeordnet werden und der offene Befehl wäre in Wahrheit geschlossen.
      \end{enumerate}
       Abbildung \ref{fig:dangling-else-correct.cup} zeigt die Umsetzung dieser Idee.
-      Die syntaktische Kategorie \textsl{MatchedStmnt} beschreibt dabei die Befehle, 
+      Wir haben hier allerdings nur noch die Grammatik-Regeln gezeigt, denn die Deklaration der
+      Terminale und syntaktischen Variablen hat sich gegenüber der ursprünglichen Grammatik nicht verändert.
+      Die syntaktische Kategorie \textsl{matchedStmnt} beschreibt dabei die Befehle, 
       bei denen jedem ``\texttt{if}'' ein ``\texttt{else}'' zugeordnet ist, während die Kategorie 
-      \textsl{UnMatchedStmnt} die restlichen Befehle erfasst.
+      \textsl{unMatchedStmnt} die restlichen Befehle erfasst.
 
 \begin{figure}[!ht]
 \centering
@@ -1259,15 +1264,6 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    class Dangling;
-
-    terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
-    terminal NUMBER, ID;
-    
-    nonterminal stmnt, matchedStmnt, unmatchedStmnt, stmntList, expr;
-    
-    start with stmnt;
-
     stmnt ::= matchedStmnt
            |  unmatchedStmnt
            ;
@@ -1287,8 +1283,9 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
                |  /* epsilon */
                ;
     
-    expr ::= NUMBER
-          ;
+    expr ::= ID EQUAL ID
+           | ID
+           ;
     \end{Verbatim}
     \vspace*{-0.3cm}
     \caption{Eine eindeutige Grammatik für \texttt{C}-Befehle.}
@@ -1301,15 +1298,16 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
       Der Nachteil ist allerdings, dass bei diesem Vorgehen die Grammatik stark aufgebläht wird. 
       Vermutlich aus diesem Grunde findet sich in den späteren Auflagen der Sprach-Spezifikation eine
       Grammatik, bei der das \emph{Dangling-Else}-Problem wieder auftritt. 
-\item Die letzte Möglichkeit um das \emph{Dangling-Else}-Problem zu lösen, besteht darin, dass
+\item Die nächste Möglichkeit um das \emph{Dangling-Else}-Problem zu lösen, besteht darin, dass
       wir ``\texttt{if}'' und ``\texttt{else}'' als Operatoren auffassen, denen wir eine Präzedenz
       zuordenen.  Abbildung \ref{fig:dangling-else-precedence.cup} zeigt die Umsetzung dieser Idee.
       \begin{enumerate}
-      \item Zunächst haben wir in den Zeilen 6 und 7 die Terminale \texttt{IF} und \texttt{ELSE} als
-            nicht-assoziative Operatoren deklariert, wobei \texttt{ELSE} die höhere Präzedenz
-            hat.  Dadurch erreichen wir, dass ein \texttt{ELSE} auf den Stack geschoben wird,
+      \item[(a)] Zunächst haben wir in den Zeilen 1 und 2 die Terminale ``\texttt{IF}'' und
+            ``\texttt{ELSE}''  als
+            nicht-assoziative Operatoren deklariert, wobei ``\texttt{ELSE}'' die höhere Präzedenz
+            hat.  Dadurch erreichen wir, dass ein ``\texttt{ELSE}'' auf den Stack geschoben wird,
             wenn der Parser in dem in Abbildung \ref{fig:dangling-else.output} gezeigten Zustand ist.
-      \item In Zeile 9 haben wir der Regel
+      \item[(b)] In Zeile 6 haben wir der Regel
             \\[0.2cm]
             \hspace*{1.3cm}
             \textsl{stmnt} \texttt{::=} \texttt{IF} \texttt{LPAREN} \textsl{expr} \texttt{RPAREN} \textsl{stmnt}
@@ -1319,20 +1317,21 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
             \hspace*{1.3cm}
             \texttt{\symbol{37}prec IF}
             \\[0.2cm]
-            die Präzedenz des Operators \texttt{IF} zugewiesen.  Dies ist notwendig, weil 
+            die Präzedenz des Operators ``\texttt{IF}'' zugewiesen.  Dies ist notwendig, weil 
             der letzte Operator, der in dieser Regel auftritt, die schließende runde Klammer
-            \texttt{RPAREN} ist, der wir keine Priorität zugewiesen haben.  Der Klammer eine Priorität
+            ``\texttt{RPAREN}'' ist, der wir keine Priorität zugewiesen haben.  Der Klammer eine Priorität
             zuzuweisen wäre einerseits kontraintuitiv, andererseits problematisch, da die Klammer ja
-            auch noch an anderen Stellen verwendet werden kann.  Mit Hilfe der
-            \texttt{\symbol{37}prec}-Deklaration können wir einer Regel unmittelbar die Präzedenz
+            auch noch an anderen Stellen verwendet werden könnte.  Mit Hilfe der
+            ``\texttt{\symbol{37}prec}''-Deklaration können wir einer Regel unmittelbar die Präzedenz
             eines Operators zuweisen und so das Problem umgehen.
 
-            In dem vorliegenden Fall ist die Präzedenz des Operators \texttt{ELSE}
-            höher als die Präzedenz von \texttt{IF}, so dass der Shift/Reduce-Konflikt
-            dadurch aufgelöst wird, dass das Token \texttt{ELSE} auf den Stack
-            geschoben wird, wodurch eine \texttt{else}-Klausel tatsächlich mit der unmittelbar davor stehenden
-            \texttt{if}-Klausel verbunden wird, wie es die Definition der Sprache \texttt{C} fordert.
+            In dem vorliegenden Fall ist die Präzedenz des Operators ``\texttt{ELSE}''
+            höher als die Präzedenz von ``\texttt{IF}'', so dass der Shift/Reduce-Konflikt
+            dadurch aufgelöst wird, dass das Token ``\texttt{ELSE}'' auf den Stack
+            geschoben wird, wodurch eine ``\texttt{else}''-Klausel tatsächlich mit der unmittelbar davor stehenden
+            ``\texttt{if}''-Klausel verbunden wird, wie es die Definition der Sprache \texttt{C} fordert.
       \end{enumerate}
+
 
             \begin{figure}[!ht]
 \centering
@@ -1341,19 +1340,12 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.3cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
                 ]
-    class Dangling;
-
-    terminal LPAREN, RPAREN, IF, ELSE, WHILE, LBRACE, RBRACE, ASSIGN, SEMI;
-    terminal NUMBER, ID;
-    
-    nonterminal stmnt, stmntList, expr;
-    
     precedence nonassoc IF;
     precedence nonassoc ELSE;
-    
+
     start with stmnt;
 
     stmnt ::= IF LPAREN expr RPAREN stmnt            %prec IF
@@ -1367,20 +1359,64 @@ Es gibt drei Möglichkeiten, das Problem zu lösen.
                |  /* epsilon */
                ;
     
-    expr ::= NUMBER
-          ;
+    expr ::= ID EQUAL ID
+           | ID
+           ;
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Auflösung des Shift/Reduce-Konflikts mit Hilfe von Operator-Präzedenzen.}
 \label{fig:dangling-else-precedence.cup}
 \end{figure}
-      
+
+      Operator-Präzedenzen sind ein mächtiges Mittel um eine Grammatik zu strukturieren.  Sie
+      sollten allerdings mit Vorsicht eingesetzt werden, denn Sprachen wie die
+      Programmier-Sprache \texttt{C}, bei der es 15 verschiedene Operator-Präzendenzen gibt, überfordern
+      die meisten Benutzer.
+\item Die letzte Möglichkeit, das \emph{Dangling-Else}-Problem zu lösen, besteht darin, dass wir
+      fordern, dass die Befehle, die in einem ``\texttt{if}''-Befehl verwendet werden, immer in den geschweiften
+      Klammern ``\texttt{\{}'' und ``\texttt{\}}'' eingeschlossen werden.  Dies ist allerdings nur
+      dann eine Option, wenn wir die Syntax der Sprache selber definieren können.  Bei der Sprache
+      \href{http://randoom.org/Software/SetlX}{\textsc{SetlX}}
+      wurde dieser Weg beschritten.  Abbildung \ref{fig:dangling-else-brace.cup} auf Seite
+      \pageref{fig:dangling-else-brace.cup} zeigt diese Grammatik.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    stmnt ::= IF LPAREN expr RPAREN block            
+           |  IF LPAREN expr RPAREN block ELSE block
+           |  WHILE LPAREN expr RPAREN stmnt
+           |  block
+           |  ID ASSIGN expr SEMI
+           ;
+    
+    block ::= LBRACE stmntList RBRACE
+           ;
+    
+    stmntList ::= stmntList stmnt
+               |  /* epsilon */
+               ;    
+
+    expr ::= ID EQUAL ID
+           | ID
+           ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Eine Grammatik ohne das \emph{Dangling-Else}-Problem.}
+\label{fig:dangling-else-brace.cup}
+\end{figure}
+
 \end{enumerate}
  
-Operator-Präzedenzen sind ein mächtiges Mittel um eine Grammatik zu strukturieren.  Sie
-sollten allerdings mit Vorsicht eingesetzt werden, denn Sprachen wie die
-Programmier-Sprache \texttt{C}, bei der es 15 verschiedene Operator-Präzendenzen gibt, überfordern
-die meisten Benutzer.
+
 
 \section{Auflösung von Reduce/Reduce-Konflikte}
 Im Gegensatz zu Shift/Reduce-Konflikten können Reduce/Reduce-Konflikte nicht durch Operator-Präzedenzen
