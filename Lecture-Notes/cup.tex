@@ -1515,16 +1515,16 @@ und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    a : b 'V'
-      | c 'W'
-      ;
-    b : 'X' 'U'
-      ;
-    c : 'X' 'U'
-      ;
+    a ::= b V
+       |  c W
+       ;
+    b ::= X U
+       ;
+    c ::= X U
+       ;
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Eine zu der in Abbildung \ref{fig:lr-conflict.g}   äquivalente LR(1)-Grammatik.}
+\caption{Eine zu \ref{fig:lr-conflict.g} äquivalente LR(1)-Grammatik.}
 \label{fig:lr-conflict-resolved.g}
 \end{figure}
 
@@ -1536,11 +1536,10 @@ die Regeln für $B$ und $C$ aufgenommen wird, dann verschwindet der Konflikt.  Ab
 
 \subsection{Mysteriöse Reduce/Reduce-Konflikte}
 Wir sprechen dann von einem \emph{mysteriösen Reduce/Reduce-Konflikt}, wenn die gegebene Grammatik eine
-LR(1)-Grammatik ist, sich aber beim Übergang von LR-Zuständen zu LALR-Zuständen Reduce/Reduce-Konflikte
-ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik habe ich dem \textsl{Bison}-Handbuch
-entnommen. (\textsl{Bison} ist ein LALR-Parser-Generator für die Sprachen \texttt{C} und
-\texttt{C++}.  Er kann mittlerweile auch Parser in der Sprache \textsl{Java} erzeugen, allerdings
-ist dieses Feature bisher noch als experimentell deklariert.)
+LR(1)-Grammatik ist, sich aber beim Übergang von den LR-Zuständen zu den LALR-Zuständen Reduce/Reduce-Konflikte
+ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik habe ich dem 
+\href{http://www.gnu.org/software/bison/manual/}{\textsl{Bison}-Handbuch} entnommen. 
+
 
 \begin{figure}[!ht]
 \centering
@@ -1629,7 +1628,6 @@ Zuständen in Abbildung \ref{fig:mysterious.txt} gezeigt sind.
     s8 = { name -> ID <*>: [':'],
            type -> ID <*>: [',']
          }
-
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{LR-Zustände der in Abbildung \ref{fig:mysterious.cup} gezeigten Grammatik.}
@@ -1646,18 +1644,18 @@ beide in dem Zustand enthaltenen Regeln zulässig.   Um den Konflikt aufzulösen m
 die beiden Zustände $s_7$ und $s_8$ zusammengefasst werden.  Dazu analysieren wir zunächst, wo diese
 Zustände herkommen.
 \begin{enumerate}
-\item Den Zustand $s_7$ erhalten wir, wenn wir im Zustand $s_2$ das Token \texttt{ID} lesen, denn
+\item Den Zustand $s_7$ erhalten wir, wenn wir im Zustand $s_0$ das Token \texttt{ID} lesen, denn
       es gilt 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $s_7 = \textsl{goto}(s_2, \mathtt{ID})$.
-\item Der Zustand $s_8$ entsteht, wenn das Token \texttt{ID} im Zustand $s_0$ gelesen wird, wir haben
+      $s_7 = \textsl{goto}(s_0, \mathtt{ID})$.
+\item Der Zustand $s_8$ entsteht, wenn das Token \texttt{ID} im Zustand $s_2$ gelesen wird, wir haben
       \\[0.2cm]
       \hspace*{1.3cm}
-      $s_8 = \textsl{goto}(s_0, \mathtt{ID})$.
+      $s_8 = \textsl{goto}(s_2, \mathtt{ID})$.
 \end{enumerate}
 Die Idee zur Auflösung des Konflikts ist, dass wir den Zustand $s_2$ so ändern, dass die Kerne von
-$\textsl{goto}(s_2, \mathtt{ID})$ und $\textsl{goto}(s_0, \mathtt{ID})$ unterschiedlich werden.  
+$s_7 = \textsl{goto}(s_0, \mathtt{ID})$ und $s_8 = \textsl{goto}(s_0, \mathtt{ID})$ unterschiedlich werden.  
 Die erweiterten markierten Regeln in dem Zustand $s_2$, die letztlich für den Konflikt verantwortlich
 sind, sind die Grammatik-Regeln für die syntaktische Variable \textsl{return\_spec}.
 Wir ändern diese Regeln nun wie in Abbildung \ref{fig:myst-solved.g} ab, indem wir eine zusätzliche
@@ -1670,8 +1668,9 @@ einführen.  Wenn das Terminal \texttt{BOGUS} nie vom Scanner erzeugt werden kann
 die Hinzunahme dieser Regel die von der Grammatik erzeugte Sprache nicht.  Allerdings ändern sich nun die
 LR-Zustände.  Abbildung \ref{fig:myst-solved.txt} zeigt, wie sich die entsprechenden Zustände ändern.
 Insbesondere sehen wir, dass der Zustand $s_8$ nun eine weitere markierte Regel enthält, zu der es in dem
-Zustand $s_7$ kein äquivalent gibt.  Die Konsequenz ist, dass diese Zustände in einem
-LALR-Parser-Generator nicht mehr zusammengefasst werden.  Dadurch gibt es dann auch keinen Konflikt mehr.
+Zustand $s_7$ kein äquivalent gibt.  Die Konsequenz ist, dass diese Zustände beim Übergang von den
+LR-Zuständen zu den LALR-Zuständen nicht mehr zusammengefasst werden.  Dadurch gibt es dann auch
+keinen Konflikt mehr. 
 
 \begin{figure}[!ht]
 \centering
@@ -1749,24 +1748,24 @@ LALR-Parser-Generator nicht mehr zusammengefasst werden.  Dadurch gibt es dann a
 \label{fig:myst-solved.txt}
 \end{figure}
 
-\vspace*{\fill}
+\hspace*{\fill}
 \pagebreak
 
-\vspace*{\fill}
+\hspace*{\fill}
 \pagebreak
 
 
 \exercise
 Nachstehend sehen Sie Regeln für eine Grammatik, die Listen von Zahlen beschreibt:
-\begin{eqnarray*}
-  \textsl{List} & \rightarrow & \textsc{Number} \quoted{,} \textsl{List} \\
-                & \mid        & \textsc{Number}                         
-\end{eqnarray*}
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{List} \;\rightarrow\; \textsc{Number} \quoted{,} \textsl{List}  \;\mid\; \textsc{Number}$
+\\[0.2cm]
 Diese Grammatik ist rechts-rekursiv.  Alternativ ist auch eine links-rekursive Grammatik möglich:
-\begin{eqnarray*}
-  \textsl{List} & \rightarrow & \textsl{List} \quoted{,} \textsc{Number} \\
-                & \mid        & \textsc{Number}                         
-\end{eqnarray*}
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{List} \;\rightarrow \; \textsl{List} \quoted{,} \textsc{Number} \;\mid\; \textsc{Number}$
+\\[0.2cm]
 Überlegen Sie, welche dieser beiden Grammatiken effizienter ist, wenn Sie aus diesen Regeln mit einem
 LALR-Parser-Generator einen Parser erzeugen wollen.  Berechnen Sie dazu für beide Fälle die Zustände
 und Aktionen und untersuchen Sie, wie eine Liste von natürlichen Zahlen der Form
@@ -1781,7 +1780,7 @@ aussieht, wenn die Teilliste
 $x_1$, $x_2$, $\cdots$, $x_{k-1}$, $x_k$ \quad mit $k \leq n$ 
 \\[0.2cm]
 gelesen worden ist.  \eox
-\pagebreak
+
 
 
 \section{Auflösung von Shift/Reduce-Konflikten}
@@ -1800,8 +1799,9 @@ Es gibt im wesentlichen zwei Arten von Shift/Reduce-Konflikten:
       Wir haben bereits früher in Abschnitt \ref{section:operator-precedence} besprochen, wie solche
       Konflikte durch die Spezifikation von Operator-Präzedenzen aufgelöst werden können.
 \item Konflikte, die entstehen, weil ein Look-Ahead von einem Token nicht ausreichend ist um zu
-      entscheiden, ob mit einer Regel reduziert werden soll.  Solche \emph{Look-Ahead}-Konflikte
-      werden wir in diesem Abschnitt diskutieren.
+      entscheiden, ob das nächste Token der Eingabe auf den Stack geschoben werden soll, oder 
+      ob statt dessen der Stack durch Anwendung einer Grammatik-Regel reduziert werden muss.
+      Solche \emph{Look-Ahead}-Konflikte   werden wir in diesem Abschnitt diskutieren.
 \end{enumerate}
 Als Beispiel für einen Look-Ahead-Konflikt betrachten wir die in Abbildung \ref{fig:lambda.g}
 gezeigte Grammatik.  Diese Grammatik beschreibt drei Arten von Ausdrücken:
@@ -1874,7 +1874,7 @@ $\textsl{expr} \rightarrow \mathtt{IDENTIFIER}$
 reduziert werden darf, wenn das Look-Ahead-Token ein Komma ist.  Um zu entscheiden, ob der Parser
 versucht eine Liste von \texttt{IDENTIFIER}n zu parsen, müsste der Parser bis zu dem Token
 \texttt{MAPSTO} schauen können.  Wenn später ein solches Token noch kommt, dann würde der Parser im
-Zustand 6 versuchen eine \textsl{identifierList} zu parsen und das Komma sollte auf den Stack
+Zustand 6 versuchen eine \texttt{identifierList} zu parsen und das Komma sollte auf den Stack
 geschoben werden.  Andernfalls könnte mit der Regel 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1946,6 +1946,7 @@ Verallgemeinerung der Grammatik eine praktische Möglichkeit um Shift/Reduce-Konf
 \caption{Die verallgemeinerte Grammatik für $\lambda$-Ausdrücke.}
 \label{fig:lambda-generalized.cup}
 \end{figure}
+\vspace*{\fill}
 
 
 %%% Local Variables: 
