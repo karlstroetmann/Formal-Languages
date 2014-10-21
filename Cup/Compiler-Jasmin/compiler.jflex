@@ -3,6 +3,7 @@ import java_cup.runtime.*;
 %char
 %line
 %column
+%cupsym IntegerCParserSym
 %cup
 %unicode
    
@@ -14,6 +15,10 @@ import java_cup.runtime.*;
         return new Symbol(type, yychar, yychar + yylength(), value);
     }
 %}
+
+%eofval{
+    return new Symbol(IntegerCParserSym.EOF);
+%eofval}
    
 %%
    

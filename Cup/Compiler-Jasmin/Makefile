@@ -1,4 +1,4 @@
-CLASSPATH = "/usr/local/lib/java-cup-11a.jar:/usr/local/lib/java-cup-11b-runtime.jar:.:.." 
+CLASSPATH = ".:/usr/local/lib/java-cup-11b-runtime.jar" 
 
 run: Examples/MySum.class 
 	cd Examples; java -cp . MySum
@@ -7,15 +7,15 @@ Examples/MySum.class: Examples/MySum.jas
 	cd Examples; jasmin MySum.jas
 
 Examples/MySum.jas: Compiler.class Examples/MySum.c
-	cd Examples; java -cp $(CLASSPATH) Compiler MySum
+	java -cp $(CLASSPATH) Compiler Examples/MySum
 
-Compiler.class: Yylex.java Compiler.java parser.java sym.java
+Compiler.class: Yylex.java Compiler.java IntegerCParser.java IntegerCParserSym.java
 	javac -g -Xlint:unchecked Assembler/*.java
-	javac -g -cp $(CLASSPATH) parser.java
+	javac -g -cp $(CLASSPATH) IntegerCParser.java
 	javac -g -Xlint:unchecked -cp $(CLASSPATH) Compiler.java
 
-parser.java sym.java: compiler.cup
-	java -cp $(CLASSPATH) java_cup.Main -expect 1 compiler.cup
+IntegerCParser.java IntegerCParserSym.java: compiler.cup
+	cup -expect 1 compiler.cup
 
 Yylex.java: compiler.jflex
 	jflex compiler.jflex
@@ -23,6 +23,7 @@ Yylex.java: compiler.jflex
 clean:
 	rm -f Assembler/*.class
 	rm -f *.class
-	rm -f parser.java
+	rm -f IntegerCParser.java
+	rm -f IntegerCParserSym.java
 	rm -f Yylex.java
 	rm -f Yylex.java~
