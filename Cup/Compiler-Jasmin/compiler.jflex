@@ -22,34 +22,34 @@ import java_cup.runtime.*;
    
 %%
    
-"+"                   { return symbol( sym.PLUS      ); } 
-"-"                   { return symbol( sym.MINUS     ); } 
-"*"                   { return symbol( sym.TIMES     ); } 
-"/"                   { return symbol( sym.SLASH     ); } 
-"("                   { return symbol( sym.LPAREN    ); } 
-")"                   { return symbol( sym.RPAREN    ); }
-"{"                   { return symbol( sym.LBRACE    ); }
-"}"                   { return symbol( sym.RBRACE    ); }
-","                   { return symbol( sym.COMMA     ); }
-";"                   { return symbol( sym.SEMICOLON ); }
-"="                   { return symbol( sym.ASSIGN    ); }
-"=="                  { return symbol( sym.EQUALS    ); }
-"!="                  { return symbol( sym.NEQUALS   ); }
-"<"                   { return symbol( sym.LT        ); }
-">"                   { return symbol( sym.GT        ); }
-"<="                  { return symbol( sym.LE        ); }
-">="                  { return symbol( sym.GE        ); }
-"&&"                  { return symbol( sym.AND       ); }
-"||"                  { return symbol( sym.OR        ); }
-"!"                   { return symbol( sym.NOT       ); }
-"int"                 { return symbol( sym.INT       ); }
-"return"              { return symbol( sym.RETURN    ); }
-"if"                  { return symbol( sym.IF        ); }
-"else"                { return symbol( sym.ELSE      ); }
-"while"               { return symbol( sym.WHILE     ); }
+"+"                   { return symbol( IntegerCParserSym.PLUS      ); } 
+"-"                   { return symbol( IntegerCParserSym.MINUS     ); } 
+"*"                   { return symbol( IntegerCParserSym.TIMES     ); } 
+"/"                   { return symbol( IntegerCParserSym.SLASH     ); } 
+"("                   { return symbol( IntegerCParserSym.LPAREN    ); } 
+")"                   { return symbol( IntegerCParserSym.RPAREN    ); }
+"{"                   { return symbol( IntegerCParserSym.LBRACE    ); }
+"}"                   { return symbol( IntegerCParserSym.RBRACE    ); }
+","                   { return symbol( IntegerCParserSym.COMMA     ); }
+";"                   { return symbol( IntegerCParserSym.SEMICOLON ); }
+"="                   { return symbol( IntegerCParserSym.ASSIGN    ); }
+"=="                  { return symbol( IntegerCParserSym.EQUALS    ); }
+"!="                  { return symbol( IntegerCParserSym.NEQUALS   ); }
+"<"                   { return symbol( IntegerCParserSym.LT        ); }
+">"                   { return symbol( IntegerCParserSym.GT        ); }
+"<="                  { return symbol( IntegerCParserSym.LE        ); }
+">="                  { return symbol( IntegerCParserSym.GE        ); }
+"&&"                  { return symbol( IntegerCParserSym.AND       ); }
+"||"                  { return symbol( IntegerCParserSym.OR        ); }
+"!"                   { return symbol( IntegerCParserSym.NOT       ); }
+"int"                 { return symbol( IntegerCParserSym.INT       ); }
+"return"              { return symbol( IntegerCParserSym.RETURN    ); }
+"if"                  { return symbol( IntegerCParserSym.IF        ); }
+"else"                { return symbol( IntegerCParserSym.ELSE      ); }
+"while"               { return symbol( IntegerCParserSym.WHILE     ); }
 
-[a-zA-Z][a-zA-Z_0-9]* { return symbol(sym.IDENTIFIER, yytext());          }
-0|[1-9][0-9]*         { return symbol(sym.NUMBER, new Integer(yytext())); }
+[a-zA-Z][a-zA-Z_0-9]* { return symbol(IntegerCParserSym.IDENTIFIER, yytext());          }
+0|[1-9][0-9]*         { return symbol(IntegerCParserSym.NUMBER, new Integer(yytext())); }
 
 [ \t\v\n\r]           { /* skip white space          */ }   
 "//" [^\n]*           { /* skip single line comments */ }   

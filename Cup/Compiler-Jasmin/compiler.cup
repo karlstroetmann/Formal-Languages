@@ -63,19 +63,19 @@ declarations ::= /* epsilon */                {: RESULT = new LinkedList<Declara
               ;
 
 statement ::= LBRACE statementList:l RBRACE {: RESULT = new Block(l);     :}
-           |  IDENTIFIER:v ASSIGN expr:e    {: RESULT = new Assign(v, e); :}
+           |  IDENTIFIER:v ASSIGN expr:e SEMICOLON {: RESULT = new Assign(v, e); :}
            |  IF LPAREN boolExpr:b RPAREN statement:s                 
               {: RESULT = new IfThen(b, s); :}        
            |  IF LPAREN boolExpr:b RPAREN statement:t ELSE statement:e
               {: RESULT = new IfThenElse(b, t, e); :}
            |  WHILE LPAREN boolExpr:b RPAREN statement:s
               {: RESULT = new While(b, s); :}
-           |  RETURN expr:e    {: RESULT = new Return(e);        :}
-           |  expr:e           {: RESULT = new ExprStatement(e); :}
+           |  RETURN expr:e SEMICOLON   {: RESULT = new Return(e);        :}
+           |  expr:e SEMICOLON          {: RESULT = new ExprStatement(e); :}
            ;
 
 statementList ::= /* epsilon */ {: RESULT = new LinkedList<Statement>(); :}
-               |  statement:s SEMICOLON statementList:l 
+               |  statement:s statementList:l 
                   {: RESULT = new LinkedList<Statement>();
                      RESULT.add(s); 
                      RESULT.addAll(l);

@@ -1,0 +1,77 @@
+program	: functionList
+        ;
+
+functionList 
+	: /* empty */
+        | functionList function
+        ;
+
+function 
+	: INT IDENTIFIER LPAREN paramList RPAREN LBRACE declarations statementList RBRACE
+	;
+
+paramList
+        : /* empty */
+	|        neParamList
+	;
+ 
+neParamList 
+       : INT IDENTIFIER
+       | neParamList COMMA INT IDENTIFIER
+       ;
+
+declaration
+       : INT IDENTIFIER SEMICOLON
+       ;
+
+declarations
+       : /* empty */
+       | declarations declaration
+       ;
+
+statement
+       : LBRACE statementList RBRACE
+       | IDENTIFIER ASSIGN expr SEMICOLON
+       | IF LPAREN boolExpr RPAREN statement
+       | IF LPAREN boolExpr RPAREN statement ELSE statement
+       | WHILE LPAREN boolExpr RPAREN statement
+       | RETURN expr SEMICOLON
+       | expr SEMICOLON
+       ;
+
+statementList        
+       : /* empty */
+       | statement statementList
+       ;
+
+boolExpr 
+       : expr EQUALS expr
+       | expr NEQUALS expr
+       | expr LE expr
+       | expr GE expr
+       | expr LT expr
+       | expr GT expr
+       | NOT boolExpr
+       | boolExpr AND boolExpr
+       | boolExpr OR boolExpr
+       ;
+
+expr   : expr PLUS expr
+       | expr MINUS expr
+       | expr TIMES expr
+       | expr SLASH expr
+       | LPAREN expr RPAREN
+       | NUMBER
+       | IDENTIFIER
+       | IDENTIFIER LPAREN exprList RPAREN
+       ; 
+
+exprList 
+       : /* empty */
+       | neExprList
+       ;
+
+neExprList
+       : expr
+       | neExprList COMMA expr
+       ;
