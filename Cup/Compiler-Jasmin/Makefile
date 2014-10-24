@@ -27,3 +27,5 @@ clean:
 	rm -f IntegerCParserSym.java
 	rm -f Yylex.java
 	rm -f Yylex.java~
+	rm -f Examples/MySum.jas
+	rm -f Examples/MySum.class
