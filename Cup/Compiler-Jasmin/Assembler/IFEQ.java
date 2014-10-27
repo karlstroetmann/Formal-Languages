@@ -7,6 +7,6 @@ public class IFEQ extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "ifeq l" + mLabel;
+        return "       ifeq l" + mLabel;
     }
 }

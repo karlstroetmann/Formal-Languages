@@ -7,6 +7,6 @@ public class IF_ICMPNE extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "if_icmpne l" + mLabel;
+        return "       if_icmpne l" + mLabel;
     }
 }

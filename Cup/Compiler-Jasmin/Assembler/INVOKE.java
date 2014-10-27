@@ -7,6 +7,6 @@ public class INVOKE extends AssemblerCmd {
         mName = name;
     }
     public String toString() {
-        return "invokestatic " + mName;
+        return "       invokestatic " + mName;
     }
 }

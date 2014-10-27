@@ -7,6 +7,6 @@ public class GOTO extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "goto l" + mLabel;
+        return "       goto l" + mLabel;
     }
 }

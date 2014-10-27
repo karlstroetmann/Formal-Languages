@@ -6,7 +6,7 @@ public class IfThen extends Statement {
     private Statement mStatement;
 
     public IfThen(BoolExpr boolExpr, Statement statement) {
-        mBoolExpr = boolExpr;
+        mBoolExpr  = boolExpr;
         mStatement = statement;
     }
     public List<AssemblerCmd> compile(Map<String, Integer> symbolTable) {

@@ -7,6 +7,6 @@ public class IF_ICMPGT extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "if_icmpgt l" + mLabel;
+        return "       if_icmpgt l" + mLabel;
     }
 }

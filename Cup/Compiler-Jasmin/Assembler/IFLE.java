@@ -7,6 +7,6 @@ public class IFLE extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "ifle l" + mLabel;
+        return "       ifle l" + mLabel;
     }
 }

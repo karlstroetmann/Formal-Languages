@@ -7,6 +7,6 @@ public class LDC extends AssemblerCmd {
         mNumber = number;
     }
     public String toString() {
-        return "ldc " + mNumber;
+        return "       ldc " + mNumber;
     }
 }

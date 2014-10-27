@@ -6,6 +6,6 @@ public class GETSTATIC extends AssemblerCmd {
         mAll = all;
     }
     public String toString() {
-        return "getstatic " + mAll;
+        return "       getstatic " + mAll;
     }
 }
