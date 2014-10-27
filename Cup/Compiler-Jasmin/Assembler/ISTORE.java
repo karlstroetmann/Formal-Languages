@@ -7,6 +7,6 @@ public class ISTORE extends AssemblerCmd {
         mIndex = index;
     }
     public String toString() {
-        return "istore " + mIndex;
+        return "       istore " + mIndex;
     }
 }

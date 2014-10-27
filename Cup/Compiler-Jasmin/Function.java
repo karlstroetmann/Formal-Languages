@@ -21,7 +21,7 @@ public class Function {
         mLocals        = mParameterList.size() + mDeclarations.size();
     }
     public List<AssemblerCmd> compile() {
-        Map<String, Integer> symbolTable = new TreeMap();
+        Map<String, Integer> symbolTable = new TreeMap<String, Integer>();
         Integer count = 0;
         for (String var: mParameterList) {
             symbolTable.put(var, count);

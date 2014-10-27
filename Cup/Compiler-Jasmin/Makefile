@@ -10,8 +10,6 @@ Examples/MySum.jas: Compiler.class Examples/MySum.c
 	cd Examples; java -cp ..:/usr/local/lib/java-cup-11b-runtime.jar Compiler MySum
 
 Compiler.class: Yylex.java Compiler.java IntegerCParser.java IntegerCParserSym.java
-	javac -g -Xlint:unchecked Assembler/*.java
-	javac -g -cp $(CLASSPATH) IntegerCParser.java
 	javac -g -Xlint:unchecked -cp $(CLASSPATH) Compiler.java
 
 IntegerCParser.java IntegerCParserSym.java: compiler.cup

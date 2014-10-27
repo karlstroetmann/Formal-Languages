@@ -7,6 +7,6 @@ public class IF_ICMPEQ extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "if_icmpeq l" + mLabel;
+        return "       if_icmpeq l" + mLabel;
     }
 }

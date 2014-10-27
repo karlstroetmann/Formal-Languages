@@ -11,6 +11,6 @@ public class LABEL extends AssemblerCmd {
         return mLabel;
     }
     public String toString() {
-        return "l" + mLabel + ":";
+        return "    l" + mLabel + ":";
     }
 }

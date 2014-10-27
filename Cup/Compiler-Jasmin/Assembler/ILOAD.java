@@ -7,6 +7,6 @@ public class ILOAD extends AssemblerCmd {
         mIndex = index;
     }
     public String toString() {
-        return "iload " + mIndex;
+        return "       iload " + mIndex;
     }
 }

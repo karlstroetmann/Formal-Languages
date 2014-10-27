@@ -7,6 +7,6 @@ public class BIPUSH extends AssemblerCmd {
         mNumber = number;
     }
     public String toString() {
-        return "bipush " + mNumber;
+        return "       bipush " + mNumber;
     }
 }

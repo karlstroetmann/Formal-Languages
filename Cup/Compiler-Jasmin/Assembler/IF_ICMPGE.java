@@ -7,6 +7,6 @@ public class IF_ICMPGE extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "if_icmpge l" + mLabel;
+        return "       if_icmpge l" + mLabel;
     }
 }

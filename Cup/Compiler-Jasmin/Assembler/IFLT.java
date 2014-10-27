@@ -7,6 +7,6 @@ public class IFLT extends AssemblerCmd {
         mLabel = label;
     }
     public String toString() {
-        return "iflt l" + mLabel;
+        return "       iflt l" + mLabel;
     }
 }
