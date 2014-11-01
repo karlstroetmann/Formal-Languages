@@ -929,14 +929,19 @@ therefore only be viewed via commands like \href{http://en.wikipedia.org/wiki/Od
 that produce an \emph{octal} or \emph{hexadecimal dump} of the given file.  The command
 \href{http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html}{\texttt{javap}} 
 is a \emph{disassembler},  i.e.~it takes a \textsl{Java} byte code file and transforms it in
-something that looks similar to \textsl{Jasmin} assembler.  For example, Figure \ref{fig:Hello.java}
-shows a typical  ``\texttt{Hello World}'' program written in \textsl{Java}.  If this program is
-stored in a file called ``\texttt{Hello.java}'', we can compile it via the following command:
+something that looks similar to \textsl{Jasmin} assembler.  For example, Figure \ref{fig:Sum.java}
+shows a program to compute the sum 
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{javac Hello.java}
+$\sum\limits_{i=1}^{36} i$
 \\[0.2cm]
-This will produce a class file with the name ``\texttt{Hello.class}'' containing the byte code.
+written in \textsl{Java}.  If this program is
+stored in a file called ``\texttt{Sum.java}'', we can compile it via the following command:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{javac Sum.java}
+\\[0.2cm]
+This will produce a class file with the name ``\texttt{Sum.class}'' containing the byte code.
 
 \begin{figure}[!ht]
 \centering
@@ -949,23 +954,31 @@ This will produce a class file with the name ``\texttt{Hello.class}'' containing
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    public class Hello {
+    public class Sum {
         public static void main(String[] args) {
-            System.out.println("Hello World!");
+            System.out.println(sum(6 * 6));
+        }
+    
+        static int sum(int n) {
+    	int s = 0;
+    	for (int i = 0; i <= n; ++i) {
+    	    s += i;
+    	}
+    	return s;
         }
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{A typical ``\texttt{Hello World!}'' program for \textsl{Java}.}
-\label{fig:Hello.java}
+\caption{A \textsl{Java} program computing $\ds\sum\limits_{i=0}^{6^2} i$.}
+\label{fig:Sum.java}
 \end{figure}
 
 Next, in order to \emph{decompile} the ``\texttt{.class}'' file, we run the command
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{javap -c Hello.class}
+\texttt{javap -c Sum.class}
 \\[0.2cm]
-The output of this command is shown in Figure \ref{fig:Hello.class}.  We see that the syntax used by
+The output of this command is shown in Figure \ref{fig:Sum.class}.  We see that the syntax used by
 \texttt{javap} differs a bit from the syntax used by \textsl{Jasmin}.  It is rather unfortunate that
 the company developing \textsl{Java} has decided not to make their assembler public.  Still, we can
 see that the output produced by \texttt{javap} is quite similar to the input accepted by \texttt{jasmin}.
@@ -981,25 +994,44 @@ see that the output produced by \texttt{javap} is quite similar to the input acc
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
-    Compiled from "Hello.java"
-    public class Hello {
-      public Hello();
+    Compiled from "Sum.java"
+    public class Sum {
+      public Sum();
         Code:
            0: aload_0       
-           1: invokespecial #1  // Method java/lang/Object."<init>":()V
+           1: invokespecial #1           // Method java/lang/Object."<init>":()V
            4: return        
     
       public static void main(java.lang.String[]);
         Code:
-           0: getstatic     #2  // Field java/lang/System.out:Ljava/io/PrintStream;
-           3: ldc           #3  // String Hello World!
-           5: invokevirtual #4  // Method java/io/PrintStream.println:(Ljava/lang/String;)V
-           8: return        
+           0: getstatic     #2           // Field java/lang/System.out:Ljava/io/PrintStream;
+           3: bipush        36
+           5: invokestatic  #3           // Method sum:(I)I
+           8: invokevirtual #4           // Method java/io/PrintStream.println:(I)V
+          11: return        
+    
+      static int sum(int);
+        Code:
+           0: iconst_0      
+           1: istore_1      
+           2: iconst_0      
+           3: istore_2      
+           4: iload_2       
+           5: iload_0       
+           6: if_icmpgt     19
+           9: iload_1       
+          10: iload_2       
+          11: iadd          
+          12: istore_1      
+          13: iinc          2, 1
+          16: goto          4
+          19: iload_1       
+          20: ireturn       
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{The output of ``\texttt{javap -c Hello.class}''.}
-\label{fig:Hello.class}
+\caption{The output of ``\texttt{javap -c Sum.class}''.}
+\label{fig:Sum.class}
 \end{figure}
 \vspace*{\fill}
 
