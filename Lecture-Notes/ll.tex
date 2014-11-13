@@ -683,36 +683,6 @@ Parsen von $\textsl{a}$ nicht auf das Token $t$ stoßen können.  Parsen wir also 
 als erstes Zeichen das Token $t$, so muss ein Syntax-Fehler vorliegen.  
 
 \section{LL(k)-Grammatiken}
-Viele interessante Grammatiken sind keine $LL(1)$-Grammatiken.
-Abbildung \ref{fig:Expr4} zeigt ein Beispiel.  Bei dieser Grammatiken werden für arithmetische
-Ausdrücke auch Funktionsaufrufe der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-$f(a_1, \cdots, a_n)$
-\\[0.2cm]
-zugelassen.  Dabei ist $f$ ein Funktionszeichen, das syntaktisch nicht von einem Identfier zu
-unterscheiden ist.  Dadurch gibt es zwischen den beiden Regeln
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{factor} \rightarrow \textsc{Identifier}$ \quad und \quad
-$\textsl{factor} \rightarrow \textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}$ 
-\\[0.2cm]
-einen Konflikt:  Soll ein \textsl{factor} geparst werden und ist das nächste zu lesende Zeichen ein 
-\textsc{Identifier}, so ist nicht klar, welche der beiden Regeln angewendet werden sollen.
-Es gibt hier zwei mögliche Lösungen:  Einerseits könnten wir die Grammatik durch eine
-Links-Faktorisierung umschreiben.  Andererseits ist es auch möglich, das Problem dadurch zu lösen,
-das wir bei der Entscheidung, welche der Grammatik-Regeln verwendet werden soll, zusätzlich das
-zweite Zeichen zu berücksichtigen:  Handelt es sich dabei um das Zeichen $\quoted{(}$, so ist offenbar die Regel
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{factor} \rightarrow \textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}$ 
-\\[0.2cm]
-heranzuziehen, andernfalls muss die Regel
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{factor} \rightarrow \textsc{Identifier}$ 
-\\[0.2cm]
-verwendet werden.
 
 \begin{figure}[!ht]
   \begin{center}    
@@ -747,6 +717,38 @@ verwendet werden.
   \label{fig:Expr4}
 \end{figure}
 
+\noindent
+Viele interessante Grammatiken sind keine $LL(1)$-Grammatiken.
+Abbildung \ref{fig:Expr4} zeigt ein Beispiel.  Bei dieser Grammatiken werden für arithmetische
+Ausdrücke auch Funktionsaufrufe der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(a_1, \cdots, a_n)$
+\\[0.2cm]
+zugelassen.  Dabei ist $f$ ein Funktionszeichen, das syntaktisch nicht von einem Identfier zu
+unterscheiden ist.  Dadurch gibt es zwischen den beiden Regeln
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Identifier}$ \quad und \quad
+$\textsl{factor} \rightarrow \textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}$ 
+\\[0.2cm]
+einen Konflikt:  Soll ein \textsl{factor} geparst werden und ist das nächste zu lesende Zeichen ein 
+\textsc{Identifier}, so ist nicht klar, welche der beiden Regeln angewendet werden sollen.
+Es gibt hier zwei mögliche Lösungen:  Einerseits könnten wir die Grammatik durch eine
+Links-Faktorisierung umschreiben.  Andererseits ist es auch möglich, das Problem dadurch zu lösen,
+das wir bei der Entscheidung, welche der Grammatik-Regeln verwendet werden soll, zusätzlich das
+zweite Zeichen zu berücksichtigen:  Handelt es sich dabei um das Zeichen $\quoted{(}$, so ist offenbar die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Identifier} \quoted{(} \textsl{argList} \quoted{)}$ 
+\\[0.2cm]
+heranzuziehen, andernfalls muss die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{factor} \rightarrow \textsc{Identifier}$ 
+\\[0.2cm]
+verwendet werden.
+
 Im allgemeinen Fall kann das Verfahren so erweitert werden, dass $k$ Token bei der Entscheidung,
 welche Regel zu verwenden ist, als Lookahead herangezogen werden.  
 Wir skizzieren die Grundzüge dieser Theorie.
@@ -770,45 +772,49 @@ Als erstes verallgemeinern wir die Definition der Funktion $\textsl{First}()$.
 \end{Definition}
 
 \example
-Streichen wir zur Vereinfachung in der in Abbildung \ref{fig:Expr3} gezeigte Grammatik 
-für arithmetische Ausdrücke die Regel 
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{factor} \rightarrow \textsc{Number}$
-\\[0.2cm]
-sowie die Regeln für \textsl{boolExpr}
-und kürzen wir weiter das Token \textsc{Identifier} als \textsc{Id} ab, so erhalten wir
-beispielsweise:
+Abbildung \ref{fig:expr-id.g} zeigt eine Grammatik für arithmetische Ausdrücke.
+Berechnen wir für die in dieser Grammatik auftretenden Variablen $v$ die Mengen
+$\textsl{First}(2,v)$, so erhalten wir beispielsweise:
 \begin{enumerate}
 \item $\textsl{First}(2, \textsl{expr}) = 
       \bigl\{\, \textsc{Id}, \,\squoted{(}\, \textsc{Id},\, \squoted{((},\,
       \textsc{Id} \squoted{+},\, \textsc{Id} \squoted{-},\,
       \textsc{Id} \squoted{*},\, \textsc{Id} \squoted{/}\,
       \bigr\}$,
-\item $\textsl{First}(2, \textsl{exprRest}) = 
-      \bigl\{\,
-      \varepsilon,\,
-      \squoted{+}\textsc{Id},\, 
-      \squoted{+(},\, 
-      \squoted{-} \textsc{Id},\,
-      \squoted{-(},\,
-      \bigr\}$,
 \item $\textsl{First}(2, \textsl{product}) = 
       \bigl\{\, \textsc{Id}, \,\squoted{(}\, \textsc{Id},\, \squoted{((},\,
       \textsc{Id} \squoted{*},\, \textsc{Id} \squoted{/}\,
-      \bigr\}$,
-\item $\textsl{First}(2, \textsl{productRest}) = 
-      \bigl\{\, 
-      \varepsilon,\,
-      \squoted{*}\textsc{Id},\, 
-      \squoted{*(},\, 
-      \squoted{/}\textsc{Id},\, 
-      \squoted{/(}\, 
       \bigr\}$,
 \item $\textsl{First}(2, \textsl{factor}) = 
       \bigl\{\, \textsc{Id}, \,\squoted{(}\, \textsc{Id},\, \squoted{((}\,
       \bigr\}$.
 \end{enumerate}
+
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+
+  \begin{eqnarray*}
+  \textsl{expr}        & \rightarrow & \textsl{expr} \quoted{+} \textsl{product}        \\
+                       & \mid        & \textsl{expr} \quoted{-} \textsl{product}        \\
+                       & \mid        & \textsl{product}        \\[0.2cm]
+  \textsl{product}     & \rightarrow & \textsl{product} \quoted{*} \textsl{factor}      \\ 
+                       & \mid        & \textsl{product} \quoted{/} \textsl{factor}      \\ 
+                       & \mid        & \textsl{factor}                                  \\[0.2cm]
+  \textsl{factor}      & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}              \\
+                       & \mid        & \;\textsc{Id} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}}}
+  \end{center}
+  \caption{Eine Beispiel-Grammatik für arithmetische Ausdrücke.}
+  \label{fig:expr-id.g}
+\end{figure}
+
 
 \begin{Definition}[$\textsl{Follow}(k,\textsl{a})$]
   Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik. Wir definieren eine Funktion
@@ -834,46 +840,49 @@ Setzen wir das letzte Beispiel sinngemäß fort, so erhalten wir:
 \item $\textsl{Follow}(2, \textsl{expr}) = 
       \bigl\{\, \varepsilon,\, 
       \squoted{)},\, 
-      \squoted{))}\,
+      \squoted{))},\,
+      \squoted{)*},\,
+      \squoted{)+},\,
+      \squoted{)-},\, 
+      \squoted{)/},\, 
+      \squoted{+}\textsc{Id},\,
+      \squoted{-}\textsc{Id},\,
+      \squoted{+(},\,
+      \squoted{-(}\,
       \bigr\}$,
-\item $\textsl{Follow}(2, \textsl{exprRest}) = 
-      \bigl\{\,
-      \varepsilon,\,
-      \squoted{)},\, 
-      \squoted{))}\,
-      \bigr\}$,
-\item $\textsl{Follow}(2, \textsl{product}) = 
-      \bigl\{\, 
-      \varepsilon,\,
-      \squoted{+} \textsc{Id},\, 
-      \squoted{+(},\, 
-      \squoted{-} \textsc{Id},\,
-      \squoted{-(},\,
-      \squoted{)},\, 
-      \squoted{))}\,
-      \bigr\}$,
-\item $\textsl{Follow}(2, \textsl{productRest}) = 
-      \bigl\{\, 
-      \varepsilon,\,
-      \squoted{+} \textsc{Id},\, 
-      \squoted{+(},\, 
-      \squoted{-} \textsc{Id},\,
-      \squoted{-(},\,
-      \squoted{)},\, 
-      \squoted{))}\,
-      \bigr\}$,
-\item $\textsl{Follow}(2, \textsl{factor}) = \bigl\{\, 
-      \varepsilon,\,
+\item $\textsl{Follow}(2, \textsl{product}) =       
+      \bigl\{\, \varepsilon,\, 
       \squoted{)},\, 
       \squoted{))},\,
-      \squoted{+} \textsc{Id},\, 
-      \squoted{+(},\, 
-      \squoted{-} \textsc{Id},\,
+      \squoted{)+},\,
+      \squoted{)-},\,
+      \squoted{)*},\, 
+      \squoted{)/},\, 
+      \squoted{+}\textsc{Id},\,
+      \squoted{-}\textsc{Id},\,
+      \squoted{*}\textsc{Id},\,
+      \squoted{/}\textsc{Id},\,
+      \squoted{+(},\,
       \squoted{-(},\,
-      \squoted{*} \textsc{Id},\, 
-      \squoted{*(},\, 
-      \squoted{/Id},\, 
-      \squoted{/(}\, 
+      \squoted{*(},\,
+      \squoted{/(}\,
+      \bigr\}$,
+\item $\textsl{Follow}(2, \textsl{factor}) = \bigl\{\, 
+      \varepsilon,\, 
+      \squoted{)},\, 
+      \squoted{))},\,
+      \squoted{)+},\,
+      \squoted{)-},\,
+      \squoted{)*},\, 
+      \squoted{)/},\, 
+      \squoted{+}\textsc{Id},\,
+      \squoted{-}\textsc{Id},\,
+      \squoted{*}\textsc{Id},\,
+      \squoted{/}\textsc{Id},\,
+      \squoted{+(},\,
+      \squoted{-(},\,
+      \squoted{*(},\,
+      \squoted{/(}\,
       \bigr\}$.
 \end{enumerate}
 
