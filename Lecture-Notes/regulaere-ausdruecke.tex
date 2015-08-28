@@ -1,64 +1,67 @@
-\chapter{Reguläre Ausdrücke \label{chapter:regular-expressions}}
-\href{http://en.wikipedia.org/wiki/Regular_expression}{\emph{Reguläre Ausdrücke}} sind Terme, die einfache formale Sprachen spezifizieren.
-Mit Hilfe eines regulären Ausdrucks lassen sich
+\chapter{Regular Expressions \label{chapter:regular-expressions}}
+\href{http://en.wikipedia.org/wiki/Regular_expression}{\emph{Regular expressions}} are terms that
+specify those formal languages that are simple enough to be recognized by a finite state machine.   
+A regular expression is able to specify 
 \begin{enumerate}
-\item die Auswahl zwischen mehreren Alternativen,
-\item Wiederholungen, und
-\item Verkettung
+\item the choice between different alternatives,
+\item concatenation, and
+\item repetition.
 \end{enumerate}
-spezifizieren.  Viele moderne Skript-Sprachen (insbesondere die Sprache \href{http://en.wikipedia.org/wiki/Perl}{\textsl{Perl}}) wären ohne
-reguläre Ausdrücke undenkbar.  Alle modernen Hoch-Sprachen (z.B. \textsl{Java}, \texttt{C\#}, $\cdots$)
-enthalten umfangreiche Bibliotheken zur Unterstützung regulärer Ausdrücke.  Darüber hinaus gibt es eine
-Reihe von \textsc{Unix}-Werkzeugen wie \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}}, 
-\href{http://en.wikipedia.org/wiki/Sed}{\texttt{sed}} oder
-\href{http://en.wikipedia.org/wiki/Awk}{\texttt{awk}}, die auf der Verwendung regulärer
-Ausdrücke basieren. 
+Many modern scripting languages are heavily based on regular expression, for example
+the success of the programming language \href{http://en.wikipedia.org/wiki/Perl}{\textsl{Perl}} is
+largely based on its efficiency in dealing with regular expressions.
+All modern high-level languages, e.g.~\textsl{Java}, \texttt{C\#}, and many others
+provide extensive libraries to support regular expressions.  Furthermore, there are a number of 
+\textsc{Unix} tools like \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}}, 
+\href{http://en.wikipedia.org/wiki/Sed}{\texttt{sed}} or
+\href{http://en.wikipedia.org/wiki/Awk}{\texttt{awk}} that are based on regular expressions.  Hence,
+every aspiring computer scientist needs to be comfortable with regular expressions.
 
-\section{Einige Definitionen}
-Bevor wir die Definition der regulären Ausdrücke geben können, benötigen wir einige
-Definitionen.
 
-\begin{Definition}[Produkt von Sprachen]
-  Es sei $\Sigma$ ein Alphabet und $L_1 \subseteq \Sigma^*$ und $L_2 \subseteq \Sigma^*$ seien
-  formale Sprachen.  Dann definieren wir das \emph{Produkt} der Sprachen $L_1$ und $L_2$, geschrieben
-  $L_1 \cdot L_2$, als die Menge aller Konkatenationen $w_1w_2$, für die $w_1$ ein Wort aus $L_1$ und
-  $w_2$ ein Wort aus $L_2$ ist:
+\section{Preliminary Definitions}
+Before we can define the syntax and semantics of regular expressions, we need some auxiliary definitions. 
+
+
+\begin{Definition}[Product of Languages]
+  If $\Sigma$ is an  alphabet and $L_1 \subseteq \Sigma^*$ and $L_2 \subseteq \Sigma^*$ are formal
+  languages, the \emph{product} of $L_1$ and $L_2$ is written as
+  $L_1 \cdot L_2$ and is defined as the set of all concatenations $w_1w_2$ such that $w_1 \in L_1$ and
+  $w_2 \in L_2$, i.e.~we have
   \\[0.2cm]
   \hspace*{1.3cm}
-  $L_1 \cdot L_2 := \bigl\{ w_1w_2 \mid w_1 \in L_1 \wedge w_2 \in L_2 \bigr\}$ \qed
+  $L_1 \cdot L_2 := \bigl\{ w_1w_2 \mid w_1 \in L_1 \wedge w_2 \in L_2 \bigr\}$ \eox
 \end{Definition}
 
-\example
-Es sei $\Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \}$ und $L_1$ und $L_2$ seien als
+\exampleEng
+If $\Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \}$ and $L_1$ and $L_2$ are defined as
 \\[0.2cm]
 \hspace*{1.3cm}
-$L_1 = \{ \texttt{ab}, \texttt{bc} \}$ \quad und \quad
-$L_2 = \{ \texttt{ac}, \texttt{cb} \}$ 
+$L_1 = \{ \texttt{ab}, \texttt{bc} \}$ \quad and \quad
+$L_2 = \{ \texttt{ac}, \texttt{cb} \}$. 
 \\[0.2cm]
-definiert.  Dann gilt 
+Then the product of $L_1$ and $L_2$ is given as
 \\[0.2cm]
 \hspace*{1.3cm}
 $L_1 \cdot L_2 = \{ \texttt{abac}, \texttt{abcb}, \texttt{bcac}, \texttt{bccb} \}$.  \eox
 
-\begin{Definition}[Potenz einer Sprache] 
-Es sei $\Sigma$ ein Alphabet, $L \subseteq \Sigma^*$ eine formale Sprache und $n\in\mathbb{N}_0$
-eine natürliche Zahl.  Wir definieren die \emph{$n$-te Potenz} von $L$, wir schreiben dafür $L^n$, durch
-Induktion nach $n$.
+\begin{Definition}[Power of a Language] 
+Assume $\Sigma$ is an  alphabet, $L \subseteq \Sigma^*$ is a formal language and $n\in\mathbb{N}_0$.
+The  \emph{$n$-th power} of $L$ is written as  $L^n$ and is definition by induction on  $n$. 
 \begin{enumerate}
-\item[I.A.:] $n = 0$: 
+\item[B.C.:] $n = 0$: 
 
       $L^0 := \{ \varepsilon \}$.
 
-      Hier steht $\varepsilon$ für das leere Wort, schreiben wir Worte als Listen von
-      Buchstaben, so gilt also $\varepsilon = []$.
+      Here $\varepsilon$ denotes the empty string.  If we would write a string as a list of its characters we would have
+      $\varepsilon = []$.
 \item [I.S.:] $n \mapsto n + 1$:
 
-      $L^{n+1} = L^n \cdot L$
+      $L^{n+1} = L^n \cdot L$  \eox
 \end{enumerate}
 \end{Definition}
 
-\example
-Es sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$ und $L = \{ \texttt{ab}, \texttt{ba} \}$.  Dann gilt:
+\exampleEng
+If $\Sigma = \{ \texttt{a}, \texttt{b} \}$ and $L = \{ \texttt{ab}, \texttt{ba} \}$, we have
 \begin{enumerate}
 \item $L^0 = \{ \varepsilon \}$,
 \item $L^1 = \{ \varepsilon \} \cdot \{ \texttt{ab}, \texttt{ba} \} = \{ \texttt{ab}, \texttt{ba} \}$,
@@ -79,162 +82,164 @@ Es sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$ und $L = \{ \texttt{ab}, \texttt{
 \end{Definition}
 
 \example
-Es sei $\Sigma = \{ \texttt{a}, \texttt{b} \}$ und  $L = \{ \texttt{a} \}$.  Dann gilt
+Assume $\Sigma = \{ \texttt{a}, \texttt{b} \}$ and  $L = \{ \texttt{a} \}$.  Then we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $L^* = \{ \texttt{a}^n \mid n \in \mathbb{N}_0 \}$.
 \\[0.2cm]
-Hierbei bezeichnet $\texttt{a}^n$ das Wort der Länge $n$, das nur den
-Buchstaben \texttt{a} enthält, es gilt also 
+Here $\texttt{a}^n$ is the string of length  $n$, that only contains the letter \texttt{a}.  Hence, we have 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\texttt{a}^n = \underbrace{\texttt{a} \cdots \texttt{a}}_n$.  \eox 
-\\[0.2cm]
-Formal definieren wir für einen beliebigen String $s$ und eine natürliche Zahl $n \in \mathbb{N}_0$
-den Ausdruck $s^n$ durch Induktion über $n$:
-\begin{tabbing}
-\hspace*{1.3cm} \= I.A. $n = 0$:  \hspace*{1.3cm} \= $s^0$ \hspace*{0.3cm} \= $:= \varepsilon$. \\[0.2cm]
-                \> I.S. $n \mapsto n + 1$:               \> $s^{n+1}$             \> $:= s^n s$, 
-                \quad wobei $s^n s$ für die Konkatenation der Strings $s^n$ und $s$ steht.
-\end{tabbing}
 
-Das letzte Beispiel zeigt, dass der Kleene-Abschluss einer endlichen
-Sprache unendlich sein kann.  Offenbar ist der Kleene-Abschluss einer Sprache $L$ dann unendlich,
-wenn $L$ wenigstens ein Wort mit einer Länge größer als 0 enthält.
+
+Formally, given a string $s$ and an non-negative integer Zahl $n \in \mathbb{N}_0$, we define the expression
+ $s^n$ by induction on  $n$:
+\begin{enumerate}
+\item[B.C.:] $n = 0$
+
+             $s^0 := \varepsilon$. 
+\item[I.S.:] $n \mapsto n + 1$
+
+             $s^{n+1} := s^n s$, \quad where $s^n s$ denotes the concatenation of the strings $s^n$ and $s$.
+             \eox
+\end{enumerate}
+
+The previous example shows that the Kleene closure of a finite language can be infinite.
+It is easy to see that the Kleene closure of a language $L$ is infinite,
+if $L$ contains at least one string $s$ such that $|s| > 0$.
 \vspace*{0.3cm}
 
-
-Wir geben nun die Definition der regulären Ausdrücke über einem Alphabet $\Sigma$.  Wir bezeichnen
-die Menge aller regulären Ausdrücke mit $\texttt{RegExp}_\Sigma$.  Die Definition dieser Menge
-verläuft induktiv. Gleichzeitig mit der Menge $\texttt{RegExp}_\Sigma$ definieren wir eine Funktion
+We proceed to define the set of regular expressions given an  alphabet $\Sigma$.  This set is
+denoted as $\texttt{RegExp}_\Sigma$.  This set is defined by induction.  Simultaneously,  we define
+the function
 \\[0.2cm]
 \hspace*{1.3cm}
-$L: \texttt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*}$,
+$L: \texttt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*}$
 \\[0.2cm]
-die jedem regulären Ausdruck $r$ eine formale Sprache $L(r) \subseteq \Sigma^*$ zuordnet.\footnote{
-Für eine Menge $M$ bezeichnet $2^M$ die \emph{Potenzmenge} von $M$, also die Menge aller Teilmengen
-von $M$.}
+which interprets every regular expression  $r$ as a formal language $L(r) \subseteq \Sigma^*$.\footnote{
+  Given a set $M$ the power set of $M$, i.e.~the set of all subsets of $M$, is denoted as $2^M$.
+}
 
-\begin{Definition}[reguläre Ausdrücke]
-  Die Menge $\texttt{RegExp}_\Sigma$ der \emph{regulären Ausdrücke} über dem Alphabet
-  $\Sigma$ wird wie folgt induktiv definiert:
+\begin{Definition}[Regular Expressions]
+  The set $\texttt{RegExp}_\Sigma$ of \emph{regular expression} on the alphabet  $\Sigma$ is defined
+  by induction as follows:
   \begin{enumerate}
   \item $\emptyset \in \texttt{RegExp}_\Sigma$
 
-        Der reguläre Ausdruck $\emptyset$ bezeichnet die leere Sprache, es gilt also
+        The regular expression $\emptyset$ denotes the empty language, we have
         \\[0.2cm]
         \hspace*{1.3cm}
         $L(\emptyset) := \{\}$.
 
-        Zur Vermeidung von Verwirrung nehmen wir dabei an, dass das Zeichen $\emptyset$ nicht in dem Alphabet $\Sigma$
-        auftritt, es gilt also $\emptyset \not\in \Sigma$.
+        In order to avoid confusion we assume that the symbol $\emptyset$ is not a member of the
+        alphabet $\Sigma$, i.e.~we have $\emptyset \not\in \Sigma$.
   \item $\varepsilon \in \texttt{RegExp}_\Sigma$
 
-        Der reguläre Ausdruck $\varepsilon$ bezeichnet die Sprache, die nur das leere Wort 
-        $\varepsilon$ enthält: 
+        The regular expression $\varepsilon$ denotes the language that only contains the empty
+        string $\varepsilon$: 
         \\[0.2cm]
         \hspace*{1.3cm}
         $L(\varepsilon) := \{ \varepsilon \}$
         \\[0.2cm]
-        Beachten Sie, dass die beiden Auftreten von $\varepsilon$ in der obigen Gleichung
-        verschiedene Dinge bezeichnen.  Das Auftreten auf der linken Seite der
-        Gleichung bezeichnet einen regulären Ausdruck, während das Auftreten auf der rechten Seite 
-        das leere Wort bezeichnet. 
+        Observe that in this equation the two occurrences of $\varepsilon$ are interpreted differently:
+        The occurrence of $\varepsilon$ on the left hand side of this equation denotes a regular
+        expression, while the occurrence of $\varepsilon$ on the right hand side denotes the empty
+        string.
   \item $c \in \Sigma \rightarrow c \in \texttt{RegExp}_\Sigma$.
 
-        Jeder Buchstabe aus dem Alphabet $\Sigma$ fungiert also gleichzeitig als regulärer
-        Ausdruck.  Dieser Ausdruck beschreibt die Sprache, die aus genau dem Wort $c$ besteht:
+        Every character from the alphabet $\Sigma$ is a regular expression.  This expression denotes
+        the language that contains only the string $c$:
         \\[0.2cm]
         \hspace*{1.3cm}
         $L(c) := \{ c \}$
         \\[0.2cm]
-        Bemerken Sie, dass wir an dieser Stelle Buchstaben mit Wörtern der Länge Eins identifizieren.
+        Observe that we identify characters with strings of length one.
   \item $r_1 \in \texttt{RegExp}_\Sigma \wedge r_2 \in \texttt{RegExp}_\Sigma
          \rightarrow r_1 + r_2 \in \texttt{RegExp}_\Sigma$
 
-        Aus den regulären Ausdrücken $r_1$ und $r_2$ kann mit dem Infix-Operator
-        ``$+$'' ein neuer regulärer Ausdruck gebildet werden.  Dieser so gebildete Ausdruck
-        beschreibt die Vereinigung der Sprachen von $r_1$ und $r_2$:
+        Starting from two regular expressions $r_1$ and $r_2$ we can use the  infix operator
+        ``$+$'' to build a new regular expression.  This regular expression denotes the union of 
+        the languages described by $r_1$ and $r_2$:
         \\[0.2cm]
         \hspace*{1.3cm}
         $L(r_1 + r_2) := L(r_1) \cup L(r_2)$.
 
-         Wir nehmen an, dass das Zeichen ``\texttt{+}'' nicht in dem Alphabet $\Sigma$
-         auftritt, es gilt also  $\squoted{+} \not\in \Sigma$.
+        In order to avoid confusion we have to assume that the symbol  ``\texttt{+}'' does not occur
+        in the alphabet $\Sigma$, i.e.~we have  $\squoted{+} \not\in \Sigma$.
   \item $r_1 \in \texttt{RegExp}_\Sigma \wedge r_2 \in \texttt{RegExp}_\Sigma 
          \rightarrow r_1 \cdot r_2 \in \texttt{RegExp}_\Sigma$
 
-        Aus den regulären Ausdrücken $r_1$ und $r_2$ kann also mit dem Infix-Operator
-        ``$\cdot$'' ein neuer regulärer Ausdruck gebildet werden.  Dieser so gebildete Ausdruck
-        beschreibt das Produkt der Sprachen von $r_1$ und $r_2$:
+        Starting from the regular expression $r_1$ and $r_2$ we can use the  infix operator
+        ``$\cdot$'' to build s new regular expression.  This regular expression denotes
+        the product of the languages of $r_1$ and $r_2$:
         \\[0.2cm]
         \hspace*{1.3cm}
         $L(r_1 \cdot r_2) := L(r_1) \cdot L(r_2)$.
 
-         Wir nehmen wieder an, dass das Zeichen ``$\cdot$'' nicht in dem Alphabet $\Sigma$
-         auftritt, es gilt also  $\squoted{$\cdot$} \not\in \Sigma$.
+        Again, in order to avoid confusion we have to assume that the symbol ``$\cdot$'' does not
+        occur in the alphabet $\Sigma$, i.e.~we have $\squoted{$\cdot$} \not\in \Sigma$.
   \item $r \in \texttt{RegExp}_\Sigma \rightarrow r^* \in \texttt{RegExp}_\Sigma$
 
-        Aus dem regulären Ausdruck $r$ kann mit dem Postfix-Operator
-        ``$^*$'' ein neuer regulärer Ausdruck gebildet werden.  Dieser so gebildete Ausdruck
-        steht für den Kleene-Abschluss der durch $r$ beschriebenen Sprache:
+        Given a regular expression $r$, the postfix operator
+        ``$^*$'' can be used to create a new regular expression.  This new regular expression
+        denotes the Kleene closure of the language described by  $r$:
         \\[0.2cm]
         \hspace*{1.3cm}
         $L(r^*) := \bigl(L(r)\bigr)^*$.
 
-         Wir nehmen $\squoted{$^*$} \not\in \Sigma$ an. 
+        We have to assume that $\squoted{$^*$} \not\in \Sigma$. 
   \item $r \in \texttt{RegExp}_\Sigma \rightarrow (r) \in \texttt{RegExp}_\Sigma$
 
-        Reguläre Ausdrücke können geklammert werden.  Dadurch ändert sich die Sprache
-        natürlich nicht:
+        Regular expressions my be surrounded by parentheses.  This does not change the language
+        denoted by the regular expression:
         \\[0.2cm]
         \hspace*{1.3cm}
         $L\bigl((r)\bigr) := L(r)$. 
 
-        Wir nehmen dabei an, dass die Klammer-Symbole \qote{(} und \qote{)} nicht in
-        dem Alphabet $\Sigma$ auftreten, es gilt also
-        $\squoted{(} \not\in \Sigma$  und $\squoted{)} \not\in \Sigma$. \qed
+        We have to assume that the parentheses  \qote{(} and \qote{)} do not occur
+        in the alphabet $\Sigma$, i.e.~we have $\squoted{(} \not\in \Sigma$  and $\squoted{)} \not\in \Sigma$. \eox
   \end{enumerate}
 \end{Definition}
-Um Klammern zu sparen vereinbaren wir die folgenden Operator-Präzedenzen:
+In order to save parentheses and to increase the readability we agree to use the following operator
+precedences:
 \begin{enumerate}
-\item Der Postfix-Operator ``$^*$'' bindet am stärksten.
-\item Der Infix-Operator ``$\cdot$'' bindet schwächer als ``$^*$'' und stärker als ``$+$''.
-\item Der Infix-Operator ``$+$'' bindet am schwächsten.
+\item The postfix operator ``$^*$'' has the highest precedence.
+\item The precedence of the infix operator ``$\cdot$'' is lower than the precedence of  ``$^*$'' but
+      stronger than the precedence of ``$+$''.
+\item The operator ``$+$'' has the lowest precedence.
 \end{enumerate}
-Damit wird also der reguläre Ausdruck
+using these conventions, the regular expression 
 \\[0.2cm]
 \hspace*{1.3cm}
-$a + b \cdot c^*$ \quad implizit geklammert als \quad $a + \bigl(b \cdot (c^*)\bigr)$.
+$a + b \cdot c^*$ \quad is interpreted as  \quad $a + \bigl(b \cdot (c^*)\bigr)$.
 
-\examples
-Bei den folgenden Beispielen ist das Alphabet $\Sigma$ durch die Definition
+\examplesEng
+In the following examples, the alphabet  $\Sigma$ is defined as
 \\[0.2cm]
 \hspace*{1.3cm}
-$\Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \}$
-\\[0.2cm]
-festgelegt.
+$\Sigma := \{ \texttt{a}, \texttt{b}, \texttt{c} \}$.
 \begin{enumerate}
 \item $r_1 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})$
 
-      Der Ausdruck $r_1$ beschreibt alle Wörter, die aus genau zwei Buchstaben bestehen:
+      The expression  $r_1$ denotes the set of all strings that have the length $2$:
       \\[0.2cm]
       \hspace*{1.3cm}
       $L(r_1) = \bigl\{ w \in \Sigma^* \,\big|\; |w| = 2 \bigr\}$.
 \item $r_2 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})^*$
 
-      Der Ausdruck $r_2$ beschreibt alle Wörter, die aus wenigstens einem Buchstaben bestehen.
+      The expression  $r_2$ denotes the set of all strings that have at least length $1$:
       \\[0.2cm]
       \hspace*{1.3cm}
       $L(r_2) = \bigl\{ w \in \Sigma^* \,\big|\; |w| \geq 1 \bigr\}$.
 \item $r_3 := (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot 
               (\texttt{b} + \texttt{c})^*$
 
-      Der Ausdruck $r_3$ beschreibt alle Wörter, in denen der Buchstabe \texttt{a}
-      genau einmal auftritt.  Ein solches Wort besteht aus einer beliebigen Anzahl
-      der Buchstaben \texttt{b} und \texttt{c} (dafür steht der Teilausdruck
-      $(\texttt{b} + \texttt{c})^*$) gefolgt von dem Buchstaben \texttt{a}, wiederum 
-      gefolgt von einer beliebigen Anzahl der Buchstaben \texttt{b} und \texttt{c}.
+      The expression $r_3$ denotes the set of all those strings that have exactly one occurrence of
+      the letter ``\texttt{a}'''.  A string containing exactly one ``\texttt{a}''
+      is a string that starts with an arbitrary amount of the letters \texttt{b} and \texttt{c} 
+      (this is what $(\texttt{b} + \texttt{c})^*$ denotes), followed by the letter ``\texttt{a}'',
+      followed by anothe substring containing only the letters \texttt{b} and \texttt{c}.
       \\[0.2cm]
       \hspace*{1.3cm}
       $L(r_3) = \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
@@ -242,8 +247,8 @@ festgelegt.
 \item $r_4 :=  (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot (\texttt{b} + \texttt{c})^* +
                (\texttt{a} + \texttt{c})^* \cdot \texttt{b} \cdot (\texttt{a} + \texttt{c})^*$
 
-      Der Ausdruck $r_4$ beschreibt alle die Wörter, die entweder genau ein \texttt{a}
-      oder genau ein \texttt{b} enthalten.
+      The regular expression $r_4$ denotes the set of all those strings that either contain exactly
+      one occurrence of the letter ``\texttt{a}'' or exactly one occurrence of the letter ``\texttt{b}''.
       \\[0.2cm]
       \hspace*{0.3cm}
       $L(r_4) = \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
@@ -254,63 +259,63 @@ festgelegt.
                         1 \Bigr\}$.  \eox 
 \end{enumerate}
 
-\noindent
-\textbf{Bemerkung}: Die oben festgelegte Syntax regulärer Ausdrücke ist die Syntax, die in theoretischen
-Abhandlungen über formale Sprachen gebräuchlich ist, siehe beispielsweise \cite{hopcroft:06}.  Sie weicht
-allerdings von der Syntax ab, die in Sprachen wie \textsl{Java} gebräuchlich ist.
-Wir werden diese Unterschiede später noch diskutieren.
+\remarkEng 
+The syntax of regular expressions given here is the same as the syntax used in  \cite{hopcroft:06}
+and \cite{sipser:2006}.   However, the syntax used for regular expression in programming languages
+like  \textsl{Java} is different.  We will discuss these differences later when we introduce \textsl{JFlex}.
 
 \exercise
 \renewcommand{\labelenumi}{(\alph{enumi})}
 \begin{enumerate}
-\item Es sei $\Sigma = \{ a, b, c \}$.  Geben Sie einen regulären Ausdruck für die Sprache
-      $L \subseteq \Sigma^*$ an, deren Wörter mindestens ein $a$ und mindestens ein $b$
-      enthalten.
-\item Es sei $\Sigma = \{ 0, 1 \}$.   Geben Sie einen regulären Ausdruck für die Sprache
-      $L \subseteq \Sigma^*$ an, für die das drittletzte Zeichen eine $1$ ist.
-\item Wieder sei $\Sigma = \{ 0, 1 \}$.   Geben Sie einen regulären Ausdruck für die Sprache
-      $L \subseteq \Sigma^*$ der Wörter an, in denen der Teilstring $110$ nicht auftritt.
+\item Assume $\Sigma = \{ \mathtt{a}, \mathtt{b}, \mathtt{c} \}$.  Define a regular expression for the language
+      $L \subseteq \Sigma^*$ that consists of those strings that contain at least one occurrence of
+      the letter ``\texttt{a}'' and one occurrence of the letter ``\texttt{b}''.
+\item Assume $\Sigma = \{ 0, 1 \}$.   Specify a regular expression for the language 
+      $L \subseteq \Sigma^*$ that consists of those strings $s$ such that the antepenultimate
+      character is the symbol  ``$1$''.
+\item Again, we have $\Sigma = \{ 0, 1 \}$.   Define a regular expression for the language
+      $L \subseteq \Sigma^*$ containing all those strings that do not contain the substring  $110$.
 
-      \solutionEng
-      The regular expression $r$ that is sought for can be defined as 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $r = (0 + 1 \cdot 0)^* \cdot 1^*$.
-      \\[0.2cm]
-      First, it is quite obvious that the language $L(r)$ does not contain a string $w$ such that
-      $w$ contains the substring $110$.  This is so because a character $1$ that is generated by the
-      part $(0 + 1 \cdot 0)^*$ is immediately followed by a $0$.  Hence if $w$ contains the
-      substring $110$, the first $1$ cannot originate from the regular expression $(0 + 1 \cdot 0)^*$.
-      Furthermore, if the first $1$ of the substring 110 originates from the regular expression
-      $1^*$, then there cannot be a $0$ following since the language generated by $1^*$ contains
-      only ones.
+      % \solutionEng
+      % The regular expression $r$ that is sought for can be defined as 
+      % \\[0.2cm]
+      % \hspace*{1.3cm}
+      % $r = (0 + 1 \cdot 0)^* \cdot 1^*$.
+      % \\[0.2cm]
+      % First, it is quite obvious that the language $L(r)$ does not contain a string $w$ such that
+      % $w$ contains the substring $110$.  This is so because a character $1$ that is generated by the
+      % part $(0 + 1 \cdot 0)^*$ is immediately followed by a $0$.  Hence if $w$ contains the
+      % substring $110$, the first $1$ cannot originate from the regular expression $(0 + 1 \cdot 0)^*$.
+      % Furthermore, if the first $1$ of the substring 110 originates from the regular expression
+      % $1^*$, then there cannot be a $0$ following since the language generated by $1^*$ contains
+      % only ones.
 
-      Second, assume that the string $w$ does not contain the substring $110$.  We have to show that
-      $w \in L(r)$.  Now if the character $1$ does not occur in the
-      string $w$, then $w$ is just a bunch of zeros and therefore $w$ can be generated by the
-      regular expression $(0+1\cdot 0)^*$ and hence also by $(0 + 1  \cdot 0)^* \cdot 1^*$.  If the string $w$ does contain the character $1$,
-      there are two cases.
-      \begin{enumerate}
-      \item The first occurrence of $1$ is followed by a $0$.  Then the prefix of $w$ upto and
-            including this $0$ is generated by the regular expression $(0 + 1 \cdot 0)^*$.  The
-            remaining part of $w$ is shorter and, by induction, can be shown to be generated by 
-            $(0 + 1 \cdot 0)^* \cdot 1^*$.
-      \item The first occurrence of $1$ is followed by another $1$.  In this case, the rest of $w$
-            must be made up of ones.  Hence, the part of $w$ starting with the first $1$ is
-            generated by $1^*$ and obviously the preceding zeros can all be generated by 
-            $(0 + 1 \cdot 0)^*$.
-      \end{enumerate}
+      % Second, assume that the string $w$ does not contain the substring $110$.  We have to show that
+      % $w \in L(r)$.  Now if the character $1$ does not occur in the
+      % string $w$, then $w$ is just a bunch of zeros and therefore $w$ can be generated by the
+      % regular expression $(0+1\cdot 0)^*$ and hence also by $(0 + 1  \cdot 0)^* \cdot 1^*$.  If the string $w$ does contain the character $1$,
+      % there are two cases.
+      % \begin{enumerate}
+      % \item The first occurrence of $1$ is followed by a $0$.  Then the prefix of $w$ upto and
+      %       including this $0$ is generated by the regular expression $(0 + 1 \cdot 0)^*$.  The
+      %       remaining part of $w$ is shorter and, by induction, can be shown to be generated by 
+      %       $(0 + 1 \cdot 0)^* \cdot 1^*$.
+      % \item The first occurrence of $1$ is followed by another $1$.  In this case, the rest of $w$
+      %       must be made up of ones.  Hence, the part of $w$ starting with the first $1$ is
+      %       generated by $1^*$ and obviously the preceding zeros can all be generated by 
+      %       $(0 + 1 \cdot 0)^*$.
+      % \end{enumerate}
 \item Again, assume $\Sigma = \{0,1\}$.  What is the language $L$ generated by the regular expression 
       \\[0.2cm]
       \hspace*{1.3cm}
       $(1 + \varepsilon)\cdot(0\cdot 0^* \cdot 1)^* \cdot 0^*$?  \eox
 
-      \solutionEng
-      This is the language $L$ such that the strings in $L$ do not contain the substring $11$.
+      % \solutionEng
+      % This is the language $L$ such that the strings in $L$ do not contain the substring $11$.
 \end{enumerate}
 \renewcommand{\labelenumi}{\arabic{enumi}.}
 
-\section{Algebraische Vereinfachung regulärer Ausdrücke$^*$}
+\section{Algebraic Simplifications of Regular Expressions$^*$}
 Given two regular expressions $r_1$ and $r_2$, we write
 \\[0.2cm]
 \hspace*{1.3cm}
