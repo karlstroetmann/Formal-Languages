@@ -1,76 +1,78 @@
-\chapter{Der Scanner-Generator \textsl{JFlex}}
-Ein \emph{Scanner} ist ein Werkzeug, das einen gegebenen Text in Gruppen einzelner
-\emph{Token} aufspaltet.  Ein Token ist dabei eine Gruppe logisch zusammenhängender Buchstaben.
-Beispielsweise spaltet der Scanner, der für einen \texttt{C}-Compiler eingesetzt wird, den
-Programmtext in die folgenden Token auf: 
+\chapter{The Scanner Generator \textsl{JFlex}}
+A  \emph{scanner} is a tool that splits a given string into a list of \emph{token}, where a token is
+just a group of consecutive characters that belong together logically.  An example will clarify this.  
+The input for a \texttt{C}-compiler is a long \textsc{Ascii}-string such that this string can be interpreted as a
+valid \texttt{C} program.  In order to translate this string into machine language, the
+\texttt{C}-compiler first groups the different characters into tokens.  In the case of a \texttt{C}
+program, we will have the following tokens:
 \begin{enumerate}
-\item Schlüsselwörter wie ``\texttt{if}'', ``\texttt{while}'', etc.
-\item Operator-Symbole wie ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'',
-      ``\texttt{<=}'', etc.
-\item Konstanten, wobei es in der Sprache \texttt{C} drei Arten von Konstanten gibt:
+\item Keywords, a.k.a.~reserved words like ``\texttt{if}'', ``\texttt{while}'', or ``\texttt{case}''.
+\item Operator symbols like ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'', or
+      ``\texttt{<=}''.
+\item Constants.  The language \texttt{C} distinguishes between three different kinds of constants:
       \begin{enumerate}
-      \item Zahlen, beispielsweise ``\texttt{123}'' oder ``\texttt{1.23e2}'',
-      \item Strings, die in doppelten Hochkommata eingeschlossen sind, 
-            beispielsweise ``\texttt{\symbol{34}hallo\symbol{34}}'',
-      \item einzelne Buchstaben, die in Quotes eingeschlossen sind, beispielsweise
+      \item Numbers, for example the integer ``\texttt{123}'' or the floating point number ``\texttt{1.23e2}''.
+      \item Strings, which are enclosed in double.  For example,
+            ``\texttt{\symbol{34}hallo\symbol{34}}'' is a string constant.  Note that the symbols
+            ``\texttt{symbol{34}}'' are part of the string constant, while the opening and closing
+            quotes surrounding the string constant have been used to separate the string constant
+            from the surrounding text. 
+      \item Single letters that are enclosed in single quotes as in
             ``\texttt{\symbol{39}a\symbol{39}}''.
       \end{enumerate}
-\item Namen, die als Bezeichner für Variablen, Funktionen, oder Typen fungieren.
-\item Kommentare.
-\item Sogenannte \emph{White-Space-Zeichen}.  Hierzu gehören Leerzeichen, horizontale und
-      vertikale Tabulatoren, Zeilenumbrüche und Seitenvorschübe.
+\item Names that can act as variable names, function names, or type names.
+\item Comments, which come in two flavors.
+\item So called \emph{white space characters}.  For example the blank, tabulators, line breaks, and
+      carriage returns are white space symbols.
 \end{enumerate}
-Das Werkzeug \textsl{JFlex}\/ \cite{klein:2009} ist ein sogenannter Scanner-Generator,
-also ein Werkzeug, das aus einer Spezifikation verschiedener Token automatisch einen
-Scanner generiert.  Die einzelnen Token werden dabei durch reguläre Ausdrücke definiert.  
-Im Netz finden Sie dieses Programm unter der Adresse
+\textsl{JFlex}\/ \cite{klein:2009} is a so called  \emph{scanner generator}, i.e.~\textsl{JFlex} is
+a tool that takes as input the specification of the lexical structure of the tokens and that
+generates a scanner from this specification.  Usually, we specify the lexical structure of the
+tokens via regular expressions.
+You can find \textsl{JFlex} at 
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{http://jflex.de}{\texttt{http://jflex.de}}
 \\[0.2cm]
-Da das Programm selber in \textsl{Java} implementiert ist, kann es auf allen Plattformen
-eingesetzt werden, auf denen \textsl{Java} zur Verfügung steht.  Wir werden in dieser Vorlesung die
-Version \texttt{1.6.0} von \textsl{JFlex} verwenden.
+As \textsl{JFlex} is implemented in  \textsl{Java} it can be used on all platforms that support
+\textsl{Java}.    In this lecture, we will use \textsl{Java} version \texttt{1.6.1}.
 
-Im nächsten Abschnitt besprechen wir die Struktur einer \textsl{JFlex}-Eingabe-Datei und
-zeigen wie \textsl{JFlex}\/ aufgerufen wird.  Anschließend zeigen wir, wie reguläre Ausdrücke
-in der Eingabe-Sprache von \textsl{JFlex}\/ spezifiziert werden können.  Das Kapitel wird
-durch ein Beispiel abgerundet, bei dem wir mit Hilfe von \textsl{JFlex}\/ ein Programm
-erzeugen, mit dessen Hilfe die Ergebnisse einer Klausur ausgewertet werden können.
+The next section discusses the structure of a  \textsl{JFlex} input file and we will show how
+\textsl{JFlex} is used.  Next, we discuss the syntax of regular expressions as they are used in
+\textsl{JFlex}.  We finish the chapter with an example that shows how we can use \textsl{JFlex} to
+evaluate the results of an exam.
 
-Die von \textsl{JFlex}\/ erzeugten Scanner sind \textsl{Java}-Programme.  Für die
-Sprachen \texttt{C} und \texttt{C++} gibt es ein Äquivalent unter dem Namen 
+The scanner generated by \textsl{JFlex}\/ are \textsl{Java} programs.  For the languages \texttt{C}
+and \texttt{C++} there exist two similar programs that are called 
 \href{http://en.wikipedia.org/wiki/Lex_(software)}{\textsl{Lex}}
-\cite{lesk:1975} bzw.~\href{http://flex.sourceforge.net}{\textsl{Flex}} \cite{nicol93}.
+\cite{lesk:1975} and \href{http://flex.sourceforge.net}{\textsl{Flex}} \cite{nicol93}.
 
 
 \section{Struktur einer \textsl{JFlex}-Spezifikation}
-Eine \textsl{JFlex}-Spezifikation besteht aus drei
-Abschnitten, die durch den String ``\texttt{\%\%}'', der am Anfang einer Zeile stehen
-muss, voneinander getrennt werden.
+A  \textsl{JFlex} scanner specification is made up of three parts that are separated by the string
+``\texttt{\%\%}''.
+This separator string has to be positioned at the start of a line.
 \begin{enumerate}
-\item Der erste Teil ist der \emph{Benutzer-Code}.  Er besteht aus
-      \texttt{package}-Deklarationen und \texttt{import}-Befehlen, die wörtlich an den
-      Anfang der erzeugten Scanner-Klasse kopiert werden.  Zusätzlich kann der
-      Benutzer-Code noch die Definition lokaler \textsl{Java}-Klassen enthalten.
-      Allerdings ist es sinnvoller, solche Klassen in separaten Dateien zu definieren.
+\item The first part is the  \emph{user code}.  This part might contain a
+      \texttt{package} declaration and \texttt{import} directives.  Both the package declaration and
+      the import directives are copied verbatim into the \textsl{Java} program that is generated by
+      \textsl{JFlex}.  Furthermore, the user code may contain the definition of local \textsl{Java}
+      classes.  
 
-      Abbildung \ref{fig:count.jflex} auf Seite \pageref{fig:count.jflex} zeigt ein
-      Beispiel für eine \textsl{JFlex}-Spezifikation für einen Scanner, der Zahlen
-      erkennen und aufaddieren soll.  In diesem Fall besteht der Benutzer-Code nur aus der
-      \texttt{package}-Deklaration in Zeile 1.
-\item Der zweite Teil ist der \emph{Options-Teil}.  Dieser Teil enthält die Spezifikation 
-      verschiedener Optionen, sowie eventuell die Deklaration von Member-Variablen und Methoden 
-      der erzeugten Scanner-Klasse.
+      Figure \ref{fig:count.jflex} on pages \pageref{fig:count.jflex} gives an example of the
+      \textsl{JFlex} specification of a scanner that has the purpose of recognizing numbers that are
+      hidden in a text.  These numbers are then added.
+      in this case the user code consists only of the \texttt{package} declaration in line 1.
+\item The second part contains options and declarations.  This part sets various options and,
+      furthermore, may declare member variables and methods of the generated scanner.
 
-      In Abbildung \ref{fig:count.jflex} erstreckt sich dieser Teil von Zeile 3 bis Zeile
+      In Figure \ref{fig:count.jflex} this part starts in line  4 and ends in line 14.
       15.
-\item Der dritte Teil ist der \emph{Aktions-Teil}.  Hier werden die Strings, die der
-      Scanner erkennen soll, mit Hilfe von regulären Ausdrücken spezifiziert.  Zusätzlich
-      wird festgelegt, wie der Scanner diese Strings verarbeiten soll.
+\item The third part defines the \emph{actions}.  This part specifies the strings that are to be
+      recognized via regular expressions.  Furthermore, we add \textsl{Java} code that specifies how
+      the strings are to be processed.
 
-      In Abbildung \ref{fig:count.jflex} erstreckt sich der \emph{Aktions-Teil} von Zeile
-      17 bis Zeile 20.
+      In Figure \ref{fig:count.jflex} this part starts in line 18 and ends with line 20. 
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -128,24 +130,27 @@ muss, voneinander getrennt werden.
 \label{fig:input.txt}
 \end{figure}
 
-Wir diskutieren nun die in Abbildung \ref{fig:count.jflex} gezeigte \textsl{JFlex}-Spezifikation.
-Der in dieser Abbildung gezeigte Scanner hat die Aufgabe, alle natürlichen Zahlen, die in einer
-Datei vorkommen, aufzuaddieren.  Eine Eingabe-Datei für den zu entwickelnden Scanner könnte wie in
-Abbildung \ref{fig:input.txt} auf Seite \pageref{fig:input.txt} gezeigt aussehen.  Wir diskutieren
-die Spezifikation des Scanners aus Abbildung \ref{fig:count.jflex} jetzt Zeile für Zeile.
-\begin{enumerate}
-\item Zeile 1 spezifiziert, dass der erzeugte Scanner zu dem Paket \texttt{count} gehören
-      soll.  Im allgemeinen Fall würden hier auch noch \texttt{import}-Spezifikationen stehen, aber
-      dieses Beispiel ist so einfach, dass keine Imports erforderlich sind.
-\item Zeile 4 spezifiziert, dass die erzeugte Scanner-Klasse den Namen \texttt{Count} haben soll.
-\item Zeile 5 legt durch die Option ``\texttt{\%standalone}'' 
-      fest, dass der erzeugte Scanner nicht Teil eines Parsers ist, sondern als
-      unabhängiges Programm eingesetzt werden soll.  Daher wird \textsl{JFlex} die Klasse
-      \texttt{Count} mit einer Methode $\texttt{main}()$ ausstatten.  Diese Methode wird alle
-      Dateien, die ihr als Argument übergeben werden, scannen.
+We proceed to discuss the \textsl{JFlex} specification shown in Figure \ref{fig:count.jflex}.
+The purpose of the scanner that is generated from this \textsl{JFlex} specification is to process 
+a string that might contain numbers.  The scanner finds these numbers and adds them up.
+For example, a typical string processed by this scanner might be the file shown in 
+Figure \ref{fig:input.txt} on page \pageref{fig:input.txt}.  Here our scanner would find the
+substrings ``\texttt{3}'', ``\texttt{5}'', and ``\texttt{8}'' and add them.  The scanner would
+realize that the string ``\texttt{007}'' is not a number since it starts with a leading zero.
 
-      Einen Scanner, der selber mit einer $\texttt{main}$-Methode ausgestattet ist, werden wir im
-      Folgenden als \emph{Stand-Alone-Scanner} bezeichnen.
+We proceed to discuss the scanner specification shown in \ref{fig:count.jflex} line by line.
+\begin{enumerate}
+\item Line 1 specifies that the generated scanner is part of the package \texttt{count}.
+      If the scanner were a bit more complex we would have to use some \texttt{import} directives
+      here as well.  However, as this is example is rather simple, we do not need any import
+      directives.
+\item Line 4 specifies that the scanner is put into a class that has the name \texttt{Count}.
+\item Line 5 specifies that the scanner is not part of a parser but rather operates on its own.
+      Hence,  \textsl{JFlex} will generate a method with the name $\texttt{main}$ as part of the
+      class \texttt{Count}.  This method will scan all files that are used as arguments.
+
+      A scanner that is equipped with a  $\texttt{main}$ method is called a 
+      \emph{Stand-Alone-Scanner}.
 \item Zeile 6 legt durch die Option ``\texttt{\%unicode} 
       fest, dass ein Scanner für Unicode erzeugt werden soll.  Zum Scannen von
       Text-Dateien sollte diese Option immer gewählt werden.
