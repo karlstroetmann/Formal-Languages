@@ -438,7 +438,7 @@ $\textsl{OpSyms} := \{$ ``\texttt{.}'',
 ``\texttt{\symbol{92}}'', 
 ``\texttt{\symbol{94}}'', 
 ``\texttt{\symbol{36}}'', 
-``\texttt{\symbol{34}}'' $\}$
+``\texttt{\symbol{34}}'' $\}$.
 \\[0.2cm]
 Furthermore,  $\textsl{WsSym}$ denotes the set of all \textsc{Ascii} characters that represent white
 space.  Hence this set contains the blank space, the line break, the carriage return, the horizontal
@@ -453,9 +453,8 @@ expressions supported by \textsl{JFlex}.  This set is defined inductively:
       white space symbols are regular expressions that match the corresponding character $c$.
 \item ``\texttt{.}''$\in \textsl{Regexp}$
 
-      The character ``\texttt{.}'' is a regular expression that matches character that is different
-      from a Unicode line break.  The following unicode characters count as line breaks:
-      gewertet:
+      The character ``\texttt{.}'' is a regular expression that matches any character that is different
+      from a unicode line break.  The following unicode characters count as line breaks:
       \\[0.2cm]
       \hspace*{1.3cm}
        ``\texttt{\symbol{92}n}'', ``\texttt{\symbol{92}r}'',
@@ -519,7 +518,7 @@ expressions supported by \textsl{JFlex}.  This set is defined inductively:
       $a \cdot 16^5 + b \cdot 16^4 + c \cdot 16^3 + d \cdot 16^2 + e \cdot 16 + f$.
 \item $\texttt{\symbol{92}}o \in \textsl{Regexp}$ \quad provided $o \in \textsl{OpSyms}$ 
       
-      in order to match an operator symbol literally, we just have to precede it with a backslash.
+      In order to match an operator symbol literally, we just have to precede it with a backslash.
       For example, the regular expression ``\texttt{\symbol{92}*}'' matches the string ``\texttt{*}''.
 \item $r_1r_2 \in \textsl{Regexp}$ \quad provided $r_1,r_2 \in \textsl{Regexp}$
 
@@ -537,12 +536,12 @@ expressions supported by \textsl{JFlex}.  This set is defined inductively:
 
       The postfix operator ``\texttt{*}'' denotes the Kleene closure.  Hence, the regular expression
       $r\texttt{*}$ matches any string $s$ that can split up into $n$ substrings $t_1$, $\cdots$,
-      $t_n$, i.e.~we have
+      $t_n$, i.e.~if we have
       \\[0.2cm]
       \hspace*{1.3cm}
       $s = t_1\cdots t_n$
       \\[0.2cm]
-      provided $r$ matches every substring $t_i$ for $i=1, \cdots, n$.  Furthermore, $r\texttt{*}$
+      and furthermore $r$ matches every substring $t_i$ for $i=1, \cdots, n$, then $r\texttt{*}$ matches $s$.  Furthermore, $r\texttt{*}$
       matches the empty string.
 \item $r\texttt{+} \in \textsl{Regexp}$ \quad provided $r \in \textsl{Regexp}$
 
@@ -574,7 +573,7 @@ expressions supported by \textsl{JFlex}.  This set is defined inductively:
       Therefore, the regular expression  ``\texttt{a\{3,5\}}'' matches all of the following strings:
       \\[0.2cm]
       \hspace*{1.3cm}
-      ``\texttt{aaa}'', ``\texttt{aaaa}'' and ``\texttt{aaaaa}''.
+      ``\texttt{aaa}'', ``\texttt{aaaa}'', and ``\texttt{aaaaa}''.
 \item $\texttt{\symbol{94}}r$ \quad provided $r \in \textsl{Regexp}$
 
       The regular expression  $\texttt{\symbol{94}}r$ specifies that the substring matched by the
@@ -694,12 +693,11 @@ unique to the regular expressions supported by \textsl{JFlex}.
 \begin{enumerate}
 \item Regular expressions can be formatted using white space characters.
       However, white space is not allowed inside character classes.
-      Hence, In order to match a space character we can use the regular expression
+      Hence, in order to match a space character we can use the regular expression
       ``\texttt{[ ]}'', while the horizontal tab character can be matched using the regular
       expression ``\texttt{\symbol{92}t}''.
-\item Inside double quotes with one exception all operator symbols use their status as operator
-      symbols and just match themselves.  The exception is the backslash character
-      ``\texttt{\symbol{92}}''.  For example, the regular expression 
+\item Inside double quotes all operator symbols but the backslash ``\texttt{\symbol{92}}''loose
+      their status as operator symbols and just match themselves.  For example, the regular expression 
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{\symbol{34}/*\symbol{34}}
@@ -707,7 +705,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
       matches the start of a multi line \texttt{C} comment.  Although both the characters
       ``\texttt{/}'' and ``\texttt{*}'' are operator symbols, they match themselves because they are
       used inside double quotes in the regular expression given above.
-\item \textsl{JFlex} supports the negation operator ``\texttt{!}''.  This operator is used as a
+\item \textsl{JFlex} supports the negation operator ``\texttt{!}''.  Syntactically, this operator is a
       prefix operator.  If $r$ is a regular expression, then the regular expression
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -717,7 +715,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
 
       The precedence of the negation operator ``\texttt{!}'' is lower than the precedence of the
       postfix operators ``\texttt{+}'', ``\texttt{*}'', ``\texttt{?}'', ``\texttt{\{$m$\}}'', and
-      ``\texttt{\{$m$, $n$\}}'', but higher than the precedence of the concatenation.
+      ``\texttt{\{$m$, $n$\}}'', but higher than the precedence of concatenation of regular expressions.
       Therefore, the regular expression
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -736,7 +734,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
       \item First, we have to match the substring  ``\texttt{/*}''.  This is done by the regular expression
             \\[0.2cm]
             \hspace*{1.3cm}
-            \texttt{\symbol{34}/*\symbol{34}}
+            \texttt{\symbol{34}/*\symbol{34}}.
             \\[0.2cm]
             We have enclosed the substring \texttt{/*} in double quotes to prevent these characters
             from acting as operators.
@@ -749,14 +747,13 @@ unique to the regular expressions supported by \textsl{JFlex}.
             \texttt{[\symbol{94}]* \symbol{34}*/\symbol{34} [\symbol{94}]*}
             \\[0.2cm]
             matches any string that  contains the string ``\texttt{*/}''.  This string may be
-            preceded and succeeded by arbitrary characters.    
-            wobei vorher und nachher beliebige Zeichen stehen können.  Therefore, the negation of
+            preceded and succeeded by arbitrary characters. Therefore, the negation of
             this regular expression specifies exactly those strings that can appear inside a multi
             line comment: The only requirement in a multi line comment is that the string between
             the opening  ``\texttt{/*}'' and the closing ``\texttt{*/}'' must not contain the
             substring ``\texttt{*/}''.
-      \item The multi line comment ends with the substring ``\texttt{*/}'' which is matched by the
-        corresponding regular expression.
+      \item A multi line comment ends with the substring ``\texttt{*/}'' which is matched by the
+            corresponding regular expression.
       \end{enumerate}
       The  negation operator can be used to specify the intersection of two regular expressions
       $r_1$ and $r_2$:  Using  De Morgan's laws from propositional logic we have that
@@ -773,7 +770,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
       This regular expression matches all those strings that are matched by both
       $r_1$ and $r_2$.
 
-      Experience shows that the regular expressions that contains nested applications of the
+      Experience shows that the regular expressions that contain nested applications of the
       negation operator lead to finite state machines that may have huge numbers of states.
       Hence this feature should be used with caution.
 \item As a further convenience,  \textsl{JFlex} provides the \emph{upto} operator ``\texttt{\symbol{126}}''.
@@ -782,7 +779,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
       \hspace*{1.3cm}
       \texttt{\symbol{126}}$r$
       \\[0.2cm]
-      specifies any string that ends in $r$ but does not contain $r$ excpet at the end.
+      specifies any string that ends in $r$ but does not contain $r$ except at the end.
       Using the upto operator, multi line comments of the programming language \texttt{C} can be
       specified using the following regular expression:
       \\[0.2cm]
@@ -807,7 +804,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
       \texttt{[:digit:]}
       \\[0.2cm]
       specifies a digit.  The following character classes are provided in \textsl{JFlex}.  Each
-      of these character classes is corresponds to a method in the class \texttt{java.lang.Character}:
+      of these character classes corresponds to a method in the class \texttt{java.lang.Character}:
       \begin{enumerate}
       \item \texttt{[:jletter:]} is implemented via the method
             $\texttt{isJavaIdentifierStart}()$.
@@ -849,6 +846,8 @@ unique to the regular expressions supported by \textsl{JFlex}.
       \texttt{\symbol{92}P\{\textsl{className}\}}.
       \\[0.2cm]
       For example, the regular expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
       \texttt{\symbol{92}P\{greek\}}
       \\[0.2cm]
       matches all characters that are not Greek letters.
@@ -865,7 +864,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
 \section{Further \textsl{JFlex} Options}
 This section discusses the most important options that can be used in the options part of a 
 \textsl{JFlex} specification.  All options start with the character ``\texttt{\%}''.
-This character has to be the first character in the line.  Hence, options must not be indented.
+This character has to be the first character in the line.  Hence, an option must not be indented.
 \begin{enumerate}
 \item \texttt{\%char}
 
@@ -884,7 +883,7 @@ This character has to be the first character in the line.  Hence, options must n
 \item \texttt{\%cup}
 
       This option specifies that \textsl{JFlex} is used to generate a scanner that is to be used by
-      a parser generated form the  parser generator \textsc{Cup}.  We will explain and use this
+      a parser generated from the  parser generator \textsc{Cup}.  We will explain and use this
       option later once we start to discuss \textsc{Cup}.
 \item \texttt{\%ignorecase}
 
