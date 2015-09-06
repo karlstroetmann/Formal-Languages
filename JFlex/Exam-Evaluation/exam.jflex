@@ -1,6 +1,6 @@
 %%
 
-%class Note
+%class Exam
 %int        // declare return type of yylex
 %line
 %column
@@ -18,11 +18,10 @@
     }    
     public static void main(String argv[]) {
         if (argv.length != 2) {
-            System.out.println("Usage : java Note <inputfile> <maxPoints>");
+            System.out.println("Usage: java Exam <inputfile> <maxPoints>");
         } else {
-            Note scanner = null;
             try {
-                scanner            = new Note(new java.io.FileReader(argv[0]));
+                Exam scanner       = new Exam(new java.io.FileReader(argv[0]));
                 scanner.mMaxPoints = new Integer(argv[1]);
                 scanner.yylex();
             } catch (java.io.FileNotFoundException e) {
@@ -33,17 +32,16 @@
             } 
         }
     }
-
 %}
-ZAHL = 0|[1-9][0-9]*
-NAME = [A-Za-z‰ˆ¸ƒ÷‹ﬂ]+[ ][A-Za-z‰ˆ¸ƒ÷‹ﬂ\-]+
+NUMBER = 0|[1-9][0-9]*
+NAME   = [A-Za-z]+[ ][A-Za-z\-]+
 %% 
 
 [A-Za-z]+:.*\R { /* skip header                         */ }
-{NAME}/:       { System.out.print(yytext()); 
-                 mSumPoints = 0;                           }
-:[ \t]+        { System.out.print(yytext());               }
-{ZAHL}         { mSumPoints += new Integer(yytext());      }
+{NAME}:[ \t]+  { System.out.print(yytext()); 
+                 mSumPoints = 0;
+	       }
+{NUMBER}       { mSumPoints += new Integer(yytext());      }
 -              { /* skip hyphens                        */ }
 [ \t]          { /* skip white space                    */ }
 ^[ \t]*\R      { /* skip empty line                     */ }
