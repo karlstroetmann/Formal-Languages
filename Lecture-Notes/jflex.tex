@@ -281,6 +281,16 @@ We proceed to discuss the scanner specification shown in \ref{fig:count.jflex} l
             character that is not matched by any of the rules is printed to standard output.
       \end{enumerate}
 \end{enumerate}
+At this point it is natural to as ask how exactly the rules of a scanner are processed.  The
+important question is this: Provided there are two rules such that the regular expressions of these
+two rules both match, which rule will be taken?  Here is the answer:
+\begin{enumerate}
+\item If one of the regular expressions matches a longer prefix of the string than the other rule, the
+      rule matching the longer prefix wins and its action is executed.
+\item If the both regular expressions match a prefix of the same length, then the rule which appears
+      first in the rule section of the scanner specification wins.
+\end{enumerate}
+
 In order to generate a scanner from the \textsl{JFlex} specification shown in Figure
 \ref{fig:count.jflex} we have to use the  command
 \\[0.2cm]
@@ -861,7 +871,7 @@ unique to the regular expressions supported by \textsl{JFlex}.
       Here, the ``\texttt{7.0}'' specifies the version of  unicode that is supported.
  \end{enumerate}
 
-\section{Further \textsl{JFlex} Options}
+\section{\textsl{JFlex} Options}
 This section discusses the most important options that can be used in the options part of a 
 \textsl{JFlex} specification.  All options start with the character ``\texttt{\%}''.
 This character has to be the first character in the line.  Hence, an option must not be indented.
@@ -892,10 +902,10 @@ This character has to be the first character in the line.  Hence, an option must
       ``\texttt{[a-z]+}'' will also match the string ``\texttt{ABC}''.
 \end{enumerate}
 
-\section{A Complex Example: Computing Marks for an Exam}
-In diesem Abschnitt diskutieren wir eine Anwendung von \textsl{JFlex}.  Es geht dabei um die
-Auswertung von Klausuren.   Bei der Korrektur einer Klausur lege ich eine Datei an, die das 
-in Abbildung \ref{fig:ergebnis} beispielhaft gezeigte Format besitzt.
+\section{A Complex Example: Evaluating an Exam}
+This sections presents a more complex example that shows some of the power of \textsl{JFlex}.  The
+task at hand is the evaluation of an exam.  When I mark an exam I create a file that has a format
+similar to the example shown in Figure \ref{fig:result.txt}. 
 
 \begin{figure}[!h]
 \centering
@@ -907,40 +917,41 @@ in Abbildung \ref{fig:ergebnis} beispielhaft gezeigte Format besitzt.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    Klausur: Algorithmen und Datenstrukturen
-    Kurs:    TIT09AID
+    Class: Algorithms and Complexity
+    Group: TIT09AID
     
-    Aufgaben:            1. 2. 3. 4. 5. 6.
-    Max Müller:          9 12 10  6  6  0
-    Dietmar Dumpfbacke:  4  4  2  0  -  -
-    Susi Sorglos:        9 12 12  9  9  6
+    Exercise:      1. 2. 3. 4. 5. 6.
+    Jim Smith:     9 12 10  6  6  0
+    John Slow:     4  4  2  0  -  -
+    Susi Sorglos:  9 12 12  9  9  6
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Klausurergebnisse}
-\label{fig:ergebnis}
+\label{fig:result.txt}
 \end{figure}
 
 \begin{enumerate}
-\item Die erste Zeile enthält nach dem Schlüsselwort \texttt{Klausur} den Titel der Klausur.
-\item Die zweite Zeile gibt den Kurs an.
-\item Die dritte Zeile ist leer.
-\item Die vierte Zeile gibt die Nummern der einzelnen Aufgaben an.
-\item Danach folgt eine Tabelle.  Jede Zeile dieser Tabelle listet die Punkte auf,
-      die ein Student erzielt hat.  Der Name des Studenten wird dabei am Zeilenanfang angegeben.
-      Auf den Namen folgt ein Doppelpunkt und daran schließen sich dann Zahlen an, die angeben,
-      wieviele Punkte bei den einzelnen Aufgaben erzielt wurden.  Wurde eine Aufgabe nicht
-      bearbeitet, so steht in der entsprechenden Spalte ein Bindestrich ``\texttt{-}''.
+\item The first line contains the keyword ``\texttt{Class}'', a colon ``\texttt{:}'', and then the
+      name of the lecture. 
+\item The second line specifies the group that has taken the exam.
+\item The third line is empty.
+\item The fourth line specifies the exercises.
+\item After that, there is a table.  Every row in this table lists the scores achieved by a student
+      for each of the exercises.  We find the name of each student at the start of each row.  The
+      name is followed by a colon and after that there is a list of the scores achieved for each
+      exercise.  If an exercise has not been attempted at all, the corresponding column contains a hyphen
+      ``\texttt{-}''.
 \end{enumerate}
-Das \textsl{JFlex}-Programm, das wir entwickeln werden, berechnet zunächst die Summe
-\texttt{sumPoints} aller Punkte, die ein Student erzielt hat.  Aus dieser Summe wird dann nach der
-Formel 
+The \textsl{JFlex} program that we are going to develop will first compute the total score achieved
+by a student by summing up the scores she reached for each exercise.  This total score is stored in
+the variable \texttt{sumPoints}.  The mark is then computed according to the formula
 \\[0.2cm]
 \hspace*{1.3cm}
-$\texttt{note} = 7 - 6 \cdot \bruch{\;\texttt{sumPoints}\;}{\texttt{maxPoints}}$
+$\ds\texttt{mark} = 7 - 6 \cdot \frac{\;\texttt{sumPoints}\;}{\texttt{maxPoints}}$.
 \\[0.2cm]
-die Note errechnet, wobei die Variable \texttt{maxPoints} die  Punktzahl
-angibt, die für die Note 1,0 benötigt wird.  Diese Zahl ist ein Argument, das dem Programm
-beim Start übergeben wird. 
+Here, the  variable \texttt{maxPoints} specifies the score that is needed to accomplish the best
+mark. Note that in  Germany the best mark is 1.0.  This number is later provided as an argument to the
+program generated by \textsl{JFlex}.
 
 
 \begin{figure}[!ht]
@@ -971,11 +982,10 @@ beim Start übergeben wird.
         }    
         public static void main(String argv[]) {
             if (argv.length != 2) {
-                System.out.println("Usage : java Exam <inputfile> <maxPoints>");
+                System.out.println("Usage: java Exam <inputfile> <maxPoints>");
             } else {
-                Exam scanner = null;
                 try {
-                    scanner            = new Exam(new java.io.FileReader(argv[0]));
+                    Exam scanner       = new Exam(new java.io.FileReader(argv[0]));
                     scanner.mMaxPoints = new Integer(argv[1]);
                     scanner.yylex();
                 } catch (java.io.FileNotFoundException e) {
@@ -985,17 +995,18 @@ beim Start übergeben wird.
                     System.out.println(e);
                 } 
             }
-        } 
+        }
     %}
-    ZAHL = 0|[1-9][0-9]*
-    NAME = [A-Za-zäöüÄÖÜß]+[ ][A-Za-zäöüÄÖÜß\-]+
-    %% 
-    
+    NUMBER = 0|[1-9][0-9]*
+    NAME   = [A-Za-z]+[ ][A-Za-z\-]+
+
+    %%    
+
     [A-Za-z]+:.*\R { /* skip header                         */ }
-    {NAME}/:       { System.out.print(yytext()); 
-                     mSumPoints = 0;                           }
-    :[ \t]+        { System.out.print(yytext());               }
-    {ZAHL}         { mSumPoints += new Integer(yytext());      }
+    {NAME}:[ \t]+  { System.out.print(yytext()); 
+                     mSumPoints = 0;
+                   }
+    {NUMBER}       { mSumPoints += new Integer(yytext());      }
     -              { /* skip hyphens                        */ }
     [ \t]          { /* skip white space                    */ }
     ^[ \t]*\R      { /* skip empty line                     */ }
@@ -1003,110 +1014,116 @@ beim Start übergeben wird.
     .              { errorMsg();                               }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Berechnung von Noten mit Hilfe von \textsl{JFlex}.}
-\label{fig:note.jflex}
+\caption{Marking an exam using \textsl{JFlex}.}
+\label{fig:exam.jflex}
 \end{figure}
 
-Abbildung \ref{fig:note.jflex} zeigt die \textsl{JFlex}-Spezifikation, aus der sich
-automatisch ein \textsl{Java}-Programm zur Noten-Berechnung erstellen lässt.
+Figure \ref{fig:exam.jflex} on page \pageref{fig:exam.jflex} presents the \textsl{JFlex} scanner
+that is used to evaluate files like the one shown in Figure \ref{fig:result.txt}.  From this code,
+\textsl{JFlex} generates the \textsl{Java} program that can the be used to compute the scores.
 \begin{enumerate}
-\item Zeile 2 legt den Namen der Klasse fest.
-\item In Zeile 3 spezifizieren wir durch die Option ``\texttt{int}'', dass die
-      Scanner-Methode \textsl{yylex()} den Rückgabe-Wert \texttt{int} hat.
-      
-      Dies ist deswegen erforderlich, weil in einem Scanner, der nicht als
-      \texttt{standalone} deklariert ist, dieser Rückgabe-Wert den Typ \texttt{Yytoken} hat.
-      Die Klasse \texttt{Yytoken} wird allerdings von \textsl{JFlex} selber gar nicht definiert, denn
-      \textsl{JFlex} erwartet, dass diese Klasse von dem Parser, an dem der Scanner
-      angeschlossen wird, definiert wird.  Da wir gar keinen Parser anschließen wollen,
-      wäre der Typ \texttt{Yytoken} dann undefiniert.  Um zu vermeiden, dass der
-      Rückgabe-Wert der Methode \texttt{yylex()} den Typ \texttt{Yytoken} bekommt,
-      könnten wir den Scanner auch als \texttt{standalone} deklarieren, aber dann
-      hätten wir keine Möglichkeit mehr,
-      die Methode \texttt{main()} anzugeben.  Diese Methode benötigen wir, um die dem
-      Programm als Argument übergebene Punktzahl einlesen zu können.
-\item In den Zeilen 8 und 9 deklarieren wir die Variablen \texttt{mMaxPoints} und
-      \texttt{mSumPoints} als Member-Variablen der erzeugten Klasse.
-\item In der Methode \texttt{main()} erzeugen wir zunächst in Zeile 23 den Scanner und
-      setzen dann in Zeile 24 die Variable \texttt{mMaxPoints} auf den beim Aufruf
-      übergebenen Wert.  Der Scanner wird durch den Aufruf in Zeile 25 gestartet.
+\item As we neither use a \texttt{package} declaration nor need an \texttt{import} statement,
+      the first part of the \textsl{JFlex} specification is empty.  Therefore, our scanner
+      specification starts with the separator string ``\texttt{\symbol{37}\symbol{37}}''
+      that separates the first part from the second part.
+\item Line 2 defines the name of the generated class.
+\item Line 3 specifies via the option ``\texttt{int}'' that the return type of the scanner
+      method \textsl{yylex()} has to be the type  \texttt{int}.
 
-\item In dem Definitions-Abschnitt werden zwei \emph{Abkürzungen} definiert:
+      This is necessary since we have not declared the scanner as a 
+      \texttt{standalone} scanner.  If  a scanner is not a standalone scanner, by default the return
+      type of the method \texttt{yylex} is the type \texttt{Yytoken}.
+      However, the class \texttt{Yytoken} is not defined by \textsl{JFlex}.  The reason is that by default
+      \textsl{JFlex} expects any scanner that is not declared to be \texttt{standalone}
+      to be attached to a parser that declares the type \texttt{Yytoken}.  However, as we do not
+      intend to attach a parser, the type \texttt{Yytoken} is not defined.  In order to avoid
+      that the return type of the method \texttt{yylex()} is declared to be \texttt{Yytoken},
+      we specify the return type explicitly via the the option ``\texttt{\symbol{37}int}''.
+
+      At this point you might ask why we did not declare the scanner to be \texttt{standalone}.
+      The problem is that in a \texttt{standalone} scanner the method \textsl{main} is defined
+      by \textsl{JFlex}.  However, in this example we need to define the method \textsl{main}
+      ourselves as we need to call the generated program with two arguments:
       \begin{enumerate}
-      \item Zeile 35 enthält die Definition von \texttt{ZAHL}.  Mit dieser Definition können
-            wir später anstelle des regulären Ausdrucks
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            \texttt{0|[1-9][0-9]*}
-            \\[0.2cm]
-            kürzer ``\texttt{\{ZAHL\}}'' schreiben.  Beachten Sie, dass der Name einer Abkürzung
-            bei der Verwendung der Abkürzung in geschweiften Klammern eingefasst werden muss.
-      \item Zeile 36 enthält die Definition von \texttt{NAME}.  In dem regulären Ausdruck
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            \texttt{[A-Za-zöäüÖÄÜß]+[ ][A-Za-zöäüÖÄÜß]+}
-            \\[0.2cm]
-            wird festgelegt, dass ein Name aus großen und kleinen lateinischen
-            Buchstaben sowie Umlauten besteht und dass Vor- und Nachname durch ein
-            Leerzeichen getrennt werden.
+      \item The first argument is the name of file to be evaluated.
+      \item The second argument is the number of points that is needed to achieve the best mark.
       \end{enumerate}
-\item Der Regel-Abschnitt erstreckt sich von Zeile 39 -- 48.
+      The method main that is generated automatically only expects the name of the file to be
+      scanned as its argument and therefore this method does not fit our bill.
+\item In line 4 and line 5 we use the options ``\texttt{\symbol{37}line}'' and
+      ``\texttt{\symbol{37}column}'' to have both the line number and the column number available.
+      This information will come handy when we want to locate syntax errors in the input file.
+\item Line 8 and line 9 declare the variables  \texttt{mMaxPoints} und
+      \texttt{mSumPoints}.  These variable will be member variables of the class \texttt{Exam} that
+      is generated by \textsl{JFlex}.
+\item Line 10 -- 12 define the function \textsl{mark()} that is used to compute the score of an exam.
+\item Line 13 -- 16 define the function \textsl{errorMsg()} that is used to provide an error message
+      in case an unexpected character is encountered.  This function prints the position of the
+      invalid character.  Since \textsl{JFlex} starts to count lines and columns with 0 we have to
+      add $1$ to the variables \texttt{yyline} and \texttt{yycolumn}.
+\item The workhorse of the scanner is the method \textsl{main()} defined in line 17 -- 33.
       \begin{enumerate}
-      \item Die Regel in Zeile 39 dient dazu, die beiden Kopfzeilen
-            der zu verarbeitenden Datei zu lesen.  Diese Zeilen bestehen jeweils aus einem Wort,
-            auf das ein Dopplepunkt folgt.  Dahinter steht beliebiger Text, der mit einem
-            Zeilenumbruch endet.  
-      \item Die Regel in Zeile 40 liest den Namen eines Studenten, dem ein Doppelpunkt
-            folgen muss.  Da wir den Doppelpunkt mit dem Operator ``\texttt{/}''von dem Namen
-            abtrennen, ist der Doppelpunkt nicht Bestandteil des von dieser Regel gelesenen Textes.
-            Dadurch können wir den Doppelpunkt in der nächsten Regel noch benutzen.
+      \item In line 18 we have to check that the generated scanner is called with two arguments.
+            The first argument is the name of the file containing the results, while the second
+            argument is the score needed to achieve the best mark.  If the program is called with
+            either more than two or less than two arguments, usage information is printed.
+      \item Line 22 initializes the variable scanner as an object of class \texttt{Exam}.
+      \item Line 23 sets the variable \texttt{maxPoints} to the value provided by the user when
+            calling the program.
+      \item Line 24 starts the scanner by calling the function \textsl{yyylex()}.  This function
+            reads the given file and executes the scanner rules for the input given in that file.
+      \item In the lines 25 -- 30 we deal with various exceptions that might occur.   
+      \end{enumerate}
+\item Next, the lines 34 and 35 define two \emph{macros}.  A macro is just an abbreviation that can
+      be used to write a regular expressions more succinctly.
+      \begin{enumerate}
+      \item Line 35 defines the macro  \texttt{NUMBER}.  The value of this macro is the regular
+            expression recognizing natural numbers.
+      \item Line 36 defines the macro \texttt{NAME}.  The regular expression
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{[A-Za-z]+[ ][A-Za-z\symbol{92}-]+}
+            \\[0.2cm]
+            specifies that a name consists of a first name and a family name that are separated by a
+            blank character.  These names are sequences of Latin character in either lower or upper
+            case.  Furthermore, the family name might contain a hyphen.  Note that we have to escape
+            the hyphen.
+      \end{enumerate}
+\item The scanner rules are given in line 39 -- 48.
+      \begin{enumerate}
+      \item The rule in line 39 is used to read the two header lines that specify the name of the
+            class and the name of the group.
+            Both of these lines consist of a single word that is followed by a colon.  The text
+            after the colon is unimportant for the evaluation.  Therefore, these two lines are just skipped.
+      \item The rule in line 40 reads the name of the student which must be followed by a colon.
+            It also reads any white space following the colon.  Both the name and the colon
+            including the white space is then printed.
 
-            Wenn wir einen Namen gelesen haben, geben wir diesen mit Hilfe eines
-            \texttt{print}-Befehls aus.  Sie sehen hier, dass wir mit Hilfe der Methode
-            $\texttt{yytext()}$ auf den durch den regulären Ausdruck erkannten Text
-            zugreifen können.
+            The reason that we do not only print the name but also the white space is formatting.
+            Different names have different length.  By printing both the name and the white space we
+            are able to format the output in the same way the input is formatted. 
 
-            Anschließend setzen wir die Variable \texttt{mSumPoints}
-            auf 0.  Dies ist erforderlich, weil diese Variable ja noch die Punkte eines
-            anderen Studenten enthalten könnte.
-      \item Die nächste Regel in Zeile 42 liest die Leerzeichen und Tabulatoren ein, die auf 
-            den Doppelpunkt folgen und gibt diese aus.  Dadurch erreichen wir, dass die Ausgabe
-            der Noten genauso formatiert wird wie die Eingabe-Datei.
-      \item Die Regel in Zeile 43 dient dazu, die Punkte, die der Student bei einer Aufgabe 
-            erreicht hat, einzulesen.  Da die Zahl zunächst nur als String zur Verfügung steht,
-            müssen wir diesen String in eine Zahl
-            umwandeln.  Dazu benutzen wir den Konstruktor der Klasse \texttt{Integer}.
-            Anschließend wird diese Zahl dann zu der Summe der Punkte hinzuaddiert.
-      \item Für nicht bearbeitete Aufgaben enthält die Eingabe-Datei einen Bindestrich
-            ``\texttt{-}''.  Diese Bindestriche werden durch die Regel in Zeile 44
-            eingelesen und ignoriert.  Daher ist das Kommando dieser Regel (bis auf den Kommentar)
-            leer.
-      \item In der gleichen Weise überlesen wir mit der Regel in Zeile 45
-            Leerzeichen und Tabulatoren, die nicht auf einen Doppelpunkt folgen.
-      \item Die Regel in Zeile 46 dient dazu Zeilen einzulesen, die nur aus Leerzeichen
-            und Tabulatoren bestehen.  
-      \item Wenn wir nun einen einzelnen Zeilenumbruch lesen, dann muss dieser von einer Zeile
-            stammen, die die Punkte eines Studenten auflistet.  In diesem Fall berechnen wir mit
-            der Regel in Zeile 47 die erzielte Note und geben diese mit einer Stelle hinter
-            dem Komma aus.  
-      \item Die bis hierhin vorgestellten Regeln ermöglichen es, eine syntaktisch korrekte 
-            Eingabe-Datei zu verarbeiten.  Für den Fall, dass die Eingabe-Datei Syntaxfehler
-            enthält, ist es sinnvoll, eine Fehlermeldung auszugeben, denn sonst könnte es passieren,
-            dass auf Grund eines einfachen Tippfehlers eine falsche Note berechnet wird.
-            Daher enthält Zeile 48 eine Default-Regel, die immer dann greift, wenn keine der
-            anderen Regeln zum Zuge gekommen ist.  Diese Regel liest ein einzelnes Zeichen und
-            gibt eine Fehlermeldung aus.  Diese Fehlermeldung enthält das gelesene Zeichen. 
-            Außerdem werden die Variablen \texttt{yyline} und \texttt{yycolumn} benutzt um die
-            Position des fehlerhaften Zeichens anzugeben.
-            Wir benutzen hier die weiter oben definierte Methode \texttt{errorMsg}.
-            Da diese Funktion eine Member-Funktion der erzeugten Scanner-Klasse ist,
-            können wir innerhalb dieser Methode auf die beiden Variablen \texttt{yyline} und
-            \texttt{yycolumn} zurückgreifen, denn diese Variablen sind Member-Variablen 
-            der erzeugten Scanner-Klasse.
-
-            Beachten Sie, dass \textsl{JFlex} beim Zählen von Zeilen und Spalten mit $0$ beginnt.
-            Daher addieren wir jeweils noch $1$ zu den Werten von \texttt{yycolumn} und
-            \texttt{yyline}. 
+            Furthermore, we have to reset the variable \texttt{mSumPoints} to 0.  This is necessary
+            because in general this variable still contains the score of the last student.
+      \item The rule in line 43 reads the score that a student has achieved by doing an exercise.
+            As the function \textsl{yytext()} returns a string, this string has to be converted into
+            an integer.  Finally, this integer is added to the total score stored in the variable
+            \texttt{mSumPoints}. 
+      \item If a student hasn't worked on an exercise, the input file contains a hyphen 
+            ``\texttt{-}'' for this exercise.  The rule in line 44 reads this hyphen and skips it,
+            since exercises that have not been worked on do not contribute to the running total.
+      \item In the same way, the rule in line 45 skips over white space.
+      \item The rule in line 46 skips an empty line.
+      \item Since all other line breaks have been dealt with by the previous rules, the rule in line
+            47 deals with the case that we encounter a line break at the end of a 
+            line containing the scores of a student.  In this case, the mark of the student is
+            computed and printed with a precision of one decimal place.
+      \item The rules given so far are sufficient to process an input file that is syntactically
+            correct.  The last rule in line 48 deals with any unexpected character.  The regular
+            expression ``\texttt{.}'' matches every character.  If this rule is ever reached, this
+            means that a character has not been processed by the previous rules and hence there is a
+            syntax error.  In this case, an error message is printed using the function
+            \textsl{errorMsg()} defined above.
       \end{enumerate}
 \end{enumerate}
 
