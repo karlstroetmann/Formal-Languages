@@ -1127,71 +1127,68 @@ that is used to evaluate files like the one shown in Figure \ref{fig:result.txt}
       \end{enumerate}
 \end{enumerate}
 
-\section{Zustände}
-Viele syntaktische Konstrukte lassen sich zwar im Prinzip mit regulären Ausdrücken beschreiben,
-aber die Ausdrücke, die benötigt werden, sind sehr unübersichtlich.  Ein gutes Beispiel
-hierfür ist der reguläre Ausdruck zur Spezifikation von mehrzeilige
-\texttt{C}-Kommentaren, also Kommentaren der Form
+\section{Scanner States}
+Although many interesting syntactical constructions can be described through regular expressions, often
+the regular expressions that are needed can get quite unwieldy.  A case in point is the regular
+expression that describes multi line comments in the language \textsl{Java}.  In languages like
+\textsl{Java}, \texttt{C}, or \texttt{C++}, a multi line comment has the form
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{/*} $\cdots$ \texttt{*/}
 \\[0.2cm]
-Wenn wir hier einen regulären Ausdruck angeben möchten, der weder den Upto-Operator noch
-den Negations-Operator verwendet\footnote{
-  Die meisten anderen Werkzeuge, die mit regulären
-  Ausdrücken arbeiten, unterstützen weder den Negations-Operator noch den Upto-Operator.},
-so müssten wir den folgenden regulären Ausdruck verwenden:
-%\/\*([^*]|(\*+[^*/]))*\*+\/ 
+If we had to describe multi line comments with a regular expression that does use neither the
+negation operator nor the upto operator\footnote{Most of the tools that support regular expressions
+  do not support the negation operator, nor do they support the upto operator}, 
+then we would have to use a regular expression that looks similar to the following regular expression:
 \begin{equation}
   \label{eq:multiline-comment}
 \texttt{\symbol{92}/\symbol{92}*([\symbol{94}*]|\symbol{92}*+[\symbol{94}*/])*\symbol{92}*+\symbol{92}/}  
 \end{equation}
-Zunächst ist dieser Ausdruck schwer zu lesen.  Das liegt vor allem daran,
-dass die Operator-Symbole ``\texttt{/}'' und ``\texttt{*}'' durch einen Backslash
-geschützt werden müssen.  Aber auch die Logik, die hinter diesem Ausdruck steht, ist nicht
-ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
+First, the expression is quite difficult to read.  One reason is that the operator symbols
+``\texttt{/}'' and ``\texttt{*}'' have to be escaped with a backslash character.  The other problem
+is that the mechanics of this regular expression is quite involved.  Let us discuss the different
+parts of the regular expression given above:
 \begin{enumerate}
 \item \texttt{\symbol{92}/\symbol{92}*} 
 
-      Hierdurch wird der String ``\texttt{/*}'', der den Kommentar einleitet,  spezifiziert.
+      This part specifies the string ``\texttt{/*}''.
 \item \texttt{([\symbol{94}*]|\symbol{92}*+[\symbol{94}*/])*}
   
-      Dieser Teil spezifiziert alle Zeichen, die zwischen dem öffnenden String ``\texttt{/*}''
-      und einem schließenden String der Form ``\texttt{*/}'' liegen.  Wie müssen
-      sicherstellen, dass dieser Teil die Zeichenreihe ``\texttt{*/}'' nicht enthält, denn
-      sonst würden wir in einer Zeile der Form
+      This regular expression specifies text that is surrounded by the opening string
+      ``\texttt{/*}'' and the closing string  ``\texttt{*/}''.  This text must not contain the
+      substring ``\texttt{*/}'' because otherwise we would misinterpret a line of the form
       \\[0.2cm]
       \hspace*{1.3cm} \texttt{/* first */ ++n; /* second */}
       \\[0.2cm]
-      den Befehl ``\texttt{++n;}'' für einen Teil des Kommentars halten.  Der erste Teil des
-      obigen regulären Ausdrucks ``\texttt{[\symbol{94}*]}'' steht für ein beliebiges
-      von ``\texttt{*}'' verschiedenes Zeichen.  Denn solange wir kein ``\texttt{*}'' lesen,
-      kann der Text auch kein ``\texttt{*/}'' enthalten.  Das Problem ist, dass das Innere
-      eines Kommentars aber durchaus das Zeichen ``\texttt{*}'' enthalten kann, es darf
-      nur kein ``\texttt{/}'' folgen.  Daher spezifiziert die Alternative
-      ``\texttt{\symbol{92}*+[\symbol{94}*/]}'' einen String, der aus beliebig vielen 
-      ``\texttt{*}''-Zeichen besteht, auf die dann aber noch ein Zeichen folgen muss, dass
-      sowohl von ``\texttt{/}'' als auch von ``\texttt{*}'' verschieden ist.
+      since we would interpret the command ``\texttt{++n;}'' as a part of the comment.
       
-      Der Ausdruck ``\texttt{[\symbol{94}*]|\symbol{92}*+[\symbol{94}*/]}''
-      spezifiziert jetzt also entweder ein Zeichen, das von ``\texttt{*}'' verschieden
-      ist, oder aber eine Folge von ``\texttt{*}''-Zeichen, auf die dann noch ein von
-      ``\texttt{/}'' verschiedenes Zeichen folgt.  Da solche Folgen beliebig oft vorkommen
-      können, wird der ganze Ausdruck in Klammern eingefasst und mit dem Quantor
-      ``\texttt{*}'' dekoriert.   
+      The first part of the regular expression above is the expression ``\texttt{[\symbol{94}*]}''.
+      This part recognizes any character that is different from the character ``\texttt{*}''.  As
+      long as there is no  ``\texttt{*}'', the text can not contain the substring ``\texttt{*/}''.
+      However, the problem is that the character ``\texttt{*}'' is legal inside a
+      multi line comment.  However, this character must not be followed by the character ``\texttt{/}''.
+      Hence, the alternative ``\texttt{\symbol{92}*+[\symbol{94}*/]}'' specifies those strings
+      that might contain any number of ``\texttt{*}'' characters but that have to be followed by a character
+      that is both different from the character ``\texttt{/}'' and from the character ``\texttt{*}''.
+      
+      Hence, the expression  ``\texttt{[\symbol{94}*]|\symbol{92}*+[\symbol{94}*/]}''
+      specifies a character that is different from  ``\texttt{*}'', or a sequence of ``\texttt{*}''
+      characters that are followed by a character different from ``\texttt{/}''.  As these sequence
+      can occur any number of times, the expression is enclosed in parentheses and decorated with
+      the quantifier ``\texttt{*}''.   
 \item \texttt{\symbol{92}*+\symbol{92}/}
-
-      Dieser reguläre Ausdruck spezifiziert das Ende des Kommentars.  Es kann aus einer 
-      beliebigen positiven Anzahl von ``\texttt{*}''-Zeichen bestehen, auf die dann noch
-      ein ``\texttt{/}'' folgt.  Wenn wir hier nur den Ausdruck
-      ``\texttt{\symbol{92}*\symbol{92}/}'' verwenden würden, dann könnten wir Kommentare der
-      Form 
+  
+      This regular expression specifies the end of the multi line comment.
+      The end can consist of any positive number of  ``\texttt{*}'' characters that are followed by
+      the character  ``\texttt{/}''.  If we would just use the regular expression
+      ``\texttt{\symbol{92}*\symbol{92}/}'', then we would not be able to identify comments of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{/*** blah ***/}
       \\[0.2cm]
-      nicht mehr erkennen, denn der unter 2. diskutierte reguläre Ausdruck akzeptiert
-      nur Folgen von ``\texttt{*}'', auf die kein ``\texttt{*}'' folgt.
+      correctly, since the second part of the regular expression discussed previously does only allow sequences
+      of the character ``\texttt{*}'' that are followed by a character that is different from both
+      ``\texttt{*}'' and ``\texttt{/}''.
 \end{enumerate}
 
 \begin{figure}[!h]
@@ -1225,47 +1222,51 @@ ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
 \end{figure}
 
 \noindent
-Abbildung \ref{fig:decomment.jflex} zeigt ein \textsl{JFlex}-Programm, das aus einem
-\texttt{C}-Programm sowohl einzeilige Kommentare der Form ``\texttt{//} $\cdots$''
-als auch mehrzeilige Kommentare der Form ``\texttt{/*} $\cdots$ \texttt{*/} entfernt.
-Sie fragen sich an dieser Stelle vermutlich, was denn mit dem Teil des \texttt{C}-Programms
-geschieht, der nicht Teil eines Kommentars ist.  Hier kommt die \emph{Default-Regel} von
-\textsl{JFlex} zum tragen:  Jedes Zeichen,  das nicht durch eine der Regeln in dem
-\textsl{JFlex}-Programm verarbeitet wird, wird unverändert auf der Standardausgabe ausgegeben.
-Das hat zur Folge, dass das oben gezeigt \textsl{JFlex}-Programm genau die Kommentare aus einem
-\texttt{C}-Programm löscht und den Rest des \texttt{C}-Programms unverändert ausgibt.
+Figure \ref{fig:decomment.jflex} on page \pageref{fig:decomment.jflex} shows a \textsl{JFlex}
+program that can be used to remove all comments from a \texttt{C} program.  This program will remove
+both single line comments of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+ ``\texttt{//} $\cdots$''
+\\[0.2cm]
+as well as multi line comments of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+``\texttt{/*} $\cdots$ \texttt{*/}. 
+\\[0.2cm]
+At this point, you might ask yourself ``What happens to those parts of the program that are not comments?''.
+These parts are dealt with by the  \emph{default rule} of \textsl{JFlex}:  Every character of the
+input that is not matched by any of the \textsl{JFlex} rules is just echoed, i.e.~it is printed to
+the stream standard out.   Hence, the \textsl{JFlex} program shown above will remove the comments from a
+program and it will print the rest of the program unchanged.
 
-Das obige Programm zur Löschung von Kommentaren an sich ist zwar recht kurz, aber der reguläre Ausdruck zur Erkennung
-mehrzeiliger Kommentare ist sehr kompliziert und damit nur schwer zu verstehen.
-Es gibt zwei Möglichkeiten, um dieses Programm zu vereinfachen:
+Although this program is quite concise, the logic of the regular expression is very involved and,
+because of that, the program is difficult to understand and to maintain. 
+We have to options to simplify this program.
 \begin{enumerate}
-\item Wir könnten den oben bereits diskutierten Upto-Operator benutzen.
-      Das ist sicher der einfachste Weg, wenn wir mit \textsl{JFlex} arbeiten.  Sollten wir
-      allerdings mit einem Scanner-Generator wie \textsl{Flex} arbeiten, der diesen Operator nicht
-      unterstützt, dann entfällt diese Möglichkeit.
-\item Alternativ können wir auch mit sogenannten \emph{Start-Zuständen} arbeiten.
-      Wir werden diese letzte Möglichkeit jetzt anhand eines weiteren Beispiels vorführen,
-      das wir im folgenden Abschnitt diskutieren.
+\item We could use the upto operator.  If we were to use \textsl{JFlex}, this is by far the best
+      option.  However, not every scanner generator supports this operator.  For example, if we
+      would use \textsl{Flex} instead of \textsl{JFlex}, we would not have the upto operator available.
+\item Alternatively, we can use \emph{scanner states}.
+      We will discuss this option using a second example that is given in the following subsection.
 \end{enumerate}
 
-\subsection{Entfernung von \textsc{Html}-Tags}
-In diesem Abschnitt wollen wir ein Programm erstellen, das in der Lage ist, eine 
-\textsc{Html}-Datei in eine reine Text-Datei konvertieren.  Ein solches Programm ist durchaus
-nützlich: Vor einigen Jahren hatte ich einen blinden Studenten, der Webseiten nur über eine
-Braille-Zeile lesen konnte.  Für ihn waren die Formatierungs-Tags, die in einer typischen
-\textsc{Html}-Datei enthalten sind, nur störend.
+\subsection{Removal of  \textsc{Html} Tags}
+In this subsection we will develop a program that is able to convert an 
+\textsc{Html} file into a pure text file.  This program is actually quite useful: Some years ago I
+had a student that was blind.  If he read a web page, he would use his Braille display.  For him,
+the \textsc{Html} markup was of no use so if the markup was removed, he could read web pages faster.
 
-Die \textsl{JFlex}-Spezifikation, die
-in Abbildung \ref{fig:html2txt.jflex} gezeigt wird, führt die folgenden Aktionen durch:
+The \textsl{JFlex} program shown in Figure \ref{fig:html2txt.jflex} works as follows:
 \begin{enumerate}
-\item Zunächst wird der Kopf der \textsc{Html}-Datei, der in den Tags ``\texttt{<head>}''
-      und ``\texttt{</head>}'' eingeschlossen ist, entfernt.
-\item Die Skripte, die in der \textsc{Html}-Datei enthalten sind, werden ebenfalls
-      entfernt.
-\item Außerdem werden die \textsc{Html}-Tags entfernt.
+\item First, the head of an  \textsc{Html} file is removed.  The head of an \textsc{Html} file is
+      enclosed in the  tags ``\texttt{<head>}'' and ``\texttt{</head>}''.
+\item Furthermore, the \textsl{JavaScript} that is part of the \textsc{Html} file is also removed.
+\item Finally, all  \textsc{Html} tags are removed.
 \end{enumerate}
-Zur Deklaration der verschiedenen Zustände wird das Schlüsselwort
-``\texttt{\symbol{37}xstate}'' verwendet. 
+All this is done via the use of so called \emph{scanner states}.  In the example, there are two
+scanner states.  They are declared via the keyword
+``\texttt{\symbol{37}xstate}''. 
 
 \begin{figure}[!ht]
 \centering
@@ -1313,88 +1314,69 @@ Zur Deklaration der verschiedenen Zustände wird das Schlüsselwort
 \label{fig:html2txt.jflex}
 \end{figure}
 
-Wir diskutieren jetzt die in Abbildung \ref{fig:html2txt.jflex} gezeigte
-\textsl{JFlex}-Datei im Detail.
+We proceed to discuss the details of the \textsl{JFlex} program shown in Figure \ref{fig:html2txt.jflex}.
 \begin{enumerate}
-\item In Zeile 10 deklarieren wir die beiden \textsl{Zustände}\/
-      \texttt{header} und \texttt{script} über das Schlüsselwort ``\texttt{\%xstate}''
-      als \emph{exklusive} Start-Zustände.
-      Die allgemeine Syntax einer solchen Deklaration ist wie folgt:
+\item Line  10 declares the scanner states \texttt{header} and \texttt{script}.  The keyword ``\texttt{\%xstate}''
+      tells us that these states are  \emph{exclusive} scanner states.  We will discuss the difference
+      between exclusive and inclusive states later.
+      The general syntax of state declaration is as follows:
       \begin{enumerate}
-      \item Am Zeilen-Anfang einer Zustands-Deklaration steht der String ``\texttt{\symbol{37}xstate}''
-            oder ``\texttt{\symbol{37}state}''.  
-            Der String ``\texttt{\symbol{37}xstate}'' spezifiziert \emph{exklusive} Zustände,
-            der String ``\texttt{\symbol{37}state}'' spezifiziert \emph{inklusive} Zustände.
-            Den Unterschied zwischen diesen beiden Zustandsarten erklären wir später.
-      \item Darauf folgt eine Liste der Namen der deklarierten Zustände.  Die Namen werden
-            durch Leerzeichen getrennt.
+      \item A state declaration is either started with the keyword ``\texttt{\symbol{37}xstate}''
+            or the keyword ``\texttt{\symbol{37}state}''.  The keyword
+            ``\texttt{\symbol{37}xstate}'' declares \emph{exclusive} states, while
+            ``\texttt{\symbol{37}state}'' declares  \emph{inclusive} states.  The 
+            difference between these two kinds of states is discussed later.
+      \item After the keyword specifying the states as either inclusive or exclusive we have a list
+            of the names of the states.  These names are separated by blanks.
       \end{enumerate}
-\item In Zeile 13 haben wir den String ``\texttt{<head>}'' in doppelte Hochkommata
-      eingeschlossen.  Dadurch verlieren die Operator-Symbole ``\texttt{<}'' ihre
-      Bedeutung.  Dies ist eine allgemeine Möglichkeit, um Operator-Symbole in
-      \textsl{JFlex}\/ spezifizieren zu können.  Wollen wir beispielsweise den String
-      ``\texttt{a*}''  wörtlich erkennen, so können wir an Stelle von ``\texttt{a\symbol{92}*}''
-      auch klarer
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{\symbol{34}a*\symbol{34}}
-      \\[0.2cm]
-      schreiben.
+\item In line 13 we recognize the string  ``\texttt{<head>}''.  In this case, we execute the action 
+      ``\texttt{yybegin(header)}''.  This action switches the state of the scanner from the default
+      state ``\texttt{YYINITIAL}'' to  the state ``\texttt{header}''.   
+      As we had declared the state \texttt{header} to be an  exclusive state, the scanner is only
+      able to execute those rules that are marked with the prefix ``\texttt{<header>}''.
+      If the state had been declared as an inclusive state, then all rules that are not prefixed
+      with a state would also be applicable.  
       
-      Wird der String ``\texttt{<head>}'' erkannt, so wird in Zeile 13 die Aktion 
-      ``\texttt{yybegin(header)}'' ausgeführt.  Damit wechselt der Scanner aus dem
-      Default-Zustand ``\texttt{YYINITIAL}'', in dem der Scanner startet,
-      in den oben deklarierten Zustand \texttt{header}.
-      Da dieser Zustand als \emph{exklusiver} Zustand deklariert worden ist, können jetzt
-      nur noch solche Regeln angewendet werden, die mit dem Prefix ``\texttt{<header>}''
-      beginnen.  Wäre der Zustand als \emph{inklusiver} Zustand deklariert worden, so könnten auch solche 
-      Regeln verwendet werden, die nicht mit einem Zustand markiert sind.  Solche Regeln
-      sind implizit mit dem Zustand ``\texttt{<YYINITIAL>}'' markiert.
-      
-      Die Regeln, die mit dem Zustand ``\texttt{header}'' markiert sind, finden wir weiter
-      unten in den Zeilen 26 und 27.
-\item In Zeile 14 wechseln wir entsprechend in den Zustand ``\texttt{script}'' wenn
-      wir ein öffnendes \texttt{Script}-Tag sehen.
-\item In Zeile 15 werden alle restlichen Tags gelesen.  Da die Aktion hier leer ist,
-      werden diese Tags einfach entfernt.
-\item In Zeile 16 ersetzen wir die Zeichenreihe ``\texttt{\&nbsp;}'' durch ein Blank.
-\item  In den folgenden Zeilen werden die \textsc{Html}-Darstellungen von Umlauten
-      durch die entsprechenden Zeichen ersetzt.
-\item Zeile 26 beginnt mit der Zustands-Spezifikation ``\texttt{header}''.  Daher ist
-      diese Regel nur dann aktiv, wenn der Scanner in dem Zustand ``\texttt{header}'' ist.
-      Diese Regel sucht nach dem schließenden Tag ``\texttt{</head>}''.  Wird dieses Tag
-      gefunden, so wechselt der Scanner zurück in den Default-Zustand \texttt{YYINITIAL},
-      in dem nur die Regeln verwendet werden, die nicht mit einem Zustand markiert sind.
-\item Zeile 27 enthält ebenfalls eine Regel, die nur im Zustand ``\texttt{header}''
-      ausgeführt wird.  Diese Regel liest ein beliebiges Zeichen, welches nicht weiter 
-      verarbeitet wird und daher im Endeffekt verworfen wird.
-\item Die Zeilen 29 und 30 enthalten entsprechende Regeln für den Zustand
+      We find rules for the state ``\texttt{header}'' in the lines  26 and 27.
+\item Line 14 switches to the state ``\texttt{script}'' if the scanner encounters an opening
+      \texttt{script} tag.
+\item Line  15 reads all remaining tags.  Since the action is empty, these tags are removed.
+\item Line 16 replaces the string  ``\texttt{\&nbsp;}'' by a blank.
+\item The following lines replaces the  \textsc{Html} representation of strange German characters with
+      the corresponding characters.
+\item Line 26 is declared to be a rule for the state ``\texttt{header}''.  Hence, this rule is only
+      active if the scanner is in the state ``\texttt{header}''.  This rule searches for the closing tag
+      ``\texttt{</head>}''.  If this tag is found, the scanner changes back into the default state
+      \texttt{YYINITIAL}.  In the default state, the scanner uses only those rules that are not
+      prefixed with a state. 
+\item Line 27 contains another rule that is only used in the state  ``\texttt{header}''.
+      This rule reads an arbitrary character, which is not processed further and hence is simply
+      discarded. 
+\item The lines  29 and 30 contain similar rules that are used in the state
       ``\texttt{script}''.
 \end{enumerate}
+\pagebreak
 
-\exercise
-Einige Programmiersprachen unterstützen geschachtelte Kommentare.  Nehmen Sie an, dass Sie
-für eine Programmiersprache, bei der Kommentare der Form
+\exerciseEng
+Some programming languages allow nested comments.  Create a \textsl{JFlex} program that is able to
+remove nested comments of the form
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{/*} $\cdots$ \texttt{*/}
 \\[0.2cm]
-unterstützt werden, ein \textsl{JFlex}-Programm erstellen sollen, das diese Kommentare
-aus einem gegebenen Programm entfernt. 
- Nehmen Sie dabei an, dass solche Kommentare geschachtelt werden dürfen.  
-Nehmen Sie weiter an, dass die Programmiersprache auch Strings enthält, die durch doppelte
-Anführungszeichen begrenzt werden.  Falls die
-Zeichenfolgen ``\texttt{/*}'' und ``\texttt{*/}'' innerhalb eines Strings auftreten,
-sollen diese Zeichenfolgen nicht als Begrenzung eines Kommentars gewertet werden.
+from a given program.  Furthermore, assume that the program might contains strings that are
+contained in double quotes.  Now if either the character sequence ``\texttt{/*}'' or the character
+sequence ``\texttt{*/}'' occurs inside a string, then these character sequences should not be
+interpreted as comment delimiters. 
 \eox
 \vspace*{0.3cm}
 
-Die folgende Aufgabe dient der Verbesserung dieser Vorlesung.
+The next exercise is meant to improve the fun factor of my lecture.
 
-\exercise
-Überlegen Sie, bei welchen Software-Projekten sich \textsl{JFlex} überzeugend einsetzen lässt.
-Wenn Sie ein schönes Beispiel finden, teilen Sie mir dies bitte per 
-\href{mailto:karl.stroetmann@dhbw-mannheim.de}{Email} mit. \eox
+\exerciseEng
+Think of an interesting software project that provides a convincing use case for \textsl{JFlex}.  If
+you find something, please send your idea to my email adress: 
+\href{mailto:karl.stroetmann@dhbw-mannheim.de}{karl.stroetmann@dhbw-mannheim.de}. \eox
 
 %\exercise
 %Try to parse the calendar entries of an ics-calendar file and do something with these entries...
