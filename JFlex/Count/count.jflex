@@ -1,7 +1,7 @@
-/**
+/*
    This is a small example of a stupid little program that adds up all 
    the numbers it can find in its input.  Everything else in the input
-   is just ignored.
+   is just ignored. 
 */
 package count;
 
