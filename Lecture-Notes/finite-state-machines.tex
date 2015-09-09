@@ -7,101 +7,101 @@ abbreviated as \textsc{Fsm}.  There are two kinds of \textsc{Fsm}s: The determin
 non-deterministic ones.  Although non-deterministic \textsc{Fsm}s seem to be more powerful than
 deterministic \textsc{Fsm}s, we will see that every non-deterministic \textsc{Fsm} can be transformed
 into an equivalent deterministic \textsc{Fsm}.  After proving this result, we show how a regular
-expression is translated into a non-deterministic \textsc{Fsm}.  Finally, we show that every
+expression can be translated into an equivalent non-deterministic \textsc{Fsm}.  Finally, we show that every
 \textsc{Fsm} can be described by an equivalent regular expression.  Therefore, the central result of
 this chapter is the equivalence of finite state machines and regular expressions.
 
 
-\section{Deterministische endliche Automaten}
-Die endlichen Automaten, die wir in diesem Kapitel diskutieren wollen, haben die Aufgabe,
-einen String einzulesen und sollen dann entscheiden, ob dieser String ein Element der Sprache ist,
-die durch den Automaten definiert wird.  Die Ausgabe dieser Automaten beschränkt sich also auf 
-die beiden Werte \texttt{true} und \texttt{false}.  Der wesentliche Aspekt eines endlichen Automaten
-ist, dass der Automat intern eine fest vorgegebene Anzahl von Zuständen hat, in denen er sich
-befinden kann.  Die Arbeitsweise eines solchen Automaten ist dann wie folgt:
+\section{Deterministic Finite State Machines}
+The \textsc{Fsm}s that we are going to discuss in this chapter are used to read a string and
+to check whether this string is an element of some language that we are interested in.  Hence, the input of these 
+\textsc{Fsm}s is a string, while the output is either the value \texttt{true} or the value \texttt{false}.
+The main feature of an \textsc{Fsm} is the fact that an \textsc{Fsm} only has a
+finite number of possible states.  Reading a character causes the \textsc{Fsm} to change its state.
+An \textsc{Fsm} accepts its input if it has reached a so called \emph{accepting state} after reading
+all characters of the input string.  Let us render this idea more precisely:
 \begin{enumerate}
-\item Anfangs befindet sich der Automat in einem speziellen Zustand, der als \emph{Start-Zustand}
-      bezeichnet wird.
-\item In jedem Verarbeitungs-Schritt liest der Automat einen Buchstaben $b$ des Eingabe-Alphabets
-      $\Sigma$ und wechselt in Abhängigkeit von $b$ und dem aktuellen Zustand in den Folgezustand.
-\item Eine Teilmenge aller Zustände wird als Menge der \emph{akzeptierenden Zustände} ausgezeichnet.
-      Das eingelesene Wort ist genau dann ein Element der vom \textsc{EA} akzeptierten Sprache, 
-      wenn sich der Automat nach dem Einlesen aller Buchstaben in einem akzeptierenden Zustand
-      befindet.
+\item Initialy, the \textsc{Fsm} is in a state that is know as the \emph{start state}.
+\item In every step of its computation, the \textsc{Fsm} processes one character of the input string
+      $s$.  Every time a character is processed, the state of the \textsc{Fsm} might change.
+\item Some states of the \textsc{Fsm} are designated as \emph{accepting states}.  If the
+      \textsc{Fsm} has consumed all characters of the given input string $s$ and the \textsc{Fsm}
+      has reached an accepting state, then the input string $s$ is accepted and the \textsc{Fsm}
+      returns \texttt{true}.  Otherwise the \textsc{Fsm} returns \texttt{false} and the string $s$
+      is rejected.
 \end{enumerate}
-
 \begin{figure}[!ht]
   \centering
       \epsfig{file=Abbildungen/abstara.eps, scale=0.7}
-   \caption{Ein einfacher endlicher Automat zur Erkennung der durch den
-            regulären Ausdruck ``$\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*$''
-            definierten Sprache.}
+   \caption{An \textsc{Fsm} to recognize the language $L(\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*)$.}
   \label{fig:abstara.dot}
 \end{figure}
 
 
 \noindent
-Am einfachsten können endliche Automaten grafisch dargestellt werden.  Abbildung \ref{fig:abstara.dot},
-zeigt einen einfachen endlichen Automaten, der die Strings erkennt, die durch den regulären Ausdruck
+Finite state machines are best presented graphically.  Figure \ref{fig:abstara.dot} depicts a simple
+\textsc{Fsm} that recognizes those strings that are specified by the regular expression
 \\[0.2cm]
 \hspace*{1.3cm}
-$\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*$
+$\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*$.
 \\[0.2cm]
-beschrieben werden.  Der Automat hat die beiden Zustände $0$ und $1$.
+This \textsc{Fsm} has but two states.  These states are called $0$ and $1$.
 \begin{enumerate}
-\item Zustand $0$ ist der Start-Zustand.  In der Abbildung wird das durch den Pfeil, der auf
-      diesen Zustand zeigt, kenntlich gemacht.
+\item State $0$  is the start state.  In the Figure, the start state is indicated by an arrow
+      pointing do it.  
+  
+      If the \textsc{Fsm} is in the state 0 and reads the character ``\texttt{a}'', then the
+      \textsc{Fsm} stays in state 0.  This is specified in the figure by an arrow labeled with the
+      character ``\texttt{a}'' that both starts and ends in the state 0.  On the other hand, if the
+      character ``\texttt{b}'' is read while the \textsc{Fsm} is in state 0, then the \textsc{Fsm}
+      switches into the state 1.  This is depicted by an arrow labeled with the character
+      ``\texttt{b}'' that originates from the state 0 and points to the state 1.
+\item State  $1$ is an accepting state. In Figure \ref{fig:abstara.dot} this is specified by the
+      fact that the state 1 is decorated by a double circle.
 
-      Wenn in diesem Zustand der Buchstabe ``\texttt{a}'' gelesen wird, dann bleibt der Automat in
-      dem  Zustand $0$.  Wird hingegen der Buchstabe ``\texttt{b}'' gelesen, dann wechselt der
-      Automat in den Zustand $1$. 
-\item Zustand $1$ ist ein akzeptierender Zustand.  In der Abbildung ist das dadurch zu
-      erkennen, dass dieser Zustand von einem doppelten Kreis umgeben ist.
+      If the character ``\texttt{a}'' is read while the \textsc{Fsm} is in state 1, then the
+      \textsc{Fsm} does not change its state.  On the other hand, if the \textsc{Fsm} reads the
+      character ``\texttt{b}'' while in state 1, then the next state is undefined since there is no
+      arrow originating from state 1 that is labeled with the character ``\texttt{b}''.
 
-      Wenn in diesem Zustand der Buchstabe ``\texttt{a}'' gelesen wird, dann bleibt der Automat in
-      dem  Zustand $1$.  In der Abbildung wird nicht gezeigt, was passiert,
-      wenn der Automat im Zustand $1$ den Buchstaben  ``\texttt{b}'' liest, der
-      Folgezustand ist dann undefiniert. 
-
-      Allgemein sagen wir, dass ein Automat \emph{stirbt}, wenn er in einem Zustand $q$ einen
-      Buchstaben $b$ liest, für den kein Übergang definiert ist.
+      In general, a \textsc{Fsm} \emph{dies} if it reads a character $c$ in a state $s$ such that there
+      is no transition from $s$ when $c$ is read.
 \end{enumerate}
 
 \noindent
 Formally, a \href{http://en.wikipedia.org/wiki/Finite-state_machine}{\emph{finite state machine}} 
-is defined as a tuple.
+is defined as a 5-tuple.
 \begin{Definition}[\textsc{Fsm}]
 A \emph{finite state machine} (abbreviated as \textsc{Fsm}) is a 5-tuple 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\langle Q, \Sigma, \delta, q_0, F\rangle$
+$F = \langle Q, \Sigma, \delta, q_0, A\rangle$
 \\[0.2cm]
-where the components $Q$, $\Sigma$, $\delta$, $q_0$, and $F$ satisfy the following:
+where the components $Q$, $\Sigma$, $\delta$, $q_0$, and $F$ have the following properties:
 \begin{enumerate}
 \item $Q$ is the \underline{finite} \emph{set of states}.
-\item $\Sigma$ is the \emph{input alphabet}.  Therefore, $\Sigma$ is the set of characters that can
-      be used in the input strings for the given \textsc{Fsm}.
+\item $\Sigma$ is the \emph{input alphabet}.  Therefore, $\Sigma$ is the set of characters and
+      the strings read by the \textsc{Fsm} $F$ are strings from the set $\Sigma^*$.
 \item $\delta: Q \times \Sigma \rightarrow Q \cup \{ \Omega \}$
 
       is the  \emph{transition function}.  For every state $q\in Q$ and for all characters
-      $c \in \Sigma$ the expression $\delta(q,c)$ computes the new state of the \textsc{Fsm}
-      that is reached if the \textsc{Fsm} reads the character $c$ while in state $q$.
-      If $\delta(q,c) = \Omega$, then the \textsc{Fsm} \emph{dies} when it is in state $q$ and the
-      next character is $c$.
+      $c \in \Sigma$ the expression $\delta(q,c)$ computes the new state of the \textsc{Fsm} $F$
+      that is reached if $F$ reads the character $c$ while in state $q$.
+      If $\delta(q,c) = \Omega$, then $F$ \emph{dies} when it is in state $q$ and the next character
+      is $c$. 
 \item $q_0 \in Q$ is the \emph{start state}.
-\item $F \subseteq Q$ is the set of accepting states.
+\item $A \subseteq Q$ is the set of accepting states.
       \qed
 \end{enumerate}
 \end{Definition}
 
-\example
-Der in Abbildung \ref{fig:abstara.dot} gezeigte endliche Automat kann formal
-wie folgt beschrieben werden:
+\exampleEng
+The \textsc{Fsm} that is shown in Figure  \ref{fig:abstara.dot} is formally defined as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$A = \langle Q, \Sigma, \delta, q_0, F\rangle$,
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$,
 \\[0.2cm]
-wobei gilt:
+where we have:
 \begin{enumerate}
 \item $Q = \{ 0, 1 \}$,
 \item $\Sigma = \{ \texttt{a}, \texttt{b} \}$,
@@ -112,224 +112,197 @@ wobei gilt:
                         \pair(1,b) \mapsto \Omega 
                 \bigr\}$,
 \item $q_0 = 0$,
-\item $F = \{ 1 \}$.
+\item $A = \{ 1 \}$.
 \end{enumerate}
-
-Um die von einem endlichen Automaten akzeptierte Sprache formal definieren zu können, 
-verallgemeinern wir die Zustands-Übergangs-Funktion $\delta$ zu einer Funktion
+In order to formally define the language $L(F)$ that is accepted by an \textsc{Fsm} $F$
+we generalize the transition function $\delta$ to a new function
 \\[0.2cm]
 \hspace*{1.3cm}
 $\delta^*: Q \times \Sigma^* \rightarrow Q \cup \{ \Omega \}$,
 \\[0.2cm]
-der als zweites Argument ein String übergeben werden kann.  Die Definition von
-$\delta^*(q, w)$ erfolgt durch Induktion nach der Länge $|w|$ des Strings $w$.
+that accepts a string as its second argument.  The definition of
+$\delta^*(q, w)$ is given by induction on the length $|w|$ of the string $w$.
 \begin{enumerate}
-\item[I.A.] $|w| = 0$: \quad  Dann gilt offenbar $w = \varepsilon$.  Wir setzen
+\item[I.A.] $|w| = 0$: \quad Then we must have $w = \varepsilon$.  We define
             \\[0.2cm]
             \hspace*{1.3cm}
             $\delta^*(q, \varepsilon) := q$,
             \\[0.2cm]
-            denn wenn kein Buchstabe gelesen wird, ändert der Automat seinen Zustand auch nicht.
-\item[I.S.] $|w| = n + 1$: \quad In diesem Fall hat $w$ die Form $w = cv$ mit 
-            $c \in \Sigma$, $v  \in \Sigma^*$ und $|v| = n$.  Wir setzen
+            because if $F$ does not read any character, it cannot change its state. 
+\item[I.S.] $|w| = n + 1$: \quad In this case $w$ can be written as  $w = cv$ where
+            $c \in \Sigma$, $v  \in \Sigma^*$ and $|v| = n$.  We define
             \\[0.2cm]
             \hspace*{1.3cm}
             $\delta^*(q, cv) := \left\{
             \begin{array}[c]{ll}              
-            \delta^*\bigl(\delta(q,c),v\bigr) & \mbox{falls $\delta(q,c) \not= \Omega$;} \\
-            \Omega                            & \mbox{sonst}.
+            \delta^*\bigl(\delta(q,c),v\bigr) & \mbox{provided $\delta(q,c) \not= \Omega$;} \\
+            \Omega                            & \mbox{otherwise}.
             \end{array}
             \right.
             $
             \\[0.2cm]
-            denn wenn der Automat das Wort $cv$ liest, wird erst der Buchstabe $c$
-            gelesen.  Falls der Automat dabei in den Zustand $\delta(q,c)$ überwechselt,
-            wird nun in diesem Zustand der Rest des Wortes, also $v$ gelesen.
-            Falls $\delta(q,c)$ undefiniert ist, ist natürlich auch $\delta^*(q,cv)$ undefiniert.
+            If $F$ reads the string  $cv$, it first reads the character $c$.  Now if this causes  $F$
+            to change into the state $\delta(q,c)$, then $F$ has to read the string $v$ in the state
+            $\delta(q,c)$.  However, 
+            if  $\delta(q,c)$ is undefined, then  $\delta^*(q,cv)$ is undefined, too.
 \end{enumerate}
-\begin{Definition}[akzeptierte Sprache, $L(A)$]
-  Für einen endlichen Automaten $A = \langle Q, \Sigma, \delta, q_0, F\rangle$ definieren
-  wir die von $A$ \textsl{akzeptierte Sprache $L(A)$} als
+
+\begin{Definition}[Accepted Language, $L(F)$]
+  For an \textsc{Fsm} $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ the \emph{language accepted by $F$} 
+  is called $L(F)$ and is defined as
   \\[0.2cm]
   \hspace*{1.3cm}
-  $L(A) := 
-   \bigl\{ s \in \Sigma^* \mid \delta^*(q_0,s) \in F \bigr\}$. \qed
+  $L(F) := \bigl\{ s \in \Sigma^* \mid \delta^*(q_0,s) \in A \bigr\}$. 
+  \\[0.2cm]
+  Hence, the accepted language of $F$ is the set of all those strings that take $F$ from its
+  start state into an accepting state. \qed
 \end{Definition}
- 
-Die akzeptierte Sprache eines endlichen Automaten besteht also aus all den Wörtern $s$, bei denen der endliche
-Automat beim Lesen des Wortes $s$ von dem Start-Zustand in einen akzeptierenden Zustand übergeht.
+
+\exerciseEng
+Specify an \textsc{Fsm} $F$ such that $L(F)$ is the set of all those strings $s \in \{a,b\}^*$, 
+such that $s$ contains the substring  ``\texttt{aba}''.
+\eox
 
 
-\exercise
-Geben Sie einen EA $F$ an, so dass $L(F)$ aus genau den Wörtern der Sprache $\{a,b\}^*$ besteht, 
-die den Teilstring ``\texttt{aba}'' enthalten.
-\vspace*{0.3cm}
-
-
-\remarkEng
-There is a nice simulator for finite state machines at the following address:
-\\[0.2cm]
-\hspace*{1.3cm} \href{http://www.mathcs.bethel.edu/~gossett/DiscreteMathWithProof/fsme/fsme.html}{
-\texttt{http://www.mathcs.bethel.edu/\symbol{126}gossett/DiscreteMathWithProof/fsme/fsme.html}}
-\\[0.2cm]
-This simulator is a \textsl{Java} applet, so remember to activate \textsl{Java} in your browser if
-you want to try it.
-
-
-\paragraph{Vollständige Endliche Automaten}
-Gelegentlich ist es hilfreich, wenn ein Automat $A$ \emph{vollständig} ist: Darunter verstehen
-wir einen Automaten
+\paragraph{Complete Finite State Machines}
+Occasionally it is beneficial for an \textsc{Fsm} $F$ to be \emph{complete}: An \textsc{Fsm}
 \\[0.2cm]
 \hspace*{1.3cm}
-$A = \langle Q, \Sigma, \delta, q_0, F\rangle$,
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$,
 \\[0.2cm]
-für den die Funktion $\delta$ nie den Wert $\Omega$ als Ergebnis liefert, es gilt also
+is complete if the transition function $\delta$ never returns the undefined value $\Omega$. i.e.~we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $\delta: Q \times \Sigma \rightarrow Q$.
 
-\begin{Satz}
-  Zu jedem endlichen deterministischen Automaten $A$ gibt es einen vollständigen deterministischen 
-  Automaten $\hat{A}$, der dieselbe Sprache akzeptiert wie der Automat $A$, es gilt also:
+\begin{Proposition}
+  For every \textsc{Fsm} $F$ there exists a \emph{complete} \textsc{Fsm}  $\hat{F}$, that accepts
+  the same language as the \textsc{Fsm}  $F$, i.e.~we have:
   \\[0.2cm]
   \hspace*{1.3cm}
-  $L(\hat{A}) = L(A)$.
-\end{Satz}
+  $L(\hat{F}) = L(F)$.
+\end{Proposition}
 
 \proof
-Der Automat $A$ habe die Form
+Assume $F$ is given as
 \\[0.2cm]
 \hspace*{1.3cm}
-$A = \langle Q, \Sigma, \delta, q_0, F\rangle$
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$.
 \\[0.2cm]
-Die Idee ist, dass wir $\hat{A}$ dadurch definieren, dass wir zu der Menge $Q$ einen neuen,
-sogenannten \emph{toten} Zustand hinzufügen.  Wenn es nun für einen Zustand $q \in Q$ und einen Buchstaben $c$ keinen
-Folge-Zustand in $Q$ gibt, wenn also 
+The idea is to define $\hat{F}$ by adding a new state to the set of states $Q$.  This new state is called
+the  \emph{dead} state.  If there is no next state for a given state  $q \in Q$ when a character $c$
+is processed, i.e.~if we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\delta(q, c) = \Omega$
+$\delta(q, c) = \Omega$,
 \\[0.2cm]
-gilt, dann geht der Automat in den toten Zustand über und bleibt auch bei allen folgenden Eingaben
-in diesem Zustand.
+then $F$ changes into the dead state.  Once $F$ has reached a dead state, it will never leave this
+state.
 
-Die formale Definition von $\hat{A}$ verläuft wie folgt.
-Es bezeichne $\dag$ einen \emph{neuen} Zustand, also einen Zustand, der noch nicht in 
-der Zustands-Menge $Q$ vorkommt.  Wir nennen  $\dag$ auch den \emph{toten} Zustand. Dann definieren wir
+The formal definition of the \textsc{Fsm} $\hat{A}$ is done as follows:
+We introduce a new state $\dag$ which serves as the dead state.  The only requirement is that $\dag \not\in Q$.  We call $\dag$ the
+\emph{dead state}.
 \begin{enumerate}
-\item $\hat{Q} := Q \cup \{ \dag \}$,
+\item $\widehat{Q} := Q \cup \{ \dag \}$,
 
-      der tote Zustand $\dag$ wird also der Menge $Q$ hinzugefügt.
-\item $\hat{\delta} : \hat{Q} \times \Sigma \rightarrow \hat{Q}$,
+      the dead state is added to the set  $Q$.
+\item $\widehat{\delta} : \widehat{Q} \times \Sigma \rightarrow \widehat{Q}$,
 
-      wobei die Werte der Funktion $\hat{\delta}$ wie folgt festgelegt werden:
+      where the function $\widehat{\delta}$ is defined as follows:
       \begin{enumerate}
-      \item $\delta(q,c) \not= \Omega \rightarrow \hat{\delta}(q,c) = \delta(q,c)$,
+      \item $\delta(q,c) \not= \Omega \rightarrow \widehat{\delta}(q,c) = \delta(q,c)$,
 
-            wenn die Zustands-Übergangs-Funktion $\delta$ für den Zustand $q$ und den Buchstaben
-            $c$ definiert ist und also einen Zustand als Ergebnis liefert, dann produziert
-            $\hat{\delta}$ den selben Zustand.
-      \item $\delta(q,c) = \Omega \rightarrow \hat{\delta}(q,c) = \dag$,
+            if the state transition function is defined for the state  $q$ and the character
+            $c$, then $\widehat{\delta}(q,c)$ is the same as $\delta(q,c)$.
+      \item $\delta(q,c) = \Omega \rightarrow \widehat{\delta}(q,c) = \dag$,
 
-            wenn die Zustands-Übergangs-Funktion $\delta$ für den Zustand $q$ und den Buchstaben
-            $c$ als Ergebnis $\Omega$ liefert und also undefiniert ist,  dann produziert
-            $\hat{\delta}$ als Ergebnis den toten Zustand $\dag$.
-      \item $\hat{\delta}(\dag, c) = \dag$ \quad für alle $c \in \Sigma$,
+            if the state transition function $\delta$ is undefined for the state $q$ and the character
+            $c$, then $\widehat{\delta}(q,c)$ returns the dead state $\dag$.
+      \item $\widehat{\delta}(\dag, c) = \dag$ \quad for all $c \in \Sigma$,
 
-            denn aus der Unterwelt gibt es kein Entkommen: Ist der Automat einmal in dem toten
-            Zustand angekommen, so kann er in keinen anderen Zustand mehr gelangen, egal
-            welches Zeichen eingelesen wird.
+            because there is no escape from death\footnote{What is dead may never die.}.
       \end{enumerate}
 \end{enumerate}
-Damit können wir den Automaten $\hat{A}$ angeben:
+Hence the \textsc{Fsm}  $\widehat{F}$ is given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\hat{A} = \langle \hat{Q}, \Sigma, \hat{\delta}, q_0, F \rangle$.
+$\widehat{F} = \langle \widehat{Q}, \Sigma, \widehat{\delta}, q_0, A \rangle$.
 \\[0.2cm]
-Falls nun der Automat $A$  einen String $s$ einliest und dabei nicht stirbt, so ist das 
-Verhalten von $A$ und $\hat{A}$ identisch, es werden in beiden Automaten dieselben Zustände
-durchlaufen.   Falls der Automat $A$ stirbt, dann geht der Automat $\hat{A}$ ersatzweise in den
-Zustand $\dag$ und bleibt bei allen folgenden Eingaben in diesem Zustand.  Da der Zustand $\dag$
-kein Element der Menge $F$ der akzeptierenden Zustände ist,  sind die von $A$ und $\hat{A}$
-akzeptierten Sprachen identisch. \qed 
+If  $F$ reads a string $s$ without reaching an undefined state, then the behavior of $F$ and $\widehat{F}$ is the same.
+However, if $F$ reaches an undefined state, then $\widehat{F}$ instead switches into the dead state 
+$\dag$ and remains in this state regardless of the rest of the input string.  As the dead state $\dag$
+is not an accepting state, the languages accepted by  $F$ and $\widehat{F}$ are identical. \qed 
 
-\exercise
-Entwickeln Sie einen endlichen Automaten, der die durch den regulären Ausdruck
+\exerciseEng
+Define an \textsc{Fsm} that accepts the language specified by the regular expression 
 \\[0.2cm]
 \hspace*{1.3cm}
-$r := (\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})$
-\\[0.2cm]
-spezifizierte Sprache erkennt.
+$r := (\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot
+(\texttt{a}+\texttt{b})$. \eox
 
- \solution
- Der reguläre Ausdruck beschreibt genau die Wörter, die aus den Buchstaben des Alphabets 
- $\Sigma = \{ \mathtt{a}, \mathtt{b} \}$ gebildet sind, bei denen der drittletzte Buchstabe
- ein ``\texttt{b}'' ist.  Demzufolge muss der Automat in seinem Zustand den Wert der drei
- letzten Buchstaben abspeichern.  Da es für die letzten drei Buchstaben insgesamt acht
- verschiedene Kombinationsmöglichkeiten gibt, benötigen wir auch acht verschiedene
- Zustände, die wir mit den Zahlen $\{0,1,2, \cdots, 7\}$ durchnummerieren.  Im Folgenden
- beschreiben wir diese acht Zustände:
- \begin{description}
- \item[Zustand 0:] In diesem Zustand wurden als letztes die drei Buchstaben
-                   ``\texttt{aaa}'' gelesen.  
+\solutionEng
+The regular expression $r$ specifies those strings $s$ from the alphabet 
+$\Sigma = \{ \mathtt{a}, \mathtt{b} \}$ such that the antepenultimate character of $s$ is the
+character ``\texttt{b}''.  In order to recognize this fact, the \textsc{Fsm} has to remember the
+last three characters.  As there are eight different possible combinations for the last three
+characters, the \textsc{Fsm} needs to have eight states.  Let us number these states 
+ $0$, $1$, $2$, $\cdots$, $7$.  We describe the purpose of these states in the following:
+\begin{description}
+\item[State 0:] In this state, the last three characters are ``\texttt{aaa}''.  
 
-                   Bei den anderen Zuständen geben wir die letzten drei in dem jeweiligen
-                   Zustand gelesenen Buchstaben ohne weiteren Kommentar an.
- \item[Zustand 1:] ``\texttt{aab}''.
- \item[Zustand 2:] ``\texttt{aba}''.
- \item[Zustand 3:] ``\texttt{abb}''.
- \item[Zustand 4:] ``\texttt{bab}''.
- \item[Zustand 5:] ``\texttt{bba}''.
- \item[Zustand 6:] ``\texttt{bbb}''.
- \item[Zustand 7:] ``\texttt{baa}''.
- \end{description}
- Offensichtlich sind die Zustände 4, 5, 6 und 7 akzeptierend, denn hier ist jeweils der
- drittletzte gelesene Buchstabe ein ``\texttt{b}''.  Als nächstes überlegen wir, wie die
- Zustands-Übergangs-Funktion $\delta$ aussehen muss.  
- \begin{enumerate}
- \item[0.] Wir betrachten zunächst den Zustand 0.  Wenn die letzten drei gelesenen
-           Buchstaben den Wert ``\texttt{aaa}'' haben und wir als nächstes den Buchstaben
-           ``\texttt{a}'' lesen, so haben anschließend die letzten drei Buchstaben wieder
-           den Wert ``\texttt{aaa}''.  Damit ist klar, dass
-           \\[0.2cm]
-           \hspace*{1.3cm}
-           $\delta(0, \mathtt{a}) = 0$
-           \\[0.2cm]
-           gilt.  Lesen wir hingegen im Zustand 0 den Buchstaben ``\texttt{b}'', so sind
-           die letzten drei gelesenen Buchstaben durch ``\texttt{aab}'' gegeben, was dem
-           Zustand 1 entspricht.  Daher haben wir
-           \\[0.2cm]
-           \hspace*{1.3cm}
-           $\delta(0, \mathtt{b}) = 1$.
- \item[1.] Wir betrachten nun den Zustand 1.  Wenn die letzten drei gelesenen
-           Buchstaben den Wert ``\texttt{aab}'' haben und wir als nächstes den Buchstaben
-           ``\texttt{a}'' lesen, so haben anschließend die letzten drei Buchstaben den
-           Wert ``\texttt{aba}'', was dem Zustand 2 entspricht.  Damit ist klar, dass
-           \\[0.2cm]
-           \hspace*{1.3cm}
-           $\delta(1, \mathtt{a}) = 2$
-           \\[0.2cm]
-           gilt.  Lesen wir hingegen ein ``\texttt{b}'', so haben nun die letzten drei
-           Buchstaben den Wert ``\texttt{abb}'', was dem Zustand 3 entspricht.  Also gilt
-           \\[0.2cm]
-           \hspace*{1.3cm}
-           $\delta(1, \mathtt{b}) = 3$.
- \end{enumerate}
- Die restliche Berechnung der Zustands-Übergangs-Funktion verläuft nach dem für die ersten
- beiden Zustände demonstrierten Verfahren und wird daher an dieser Stelle nicht weiter
- erläutert, das Ergebnis der Rechnung ist in Abbildung   \ref{fig:abstarbabab.dot} auf Seite
- \pageref{fig:abstarbabab.dot} gezeigt.  Wir müssen lediglich noch erklären, was der
- Start-Zustand des endlichen Automaten ist.  Zu Beginn hat der Automat noch keinen
- Buchstaben gelesen.  Das heißt insbesondere, dass die letzten drei Buchstaben alle von dem
- Buchstaben ``\texttt{b}'' verschieden sind.  Damit können wir aber den Zustand 0 als
- Start-Zustand nehmen, denn die Frage, ob wir als letztes den String ``\texttt{aaa}'' gelesen
- haben oder ob wir noch gar nichts gelesen haben ist irrelevant, wenn es nur darum geht zu
- entscheiden, ob der drittletzte gelesene Buchstabe ein ``\texttt{b}'' ist.
+                For the remaining states we list the last three characters  that have been read
+                without further comment.
+\item[State 1:] ``\texttt{aab}''.
+\item[State 2:] ``\texttt{aba}''.
+\item[State 3:] ``\texttt{abb}''.
+\item[State 4:] ``\texttt{bab}''.
+\item[State 5:] ``\texttt{bba}''.
+\item[State 6:] ``\texttt{bbb}''.
+\item[State 7:] ``\texttt{baa}''.
+\end{description}
+Obviously, the states 4, 5, 6 and 7 are the accepting states because here the antepenultimate
+character is the character ``\texttt{b}''.  Next, we construct the transition function $\delta$.
+\begin{enumerate}
+\item[0.] First, let us consider the state 0.  If the last three characters that have been read are
+          ``\texttt{aaa}'' and if we read the character ``\texttt{a}'' next, then the last three
+          characters read will again be ``\texttt{aaa}''.  Hence, we must have
+          \\[0.2cm]
+          \hspace*{1.3cm}
+          $\delta(0, \mathtt{a}) = 0$.
+          \\[0.2cm]
+          However, if instead we read the character ``\texttt{b}'' in state 0, then the last three
+          characters that have been read are ``\texttt{aab}'', which is exactly the last three
+          characters that have been read in state 1.  Hence we have
+          \\[0.2cm]
+          \hspace*{1.3cm}
+          $\delta(0, \mathtt{b}) = 1$.
+\item[1.] Next we consider state 1.  If the last three characters are ``\texttt{aab}'' and we read
+          the character ``\texttt{a}'' next, then the last three characters are ``\texttt{aba}''.
+          This corresponds to the state  2.  Therefore, we must have
+          \\[0.2cm]
+          \hspace*{1.3cm}
+          $\delta(1, \mathtt{a}) = 2$.
+          \\[0.2cm]
+          If instead we read the character  ``\texttt{b}'' while in state 1, then the last three
+          characters will be ``\texttt{abb}'', which corresponds to the state number  3.  Hence we have
+          \\[0.2cm]
+          \hspace*{1.3cm}
+          $\delta(1, \mathtt{b}) = 3$.
+\end{enumerate}
+The remaining transitions are found in a similar way.
+Figure \ref{fig:abstarbabab.dot} on page \pageref{fig:abstarbabab.dot} shows the resulting \textsc{Fsm}.
+We still have to explain how we have chosen the start state.  When the computation starts, the
+finite state machine has not read any character.  In particular, this implies that neither of the
+last three characters is the character ``\texttt{b}''.  For the purpose of the language described
+this is the only thing that matters and therefor we can as well assume that in the start state the
+last three characters all have the value ``\texttt{a}''.  Hence we can use the state 0 as the start
+state of our \textsc{Fsm}.
 
  \begin{figure}[!ht]
    \centering
        \epsfig{file=Abbildungen/abstarbabab.eps, scale=1.0}
-    \caption{Ein endlicher Automat für den regulären Ausdruck
-             ``\mbox{$(\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})$}''.}
+    \caption{An \textsc{Fsm} accepting
+             $L\bigl(\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$.}
    \label{fig:abstarbabab.dot}
  \end{figure}
 
