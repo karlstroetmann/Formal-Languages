@@ -1377,9 +1377,289 @@ interpreted as comment delimiters.
 The next exercise is meant to improve the fun factor of my lecture.
 
 \exerciseEng
-Think of an interesting software project that provides a convincing use case for \textsl{JFlex}.  If
-you find something, please send your idea to my email adress: 
-\href{mailto:karl.stroetmann@dhbw-mannheim.de}{karl.stroetmann@dhbw-mannheim.de}. \eox
+The purpose of this exercise is to transform \href{http://www.latex-project.org}{\LaTeX} into 
+\href{http://rypress.com/tutorials/mathml}{\textsc{MathML}}.  \LaTeX\ is a document markup language
+that is especially well suited to present text that contains mathematical formul\ae.  In fact, these
+lecture notes have all been typeset using \LaTeX.  \textsc{MathML} is the part of \textsc{Html} that
+deals with the representation of mathematical formul\ae.  As \LaTeX\ provides a very rich
+document markup language and we can only afford to spend a few hours on this exercise, we confine
+ourselves to a small subset of \LaTeX.  Figure \ref{fig:input.tex} on page \pageref{fig:input.tex}
+shows the example input file that we want to transform in \textsc{Html}.  If this example file is
+typeset using \LaTeX, it is displayed as shown in Figure \ref{fig:input.pdf} on page
+\pageref{fig:input.pdf}.  The program that you are
+going to develop should transform the \LaTeX\ input file into an \textsc{Html} file that looks similar
+to the one shown in Figure \ref{fig:input.html} on page \pageref{fig:input.html}.  For your
+convenience, all these files are available in the github directory 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML}{\texttt{JFlex/LaTeX2HTML}}.
+
+\begin{figure}[!ht]
+  \centering
+\begin{verbatim}
+    \documentclass{article}
+    \begin{document}
+    The sum of the squares of the first $n$ natural numbers is given as:
+    $$ \sum_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
+    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    the square root of the squares of the length of the two catheti:
+    $$ c = \sqrt{a^{2} + b^{2}}.  $$
+    The area of a circle is given as 
+    $$  A = \pi \cdot r^{2},   $$ 
+    while its circumference satisfies
+    $$ C = 2 \cdot \pi \cdot r.  $$
+    \end{document}
+    \end{verbatim}
+  \caption{An example \LaTeX\ input file.}
+  \label{fig:input.tex}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \framebox{
+  \begin{minipage}{0.8\linewidth}
+    The sum of the squares of the first $n$ natural numbers is given as:
+    $$ \sum_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
+    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    the square root of the squares of the length of the two catheti:
+    $$ c = \sqrt{a^{2} + b^{2}}.  $$
+    The area $A$ of a circle is given as 
+    $$  A = \pi \cdot r^{2},   $$ 
+    while its circumference satisfies
+    $$ C = 2 \cdot \pi \cdot r.  $$   
+  \end{minipage}}
+  \caption{Output produced by the \LaTeX\ file shown in Figure \ref{fig:input.tex}}
+  \label{fig:input.pdf}
+\end{figure}
+
+In order to do this exercise, you have to understand a little bit about \LaTeX\ and about 
+\textsc{MathML}.  In the following, we discuss those features of these two language that are needed.
+\begin{enumerate}
+\item A \LaTeX\ input file has the following structure:
+      \begin{enumerate}
+      \item The first line list the type of the document.  In our example, it reads
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{92}documentclass\{article\}}.
+            \\[0.2cm]
+            This line will be transformed into the following \textsc{Html}:
+            \begin{verbatim}
+    <html>
+    <head>
+    <script type="text/javascript"
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+            \end{verbatim}
+            Here, the \texttt{<script>} tag is necessary in order for the \textsc{MathML} 
+            to be displayed correctly.
+      \item The next line has the form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{92}begin\{document\}}
+            \\[0.2cm]
+            This line precedes the content and should be translated into the tag
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{<body>}.
+      \item After that, the \LaTeX\ file contains text that contains mathematical formula.
+      \item The \LaTeX\ input file finishes with a line of the form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{92}end\{document\}}.
+            \\[0.2cm]
+            This line should be translated into the tags
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{</body></html>}.
+      \end{enumerate}
+\item In \LaTeX, an inline formula is started and ended with a single dollar symbol
+      ``\texttt{\symbol{36}}''.  
+      In \textsc{MathML}, an inline formula is written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display='inline'>$\cdots$</math>}.
+      \\[0.2cm]
+      Here, I have used ``$\cdots$'' to represent the mathematical content of the formula.
+\item In \LaTeX, a formula that is displayed in its own line is started and ended with the string
+      ``\texttt{\symbol{36}\symbol{36}}''.  
+      In \textsc{MathML}, the formul\ae\ are called \emph{block formul\ae} and are written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>$\cdots$</math>}.
+      \\[0.2cm]
+      Again, I have used ``$\cdots$'' to represent the mathematical content of the formula.
+\item While in \LaTeX\ a mathematical variable does not need any special markup, in \textsc{MathMl}
+      a mathematical variable is written using the tags 
+      \texttt{<mi>} and \texttt{</mi>}.  For example, the mathematical variable $n$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mi>n</mi>}.
+\item While in \LaTeX\ a number does not need any special markup, in \textsc{MathMl}
+      a number is written using the tags 
+      \texttt{<mn>} and \texttt{</mn>}.  For example, the number $3.14149$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mn>3.14159</mn>}.
+\item In \LaTeX\ the mathematical constant $\pi$ is written using the command ``\texttt{\symbol{92}pi}''.
+      In \textsc{MathMl}, we have to make use of the \textsc{Html} entity ``\texttt{\&pi;}'' and
+      hence we would write $\pi$ as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mn>\&pi;</mn>}.
+\item While in \LaTeX\ most operator symbols stand for themselves, in \textsc{MathMl}
+      an operator is surrounded by the tags 
+      \texttt{<mop>} and \texttt{</mop>}.  For example, the operator $+$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mop>+</mop>}.
+\item In \LaTeX, raising an expression $e$ to the $n$th power is done using the operator
+      ``\texttt{\symbol{94}}''.  Furthermore, the exponent should be enclosed in the curly braces
+      ``\texttt{\{}'' and ``\texttt{\}}''.  For example, the code to produce the term $x^2$ is
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{x\symbol{94}\{2\}}.
+      \\[0.2cm]
+      In \textsc{MathMl}, raising an expression to a power is achieved using the tags
+      \texttt{<msup>} and \texttt{</msup>}.  For example, in order to display the term $x^2$, we
+      have to write  
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<msup><mi>x</mi><mn>2</mn></msup>}.
+\item In \LaTeX, taking the square root of an expression is done using the command
+      ``\texttt{\symbol{92}sqrt}''.  The argument has to be enclosed in curly braces.
+      For example, in order to produce the output $\sqrt{a+b}$, we have to write
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{92}sqrt\{a+b\}}.
+      \\[0.2cm]
+      In \textsc{MathMl}, taking the square root makes use of the tags \texttt{<msqrt>} 
+      and \texttt{</msqrt>}.  The example shown above can be written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<msqrt><mi>a</mi><mop>+</mop><mi>b</mi></msqrt>}.
+\item In \LaTeX, writing a fraction is done using the command
+      ``\texttt{\symbol{92}frac}''.  This command takes two arguments, the numerator and the
+      denominator.  Both of these have to be enclosed in curly braces.
+      For example, in order to produce the output $\frac{a+b}{2}$, we have to write
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{92}frac\{a+b\}\{2\}}.
+      \\[0.2cm]
+      In \textsc{MathMl}, a fraction is created via the tags \texttt{<mfrac>} 
+      and \texttt{</mfrac>}.  Additionally, if the arguments contain more than a single element,
+      each of them has to be enclosed in the tags \texttt{<mrow>} and \texttt{</mrow>}.
+      The example shown above can be written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mfrac><mrow><mi>a</mi><mop>+</mop><mi>b</mi><mrow><mn>2</mn></mfrac>}.
+\item In \LaTeX, writing a sum is done using the command
+      ``\texttt{\symbol{92}sum\symbol{92}limits}''.  
+      This command takes two arguments:  The first argument gives the indexing variable together
+      with its lower bound, while the second argument gives the upper bound.  The first argument
+      is started using the string ``\texttt{\_\{}'' and ended using the string ``\texttt{\}}'',
+      while the second argument is started using the string ``\texttt{\symbol{94}\{}'' and ended using the
+      string ``\texttt{\}}''.  For example, in order to produce the output 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\sum\limits_{i=1}^{n} i$,
+      \\[0.2cm]
+      we have to write
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{92}sum\symbol{92}limits\_\{i=1\}\symbol{94}\{n\} i}.
+      \\[0.2cm]
+      In \textsc{MathMl}, a sum with lower and upper limits is created via the tags
+      \texttt{<munderover>} and \texttt{</munderover>} and the \textsc{Html} entity ``\texttt{\&sum}''.
+      The tag \texttt{munderover} takes three arguments:
+      \begin{enumerate}
+      \item The first argument is the operator, so in this case it is the entity ``\texttt{\&sum}''.
+      \item The second argument initializes the indexing variable of the sum.
+      \item The third argument provides the upper bound.
+      \end{enumerate}
+      The second argument usually contains more than a single item and therefore has to be enclosed 
+      in the tags \texttt{<mrow>} and \texttt{</mrow>}.
+      Hence, the example shown above would be written as follows: 
+      \pagebreak
+    \begin{verbatim}
+    <munderover>
+        <mo>&sum;</mo>
+        <mrow>
+            <mi>i</mi> <mo>=</mo> <mn>1</mn>
+        </mrow>
+        <mi>n</mi>
+    </munderover>
+    \end{verbatim}
+\end{enumerate}
+In order to cut the time necessary to complete this exercise, I have provided a \textsc{Java} class
+\texttt{HtmlWriter} that contains a number of useful static methods.  This file is available at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML/HtmlWriter.java}{\texttt{JFlex/LaTeX2HTML/HtmlWriter.java}}.
+\\[0.2cm] 
+Furthermore, the \texttt{github} directory \texttt{JFlex/LaTeX2HTML} already contains a \texttt{Makefile}.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    <!doctype html>
+    <html>
+    <head>
+    <script type="text/javascript"
+    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <body>
+    The sum of the squares of the first 
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display='inline'><mi>n</mi></math>
+    natural numbers is given as:
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
+    <munderover>
+      <mo>&sum;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow>
+      <mrow><mi>n</mi></mrow>
+    </munderover>
+    <msup><mi>i</mi><mrow><mn>2</mn></mrow></msup><mo>=</mo>
+    <mfrac><mrow><mn>1</mn></mrow><mrow><mn>6</mn></mrow></mfrac>
+    <mo>&sdot;</mo><mi>n</mi><mo>&sdot;</mo><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn>
+    <mo>)</mo><mo>&sdot;</mo><mo>(</mo><mn>2</mn><mo>&sdot;</mo><mi>n</mi><mo>+</mo>
+    <mn>1</mn><mo>)</mo><mo>.</mo>
+    </math>
+    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    the square root of the squares of the length of the two catheti:
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
+    <mi>c</mi><mo>=</mo>
+    <msqrt><mrow><msup><mi>a</mi><mrow><mn>2</mn></mrow></msup>
+    <mo>+</mo><msup><mi>b</mi><mrow><mn>2</mn></mrow></msup>
+    </msqrt>
+    <mo>.</mo>
+    </math>
+    The area of a circle is given as 
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
+    <mi>A</mi><mo>=</mo><mn>&pi;</mn><mo>&sdot;</mo>
+    <msup><mi>r</mi><mrow><mn>2</mn></mrow></msup>
+    <mo>,</mo>
+    </math>
+    while its circumference satisfies
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
+    <mi>C</mi><mo>=</mo><mn>2</mn><mo>&sdot;</mo><mn>&pi;</mn><mo>&sdot;</mo>
+    <mi>r</mi>
+    <mo>.</mo>
+    </math>
+    </body>
+    </html>
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Output produced by transforming the \LaTeX file into \textsc{Html}.}
+\label{fig:input.html}
+\end{figure}
+
+
 
 %\exercise
 %Try to parse the calendar entries of an ics-calendar file and do something with these entries...

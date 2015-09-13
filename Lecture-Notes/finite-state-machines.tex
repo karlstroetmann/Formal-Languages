@@ -306,74 +306,86 @@ state of our \textsc{Fsm}.
    \label{fig:abstarbabab.dot}
  \end{figure}
 
+\remark
+There is a nice tool available that can be used to better understand finite state machines.  This
+tool is called \textsc{Jflap}.  It is a \textsl{Java} program and is available at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://www.jflap.org}{\texttt{http://www.jflap.org}}.
 
 
-\section{Nicht-deterministische endliche Automaten}
-Die im letzten Abschnitt eingeführten deterministischen Automaten sind für manche Anwendungen zu
-unhandlich, weil die Anzahl der Zustände zu groß wird.  Der in der letzten Aufgabe
-zu entwickelnde Automat benötigt insgesamt 8 Zustände, denn er muss sich die letzten drei gelesenen
-Zeichen merken können und dazu werden insgesamt $2^3$ Zustände benötigt.
-Wir können einen solchen Automaten vereinfachen, wenn wir zulassen, dass der endliche
-Automat seinen Nachfolgezustand aus einer Menge von Zuständen, die vom aktuellen Zustand und dem
-gelesenen Buchstaben abhängt, frei wählen darf.  
+\section{Non-Deterministic Finite State Machines}
+For many applications, the finite state machines introduced in the previous section are unwieldy
+because they have large numbers of states.  For example, the regular expression to recognize the language
+\\[0.2cm]
+\hspace*{1.3cm}
+$L\bigl((\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$ 
+\\[0.2cm]
+needs 8 different states since the \textsc{Fsm} needs to remember the last three characters that
+have been read and there are $2^3 = 8$ combinations of these characters. 
+It would be possible to simplify this \textsc{Fsm} if the \textsc{Fsm} is permitted to choose its
+next state from a given set of states.
 
 \begin{figure}[!ht]
   \centering
       \epsfig{file=Abbildungen/abstarbabab-nd.eps, scale=0.7}
-   \caption{Ein nicht-deterministischer endlicher Automat für 
-           ``$(\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})$''.}
-  \label{fig:fig:abstarbabab-nd.dot}
+   \caption{A non-deterministic finite state machine to recognize 
+           $L\bigl((\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$.}
+  \label{fig:abstarbabab-nd.dot}
 \end{figure}
 \noindent
-Abbildung \ref{fig:fig:abstarbabab-nd.dot} zeigt einen nicht-deterministischen endlichen Automaten, der
-die durch den regulären Ausdruck
+Figure \ref{fig:abstarbabab-nd.dot} presents a non-deterministic finite state machine that acepts
+the language specified by the regular expression
 \\[0.2cm]
 \hspace*{1.3cm}
-$(\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})$
+$(\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})$.
 \\[0.2cm]
-beschriebene Sprache akzeptiert.  Der Automat hat insgesamt 4 Zustände mit den Namen
-$0$, $1$, $2$ und $3$.
+This finite state machine has only 4 different states that are named $0$, $1$, $2$ and $3$.
 \begin{enumerate}
-\item $0$ ist der Start-Zustand.  Wird in diesem Zustand ein \texttt{a} gelesen,
-      so bleibt der Automat im Zustand $0$.  Wird hingegen der Buchstabe \texttt{b}
-      gelesen, so hat der Automat die Wahl:  Er kann entweder im Zustand $0$ bleiben,
-      oder er kann in den Zustand $1$ wechseln.
-\item Vom Zustand $1$ wechselt der Automat in den Zustand $2$, falls
-      ein \texttt{a} oder ein \texttt{b} gelesen wurde.
-\item Vom Zustand $2$ wechselt der Automat in den Zustand $3$, falls
-      ein \texttt{a} oder ein \texttt{b} gelesen wurde.
-\item Der Zustand $3$ ist der akzeptierende Zustand.  Von diesem Zustand gibt es keinen
-      Übergang mehr.
+\item $0$ is the start state.  If the \textsc{Fsm} reads the letter \texttt{a} while it is in this
+      state, the \textsc{Fsm} will stay in state 0.  However, if the \textsc{Fsm} reads the
+      character \texttt{b}, then the finite state machine has a choice:  It can either stay in state
+      $0$, or it might switch to the state $1$.
+\item In state $1$ the finite state machine switches to state $2$ if it reads either the character
+      \texttt{a} or the character \texttt{b}.
+\item The story is similar in state 2: The \textsc{Fsm} switches to state $2$ if it reads either the character
+      \texttt{a} or the character \texttt{b}.
+\item State  $3$ is the accepting state.  There is no transition from this state.
 \end{enumerate}
-Der Automat aus Abbildung \ref{fig:fig:abstarbabab-nd.dot} ist nicht-deterministisch, weil er im 
-Zustand $0$ bei der Eingabe von $b$ den ``richtigen'' Nachfolge-Zustand
-\underline{raten} muss.   Betrachten wir eine mögliche \emph{Berechnung} des Automaten zu der
-Eingabe ``\texttt{abab}'':
+The finite state machine in Figure \ref{fig:abstarbabab-nd.dot} is non-deterministic because it has
+to guess the next state if it is in state 0 and reads the character ``\texttt{b}''.  Let us consider a possible
+\emph{computation} of the \textsc{Fsm} when it reads the input ``\texttt{abab}'':
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{a} 0 \comp{b} 1 \comp{a} 2 \comp{b} 3$
 \\[0.2cm]
-Bei dieser Berechnung hat der Automat bei der Eingabe des ersten \texttt{b}'s richtig
-geraten,  dass er in den Zustand $1$ wechseln muss.  Wäre der Automat hier im Zustand
-$0$ verblieben, so könnte der akzeptierende Zustand $3$ nicht mehr erreicht werden:
+In this computation, the \textsc{Fsm} has chosen the correct transition when reading the first
+occurrence of the character ``\texttt{b}''.  If the \textsc{Fsm} had stayed in the state 0 instead
+of switching into the state 1, it would have been impossible to reach the accepting state 3 later
+because then the computation would have worked out as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{a} 0 \comp{b} 0 \comp{a} 0 \comp{b} 1$
 \\[0.2cm] 
-Hier ist der Automat am Ende der Berechnung im Zustand $1$, der nicht akzeptierend ist.
-Betrachten wir eine andere Berechnung, bei der das Wort ``\texttt{bbbbb}'' gelesen wird:
+Here, the \textsc{Fsm} is in state 1 after consuming the input string ``\texttt{abab}'' and as state
+1 is not an accepting state, the \textsc{Fsm} would gave falsely rejected the string ``\texttt{abab}''.
+Let us consider a different example where the input is the string ``\texttt{bbbbb}'':
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3 \comp{b} \Omega$
 \\[0.2cm]
-Hier ist der Automat zu früh in den Zustand $1$ gewechselt, was bei der Eingabe des
-letzten Zeichens zum Tode des Automaten führt.  Wäre der Automat beim Lesen des zweiten
-Buchstabens \texttt{b} noch im Zustand $0$ geblieben, so hätte er das Wort
-``\texttt{bbbbb}'' erkennen können:
+Here, the \textsc{Fsm} has switched to early into the state 1.  In this case, the \textsc{Fsm} dies
+when reading the last state $1$.  If the \textsc{Fsm} has stayed in state 0 when reading the second
+occurrence of the character ``\texttt{b}'', then it would have correctly accepted the string
+``\texttt{bbbbb}'' since the computation would have been as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$0 \comp{b} 0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3$
+$0 \comp{b} 0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3$.
 \\[0.2cm]
+The previous examples show that in order to avoid premature death, the \textsc{Fsm} has to choose
+its successor state
+\href{http://mygeekwisdom.com/2013/06/15/he-chose-poorly-and-you-have-chosen-wisely/}{wisely}.  
+
 Auf den ersten Blick scheint es so zu sein, dass das Konzept der nicht-deterministischen
 endlichen Automaten wesentlich mächtiger ist als das Konzept der deterministischen
 endlichen Automaten, denn die nicht-deterministischen Automaten müssen ja geradezu
@@ -430,7 +442,7 @@ $q_1 \stackrel{c}{\mapsto} q_2$. \qed
 \end{Definition}
 
 \example
-Für den in Abbildung \ref{fig:fig:abstarbabab-nd.dot} auf Seite \pageref{fig:fig:abstarbabab-nd.dot} 
+Für den in Abbildung \ref{fig:abstarbabab-nd.dot} auf Seite \pageref{fig:abstarbabab-nd.dot} 
 gezeigten nicht-deterministischen endlichen Automaten $A$ gilt
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -503,7 +515,7 @@ $\langle q_0, s \rangle$ eine Konfiguration $\langle p, \varepsilon \rangle$ err
 ist, bei der $p$ ein akzeptierender Zustand ist.
 
 \example 
-Für den in Abbildung \ref{fig:fig:abstarbabab-nd.dot} gezeigten endlichen Automaten $A$ besteht die akzeptierte
+Für den in Abbildung \ref{fig:abstarbabab-nd.dot} gezeigten endlichen Automaten $A$ besteht die akzeptierte
 Sprache $L(A)$ aus allen Worten $w \in \{ \mathtt{a}, \mathtt{b} \}^*$, die mindestens die Länge drei haben und
 für die der drittletzte Buchstabe ein \texttt{b} ist:
 \\[0.2cm]
@@ -693,7 +705,7 @@ $\textsl{det}(A) = \bigl\langle 2^Q, \Sigma, \Delta, \textsl{ec}(q_0), \widehat{
 \end{enumerate}
 
 \exercise
-Transformieren Sie den in Abbildung \ref{fig:fig:abstarbabab-nd.dot} auf Seite \pageref{fig:fig:abstarbabab-nd.dot} 
+Transformieren Sie den in Abbildung \ref{fig:abstarbabab-nd.dot} auf Seite \pageref{fig:abstarbabab-nd.dot} 
 gezeigten nicht-deterministischen Automat $A$ in einen deterministischen Automaten
 $\textsl{det}(A)$.  \eox
 
