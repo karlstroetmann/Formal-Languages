@@ -52,17 +52,11 @@ public class HtmlWriter {
     public static void endRow() {
 	System.out.println("</mrow>");
     }
-    public static void startVar() {
-	System.out.print("<mi>");
+    public static void writeVar(String v) {
+	System.out.print("<mi>" + v + "</mi>");
     }
-    public static void endVar() {
-	System.out.println("</mi>");
-    }
-    public static void startNumber() {
-	System.out.print("<mn>");
-    }
-    public static void endNumber() {
-	System.out.println("</mn>");
+    public static void writeNumber(String n) {
+	System.out.print("<mn>" + n + "</mn>");
     }
     public static void writeTimes() {
 	System.out.println("<mo>&sdot;</mo>");

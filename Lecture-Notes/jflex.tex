@@ -1387,8 +1387,7 @@ ourselves to a small subset of \LaTeX.  Figure \ref{fig:input.tex} on page \page
 shows the example input file that we want to transform in \textsc{Html}.  If this example file is
 typeset using \LaTeX, it is displayed as shown in Figure \ref{fig:input.pdf} on page
 \pageref{fig:input.pdf}.  The program that you are
-going to develop should transform the \LaTeX\ input file into an \textsc{Html} file that looks similar
-to the one shown in Figure \ref{fig:input.html} on page \pageref{fig:input.html}.  For your
+going to develop should transform the \LaTeX\ input file into an \textsc{Html} file.  For your
 convenience, all these files are available in the github directory 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1400,7 +1399,7 @@ convenience, all these files are available in the github directory
     \documentclass{article}
     \begin{document}
     The sum of the squares of the first $n$ natural numbers is given as:
-    $$ \sum_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
+    $$ \sum\limits_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
     According to Pythagoras, the length of the hypotenuse of a right triangle is
     the square root of the squares of the length of the two catheti:
     $$ c = \sqrt{a^{2} + b^{2}}.  $$
@@ -1506,6 +1505,12 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{<mn>\&pi;</mn>}.
+\item In \LaTeX\ the multiplication operator ``$\cdot$'' is written using the command ``\texttt{\symbol{92}cdot}''.
+      In \textsc{MathMl}, we have to make use of the \textsc{Html} entity ``\texttt{\&sdot;}'' and
+      hence we would write ``$\cdot$'' as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mop>\&sdot;</mop>}.
 \item While in \LaTeX\ most operator symbols stand for themselves, in \textsc{MathMl}
       an operator is surrounded by the tags 
       \texttt{<mop>} and \texttt{</mop>}.  For example, the operator $+$ is written as    
@@ -1551,7 +1556,7 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
       The example shown above can be written as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<mfrac><mrow><mi>a</mi><mop>+</mop><mi>b</mi><mrow><mn>2</mn></mfrac>}.
+      \texttt{<mfrac><mrow><mi>a</mi><mop>+</mop><mi>b</mi></mrow><mn>2</mn></mfrac>}.
 \item In \LaTeX, writing a sum is done using the command
       ``\texttt{\symbol{92}sum\symbol{92}limits}''.  
       This command takes two arguments:  The first argument gives the indexing variable together
@@ -1561,7 +1566,7 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
       string ``\texttt{\}}''.  For example, in order to produce the output 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\sum\limits_{i=1}^{n} i$,
+      $\displaystyle\sum\limits_{i=1}^{n} i$,
       \\[0.2cm]
       we have to write
       \\[0.2cm]
@@ -1579,7 +1584,6 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
       The second argument usually contains more than a single item and therefore has to be enclosed 
       in the tags \texttt{<mrow>} and \texttt{</mrow>}.
       Hence, the example shown above would be written as follows: 
-      \pagebreak
     \begin{verbatim}
     <munderover>
         <mo>&sum;</mo>
@@ -1597,72 +1601,35 @@ In order to cut the time necessary to complete this exercise, I have provided a 
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML/HtmlWriter.java}{\texttt{JFlex/LaTeX2HTML/HtmlWriter.java}}.
 \\[0.2cm] 
 Furthermore, the \texttt{github} directory \texttt{JFlex/LaTeX2HTML} already contains a \texttt{Makefile}.
+Additionally, the directory contains the file
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML/input.html}{\texttt{JFlex/LaTeX2HTML/input.html}}
+\\[0.2cm]
+which shows the result of converting the input file ``\texttt{input.tex}'' into \textsc{Html}.
+Next, there is a file \texttt{State.java} containing an enumeration that I have found useful for my
+solution of the problem.
 
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    <!doctype html>
-    <html>
-    <head>
-    <script type="text/javascript"
-    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-    </script>
-    <body>
-    The sum of the squares of the first 
-    <math xmlns="http://www.w3.org/1998/Math/MathML" display='inline'><mi>n</mi></math>
-    natural numbers is given as:
-    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
-    <munderover>
-      <mo>&sum;</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow>
-      <mrow><mi>n</mi></mrow>
-    </munderover>
-    <msup><mi>i</mi><mrow><mn>2</mn></mrow></msup><mo>=</mo>
-    <mfrac><mrow><mn>1</mn></mrow><mrow><mn>6</mn></mrow></mfrac>
-    <mo>&sdot;</mo><mi>n</mi><mo>&sdot;</mo><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn>
-    <mo>)</mo><mo>&sdot;</mo><mo>(</mo><mn>2</mn><mo>&sdot;</mo><mi>n</mi><mo>+</mo>
-    <mn>1</mn><mo>)</mo><mo>.</mo>
-    </math>
-    According to Pythagoras, the length of the hypotenuse of a right triangle is
-    the square root of the squares of the length of the two catheti:
-    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
-    <mi>c</mi><mo>=</mo>
-    <msqrt><mrow><msup><mi>a</mi><mrow><mn>2</mn></mrow></msup>
-    <mo>+</mo><msup><mi>b</mi><mrow><mn>2</mn></mrow></msup>
-    </msqrt>
-    <mo>.</mo>
-    </math>
-    The area of a circle is given as 
-    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
-    <mi>A</mi><mo>=</mo><mn>&pi;</mn><mo>&sdot;</mo>
-    <msup><mi>r</mi><mrow><mn>2</mn></mrow></msup>
-    <mo>,</mo>
-    </math>
-    while its circumference satisfies
-    <math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>
-    <mi>C</mi><mo>=</mo><mn>2</mn><mo>&sdot;</mo><mn>&pi;</mn><mo>&sdot;</mo>
-    <mi>r</mi>
-    <mo>.</mo>
-    </math>
-    </body>
-    </html>
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Output produced by transforming the \LaTeX file into \textsc{Html}.}
-\label{fig:input.html}
-\end{figure}
+\remarkEng
+The most important problem that you have to solve is the following:  Once you encounter a closing brace
+``\texttt{\}}'' you have to know whether this brace closes the argument of a square root, a
+fraction, a sum, or an exponent.  You should be aware that, for example, square roots and fractions
+can be nested.  Hence, it is not enough to have a single variable that remembers whether you are
+parsing, say, a square root or a fraction.  Instead, every time you encounter a string like, e.g.
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{\symbol{92}sqrt\{} \quad or \quad \texttt{\symbol{92}frac\{},
+\\[0.2cm]
+you should store the current state on a stack and set the new state according to whether you have just seen the
+keyword ``\texttt{\symbol{92}frac}'' or ``\texttt{\symbol{92}sqrt}'' or whatever else caused the
+curly brace to be opened.  When you encounter a closing brace ``\texttt{\}}'', you should 
+restore the state to its previous value by looking up this value from the stack.  The github directory
+\texttt{JFlex/LaTeX2HTML} already contains both the interface \texttt{Stack.java} as well as the
+class \texttt{ArrayStack.java} implementing this interface.
+\eox
 
 
 
-%\exercise
-%Try to parse the calendar entries of an ics-calendar file and do something with these entries...
 
 %%% Local Variables: 
 %%% mode: latex
