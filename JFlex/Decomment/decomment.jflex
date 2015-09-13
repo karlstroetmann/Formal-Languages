@@ -10,6 +10,6 @@
 
 %%
 
-\/\*([^*]|\*+[^*/])*\*+\/[ \t]*\R? { /* skip multi  line comments */ }
+\/\*([^*]|\*+[^/*])*\*+\/[ \t]*\R? { /* skip multi  line comments */ }
 \/\/.*\R?                          { /* skip single line comments */ }
 

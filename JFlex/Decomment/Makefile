@@ -1,5 +1,5 @@
 test-clean.c: Decomment.class
-	java Decomment test.c > test-clean.c
+	java Decomment test.c
 
 Decomment.class: Decomment.java
 	javac Decomment.java

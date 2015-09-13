@@ -1,5 +1,5 @@
 run: index.txt
-	cat index.txt
+	type index.txt
 
 index.txt: Converter/Html2Txt.class index.html
 	java Converter/Html2Txt index.html > index.txt
