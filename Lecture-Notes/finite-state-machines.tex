@@ -316,14 +316,14 @@ tool is called \textsc{Jflap}.  It is a \textsl{Java} program and is available a
 
 \section{Non-Deterministic Finite State Machines}
 For many applications, the finite state machines introduced in the previous section are unwieldy
-because they have large numbers of states.  For example, the regular expression to recognize the language
+because they have a large numbers of states.  For example, the regular expression to recognize the language
 \\[0.2cm]
 \hspace*{1.3cm}
 $L\bigl((\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$ 
 \\[0.2cm]
 needs 8 different states since the \textsc{Fsm} needs to remember the last three characters that
 have been read and there are $2^3 = 8$ combinations of these characters. 
-It would be possible to simplify this \textsc{Fsm} if the \textsc{Fsm} is permitted to choose its
+It would be possible to simplify this \textsc{Fsm} if the \textsc{Fsm} is permitted to \emph{choose} its
 next state from a given set of states.
 
 \begin{figure}[!ht]
@@ -350,7 +350,8 @@ This finite state machine has only 4 different states that are named $0$, $1$, $
       \texttt{a} or the character \texttt{b}.
 \item The story is similar in state 2: The \textsc{Fsm} switches to state $2$ if it reads either the character
       \texttt{a} or the character \texttt{b}.
-\item State  $3$ is the accepting state.  There is no transition from this state.
+\item State  $3$ is the accepting state.  There is no transition from this state.  Hence, if the
+      \textsc{Fsm} is in state 3 and there are still characters to read, then the \textsc{Fsm} dies.
 \end{enumerate}
 The finite state machine in Figure \ref{fig:abstarbabab-nd.dot} is non-deterministic because it has
 to guess the next state if it is in state 0 and reads the character ``\texttt{b}''.  Let us consider a possible
@@ -375,9 +376,9 @@ Let us consider a different example where the input is the string ``\texttt{bbbb
 $0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3 \comp{b} \Omega$
 \\[0.2cm]
 Here, the \textsc{Fsm} has switched to early into the state 1.  In this case, the \textsc{Fsm} dies
-when reading the last state $1$.  If the \textsc{Fsm} has stayed in state 0 when reading the second
+when reading the last character ``\texttt{b}''.  If the \textsc{Fsm} has stayed in state 0 when reading the second
 occurrence of the character ``\texttt{b}'', then it would have correctly accepted the string
-``\texttt{bbbbb}'' since the computation would have been as follows:
+``\texttt{bbbbb}'' since then the computation could have been as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{b} 0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3$.
@@ -385,57 +386,57 @@ $0 \comp{b} 0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3$.
 The previous examples show that in order to avoid premature death, the \textsc{Fsm} has to choose
 its successor state
 \href{http://mygeekwisdom.com/2013/06/15/he-chose-poorly-and-you-have-chosen-wisely/}{wisely}.  
+If $F$ is a non-deterministic \textsc{Fsm} and $s$ is a string such that $F$ can, when reading $s$,
+choose its successor so that it reaches an accepting state after having read $s$, then the string
+$s$ is an element of the language $L(F)$.
 
-Auf den ersten Blick scheint es so zu sein, dass das Konzept der nicht-deterministischen
-endlichen Automaten wesentlich mächtiger ist als das Konzept der deterministischen
-endlichen Automaten, denn die nicht-deterministischen Automaten müssen ja geradezu
-hellseherische Fähigkeiten haben, um den richtigen Übergang raten zu können.  Wir werden
-allerdings im nächsten Abschnitt sehen, dass die beiden Konzepte bei der Erkennung von
-Sprachen die gleiche Mächtigkeit haben.  Dazu formalisieren wir den Begriff des
-nicht-deterministischen endlichen Automaten.  Die Definition,
-die nun folgt, ist noch etwas weiter gefasst als in der informalen Erklärung, die wir
-bisher gegeben haben, denn wir erlauben dem Automaten zusätzlich \emph{spontane
-Übergänge}, sogenannte \emph{$\varepsilon$-Transitionen}:  Darunter verstehen wir einen
-Zustands-Übergang, bei dem kein Zeichen der Eingabe gelesen wird.  Wir schreiben einen
-solchen spontanen Übergäng vom Zustand $1$ in den Zustand $2$ als
+It seems that the concept of a non-deterministic \textsc{Fsm} is far more powerful than the 
+concept of a deterministic \textsc{Fsm}.  After all, a non-deterministic \textsc{Fsm} appears to
+have some form of clairvoyance for else it could not guess which states to choose.  However, we will
+prove in the 
+next section that both deterministic and non-deterministic \textsc{Fsm}s have the same power to
+recognize languages:  Every language recognized by a non-deterministic \textsc{Fsm} is also
+recognized by a deterministic \textsc{Fsm}.  In order to prove this claim, we have to
+formalize the notion of a non-deterministic \textsc{Fsm}.  The definition that follows is even more
+general than the informal description of non-deterministic \textsc{Fsm}s given so far, as we will
+allow the \textsc{Fsm} to also have \texttt{$\varepsilon$ transitions}.  An $\varepsilon$ transition
+allows the \textsc{Fsm} to switch its state without reading a character.  For example, if there is
+an $\varepsilon$ transition from the state 1 into the state 2, we write
 \\[0.2cm]
 \hspace*{1.3cm}
 $1 \comp{\varepsilon} 2$.
 
 
-\begin{Definition}[NEA]
-Ein \emph{nicht-deterministischer endlicher Automat} (abgekürzt NEA) ist ein 5-Tupel 
+\begin{Definition}[NFA]
+A \emph{non-deterministic \textsc{Fsm}} (abbreviated as \textsc{NFA} for non-deterministic
+automaton) is a  5-tupel  
 \\[0.2cm]
 \hspace*{1.3cm}
 $\langle Q, \Sigma, \delta, q_0, F\rangle$,
 \\[0.2cm]
-so dass folgendes gilt:
+such that the following holds:
 \begin{enumerate}
-\item $Q$ ist die endliche Menge von Zuständen.
-\item $\Sigma$ ist das Eingabe-Alphabet.
-\item $\delta$ ist eine Funktion auf $Q \times (\Sigma \cup \{ \varepsilon \})$, die jedem
-      Paar $\pair(q, a)$ aus $Q \times (\Sigma \cup \{ \varepsilon \})$ eine Menge 
-      $\delta(q, a) \subseteq Q$ zuordnet, es gilt also
+\item $Q$ is the finite set of states.
+\item $\Sigma$ is the input alphabet.
+\item $\delta$ is a function from $Q \times (\Sigma \cup \{ \varepsilon \})$ that assigns a set of states
+      $\delta(q, a) \subseteq Q$ to every pair $\pair(q, a)$ from $Q \times (\Sigma \cup \{ \varepsilon \})$:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta: Q \times (\Sigma \cup \{\varepsilon\}) \rightarrow 2^Q$.
       \\[0.2cm]
-      Falls $a \in \Sigma$ ist, interpretieren wir $\delta(q, a)$ als die
-      Menge der Zustände, in denen der Automat sein kann, wenn im Zustand $q$ das Symbol
-      $a$ gelesen wurde.  Die Menge $\delta\bigl(q, \varepsilon)$ ist die
-      Menge der Zustände, die der Automat aus dem Zustand $q$ mit einem
-      $\varepsilon$-Übergang erreichen kann.
-\item $q_0 \in Q$ ist der Start-Zustand.
-\item $F \subseteq Q$ ist die Menge der akzeptierenden Zustände. 
+      If $a \in \Sigma$, then $\delta(q, a)$ is the set of states the \textsc{Fsm} can switch to
+      after reading the character $a$ in state $q$.  The set $\delta\bigl(q, \varepsilon)$ is the
+      set of states that can be reached from the state $q$ without reading a character.
+\item $q_0 \in Q$ is the start state.
+\item $F \subseteq Q$ is the set of accepting states. 
 \end{enumerate}
-Falls $q_2 \in \delta(q_1, \varepsilon)$ ist, dann sagen wir, dass der Automat eine
-\emph{$\varepsilon$-Transition} von dem Zustand $q_1$ in den Zustand $q_2$ hat.  Wir
-schreiben dies als
+If we have $q_2 \in \delta(q_1, \varepsilon)$, then the \textsc{Fsm} has an
+\emph{$\varepsilon$-Transition} from the state $q_1$ into the state $q_2$.  This is written as
 \\[0.2cm]
 \hspace*{1.3cm}
 $q_1 \stackrel{\varepsilon}{\mapsto} q_2$.
 \\[0.2cm]
-Falls $c \in \Sigma$ ist und  $q_2 \in \delta(q_1, c)$ gilt, so schreiben wir
+If  $c \in \Sigma$ and  $q_2 \in \delta(q_1, c)$, we write
 \\[0.2cm]
 \hspace*{1.3cm}
 $q_1 \stackrel{c}{\mapsto} q_2$. \qed
