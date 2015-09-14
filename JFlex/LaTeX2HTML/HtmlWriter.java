@@ -6,6 +6,7 @@ public class HtmlWriter {
 	System.out.println("<script type=\"text/javascript\"");
         System.out.println("src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\">");
 	System.out.println("</script>");
+	System.out.println("</head>");
 	System.out.println("<body>");
     }
     public static void endHtml() {
