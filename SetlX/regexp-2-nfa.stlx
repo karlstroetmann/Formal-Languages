@@ -18,34 +18,29 @@ class regexp2NFA(sigma) {
              return kleene(toNFA(r0));
         }
     };
-
     genEmptyNFA := procedure() {
         q0 := getNewState();
         q1 := getNewState();
         return [ {q0, q1}, mSigma, {}, q0, q1 ];
     };
-
     genEpsilonNFA := procedure() {
         q0 := getNewState();
         q1 := getNewState();
         delta := { [ [q0, ""], {q1} ] };
         return [ {q0, q1}, mSigma, delta, q0, q1 ];
     };
-    
     genCharNFA := procedure(c) {
         q0 := getNewState();
         q1 := getNewState();
         delta := { [[q0, c], {q1}] };
         return [ {q0, q1}, mSigma, delta, q0, q1 ];
     };
-
     catenate := procedure(f1, f2) {
         [m1, _, delta1, q1, q2] := f1;
         [m2, _, delta2, q3, q4] := f2;
         delta := { [[q2, ""], {q3}] } + delta1 + delta2; 
         return [ m1 + m2, mSigma, delta, q1, q4 ];
     };
-
     disjunction := procedure(f1, f2) {
         [m1, _, delta1, q1, q3] := f1;
         [m2, _, delta2, q2, q4] := f2;
@@ -55,7 +50,6 @@ class regexp2NFA(sigma) {
         delta += { [[q0, ""], {q1, q2}], [[q3, ""], {q5}], [[q4, ""], {q5}] };
         return [ { q0, q5 } + m1 + m2, mSigma, delta, q0, q5 ];
     };
-
     kleene := procedure(f) {
         [m, _, delta0, q1, q2] := f;
         q0 := getNewState(); 
