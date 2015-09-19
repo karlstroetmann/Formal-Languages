@@ -1,11 +1,15 @@
-load("fixpoint.stlx");
-
 // Given a transition function delta and a state s, this function
 // computes the set of all those states that can be reached from the state
 // s via epsilon transitions.
 epsClosure := procedure(s, delta) {
-    result := fixpoint({s}, q |=> delta(q, ""));
-    return result;
+    result := newStates := { s };
+    while (true) {
+        newStates := {} +/ { delta[q, ""] : q in newStates };
+        if (newStates <= result) {
+            return result;
+        }
+        result += newStates;
+    }
 };
 
 // Given a transition function delta, a state q, and a character c,
@@ -14,7 +18,12 @@ epsClosure := procedure(s, delta) {
 // on reading the character c followed by any number of epsilon transitions
 // starting in p.
 deltaStar := procedure(s, c, delta) {
-    return {} +/ { epsClosure(q, delta) : q in delta(s, c) };
+    result := {};
+    if (delta[s, c] != om) {
+        return {} +/ { epsClosure(q, delta) : q in delta[s, c] };
+    } else {
+        return {};
+    }
 };
 
 // This function extends the function deltaStar from a single state
@@ -22,15 +31,26 @@ deltaStar := procedure(s, c, delta) {
 capitalDelta := procedure(m, c, delta) {
     return {} +/ { deltaStar(q, c, delta) : q in m };
 };
+
+allStates := procedure(newStart, delta, sigma) {
+    result := newStates := { newStart };
+    while (true) {
+        newStates := { capitalDelta(m, c, delta) : m in newStates, c in sigma };
+        if (newStates <= result) {
+            return result;
+        }
+        result += newStates;
+    }
+};
+
 // This function takes a non-deterministic finite state machine and converts it 
 // into an equivalent deterministic finite state machine.
 nfa2dfa := procedure(nfa) {
     [states, sigma, delta, q0, final] := nfa;
-    newStart   := epsClosure(q0, delta);
-    nextStates := m |=> { capitalDelta(m, c, delta) : c in sigma };
-    newStates  := fixpoint({newStart}, nextStates);
-    newDelta   := [m, c] |=> capitalDelta(m, c, delta);
-    newFinal   := { m : m in newStates | m * final != {} };
+    newStart  := epsClosure(q0, delta);
+    newStates := allStates(newStart, delta, sigma);
+    newDelta  := { [[m, c], capitalDelta(m, c, delta)] : m in newStates, c in sigma };
+    newFinal  := { m : m in newStates | m * final != {} };
     return [newStates, sigma, newDelta, newStart, newFinal];
 };
 
