@@ -243,7 +243,7 @@ die Menge $R$ der von dem Start-Zustand $q_0$ erreichbaren Zustände.  Diese Bere
 kann am einfachsten iterativ erfolgen:
 \begin{enumerate}
 \item $q_0 \in R$.
-\item $p_1 \in R \wedge \bigl(\exists c \in \Sigma: \delta(p_1,c) = p_2\bigr) \;\Rightarrow\; p_2 \in R$.
+\item $p_1 \in R \wedge \delta(p_1,c) = p_2 \;\rightarrow\; p_2 \in R$.
 
       Dieser Schritt wird solange wiederholt, bis wir der Menge $R$ keine neuen Zustände
       mehr hinzufügen können.
@@ -254,7 +254,7 @@ ist, mit anderen Worten haben wir
 \hspace*{1.3cm}
 $L(A) = \{\} \;\Leftrightarrow\; R \cap F = \{\}$.
 \\[0.2cm]
-Damit haben wir einen Algorithmus zur Beantwortung der Frage $L(A) = \{\}$:
+Damit haben wir einen Algorithmus zur Beantwortung der Frage, ob $L(A) = \{\}$ ist:
 Wir bilden die Menge alle vom Start-Zustand $q_0$ erreichbaren Zustände und überprüfen
 dann, ob diese Menge einen akzeptierenden Zustand enthält.
 \vspace*{0.3cm}
@@ -274,60 +274,50 @@ $L(r)$ leer ist.
 \end{enumerate}
 
 
-\section{Äquivalenz regulärer Ausdrücke}
-Bei der Diskussion der algebraischen Vereinfachung regulärer Ausdrücke im Kapitel
-\ref{chapter:regular-expressions} hatten wir 
-zwei reguläre Ausdrücke $r_1$ und $r_2$ als äquivalent bezeichnet
-(geschrieben $r_1 \doteq r_2$), wenn die durch $r_1$ und $r_2$ spezifizierten Sprachen
-identisch sind:
+\section{Equivalence of Regular Expressions}
+In Chapter \ref{chapter:regular-expressions} we had defined two regular expressions $r_1$ and $r_2$ to be equivalent 
+(written $r_1 \doteq r_2$), if the languages specified by $r_1$ and $r_2$ are identical:
 \\[0.2cm]
 \hspace*{1.3cm}
 $r_1 \doteq r_2 \stackrel{\mbox{\scriptsize def}}{\Longleftrightarrow} L(r_1) = L(r_2)$. 
 \\[0.2cm]
-Wir werden in diesem Abschnitt ein Verfahren vorstellen, mit dem wir für zwei reguläre
-Ausdrücke $r_1$ und $r_2$ entscheiden können, ob $r_1 \doteq r_2$ gilt. 
-\pagebreak
+In this section, we present an algorithm that receives two regular expressions $r_1$ and $r_2$ as input and then
+checks, whether $r_1 \doteq r_2$ holds. 
 
-\begin{Satz}
-  Es seien $r_1$ und $r_2$ zwei reguläre Ausdrücke.  Dann ist die Frage, ob $r_1 \doteq r_2$
-  gilt, ob also die von den beiden Ausdrücken spezifizierten Sprachen gleich sind und damit
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $L(r_1) = L(r_2)$
-  \\[0.2cm]
-  gilt, entscheidbar.
-\end{Satz}
 
-\proof
-Wir geben einen Algorithmus an, der die Frage, ob $L(r_1) = L(r_2)$ gilt, beantwortet.
-Zunächst bemerken wir, dass die Sprachen $L(r_1)$ und $L(r_2)$ genau dann gleich sind,
-wenn die Mengen-Differenzen $L(r_2) \backslash L(r_1)$ und $L(r_1) \backslash L(r_2)$
-beide verschwinden, denn es gilt:
+\begin{Theorem}
+  If $r_1$ and $r_2$ are regular expressions, then the question whether $r_1 \doteq r_2$ holds, is decidable.
+\end{Theorem}
+
+\proofEng
+We present an algorithm that decides, whether $L(r_1) = L(r_2)$.  First, we observe that 
+$L(r_1)$ and $L(r_2)$ are the same sets iff the set differences $L(r_2) \backslash L(r_1)$ and $L(r_1) \backslash L(r_2)$
+are both empty:
 \begin{eqnarray*}
                   L(r_1) = L(r_2) 
 &\Leftrightarrow& L(r_1) \subseteq L(r_2)         \;\wedge\; L(r_2) \subseteq L(r_1)          \\
 &\Leftrightarrow& L(r_1) \backslash L(r_2) = \{\} \;\wedge\; L(r_2) \backslash L(r_1) = \{\}  
 \end{eqnarray*}
-Seien nun $A_1$ und $A_2$ endliche Automaten mit
+Next, assume that $F_1$ and $F_2$ are deterministic \textsc{Fsms} such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(A_1) = L(r_1)$ \quad und \quad $L(A_2) = L(r_2)$.
+$L(F_1) = L(r_1)$ \quad and \quad $L(F_2) = L(r_2)$
 \\[0.2cm]
-Im letzten Kapitel haben wir gesehen, wie wir solche Automaten konstruieren können.
-Nach dem Korollar \ref{kor:mengendif} sind die Sprachen $L(r_1) \backslash L(r_2)$ und
-$L(r_2) \backslash L(r_1)$ regulär und wir haben gesehen, wie wir endliche Automaten $A_{12}$ und
-$A_{21}$ so konstruieren können,  dass
+holds.  We have seen in Chapter \ref{chapter:finit-state-machines.tex} how $F_1$ and $F_2$ can be
+constructed from $r_1$ and $r_2$. According to the corollary \ref{kor:mengendif} the languages
+$L(r_1) \backslash L(r_2)$ and $L(r_2) \backslash L(r_1)$ are regular and we have seen how to
+construct \textsc{Fsm}s $F_{12}$ and $F_{21}$ such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(r_1) \backslash L(r_2) = L(A_{12})$ \quad und \quad
-$L(r_2) \backslash L(r_1) = L(A_{21})$ 
+$L(r_1) \backslash L(r_2) = L(F_{12})$ \quad and \quad $L(r_2) \backslash L(r_1) = L(F_{21})$ 
 \\[0.2cm]
-gilt.  Damit gilt nun
+holds.  Hence we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $r_1 \doteq r_2 \;\Leftrightarrow\; L(A_{12}) = \{\} \wedge  L(A_{21}) = \{\}$
-\\[0.2cm]                            
-und diese Frage ist nach Abschnitt \ref{section:leer} entscheidbar.
+\\[0.2cm]
+and according to Section \ref{section:leer} this question is decidable by checking whether any of
+the accepting states of $F_{12}$ or $F_{21}$ are reachable from the start state.
 \qed
 
 \section{Implementing an Equivalence Checker}
@@ -355,8 +345,8 @@ below.
     };
     regexp2DFA := procedure(r, sigma) {
         converter := regexp2NFA(sigma);
-        [states, sigma, delta, q0, final] := converter.toNFA(r);    
-        return nfa2dfa([states, sigma, delta, q0, { final }]);    
+        [states, sigma, delta, q0, qf] := converter.toNFA(r);    
+        return nfa2dfa([states, sigma, delta, q0, { qf }]);    
     };
     fsmComplement := procedure(f1, f2) {
         [states1, sigma, delta1, q1, a1] := f1;
@@ -434,12 +424,11 @@ below.
       to be a 5-tuple of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\langle Q, \Sigma, \delta, q_0, F \rangle$
+      $\langle Q, \Sigma, \delta, q_0, A \rangle$
       \\[0.2cm]
-      where $F$ is the set of accepting states.  Therefore, we had to extract the components of 
+      where $A$ is the set of accepting states.  Therefore, we had to extract the components of 
       NFA returned by \texttt{toNFA} and turn the single accepting state $q_f$ into the set 
       $\{ q_f \}$ in order to call the function \texttt{nfa2dfa}.
-
 
       The function \texttt{toNFA} has already been shown in
       Figure \ref{fig:regexp-2-nfa.stlx:toNFA} on page
@@ -472,27 +461,24 @@ below.
       Figure \ref{fig:nfa2dfa.stlx} on page \pageref{fig:nfa2dfa.stlx}.
 \end{enumerate}
 
-\section{Grenzen regulärer Sprachen}
-Wir haben im letzten Kapitel bereits das Theorem von Nerode kennengelernt und konnten mit
-Hilfe dieses Theorems zeigen, dass bestimmte Sprachen nicht regulär sind.  Wir werden nun
-ein weiteres Theorem kennenlernen, das ebenfalls genutzt werden kann um nachzuweisen, dass eine
-gegebene Sprache nicht regulär ist. 
+\section{Limits of Regular Languages}
+In this section we present a theorem that can be used to show that certain languages are
+\underline{not} regular.  This theorem is know as the 
+\href{https://en.wikipedia.org/wiki/Pumping_lemma_for_regular_languages}{\emph{pumping lemma for regular languages}}.
 
-\begin{Theorem}[Pumping-Lemma]
-  Es sei $L$ eine reguläre Sprache.  Dann gibt es eine natürliche Zahl $n \in \mathbb{N}$,
-  so dass sich alle Strings $s \in L$, deren Länge größer oder gleich $n$ ist, so in drei
-  Teile $u$, $v$ und $w$ aufspalten lassen, dass die folgenden 
-  Bedingungen gelten:
+\begin{Theorem}[Pumping Lemma for Regular Languages] \lb
+  Assume $L$ is a regular language.  Then there exists a natural number $n \in \mathbb{N}$ such that
+  every string $s \in L$ that has a length of at least $n$ can be split into three substrings $u$,
+  $v$, and $w$ such that the following holds:
   \begin{enumerate}
-  \item $s= uvw$
+  \item $s= uvw$,
   \item $v \not= \varepsilon$,
   \item $|uv| \leq n$,
   \item $\forall h \in \mathbb{N}_0: uv^hw \in L$.
   \end{enumerate}
-  Das Pumping-Lemma für eine reguläre Sprache $L$ kann in einer einzigen Formel zusammengefasst
-  werden: 
+  This theorem can be written as a single formula:  If $L$ is a regular language, then 
   \\[0.2cm]
-  \hspace*{0.1cm}
+  \hspace*{1.3cm}
   $\exists n \in \mathbb{N}: \forall s \in L : \Bigl(|s| \geq n \rightarrow \exists u,v,w\in \Sigma^* :
    s = uvw \wedge v \not= \varepsilon \wedge |uv| \leq n \wedge 
     \forall h \in \mathbb{N}_0: uv^h w \in L
@@ -500,199 +486,219 @@ gegebene Sprache nicht regulär ist.
   $.
 \end{Theorem}
 
-\proof
-Da $L$ eine reguläre Sprache ist, gibt es einen deterministischen endlichen Automaten
+\proofEng
+As $L$ is a regular language, there exists a deterministic \textsc{Fsm}
 \\[0.2cm]
 \hspace*{1.3cm}
-$A = \langle Q, \Sigma, \delta, q_0, F \rangle$,
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$,
 \\[0.2cm]
-so dass $L = L(A)$ ist.  Die Zahl $n$, deren Existenz in dem Lemma behauptet wird, definieren wir
-als die Zahl der Zustände dieses Automaten: 
+such that $L = L(F)$.  The number $n$ whose existence is claimed in the Pumping Lemma is defined as
+the number of states of $F$: 
 \\[0.2cm]
 \hspace*{1.3cm}
 $n := \textsl{card}(Q)$.
 \\[0.2cm]
-Es sei nun ein Wort $s \in L$ gegeben, das aus mindestens $n$ Buchstaben besteht.
-Konkret gelte
+Next, assume a string $s \in L$ is given such that $|s| \geq n$.  Then there are $m := |w|$
+characters $c_i$ such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$s = c_1 c_2 \cdots c_m$ \quad mit $m \geq n$,
+$s = c_1 c_2 \cdots c_m$.
 \\[0.2cm]
-wobei $c_1$, $\cdots$, $c_m$ die einzelnen Buchstaben sind.
-Wir betrachten die Berechnung, die der Automat $A$ bei der Eingabe $s$ durchführt.  Diese Berechnung hat
-die Form
+Since $|s| \geq n$ we have $m \geq n$.  On reading the characters $c_i$ the \textsc{Fsm} changes its
+states as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $q_0 \stackrel{c_1}{\longmapsto} q_1 \stackrel{c_2}{\longmapsto} q_2 \stackrel{c_3}{\longmapsto} \cdots \stackrel{c_m}{\longmapsto} q_m$
 \\[0.2cm]
-und da $s \in L$ ist, gilt $q_m \in F$.
-Die Länge $m$ des Wortes $s$ hat nach Voraussetzung mindestens den Wert $n$.  Daher können in der Liste
+and since we have  $s \in L$ we conclude that  $q_m$ must be an accepting state, i.e.~$q_m \in A$.
+As $m \geq n$ and $n$ is the total number of states of $F$, not all of the states 
 \\[0.2cm]
 \hspace*{1.3cm}
-$[q_0,q_1,q_2,\cdots, q_m]$
+$q_0$, $q_1$, $q_2$, $\cdots$, $q_m$
 \\[0.2cm]
-nicht alle $q_i$ verschieden sein, denn es gibt ja insgesamt nur $n$ verschiedene Zustände.
-Wegen
+can be different.
+Because of
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{card}\bigl(\{0,1,\cdots,n\}\bigr) = n+1$
 \\[0.2cm]
-wissen wir, dass schon in der Liste
+we know, that even in the list
 \\[0.2cm]
 \hspace*{1.3cm}
 $[q_0,q_1,q_2,\cdots, q_{n}]$
 \\[0.2cm]
-mindestens ein Zustand zweimal (oder öfter) auftreten muss.  Bezeichnen wir den Index des ersten
-Auftretens mit $k$ und den Index des zweiten Auftretens mit $l$, so haben wir also 
+at least one state has to occur at least twice.  Hence there are $k, l \in \{0,\cdots,n\}$ such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_k = q_l \wedge k < l \wedge l \leq n$.
+$q_k = q_l \wedge k < l$.
 \\[0.2cm]
-Dann können wir den String $s$ wie folgt in die Strings $u$, $v$ und $w$ zerlegen:
+Next, we define the strings $u$, $v$, and $w$ as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$u := c_1 \cdots c_k$, \quad $v := c_{k+1} \cdots c_l$ \quad und \quad $w := c_{l+1} \cdots c_{m}$
+$u := c_1 \cdots c_k$, \quad $v := c_{k+1} \cdots c_l$, \quad and \quad $w := c_{l+1} \cdots c_{m}$.
 \\[0.2cm]
-Aus $k < l$ folgt nun $v \not= \varepsilon$ und aus $l \leq n$ folgt $|uv| \leq n$.
-Weiter wissen wir das Folgende:
+As $k < l$ we have that $v \not= \varepsilon$ and $l \leq n$ implies $|uv| \leq n$.
+Furthermore, we have the following:
 \begin{enumerate}
-\item Beim Lesen von $u$ geht der Automat vom Zustand $q_0$ in den Zustand $q_k$ über, es gilt
+\item Reading the string $u$ changes the state of the \textsc{Fsm} $F$ from the start state $q_0$ to
+      the state $q_k$, we have
       \begin{equation}
         \label{eq:pumping1}
         q_0 \stackrel{u}{\longmapsto} q_k.    
       \end{equation}
-\item Beim Lesen von $v$ geht der Automat vom Zustand $q_k$ in den Zustand $q_l$ über.  Da aber 
-      $q_l = q_k$ ist, gilt 
+\item Reading the string $v$ changes the state of the \textsc{Fsm} $F$ from the state $q_k$ to the
+      state $q_l$.  As we have $q_l = q_k$, this implies
       \begin{equation}
         \label{eq:pumping2}
       q_k \stackrel{v}{\longmapsto} q_k.        
       \end{equation}
-\item Beim Lesen von $w$ geht der Automat vom Zustand $q_l = q_k$   in den akzeptierenden Zustand
-      $q_m$ über:
+\item Reading the string $w$ changes the state of the \textsc{Fsm} $F$ from the state  $q_l = q_k$
+      to the accepting state $q_m$:
       \begin{equation}
         \label{eq:pumping3}
         q_k \stackrel{w}{\longmapsto} q_m.        
       \end{equation}
 \end{enumerate}
-Aus $q_k \stackrel{v}{\longmapsto} q_k$ folgt
+From $q_k \stackrel{v}{\longmapsto} q_k$ we conclude
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_k \stackrel{v}{\longmapsto} q_k \stackrel{v}{\longmapsto} q_k$, \quad also \quad $q_k \stackrel{v^2}{\longmapsto} q_k$
+$q_k \stackrel{v}{\longmapsto} q_k \stackrel{v}{\longmapsto} q_k$, \quad hence \quad $q_k \stackrel{v^2}{\longmapsto} q_k$.
 \\[0.2cm]
-Da wir dieses Spiel beliebig oft wiederholen können, haben wir für alle $h \in \mathbb{N}_0$
+As we can repeat reading $v$ in state $q_k$ any number of times, we have
 \begin{equation}
   \label{eq:pumping4}
-  q_k \stackrel{v^h}{\longmapsto} q_k  
+  q_k \stackrel{v^h}{\longmapsto} q_k  \quad \mbox{for all $h \in \mathbb{N}_0$.}
 \end{equation}
-Aus den Gleichungen (\ref{eq:pumping1}), (\ref{eq:pumping3}) und (\ref{eq:pumping4})  folgt nun
+Combining the equations (\ref{eq:pumping1}), (\ref{eq:pumping3}), and (\ref{eq:pumping4})  we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_0 \stackrel{u}{\longmapsto} q_k \stackrel{v^h}{\longmapsto} q_k \stackrel{w}{\longmapsto} q_m$.
+\\[0.2cm]
+This can be condensed to
 \\[0.2cm]
 \hspace*{1.3cm}
 $q_0 \stackrel{uv^hw}{\longmapsto} q_m$
 \\[0.2cm]
-und da $q_m$ ein akzeptierender Zustand ist, haben wir damit $uv^hw \in L$ gezeigt. \qed
-\vspace*{0.3cm}
+and since the state $q_m$ is an accepting state we conclude that $uv^hw \in L$ holds for any $h \in \mathbb{N}_0$. \qed
 
 
-\begin{Satz}
-  Das Alphabet $\Sigma$ sei durch $\Sigma = \{ \quoted{(}, \quoted{)} \}$ definiert, es enthält
-  also die beiden Klammer-Symbole ``\texttt{(}'' und ``\texttt{)}''.  Die Sprache $L$ sei die Menge
-  aller Strings, die aus $k$ öffnenden runden Klammern gefolgt von $k$ schließenden runden Klammern
-  besteht:
+
+\begin{Proposition}
+  The alphabet  $\Sigma$ is defined as $\Sigma = \{ \quoted{a}, \quoted{b} \}$.
+  Define the language $L$ as the set of all strings of the form $\mathtt{a}^k\mathtt{b}^k$ where $k$
+  is some natural number:
   \\[0.2cm]
   \hspace*{1.3cm}
-  $L = \bigl\{ \mathtt{(}^k\mathtt{)}^k \mid k \in \mathbb{N} \bigr\}$
+  $L = \bigl\{ \mathtt{a}^k\mathtt{b}^k \mid k \in \mathbb{N} \bigr\}$.
   \\[0.2cm]
-  Dann ist die Sprache $L$ nicht regulär.
-\end{Satz}
+  Then the language  $L$ is not regular.
+\end{Proposition}
 
-\proof
-Wir führen den Beweis indirekt und nehmen an, dass $L$ regulär ist.  Nach dem Pumping-Lemma gibt es
-dann eine feste Zahl $n$, so dass sich alle Strings $s \in L$, für die $|s| \geq n$ gilt, so in drei Teile
-$u$, $v$ und $w$ aufspalten lassen, dass
+\proofEng
+The proof is a proof by contradiction. We assume that $L$ is a regular language.  According to the
+Pumping Lemma there exists a fixed natural number $n$ such that every $s \in L$ that satisfies  $|s|
+\geq n$ can be written as
 \\[0.2cm]
 \hspace*{1.3cm}
-$s = uvw$, \quad $|uv| \leq n$, \quad $v \not= \varepsilon$, 
-\quad und \quad $\forall h \in \mathbb{N}_0: uv^h w \in L$
+$s = uvw$
 \\[0.2cm]
-gilt.  Mit Hilfe der durch das Pumping-Lemma gegebenen festen Zahl $n$ definieren wir den String $s$ als
-\\[0.2cm]
-\hspace*{1.3cm}
-$s := \mathtt{(}^{n} \mathtt{)}^{n}$.
-\\[0.2cm]
-Offenbar gilt $|s| = 2 \cdot n \geq n$.  Wir finden also jetzt drei Strings $u$, $v$ und $w$,
-für die gilt:
+such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mathtt{(}^{n}\mathtt{)}^{n} = uvw$, \quad $|uv| \leq n$, \quad $v \not= \varepsilon$, 
-\quad und \quad $\forall h \in \mathbb{N}_0: uv^h w \in L$.
+$|uv| \leq n$, \quad $v \not= \varepsilon$, \quad and \quad $\forall h \in \mathbb{N}_0: uv^h w \in L$
 \\[0.2cm]
-Wegen $|uv| \leq n$ und $v \not= \varepsilon$ wissen wir, dass der String $v$ aus einer positiven
-Zahl öffnender runder Klammern bestehen muss:
+holds.  Let us define the string $s$ as
 \\[0.2cm]
 \hspace*{1.3cm}
-$v = \mathtt{(}^k$ \quad für ein $k \in \mathbb{N}$ mit $k> 0$.
+$s := \mathtt{a}^{n} \mathtt{b}^{n}$.
 \\[0.2cm]
-Setzen wir in der Formel $\forall h \in \mathbb{N}_0: uv^h w \in L$ für $h$ den Wert $0$ ein,
-so sehen wir, dass 
+Obviously we have $|s| = 2 \cdot n \geq n$.  Hence there are strings $u$, $v$, and $w$
+such that 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathtt{a}^{n}\mathtt{b}^{n} = uvw$, \quad $|uv| \leq n$, \quad $v \not= \varepsilon$, 
+\quad and \quad $\forall h \in \mathbb{N}_0: uv^h w \in L$.
+\\[0.2cm]
+As $|uv| \leq n$, the string $uv$ is a prefix not only of $s$ but even of $\mathtt{a}^n$. Therefore,
+and since $v \not= \varepsilon$ we know that the string $v$ must have the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$v = \mathtt{a}^k$ \quad for some $k \in \mathbb{N}$.
+\\[0.2cm]
+If we take the formula $\forall h \in \mathbb{N}_0: uv^h w \in L$ and set  $h:=0$, we conclude that
 \begin{equation}
   \label{eq:pumping5}
- uw \in L 
+ uw \in L. 
 \end{equation}
-gilt.  Um den Beweis besser formalisieren zu können, führen wir eine Funktion
-\[ \textsl{count}: \Sigma^* \times \Sigma \rightarrow \mathbb{N}_0 \]
-ein.  Für einen String $t$ und einen Buchstaben $c$ soll $\textsl{count}(t,c)$ zählen, wie
-oft der Buchstabe $c$ in dem String $t$ vorkommt.  Für die Sprache $L$ gilt offenbar
-\[ t \in L \Rightarrow \textsl{count}(t,\squoted{(}) = \textsl{count}(t, \squoted{)}). \]
-Einerseits haben wir nun
+In order to facilitate our argument, we define the function
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{count}: \Sigma^* \times \Sigma \rightarrow \mathbb{N}_0$.
+\\[0.2cm]
+Given a  string $t$ and a character $c$ the function $\textsl{count}(t,c)$ counts how often the
+character $c$ occurs in the string $t$.  For the language  $L$ we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$t \in L \Rightarrow \textsl{count}(t,\squoted{a}) = \textsl{count}(t, \squoted{b})$. 
+\\[0.2cm]
+On one hand we have:
 \[  
 \begin{array}{lcl}
-\textsl{count}(uw,\squoted{(}) & = & \textsl{count}(uvw,\squoted{(}) - \textsl{count}(v,\squoted{(}) \\
- & = & \textsl{count}(s,\squoted{(}) - \textsl{count}(v,\squoted{(}) \\
- & = & \textsl{count}(\mathtt{(}^n\mathtt{)}^n,\squoted{(}) - \textsl{count}(\mathtt{(}^k,\squoted{(}) \\
+\textsl{count}(uw,\squoted{a}) & = & \textsl{count}(uvw,\squoted{a}) - \textsl{count}(v,\squoted{a}) \\
+ & = & \textsl{count}(s,\squoted{a}) - \textsl{count}(v,\squoted{a}) \\
+ & = & \textsl{count}(\mathtt{a}^n\mathtt{b}^n,\squoted{a}) - \textsl{count}(\mathtt{a}^k,\squoted{a}) \\
  & = & n - k  \\
  & < & n   \\
 \end{array}
 \]
-Andererseits gilt 
+But on the other hand we have
 \[  
 \begin{array}{lcl}
-\textsl{count}(uw,\squoted{)}) & = & \textsl{count}(uvw,\squoted{)}) - \textsl{count}(v,\squoted{)}) \\
-                               & = & \textsl{count}(s,\squoted{)}) - \textsl{count}(v,\squoted{)}) \\
- & = & \textsl{count}(\mathtt{(}^n\mathtt{)}^n,\squoted{)}) - \textsl{count}(\mathtt{(}^k,\squoted{)}) \\
+\textsl{count}(uw,\squoted{b}) & = & \textsl{count}(uvw,\squoted{b}) - \textsl{count}(v,\squoted{b}) \\
+                               & = & \textsl{count}(s,\squoted{b}) - \textsl{count}(v,\squoted{b}) \\
+ & = & \textsl{count}(\mathtt{a}^n\mathtt{b}^n,\squoted{b}) - \textsl{count}(\mathtt{a}^k,\squoted{b}) \\
                                & = & n  - 0\\
                                & = & n  
 \end{array}
 \]
-Insgesamt sehen wir
-\[ \textsl{count}(uw,\squoted{(}) < \textsl{count}(uw,\squoted{)}) \]
-und damit kann der String $uw$ im Widerspruch zum Pumping-Lemma nicht in der Sprache $L$
-liegen, denn alle Wörter der Sprache $L$ enthalten gleich viele öffnende wie geschlossene
-Klammern.   Dieser Widerspruch zum Pumping-Lemma zeigt, dass die Sprache $L$ nicht 
-regulär sein kann. 
+Therefore, we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{count}(uw,\squoted{a}) < \textsl{count}(uw,\squoted{b})$
+\\[0.2cm]
+and this shows that the string $uw$ is not a member of the language $L$ because for all strings in $L$ 
+the same number of occurrences of the character ``\texttt{a}'' is the same as the number of
+occurrences of the character ``\texttt{b}''.  This contradiction shows that the language $L$ cannot
+be regular.
 \qed
 
 \remark
-Der letzte Satz zeigt uns, dass wir mit Hilfe von regulären Ausdrücken noch nicht einmal Klammern
-zählen können.  Der Begriff der regulären Ausdrücke ist damit offensichtlich zu schwach um die
-Syntax gängiger  Programmier-Sprachen adäquat zu beschreiben.  Im nächsten Kapitel werden wir 
-das Konzept der kontextfreien Grammatik kennen lernen, das wesentlich mächtiger als das
-Konzept der regulären Sprachen ist.   Mit diesem Konzept wird es dann möglich sein, die
-Syntax der gängigen Programmier-Sprachen zu beschreiben.
+The previous proposition shows that the expressive power of regular languages is quite weak.
+We could easily adapt the previous proposition to show that the language
+\\[0.2cm]
+\hspace*{1.3cm}
+$\bigl\{ \mathtt{(}^n \mathtt{)}^n \mid n \in \mathbb{N} \bigr\}$
+\\[0.2cm]
+is not regular.  Hence, regular expressions are unable to check even such simple questions as to
+whether the parentheses in an expressions are balanced.  Therefore, the concept of regular
+expressions is not strong enough to describe the syntax of a programming language.
+The next chapter introduces the notion of \emph{context-free languages}.  These languages
+are powerful enough to describe modern programming languages. 
 
-\exercise
-Die Sprache $L_{\mathrm{square}}$ beinhaltet alle Wörter der Form $\mathtt{a}^n$ für die $n$ eine
-Quadrat-Zahl ist, es gilt also
+\exerciseEng
+The language  $L_{\mathrm{square}}$ is the set of all strings of the form $\mathtt{a}^n$ where $n$
+is a square, we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $L_{\mathrm{square}} = \bigl\{ a^{m} \mid \exists k \in \mathbb{N}_0: m = k^2 \bigr\}$
 \\[0.2cm]
-Zeigen Sie mit Hilfe des Pumping-Lemmas, dass die Sprache $L_{\mathrm{square}}$ keine reguläre
-Sprache ist.
+Prove that the language  $L_{\mathrm{square}}$ is not a regular language.
 \eox
 \vspace*{0.1cm}
 
 \noindent
-\textbf{Hinweis}:  Nutzen Sie aus, dass der Abstand zwischen den Quadrat-Zahlen beliebig groß wird.
+\textbf{Hint}:  When looking for a counter example, you should try to set $h:=2$.
+
 
 \solution
 Wir führen den Beweis indirekt und nehmen an, dass $L_{\mathrm{square}}$ regulär
@@ -798,58 +804,58 @@ $L := \bigl\{ \mathtt{a}^p \mid \mbox{$p$ is a prime number} \bigr\}$
 is not regular.  \eox
 \vspace{0.3cm}
 
-\noindent
-\textbf{Beweis}:
-Wir führen den Beweis indirekt und nehmen an, $L$ wäre regulär.  Nach
-dem Pumping-Lemma gibt es dann eine Zahl $n$, so dass es für alle Strings $s \in L$, 
-deren Länge größer-gleich $n$ ist, eine Zerlegung
-\\[0.2cm]
-\hspace*{1.3cm}
-$s = uvw$
-\\[0.2cm]
-mit den folgenden drei Eigenschaften gibt:
-\begin{enumerate}
-\item $v \not= \varepsilon$, 
-\item $|uv| \leq n$ \quad und
-\item $\forall h \in \mathbb{N}_0: u v^h w \in L$.
-\end{enumerate}
-Wir wählen nun eine Primzahl $p$, die größer-gleich  $n + 2$ ist und setzen $s = \mathtt{a}^p$.
-Dann gilt $|s| = p \geq n$ und die Voraussetzung des Pumping-Lemmas ist erfüllt.
-Wir finden also eine Zerlegung von $\mathtt{a}^p$ der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-$\mathtt{a}^p = uvw$ 
-\\[0.2cm]
-mit den oben angegebenen Eigenschaften.
-Aufgrund der Gleichung $s = uvw$ können die Teilstrings $u$, $v$ und $w$ nur aus dem
-Buchstaben ``\texttt{a}'' bestehen.  Also gibt es natürliche Zahlen $x$, $y$, und
-$z$ so dass gilt:
-\\[0.2cm]
-\hspace*{1.3cm}
-$u = \mathtt{a}^x$, \quad $v = \mathtt{a}^y$ \quad und \quad $w = \mathtt{a}^z$.
-\\[0.2cm]
-Für  $x$, $y$ und $z$ gilt dann Folgendes:
-\begin{enumerate}
-\item $x + y + z = p$,
-\item $y \not= 0$,
-\item $x + y \leq n$,
-\item $\forall h \in \mathbb{N}_0: x + h \cdot y + z \in \mathbb{P}$.
-\end{enumerate}
-Setzen wir in der letzten Gleichung für $h$ den Wert $(x + z)$ ein, so erhalten wir
-\\[0.2cm]
-\hspace*{1.3cm}
-$x + (x + z)\cdot y + z \in P$.
-\\[0.2cm]
-Wegen $x + (x + z)\cdot y + z = (x + z) \cdot (1 + y)$ hätten wir dann
-\\[0.2cm]
-\hspace*{1.3cm}
-$(x + z) \cdot (1 + y) \in \mathbb{P}$.
-\\[0.2cm]
-Das kann aber nicht sein, denn wegen $y > 0$ ist der Faktor $1 + y$ von 1
-verschieden und wegen $x + y \leq n$ und $x + y + z = p$ und $p \geq n + 2$ wissen wir, dass
-$z \geq 2$ ist, so dass auch der Faktor $(x + z)$ von 1 verschieden ist.  Damit kann das Produkt
-$(x + z) \cdot (1 + y)$ aber keine Primzahl mehr sein und wir haben einen Widerspruch zu der
-Annahme, dass $L$ regulär ist. \qed
+% \noindent
+% \textbf{Beweis}:
+% Wir führen den Beweis indirekt und nehmen an, $L$ wäre regulär.  Nach
+% dem Pumping-Lemma gibt es dann eine Zahl $n$, so dass es für alle Strings $s \in L$, 
+% deren Länge größer-gleich $n$ ist, eine Zerlegung
+% \\[0.2cm]
+% \hspace*{1.3cm}
+% $s = uvw$
+% \\[0.2cm]
+% mit den folgenden drei Eigenschaften gibt:
+% \begin{enumerate}
+% \item $v \not= \varepsilon$, 
+% \item $|uv| \leq n$ \quad und
+% \item $\forall h \in \mathbb{N}_0: u v^h w \in L$.
+% \end{enumerate}
+% Wir wählen nun eine Primzahl $p$, die größer-gleich  $n + 2$ ist und setzen $s = \mathtt{a}^p$.
+% Dann gilt $|s| = p \geq n$ und die Voraussetzung des Pumping-Lemmas ist erfüllt.
+% Wir finden also eine Zerlegung von $\mathtt{a}^p$ der Form
+% \\[0.2cm]
+% \hspace*{1.3cm}
+% $\mathtt{a}^p = uvw$ 
+% \\[0.2cm]
+% mit den oben angegebenen Eigenschaften.
+% Aufgrund der Gleichung $s = uvw$ können die Teilstrings $u$, $v$ und $w$ nur aus dem
+% Buchstaben ``\texttt{a}'' bestehen.  Also gibt es natürliche Zahlen $x$, $y$, und
+% $z$ so dass gilt:
+% \\[0.2cm]
+% \hspace*{1.3cm}
+% $u = \mathtt{a}^x$, \quad $v = \mathtt{a}^y$ \quad und \quad $w = \mathtt{a}^z$.
+% \\[0.2cm]
+% Für  $x$, $y$ und $z$ gilt dann Folgendes:
+% \begin{enumerate}
+% \item $x + y + z = p$,
+% \item $y \not= 0$,
+% \item $x + y \leq n$,
+% \item $\forall h \in \mathbb{N}_0: x + h \cdot y + z \in \mathbb{P}$.
+% \end{enumerate}
+% Setzen wir in der letzten Gleichung für $h$ den Wert $(x + z)$ ein, so erhalten wir
+% \\[0.2cm]
+% \hspace*{1.3cm}
+% $x + (x + z)\cdot y + z \in P$.
+% \\[0.2cm]
+% Wegen $x + (x + z)\cdot y + z = (x + z) \cdot (1 + y)$ hätten wir dann
+% \\[0.2cm]
+% \hspace*{1.3cm}
+% $(x + z) \cdot (1 + y) \in \mathbb{P}$.
+% \\[0.2cm]
+% Das kann aber nicht sein, denn wegen $y > 0$ ist der Faktor $1 + y$ von 1
+% verschieden und wegen $x + y \leq n$ und $x + y + z = p$ und $p \geq n + 2$ wissen wir, dass
+% $z \geq 2$ ist, so dass auch der Faktor $(x + z)$ von 1 verschieden ist.  Damit kann das Produkt
+% $(x + z) \cdot (1 + y)$ aber keine Primzahl mehr sein und wir haben einen Widerspruch zu der
+% Annahme, dass $L$ regulär ist. \qed
 
 
 \exercise
