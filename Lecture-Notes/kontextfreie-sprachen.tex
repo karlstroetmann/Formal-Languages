@@ -1,14 +1,16 @@
-\chapter{Kontextfreie Sprachen \label{chap:kontextfrei}}
-Im letzten Kapitel haben wir mit Hilfe des Pumping-Lemmas gesehen, dass reguläre Sprachen nicht in der Lage
-sind, Klammern zu zählen.  Damit ist klar, dass reguläre Sprachen nicht ausdrucksstark genug sind,
-um die Syntax arithmetischer Ausdrücke beschreiben zu können.  Allgemeiner lässt sich sagen, 
-dass reguläre Sprachen nicht dazu geeignet sind, rekursiv aufgebaute Sprachen zu definieren. 
-Folglich sind reguläre Sprachen nicht dazu geeignet, die Syntax von Programmier-Sprachen zu
-beschreiben.  Hierfür ist ein ausdrucksstärkeres Konzept erforderlich.
-In diesem Kapitel stellen wir ein solches Konzept vor.  Es handelt sich dabei um
-die \href{http://en.wikipedia.org/wiki/Context-free_language}{\emph{kontextfreien}}
-Sprachen, die mit Hilfe von \emph{kontextfreien Grammatiken} definiert werden.  Letztere werden wir
-nun einführen.
+\chapter{Context-Free Languages \label{chap:kontextfrei}}
+In this chapter we present the notion of 
+\href{http://en.wikipedia.org/wiki/Context-free_language}{\emph{context-free languages}}.
+This concept is much more powerful than the notion of regular languages.  The syntax of most modern
+programming languages can be described via context-free languages.  Furthermore, checking whether a
+string is a member of a context-free language structures the string into a recursive structure known
+as a \emph{parse tree}.  These parse trees are the basis for \emph{understanding} the meaning of a
+string that is to be interpreted as a program fragment.  A program that checks whether a given
+string is an element of a context-free language is called a \emph{parser}.  Usually, a parser builds
+a parse tree from a given string.  Parsing is therefore the first step in an interpreter or a compiler.
+In this chapter, we first define the notion of context-free languages.  Next, we discuss parse
+trees.  We conclude the chapter by introducing some of the less complex algorithms that are
+available for parsing a string into a parse tree.
 
 \section{Kontextfreie Grammatiken \label{kontextfreie}}
 Kontextfreie Sprachen dienen zur Beschreibung von Programmier-Sprachen, insofern handelt
@@ -924,10 +926,23 @@ $L(x) = \bigl\{ \omega \in \Sigma^* \mid \omega \in L \;\wedge\; \forall \sigma 
 $L(y) = \bigl\{ \omega \in \Sigma^* \mid \omega \in L \;\wedge\; \forall \sigma \preceq \omega : 
                   \textsl{count}(\sigma, \squoted{A}) \leq \textsl{count}(\sigma, \squoted{B}) \bigr\}$.
 \\[0.2cm]
-Ein String der Sprache $L(x)$ kann also kein ``\texttt{B}'' enthalten, das zu einem
-``\texttt{A}'' gehört, das vor diesem String steht und analog kann 
-ein String der Sprache $L(y)$  kein ``\texttt{A}'' enthalten, das zu einem
-``\texttt{B}'' gehört, das vor diesem String steht.
+Ist $w \in L(x)$, so gibt es zu jedem Auftreten des Buchstabens ``\texttt{B}'' in dem String $w$ ein
+dazu korrespondierendes Auftreten des Buchstabens ``\texttt{A}'', das dem Auftreten des Buchstabens
+``\texttt{B}'' vorangeht.  Würden wir den Buchstaben
+``\texttt{A}'' durch eine öffnende Klammer und den Buchstaben ``\texttt{B}'' durch eine schließende
+Klammer ersetzen, so wird also niemals eine Klammer geschlossen, die nicht vorher geöffnet wurde.
+Damit ist klar, dass in einem String der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+``\texttt{A}'' $w$ ``\texttt{B}'' \quad mit $w \in L(x)$ 
+\\[0.2cm]
+das zu dem ersten ``\texttt{A}'' korrespondierende ``\texttt{B}'' nur das letzte ``\texttt{B}'' sein kann.
+Analog können wir sehen, dass in einem String der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+``\texttt{B}'' $w$ ``\texttt{A}'' \quad mit $w \in L(Y)$ 
+\\[0.2cm]
+das zu dem ersten ``\texttt{B}'' korrespondierende ``\texttt{A}'' nur das letzte ``\texttt{A}'' sein kann.
 
 Ein String der Sprache $L$ fängt nun entweder mit ``\texttt{A}'' oder mit ``\texttt{B}''
 an.  Im ersten Fall interpretieren wir das ``\texttt{A}'' als öffnende Klammer und 
@@ -965,12 +980,12 @@ String der Form
 \hspace*{1.3cm}
 $\mathtt{A}^n \mathtt{B}^n \mathtt{C}^n \mathtt{D}^n$
 \\[0.2cm]
-immer zwei strukturell verschiedene Parse-Bäume besitzt.  Ein Beweis dieser Behaupung
-findet sich in dem Buch von  Hopcroft und Ullman auf Seite 100 \cite{hopcroft:79}.   
+immer zwei strukturell verschiedene Parse-Bäume besitzen muss.  Ein Beweis dieser Behaupung
+findet sich in der ersten Auflage des Buchs von  Hopcroft und Ullman auf Seite 100 \cite{hopcroft:79}.   
 
 \section{Top-Down-Parser}
-In diesem Abschnitt stellen wir ein Verfahren vor, mit dem sich viele
-Grammatiken leicht parsen lassen.  Die Grundidee ist einfach:  Um einen String $w$ mit
+In diesem Abschnitt stellen wir ein Verfahren vor, mit dem sich eine ganze Reihe von
+Grammatiken bequem parsen lassen.  Die Grundidee ist einfach:  Um einen String $w$ mit
 Hilfe einer Grammatik-Regel der Form
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1565,7 +1580,7 @@ Figure \ref{fig:rd-parser.stlx} on page
       \hspace*{1.3cm}
       \verb|[2, ["+", 3]]|,
       \\[0.2cm]
-      where $2$ is the result of parsing the token list \verb|[1, "*", 2]|, while
+      where $2$ is the result of parsing and evaluating the token list \verb|[1, "*", 2]|, while
       \verb|["+", 3]| is the part of the input token list that is not used by
       \texttt{parseProduct}.  Next, the list \verb|["+", 3]| needs to be parsed as 
       the rest of an expression and then $3$ needs to be added to $2$.      
