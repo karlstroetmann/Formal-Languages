@@ -1,12 +1,14 @@
-AntlrPath = /usr/local/lib/antlr-4.4-complete.jar
+#AntlrPath = /usr/local/lib/antlr-4.5.1-complete.jar
+AntlrPath = C:/Users/Karl/Dropbox/Software/antlr-4.5.1-complete.jar
 CP        = .:${AntlrPath}
 
+
 run: ParseExpr.class 
-	echo "1 + 2 * 3 - 4" | java -cp ${CP} ParseExpr
-	echo "1 + 2 * 3 - 4" | java -cp ${CP} org.antlr.v4.runtime.misc.TestRig Expr start -gui
+	echo "1 + 2 * 3 - 4" | java ParseExpr
+	echo "1 + 2 * 3 - 4" | java org.antlr.v4.runtime.misc.TestRig Expr start -gui
 
 ParseExpr.class: ParseExpr.java ExprParser.java
-	javac -cp ${CP} ParseExpr.java  
+	javac *.java  
 
 ExprParser.java: Expr.g4
 	java -jar ${AntlrPath} Expr.g4
