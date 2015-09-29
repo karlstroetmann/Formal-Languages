@@ -1,0 +1,98 @@
+// expr    : product exprRest
+//         ;
+// 
+// exprRest: '+' product exprRest
+//         | '-' product exprRest
+//         |
+//         ;
+//
+// product : factor prodRest
+//         ;
+//
+// prodRest: '*' factor prodRest
+//         | '/' factor prodRest
+//         |
+//         ;
+//
+// factor  : '(' expr ')'
+//         | NUMBER
+//         ;
+
+r01 := [ "expr"    , [ Var("product"), Var("exprRest")               ] ];
+r02 := [ "exprRest", [ Literal("+"), Var("product"), Var("exprRest") ] ];
+r03 := [ "exprRest", [ Literal("-"), Var("product"), Var("exprRest") ] ];
+r04 := [ "exprRest", [                                               ] ];
+r05 := [ "product" , [ Var("factor"), Var("prodRest")                ] ];
+r06 := [ "prodRest", [ Literal("*"), Var("factor"), Var("prodRest")  ] ];
+r07 := [ "prodRest", [ Literal("/"), Var("factor"), Var("prodRest")  ] ];
+r08 := [ "prodRest", [                                               ] ];
+r09 := [ "factor"  , [ Literal("("), Var("expr"), Literal(")")       ] ];
+r10 := [ "factor"  , [ Token("NUMBER")                               ] ];
+
+parseTable := {};
+
+parseTable[ "expr"    , Literal("(")    ] := r01;
+parseTable[ "expr"    , Token("NUMBER") ] := r01;
+
+parseTable[ "exprRest", Literal("+")    ] := r02;
+parseTable[ "exprRest", Literal("-")    ] := r03;
+parseTable[ "exprRest", Literal(")")    ] := r04;
+parseTable[ "exprRest", Token("EOF")    ] := r04;
+
+parseTable[ "product" , Literal("(")    ] := r05;
+parseTable[ "product" , Token("NUMBER") ] := r05;
+
+parseTable[ "prodRest", Literal("*")    ] := r06;
+parseTable[ "prodRest", Literal("/")    ] := r07;
+parseTable[ "prodRest", Literal("+")    ] := r08;
+parseTable[ "prodRest", Literal("-")    ] := r08;
+parseTable[ "prodRest", Literal(")")    ] := r08;
+parseTable[ "prodRest", Token("EOF")    ] := r08;
+
+parseTable[ "factor"  , Literal("(")    ] := r09;
+parseTable[ "factor"  , Token("NUMBER") ] := r10;
+
+myParse := closure(string, start) {
+    tokenList := tokenizeString(string);
+    itemList  := [ Var(start) ];
+    while (#tokenList > 1 || #itemList > 0) {
+        print("tokens: " + tokenList);
+        print("items:  " + itemList);
+        if (    itemList[1] == tokenList[1]
+             || itemList[1] == Token("NUMBER") && isNumber(tokenList[1])
+           )
+        {
+            itemList  := itemList [2..];
+            tokenList := tokenList[2..];
+            continue;
+        }
+        if (fct(itemList[1]) == "Var") {
+            varName  := args(itemList[1])[1];
+            rule     := parseTable[varName, tokenList[1]];
+            if (rule != om) {
+                print("rule:   $rule[1]$ -> $[str(args(x)[1]) : x in rule[2]]$");
+                itemList := rule[2] + itemList[2..];
+                continue;
+            }
+        }
+        print("Parse error at token \"$tokenList[1]$\".");
+        print(itemList);
+        return;
+    }
+    print("Parse successful");
+};
+
+// This procedure partitions the string s into a list of tokens.
+// It recognizes numbers, the operator symbols "+", "-", "*", "/",
+// and the parentheses "(" and ")".
+tokenizeString := procedure(s) {
+    tokenList := [];
+    scan (s) {
+        regex '0|[1-9][0-9]*' as [ number   ]: tokenList += [ Token("NUMBER")   ];
+        regex '[-+*/()]'      as [ operator ]: tokenList += [ Literal(operator) ];
+        regex '[ \t\v\n\r]+'                 : // skip
+    }
+    return tokenList + [ Token("EOF") ];
+};
+
+myParse("1+2*3", "expr");
