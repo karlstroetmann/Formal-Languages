@@ -1,4 +1,4 @@
-AntlrPath = /usr/local/lib/antlr-4.4-complete.jar
+AntlrPath = /usr/local/lib/antlr-4.5.1-complete.jar
 CP        = .:${AntlrPath}
 
 run: SLInterpreter.class
