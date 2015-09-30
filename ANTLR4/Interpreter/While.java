@@ -16,9 +16,9 @@ public class While extends Statement {
         }
     }
     public String toString(int l) {
-		String blanks     = nBlanks(4 * l);
-		String moreBlanks = nBlanks(4 * l + 4);
-		String result     = blanks;
+	String blanks     = nBlanks(4 * l);
+	String moreBlanks = nBlanks(4 * l + 4);
+	String result     = blanks;
         result += "while (" + mCond + ") {\n";
         for (Statement stmnt: mStmntList) {
             result += stmnt.toString(l+1) + "\n";
