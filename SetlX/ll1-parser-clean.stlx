@@ -56,41 +56,26 @@ myParse := closure(string, start) {
     itemList  := [ Var(start) ];
     while (#itemList > 0) {
         lat := tokenList[1];
-        print("lat = $lat$");
         match (itemList[1]) {
         case Var(varName):
             rule := parseTable[varName, removeNumber(lat)];
              if (rule != om) {
-                 print("reducing with:   $rule[1]$ -> $cleanList(rule[2])$");
-                 s1 := cleanList(itemList);
                  itemList := rule[2] + itemList[2..];
-                 s2 := cleanList(itemList);
-                 print("$s1$ => $s2$");
                  continue;
              } else {
-                 print("ERROR: unexpected token $lat$.");
-                 return;
+                 print("ERROR: unexpected token $lat$."); return;
              }
         case Number():
              if (isNumber(lat)) {
-                 print("read $getNumber(lat)$");
-                 s1 := cleanList(itemList);
                  itemList  := itemList[2..];
                  tokenList := tokenList[2..];
-                 s2 := cleanList(itemList);
-                 print("$s1$ => $s2$");
              } else {
-                 print("ERROR: number expected but found $lat$");
-                 return;
+                 print("ERROR: number expected but found $lat$"); return;
              }
         default:
              if (lat == tokenList[1]) {                
-                 s1 := cleanList(itemList);
                  itemList  := itemList [2..];
                  tokenList := tokenList[2..];
-                 s2 := cleanList(itemList);
-                 print("recognizing $lat$");
-                 print("$s1$ => $s2$");
                  continue;
              } else {
                  print("Parse error at token $tokenList[1]$.");
@@ -148,4 +133,4 @@ removeNumber := procedure(item) {
     return item;
 };
 
-myParse("1+2*3", "expr");
+myParse("1+2*3*(2+3*4)", "expr");
