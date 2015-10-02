@@ -12,5 +12,6 @@ product
 
 factor
     : ID
+    | ID '(' expr ')'
     | '(' expr ')'
     ;

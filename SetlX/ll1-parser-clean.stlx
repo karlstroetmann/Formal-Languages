@@ -55,10 +55,10 @@ myParse := closure(string, start) {
     tokenList := tokenizeString(string);
     itemList  := [ Var(start) ];
     while (#itemList > 0) {
-        lat := tokenList[1];
+        lat := tokenList[1];  // lookahead token
         match (itemList[1]) {
         case Var(varName):
-            rule := parseTable[varName, removeNumber(lat)];
+             rule := parseTable[varName, removeNumber(lat)];
              if (rule != om) {
                  itemList := rule[2] + itemList[2..];
                  continue;
@@ -73,13 +73,13 @@ myParse := closure(string, start) {
                  print("ERROR: number expected but found $lat$"); return;
              }
         default:
-             if (lat == tokenList[1]) {                
+             if (itemList[1] == lat) {                
                  itemList  := itemList [2..];
                  tokenList := tokenList[2..];
                  continue;
              } else {
                  print("Parse error at token $tokenList[1]$.");
-                 print("Expecting $tokenList[1]$");
+                 print("Expecting $itemList[1]$");
                  return;
              }
         }
