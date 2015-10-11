@@ -75,10 +75,13 @@ benutzen müssen.  Das erklärt, warum wir die markierte Regel
 in den Start-Zustand aufnehmen müssen, denn 
 da wir am Anfang noch gar nicht wissen können, welche Regel wir benötigen, muss
 der Start-Zustand daher alle diese Regeln enthalten.  Haben wir erst die markierte Regel
- $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$ zum Start-Zustand hinzugefügt, so
- sehen wir, dass wir eventuell als nächstes ein $\textsl{product}$ lesen müssen.  Daher sehen wir,
- dass der Start-Zustand außerdem noch die folgenden markierten 
-Regeln enthält: 
+\\[0.2cm]
+\hspace*{1.3cm}
+ $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$ 
+\\[0.2cm]
+zum Start-Zustand hinzugefügt, so sehen wir, dass wir eventuell als nächstes ein $\textsl{product}$
+lesen müssen.  Daher sehen wir,  dass der Start-Zustand außerdem noch die folgenden markierten
+Regeln enthält:  
 \begin{enumerate}
 \item[4.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \quoted{*} \textsl{factor}$,
 \item[5.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \quoted{/} \textsl{factor}$,
@@ -213,21 +216,21 @@ angewendet werden können.
 
 
 Zur Vereinfachung der folgenden Konstruktionen erweitern wir die
-Grammatik $G = \langle V, T, R, s \rangle$ durch Einführung eines neuen Start-Symbols $\widehat{s}$ zu
-einer Grammatik 
+Grammatik $G = \langle V, T, R, s \rangle$ durch Einführung eines neuen Start-Symbols $\widehat{s}$
+und eines neuen Tokens \textsc{Eof} zu der Grammatik 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\widehat{G} = 
- \Bigl\langle V \cup \{ \widehat{s} \}, T, R \cup \{ \widehat{s} \rightarrow s \}, \widehat{s} 
- \Bigr\rangle
+ \Bigl\langle V \cup \{ \widehat{s} \}, T \cup \{\textsc{Eof}\}, R \cup \{ \widehat{s} \rightarrow s\, \textsc{Eof} \}, \widehat{s} \Bigr\rangle
 $.
 \\[0.2cm]
-Diese Grammatik bezeichnen wir als die \emph{augmentierte Grammatik}.  Die Verwendung der
+Das Token \textsc{Eof} steht dabei als Abkürzung für \emph{\underline{e}end \underline{o}f \underline{f}ile}.
+Die Grammatik $\widehat{G}$ bezeichnen wir als die \emph{augmentierte Grammatik}.  Die Verwendung der
 augmentierten Grammatik ermöglicht die nun folgende Definition des Start-Zustands.
 Wir setzen nämlich:
 \\[0.2cm]
 \hspace*{1.3cm}
-$ q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s \bigr\} \Bigr)$.
+$ q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s\,\textsc{Eof} \bigr\} \Bigr)$.
 \\[0.2cm]
 Als nächstes konstruieren wir die Funktion $\textsl{goto}()$.  Die Definition lautet:
 \\[0.2cm]
@@ -249,7 +252,7 @@ Regel $a \rightarrow \beta \bullet c\, \delta$ enthält in einen Zustand, der die
 $a \rightarrow \beta\, c \bullet \delta$ 
 enthält, übergehen.  Daher erhalten wir die oben angegebene Definition der Funktion $\textsl{goto}(\mathcal{M},c)$.
 Für die gleich folgende Definition der Funktion $\textsl{action}(\mathcal{M}, t)$ ist es
-nützlich, die Definition der Funktion $\textsl{goto}()$ auf Terminale zu erweitern.  
+nützlich, die Definition der Funktion $\textsl{goto}$ auf Terminale zu erweitern.  
 Für Terminale $t \in T$ setzen wir:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -298,13 +301,13 @@ Bei der Definition von $\textsl{action}(\mathcal{M},t)$ unterscheiden wir vier F
       \quad falls 
       $(a \rightarrow \beta\bullet) \in \mathcal{M}$, $a \not= \widehat{s}$ 
       und $t \in \textsl{Follow}(a)$ gilt.
-\item Falls $\mathcal{M}$ die markierte Regel $\widehat{s} \rightarrow s \bullet$ enthält und
+\item Falls $\mathcal{M}$ die markierte Regel $\widehat{s} \rightarrow s \bullet \textsc{Eof}$ enthält und
       wir den zu parsenden String vollständig gelesen haben, setzen wir
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(\mathcal{M},\textsc{Eof}) := \texttt{accept}$,
       \\[0.2cm]
-      denn in diesem Fall versucht der Parser, $\widehat{s}$ mit Hilfe der Regel $\widehat{s} \rightarrow s$
+      denn in diesem Fall versucht der Parser, $\widehat{s}$ mit Hilfe der Regel $\widehat{s} \rightarrow s\,\textsc{Eof}$
       zu erkennen und hat also bereits $s$ erkannt. Ist nun das nächste Token im Eingabe-String 
       das Datei-Ende-Zeichen \textsc{Eof}, 
       so liegt der zu parsende String in der durch die Grammatik $G$ spezifizierten Sprache
@@ -312,7 +315,7 @@ Bei der Definition von $\textsl{action}(\mathcal{M},t)$ unterscheiden wir vier F
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(\mathcal{M},\textsc{Eof}) := \texttt{accept}$,
-      \quad falls $(\widehat{s} \rightarrow s\bullet) \in \mathcal{M}$.
+      \quad falls $(\widehat{s} \rightarrow s\bullet\textsc{Eof}) \in \mathcal{M}$.
 \item In den restlichen Fällen setzen wir
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -346,13 +349,10 @@ Wir unterscheiden zwischen zwei Arten von Konflikten.
       enthält und wenn gleichzeitig $t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)$ ist,
       denn dann ist nicht klar, welche
       der beiden Regeln der Parser anwenden soll, wenn das nächste zu lesende Token den Wert $t$ hat.
-
-      Auch zwischen der zweiten und der dritten Regel kann es einen Konflikt geben.  Ein solcher
-      Konflikt wird ebenfalls als Reduce-Reduce-Konflikt bezeichnet, 
 \end{enumerate}
 Falls einer dieser beiden Konflikte auftritt, dann sagen wir, dass die Grammatik keine
 SLR-Grammatik ist.  Eine solche Grammatik kann mit Hilfe eines SLR-Parsers nicht geparst
-werden.  Wir werden später noch Beispiele für die beiden Arten von Konflikten geben, aber
+werden.  Wir werden später noch Beispiele für die beiden Arten von Konflikten angeben, aber
 zunächst wollen wir eine Grammatik untersuchen, bei der keine Konflikte auftreten und wollen für
 diese Grammatik die Funktionen $\textsl{goto}()$ und $\textsl{action}()$ auch tatsächlich
 berechnen.  Wir nehmen als Grundlage die  in Abbildung
@@ -362,7 +362,7 @@ Grammatik-Regeln auftritt, definieren wir \textsl{start} als neues Start-Symbol 
 in der Grammatik die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{start} \rightarrow \textsl{expr}$
+$\textsl{start} \rightarrow \textsl{expr}\; \textsc{Eof}$
 \\[0.2cm]
 ein.  Dieser Schritt entspricht dem früher diskutierten \emph{Augmentieren} der Grammatik.
 Als erstes berechnen wir die Menge der Zustände $Q$.  Wir hatten dafür oben die
@@ -379,14 +379,14 @@ wir führen wir die folgenden Abkürzungen ein:
 \\[0.2cm]
 \hspace*{1.3cm}
 $s := \textsl{start},\; e := \textsl{expr},\; p := \textsl{product},\; 
-   f := \textsl{factor},\; N := \textsc{Number}$. 
+   f := \textsl{factor},\; N := \textsc{Number}$ und $\symbol{36} := \textsc{Eof}$. 
 \\[0.2cm]
 Wir beginnen mit dem Start-Zustand: 
 \begin{enumerate}
 \item $ 
 \begin{array}[t]{lcrl}
-s_0 & := & \textsl{closure}\bigl(\{ & s \rightarrow \bullet\, e \quad \}\bigr) \\
-    &  = & \{ & s \rightarrow \bullet\, e,                \\[0.1cm]
+s_0 & := & \textsl{closure}\bigl(\{ & s \rightarrow \bullet\, e\, \symbol{36}\quad \}\bigr) \\
+    &  = & \{ & s \rightarrow \bullet\, e \,\symbol{36},                \\[0.1cm]
     &    &    & e \rightarrow \bullet\, e \quoted{+} p,\; 
                 e \rightarrow \bullet\, e \quoted{-} p,\;
                 e \rightarrow \bullet\, p, \\[0.1cm]
@@ -425,11 +425,11 @@ $
 \begin{array}[t]{lcl}
 s_4 & := & \textsl{goto}(s_0, e ) \\
     &  = & \textsl{closure}(\{ 
-           s \rightarrow e \bullet,\;  
+           s \rightarrow e \bullet\,\symbol{36}.\;  
            e \rightarrow e \bullet \quoted{+} p,\; 
            e \rightarrow e \bullet \quoted{-} p\;
        \}) \\
-    &  = & \{\;  s \rightarrow e \bullet,\;
+    &  = & \{\;  s \rightarrow e \bullet\,\symbol{36},\;
                  e \rightarrow e \bullet \quoted{+} p,\; 
                  e \rightarrow e \bullet \quoted{-} p \; \}.
 \end{array}
@@ -613,12 +613,11 @@ Es gilt aber
 \hspace*{1.3cm}
 $ \textsl{Follow}(e) = \{ \quoted{+}, \quoted{-}, \quoted{)} ,\quoted{\symbol{36}} \} $,
 \\[0.2cm]
-wobei hier ``\texttt{\symbol{36}}'' für das Ende der Eingabe steht
 und daraus folgt $\squoted{*} \not\in \textsl{Follow}(e)$, so dass hier kein Shift-Reduce-Konflikt
 vorliegt.  Eine Untersuchung der anderen Mengen zeigt, dass dort ebenfalls keine Shift-Reduce- oder
 Reduce-Reduce-Konflikte auftreten.
 
-Als nächstes berechnen wir die Funktion $\textsl{action}()$.  Wir betrachten exemplarisch
+Als nächstes berechnen wir die Funktion $\textsl{action}$.  Wir betrachten exemplarisch
 zwei Fälle.
 \begin{enumerate}
 \item Als erstes berechnen wir $\textsl{action}(s_1, \quoted{+})$.  Es gilt
@@ -639,7 +638,7 @@ zwei Fälle.
 $ 
       \begin{array}[t]{lcl}
       \textsl{action}(s_4, \quoted{+}) & = & 
-            \textsl{action}(\{ s \rightarrow e \bullet,\;
+            \textsl{action}(\{ s \rightarrow e \bullet\,\symbol{36},\;
                  e \rightarrow e \bullet \quoted{+} p,\; 
                  e \rightarrow e \bullet \quoted{-} p \; \}, \quoted{+}) \\
       & = & \langle \textsl{shift}, \textsl{closure}(\{ e \rightarrow e \quoted{+} \bullet p\}) \rangle \\
@@ -654,7 +653,7 @@ in den Tabellen \ref{tab:action} und \ref{tab:goto} übereinstimmen.
 
 \exercise
 Berechnen Sie die Menge der SLR-Zustände für die in Abbildung \ref{fig:BoolExpr.grammar} gezeigte
-Grammatik und geben Sie die Funktionen $\textsl{action}()$ und $\textsl{goto}()$ an.
+Grammatik und geben Sie die Funktionen $\textsl{action}$ und $\textsl{goto}$ an.
 Kürzen Sie die Namen der syntaktischen Variablen und Terminale mit $s$, $c$, $d$, $l$ und $I$
 ab, wobei $s$ für das neu eingeführte Start-Symbol steht.  \eox
 \vspace*{0.2cm}
@@ -720,8 +719,8 @@ Wir berechnen zunächst den Start-Zustand $s_0$.
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}[t]{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ s \rightarrow \bullet\, e \}\bigr) \\[0.1cm]
-     & = & \bigl\{ s \rightarrow \bullet\, e,\;
+ s_0 & = & \textsl{closure}\bigl( \{ s \rightarrow \bullet\, e\,\symbol{36} \}\bigr) \\[0.1cm]
+     & = & \bigl\{ s \rightarrow \bullet\, e\,\symbol{36},\;
                    e \rightarrow \bullet\, e \quoted{+} e,\;
                    e \rightarrow \bullet\, e \quoted{*} e,\;
                    e \rightarrow \bullet\, N\;
@@ -735,11 +734,11 @@ Als nächstes berechnen wir $s_1 := \textsl{goto}(s_0, e)$:
 $\begin{array}[t]{lcl}
   s_1 & = & \textsl{goto}(s_0, e)  \\
       & = & \textsl{closure}\bigl(\{  
-                   s \rightarrow e \bullet,\;
+                   s \rightarrow e \bullet\,\symbol{36}\;
                    e \rightarrow e \bullet \squoted{+}\; e,\;
                    e \rightarrow e \bullet \squoted{*}\; e \;
             \}\bigr) \\
-      & = & \{ s \rightarrow e \bullet,\;
+      & = & \{ s \rightarrow e \bullet\,\symbol{36},\;
                e \rightarrow e \bullet \squoted{+}\; e,\;
                e \rightarrow e \bullet \squoted{*}\; e \;
             \}\bigr) 
@@ -850,14 +849,14 @@ berechnen wir den Start-Zustand eines SLR-Parsers für diese Grammatik.
 \\[0.2cm]
 $\hspace*{1.3cm}
 \begin{array}[t]{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s \}\bigr) \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s,\;
+ s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
+     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
                    s \rightarrow \bullet\, a \quoted{x} a \quoted{y},\;
                    s \rightarrow \bullet\, b \quoted{y} b \quoted{x},\;
                    a \rightarrow \bullet\, \varepsilon, \;
                    b \rightarrow \bullet\, \varepsilon \;
             \bigr\} \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s,\;
+     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
                    s \rightarrow \bullet\, a \quoted{x} a \quoted{y},\;
                    s \rightarrow \bullet\, b \quoted{y} b \quoted{x},\;
                    a \rightarrow \varepsilon \bullet, \;
@@ -918,8 +917,8 @@ gezeigten Grammatik auftritt, kann wie folgt gelöst werden:  In dem Zustand
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s \}\bigr) \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\,\, s,\;
+ s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
+     & = & \bigl\{ \widehat{s} \rightarrow \bullet\,\, s\,\symbol{36},\;
                    s \rightarrow \bullet\,\, a \quoted{x} a \quoted{y},\;
                    s \rightarrow \bullet\,\, b \quoted{y} b \quoted{x},\;
                    a \rightarrow \varepsilon \bullet, \;
@@ -981,15 +980,15 @@ in dem folgendes gilt:
       erkennen.
 \item Dabei wurde bereits $\beta$ erkannt.  Damit die Regel $a \rightarrow \beta \gamma$
       angewendet werden kann, muss nun  $\gamma$ erkannt werden.
-\item Wir wissen zusätzlich. dass auf die syntaktische Variable $a$ ein Token aus der Menge $L$
+\item Wir wissen zusätzlich, dass auf die syntaktische Variable $a$ ein Token aus der Menge $L$
       folgen muss.
 
       Die Menge $L$ bezeichnen wir daher als die Menge der \emph{Folge-Token}.
 \end{enumerate}
 
 Mit erweiterten markierten Regeln arbeitet sich ganz ähnlich wie mit markierten Regeln, allerdings
-müssen wir die Definitionen der Funktionen $\textsl{closure}()$, $\textsl{goto}$ und $\textsl{action}()$
-etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}()$.
+müssen wir die Definitionen der Funktionen $\textsl{closure}$, $\textsl{goto}$ und $\textsl{action}$
+etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}$.
 
 \begin{Definition}[$\textsl{closure}(\mathcal{M})$]
   Es sei $\mathcal{M}$ eine Menge erweiterter markierter Regeln.  Dann definieren wir den
@@ -1097,9 +1096,10 @@ $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, x \bullet \delta:L \mid (a \rightarrow \beta \bullet x\, \delta:L) \in \mathcal{M} 
    \bigr\} \Bigr)$. 
 \\[0.2cm]
-Genau wie bei der Theorie der SLR-Parser augmentieren wir unsere Grammatik $G$, indem wir
+Ähnlich wie bei der Theorie der SLR-Parser augmentieren wir unsere Grammatik $G$, indem wir
 der Menge der Variable eine neue Start-Variable $\widehat{s}$ und der Menge der Regeln die
-neue Regel $\widehat{s} \rightarrow s$ hinzufügen.  Dann hat der Start-Zustand die  Form
+neue Regel $\widehat{s} \rightarrow s$ hinzufügen.  Weiter fügen wir den Token das Symbol
+\textsc{Eof} hinzu.  Dann hat der Start-Zustand die  Form
 \\[0.2cm]
 \hspace*{1.3cm}
 $q_0 := \textsl{closure}\bigr(\bigl\{ \widehat{s} \rightarrow \bullet\, s:\textsc{Eof}\bigr\}\bigr)$,
@@ -1113,7 +1113,7 @@ Wir spezifizieren die Berechnung dieser Funktion durch die folgenden bedingten G
 \item $(a \rightarrow \beta \bullet:L) \in \mathcal{M} \;\wedge\; a \not= \widehat{s}
        \;\wedge\; t \in L \;\Longrightarrow\;
        \textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$. 
-\item $(\widehat{s} \rightarrow S \bullet:\textsc{Eof}) \in \mathcal{M} \;\Longrightarrow\;
+\item $(\widehat{s} \rightarrow s \bullet:\textsc{Eof}) \in \mathcal{M} \;\Longrightarrow\;
        \textsl{action}(\mathcal{M},\textsc{Eof}) := \texttt{accept}$. 
 \item Sonst: \quad $\textsl{action}(\mathcal{M},t) := \texttt{error}$. 
 \end{enumerate}
@@ -1157,17 +1157,10 @@ $L_1$ und $L_2$.  \eox
 \vspace*{0.3cm}
 
 
-\noindent
-\textbf{Bemerkung}:  Neben den oben angegebenen Konflikten ist auch ein Konflikt zwischen
-der 2.~und der 3.~Regel möglich.  Da die 3.~Regel als ein Speziallfall der 2.~Regel angesehen werden
-kann, sprechen wir dann ebenfalls von einem Reduce-Reduce-Konflikt.  \eox
-
-
-
 \example
 Wir greifen das Beispiel der in Abbildung \ref{fig:reduce-reduce-conflict.grammar} gezeigten Grammatik
 wieder auf und berechnen zunächst die Menge aller Zustände.  Um die Schreibweise zu
-vereinfachen, schreiben wir an Stelle von ``\textsc{Eof}'' kürzer ``\symbol{36}''.
+vereinfachen, schreiben wir an Stelle von ``\textsc{Eof}'' kürzer ``$\symbol{36}$''.
 
 \begin{enumerate}
 \item $\begin{array}[t]{lcl}
@@ -1310,13 +1303,13 @@ SLR-Parser derselben Grammatik hätte.  Beispielsweise kommt ein SLR-Parser für d
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar.g}{\texttt{C}-Grammatik} 
 mit 349 Zuständen aus.  Da die Sprache \texttt{C} keine SLR-Sprache ist, gibt es beim Erzeugen
 einer SLR-Parse-Tabelle für \texttt{C} allerdings eine Reihe von 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar:slr-table.txt}{Konflikten},
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-slr-table.txt}{Konflikten},
 so dass ein SLR-Parser für die Sprache \texttt{C} nicht funktioniert.  Demgegenüber kommt ein
 LR-Parser für die Sprache \texttt{C} auf 1572 Zustände, wie Sie 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar:lr-table.txt}{hier}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-lr-table.txt}{hier}
 sehen können.  Anfangs, als der zur Verfügung stehenden
 Haupt-Speicher der meisten Rechner noch bescheidener dimensioniert waren, als dies heute
-der Fall ist, hatten LR-Parser daher eine für die Praxis inakzeptable 
+der Fall ist, hatten LR-Parser daher eine für die Praxis problematische
 Größe.  Eine genaue Analyse der Menge der Zustände von LR-Parsern zeigte, dass es oft möglich ist, 
 bestimmte Zustände zusammen zu fassen.  Dadurch kann die Menge der Zustände in den meisten Fällen
 deutlich verkleinert werden.  Wir illustrieren das Konzept an einem Beispiel und betrachten die in
