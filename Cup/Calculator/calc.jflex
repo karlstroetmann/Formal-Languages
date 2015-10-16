@@ -37,7 +37,7 @@ import java_cup.runtime.*;
 
 (0|[1-9][0-9]*)(\.[0-9]+)? { return symbol(ExprParserSym.NUMBER, new Double(yytext())); }
 
-[ \t\n]       { /* skip white space */ }   
+[ \t\n\r\v\f] { /* skip white space */ }   
 
 [^]           { throw new Error("Illegal character '" + yytext() + 
                                 "' at line " + yyline + ", column " + yycolumn); }
