@@ -1080,7 +1080,9 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
       finden Sie verschiedene \textsl{Java}-Klassen, mit denen Sie einen solchen Syntax-Baum
       darstellen können.  Diese Klassen implementieren eine Methode \texttt{toString()}, mit deren
       Hilfe sich der Syntax-Baum bequem im \textsc{Html}-Format ausgeben lässt.  Außerdem enthält
-      das Verzeichnis auch die Datei \texttt{Grammatik.java}, welche die Klasse \texttt{Grammatik}
+      das Verzeichnis auch die Datei 
+      \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Exercises/Grammar2HTML-Cup/Grammatik.java}{\texttt{Grammatik.java}},
+      welche die Klasse \texttt{Grammatik}
       implementiert.  Diese Klasse enthält eine Methode \texttt{main}, mit der Sie Ihren Parser
       testen können.
 \item Die semantischen Aktionen der gelesenen Grammatik sollen unterdrückt werden.
@@ -1088,6 +1090,7 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
       vorgestellte Grammatik für arithmetische Ausdrücke anwenden.
       Zusätzlich können Sie es auch auf die \texttt{C}-Grammatik, die Sie unter
       \\[0.2cm]
+      \hspace*{1.3cm}
       \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Cup/Grammars/c-grammar.cup}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Cup/Grammars/c-grammar.cup}
       \\[0.2cm]
       im Netz finden, anwenden.
@@ -1135,15 +1138,16 @@ Implementieren Sie einen \textsc{Cup}-Parser, der in der Lage ist, eine
 \end{figure}
 
 \noindent
-Bei der syntaktischen Beschreibung von Befehlen der Sprache \texttt{C} 
-tritt bei der Behandlung
+Bei der syntaktischen Beschreibung von Befehlen der Sprache \texttt{C} tritt bei der Behandlung
 von \emph{if-then-else} Konstrukten ein Shift/Reduce-Konflikt auf, den wir jetzt analysieren wollen.
-Abbildung \ref{fig:dangling-else.y} zeigt eine Grammatik, die einen Teil der Syntax von Befehlen der
-Sprache \texttt{C} beschreibt.  Um uns auf das Wesentliche konzentrieren zu können, sind dort die Ausdrücke
-nur Gleichungen und Variablen.  Das Token ``\texttt{ID}'' (Abkürzung für \textsl{Identifier}) steht
-für eine Variable, die Grammatik beschreibt also Befehle, die aus Zuweisungen, \emph{If-Abfragen},
-\emph{If-Else-Abfragen} und \emph{While-Schleifen} aufgebaut sind.  Übersetzen wir diese Grammatik mit
-\textsc{Cup}, so erhalten wir den in Abbildung \ref{fig:dangling-else.output} ausschnittsweise gezeigten
+Abbildung \ref{fig:dangling-else.y} zeigt die Grammatik 
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/DanglingElse/dangling.cup}{\texttt{dangling.cup}},
+die einen Teil der Syntax von Befehlen der Sprache \texttt{C} beschreibt.  Um uns auf das
+Wesentliche konzentrieren zu können, sind dort die Ausdrücke nur Gleichungen und Variablen.  Das
+Token ``\texttt{ID}'' (Abkürzung für \textsl{Identifier}) steht für eine Variable, die Grammatik
+beschreibt also Befehle, die aus Zuweisungen, \emph{If-Abfragen}, \emph{If-Else-Abfragen} und
+\emph{While-Schleifen} aufgebaut sind.  Übersetzen wir diese Grammatik mit \textsc{Cup}, so erhalten
+wir den in Abbildung \ref{fig:dangling-else.output} ausschnittsweise gezeigten 
 Shift/Reduce-Konflikt. 
 
 \begin{figure}[!ht]
@@ -1153,14 +1157,19 @@ Shift/Reduce-Konflikt.
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
                 ]
     Warning : *** Shift/Reduce conflict found in state #10
       between stmnt ::= IF LPAREN expr RPAREN stmnt (*) 
       and     stmnt ::= IF LPAREN expr RPAREN stmnt (*) ELSE stmnt 
       under symbol ELSE
       Resolved in favor of shifting.
+
+    lalr_state [10]: {
+      [stmnt ::= IF LPAREN expr RPAREN stmnt (*) , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+      [stmnt ::= IF LPAREN expr RPAREN stmnt (*) ELSE stmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+    }
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Ein Shift/Reduce-Konflikt.}
@@ -1231,8 +1240,9 @@ Es gibt vier Möglichkeiten, das Problem zu lösen.
       \texttt{cup -expect 1 -dump dangling.cup}
       \\[0.2cm]
       Die Zahl \texttt{1} gibt hier die Anzahl der Konflikte an, die wir erwarten.
-      So lange die spezifizierte Zahl mit der tatsächlich gefundenen Zahl an Konflikten übereinstimmt,
-      erzeugt \textsc{Cup} einen Parser.
+      So lange die spezifizierte Zahl der Konflikte mit der tatsächlich gefundenen Zahl übereinstimmt,
+      wird von \textsc{Cup} nur eine Warnung und keine Fehlermeldung ausgegeben. Insbesondere wird
+      in diesem Fall ein Parser erzeugt.
 \item Die zweite Möglichkeit besteht darin, die Grammatik so umzuschreiben, dass die Mehrdeutigkeit
       verschwindet.   Die grundsätzliche Idee ist hier, zwischen zwei Arten von Befehlen zu
       unterscheiden.
@@ -1251,12 +1261,13 @@ Es gibt vier Möglichkeiten, das Problem zu lösen.
             auftreten, denn dann müsste das ``\texttt{else}'' dem ``\texttt{if}'' des offenen
             Befehls zugeordnet werden und der offene Befehl wäre in Wahrheit geschlossen.
      \end{enumerate}
-      Abbildung \ref{fig:dangling-else-correct.cup} zeigt die Umsetzung dieser Idee.
-      Wir haben hier allerdings nur noch die Grammatik-Regeln gezeigt, denn die Deklaration der
-      Terminale und syntaktischen Variablen hat sich gegenüber der ursprünglichen Grammatik nicht verändert.
-      Die syntaktische Kategorie \textsl{matchedStmnt} beschreibt dabei die Befehle, 
-      bei denen jedem ``\texttt{if}'' ein ``\texttt{else}'' zugeordnet ist, während die Kategorie 
-      \textsl{unMatchedStmnt} die restlichen Befehle erfasst.
+      Abbildung \ref{fig:dangling-else-correct.cup} zeigt die Grammatik
+      \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/DanglingMatched/dangling.cup}{\texttt{dangling.cup}},
+      die diese Idee umsetzt.  In der Abbildung sind nur noch die Grammatik-Regeln gezeigt, denn die
+      Deklaration der Terminale und syntaktischen Variablen hat sich gegenüber der ursprünglichen
+      Grammatik nicht verändert. Die syntaktische Kategorie \textsl{matchedStmnt} beschreibt dabei
+      die Befehle, bei denen jedem ``\texttt{if}'' ein ``\texttt{else}'' zugeordnet ist, während die
+      Kategorie \textsl{unMatchedStmnt} die restlichen Befehle erfasst.
 
 \begin{figure}[!ht]
 \centering
@@ -1297,14 +1308,15 @@ Es gibt vier Möglichkeiten, das Problem zu lösen.
 \end{figure}
 
       Aus theoretischer Sicht ist das Umschreiben der Grammatik der sauberste Weg.  
-      Aus diesem Grund haben die Entwickler der Sprache \textsl{Java} in der ersten Version der
-      Spezifikation dieser Sprache \cite{gosling:96} diesen Weg auch beschritten.  
-      Der Nachteil ist allerdings, dass bei diesem Vorgehen die Grammatik stark aufgebläht wird. 
-      Vermutlich aus diesem Grunde findet sich in den späteren Auflagen der Sprach-Spezifikation eine
-      Grammatik, bei der das \emph{Dangling-Else}-Problem wieder auftritt. 
+      Aus diesem Grund haben die Entwickler der Sprache \textsl{Java} \cite{gosling:96} bei der
+      \href{http://titanium.cs.berkeley.edu/doc/java-langspec-1.0/14.doc.html#5991}{Spezifikation}
+      der Syntax den oben skizzierten Weg beschritten.   
+      Der Nachteil ist allerdings, dass bei diesem Vorgehen die Grammatik aufgebläht wird. 
 \item Die nächste Möglichkeit um das \emph{Dangling-Else}-Problem zu lösen, besteht darin, dass
       wir ``\texttt{if}'' und ``\texttt{else}'' als Operatoren auffassen, denen wir eine Präzedenz
-      zuordenen.  Abbildung \ref{fig:dangling-else-precedence.cup} zeigt die Umsetzung dieser Idee.
+      zuordenen.  Abbildung \ref{fig:dangling-else-precedence.cup} zeigt die Grammatik
+      \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/DanglingOperator/dangling.cup}{\texttt{dangling.cup}},
+      bei der dieser Weg beschritten wurde.
       \begin{enumerate}
       \item[(a)] Zunächst haben wir in den Zeilen 1 und 2 die Terminale ``\texttt{IF}'' und
             ``\texttt{ELSE}''  als
@@ -1382,7 +1394,10 @@ Es gibt vier Möglichkeiten, das Problem zu lösen.
       dann eine Option, wenn wir die Syntax der Sprache selber definieren können.  Bei der Sprache
       \href{http://randoom.org/Software/SetlX}{\textsc{SetlX}}
       wurde dieser Weg beschritten.  Abbildung \ref{fig:dangling-else-brace.cup} auf Seite
-      \pageref{fig:dangling-else-brace.cup} zeigt diese Grammatik.
+      \pageref{fig:dangling-else-brace.cup} zeigt die Grammatik
+      \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/DanglingBrace/dangling.cup}{\texttt{no-dangling.cup}},
+      bei der durch die Verwendung von geschweiften Klammern erreicht wurde, dass keine
+      Mehrdeutigkeit mehr auftritt. 
 
 \begin{figure}[!ht]
 \centering
