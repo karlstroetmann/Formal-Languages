@@ -29,7 +29,9 @@ string
 ``\texttt{Hello World!}'' 
 \\[0.2cm]
 on the standard output stream.  Figure \ref{fig:Hello.jas} on page
-\pageref{fig:Hello.jas} shows this program. We discuss this program line by line.
+\pageref{fig:Hello.jas} shows the program
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Jasmin/Hello.jas}{\texttt{Hello.jas}}. 
+We discuss this program line by line.
 
 \begin{figure}[!ht]
 \centering
@@ -66,12 +68,14 @@ on the standard output stream.  Figure \ref{fig:Hello.jas} on page
 \end{figure}
 
 \begin{enumerate}
-\item Line 1 defines the name of the class file that is to be produced by the assembler.
+\item Line 1 uses the directive ``\texttt{.class}'' to define the name of the class file that is to
+      be produced by the assembler.  
       In this case, the class name is \texttt{Hello}.  Therefore, \textsl{Jasmin} will translate
       this file into the class file ``\texttt{Hello.class}''.
-\item Line 2 names the super class.  In our examples, this will always be the class
-      \texttt{Object}.  Since this class resides in the package ``\texttt{java.lang}'', the super class
-      has to be specified as
+\item Line 2 uses the directive ``\texttt{.super}'' to specify the super class of the class
+      \texttt{Hello}.  In our examples, the super class will always be the class \texttt{Object}.
+      Since this class resides in the package ``\texttt{java.lang}'', the super class has to be
+      specified as 
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{java/lang/Object}.
@@ -84,7 +88,8 @@ on the standard output stream.  Figure \ref{fig:Hello.jas} on page
       of every class file, we will not discuss it further. 
 \item Line 10 -- 17 defines the method \texttt{main} that does the actual work.
   \begin{enumerate}
-  \item Line 10 declares the name of the method and its signature.  The string
+  \item Line 10 uses the directive ``\texttt{.method}'' to declare the name of the method and its
+        signature.  The string 
         \\[0.2cm]
         \hspace*{1.3cm}
         \texttt{main([Ljava/lang/String;)V}
@@ -100,13 +105,14 @@ on the standard output stream.  Figure \ref{fig:Hello.jas} on page
         \item Finally, the character ``\texttt{V}'' specifies that the return type of the method \texttt{main}
               is ``\texttt{void}''.
        \end{enumerate}
-  \item Line 11 declares that the method \texttt{main} uses one local variable.  This variable
-        corresponds to the argument of the method main.  The assembler file shown in Figure
+  \item Line 11 uses the directive ``\texttt{.limit}'' to specify the number of local variables 
+        used by the method \texttt{main}.  In this case, there is just one local variable.  This variable
+        corresponds to the parameter of the method main.  The assembler file shown in Figure
         \ref{fig:Hello.jas} on page \pageref{fig:Hello.jas} corresponds to the \textsl{Java} code
         shown in Figure \ref{fig:Hello.java} below.  The method \texttt{main} has one local
         variable, which is the argument \texttt{args}.
         The information on the number of local variables is needed by the \textsl{Java} virtual
-        machine in order to allocate room for these variables on the stack.
+        machine in order to allocate memory for these variables on the stack.
 
 \begin{figure}[!ht]
 \centering
@@ -116,8 +122,8 @@ on the standard output stream.  Figure \ref{fig:Hello.jas} on page
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
+                  xleftmargin   = 2.3cm,
+                  xrightmargin  = 2.3cm,
                 ]
     public class Hello {
         public static void main(String[] args) {
@@ -130,37 +136,57 @@ on the standard output stream.  Figure \ref{fig:Hello.jas} on page
 \label{fig:Hello.java}
 \end{figure}
 
-  \item Line 12 specifies that the stack contains a maximum of two objects.  It is easy to see that
-        this is true, since line 13 pushes the object
+  \item For the purpose of the following discussion, we basically assume that there exist two types of
+        processors: Those that store the objects they work upon in registers and those that store
+        these objects on a stack residing in main memory.  The Java virtual machine is of the second
+        type.  Hence, \textsl{Jasmin} assembler programs do not refer to registers but rather refer to
+        this stack\footnote{
+          In reality, all real processors make use of registers.  However, it is possible 
+          to simulate a stack machine using a real processor and that is what is done in the Java
+          virtual machine.}.
+        Line 12 uses the directive ``\texttt{.stack}'' to specify the the maximal height of the
+        stack.  In this case, the stack is allowed to contain a maximum of two objects.  It is easy
+        to see that we indeed do never place more than two objects onto the stack, since line
+        13 pushes the object 
         \\[0.2cm]
         \hspace*{1.3cm}
         \texttt{java.lang.System.out}
         \\[0.2cm]
         onto the stack.  This is an object of class ``\texttt{java.io.PrintStream}''.
         Then, line 14 pushes a reference to the string ``\texttt{Hello World}'' onto the stack.
+        The other instructions to not push anything onto the stack.
   \item Line 15 calls the method \texttt{println}, which is a method of the class
-        ``\texttt{java.io.PrintStream}''.  
+        ``\texttt{java.io.PrintStream}''.  It also specifies that \texttt{println} is used to print
+        a string.
   \item Line 16 returns from the method \texttt{main}.
-  \item Line 17 is a declaration signifying the end of the code corresponding to the method 
+  \item In line 17 the directive ``\texttt{.end}''  marks the end of the code corresponding to the method 
         \texttt{main}.
   \end{enumerate}
 \end{enumerate}
-Before we proceed, let us assume that there is an executable file called \texttt{jasmin}
-somewhere in our path that contains the following code:
+Before we proceed, let us assume that we are working on a Unix operating system and that there is an
+executable file called \texttt{jasmin} somewhere in our path that contains the following code:
 \begin{verbatim}
     #!/bin/bash 
     java -jar /usr/local/lib/jasmin.jar $@
 \end{verbatim}
 Of course, for this to work the directory \texttt{/usr/local/lib/} has to contain the file
-``\texttt{jasmin.jar}''.
-In order to execute the assembler program discussed above, we first have to translate this program into a  
-\texttt{class}-file.  This is done using the command
+``\texttt{jasmin.jar}''.  If we were working on a windows operating system, we would have a file
+called \texttt{jasmin.bat} somewhere in our \texttt{PATH}.  This file would contain the following
+line:
+\begin{verbatim}
+    java -jar ~/Dropbox/Software/jasmin-2.4/jasmin.jar $*
+\end{verbatim}
+Of course, for this to work the directory \texttt{\symbol{126}/Dropbox/Software/jasmin-2.4} has to
+contain the file ``\texttt{jasmin.jar}''.
+
+In order to execute the assembler program discussed above, we first have to translate the assembler
+program into a \texttt{class}-file.  This is done using the command
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{jasmin Hello.jas}
 \\[0.2cm]
 Executing this command creates the file ``\texttt{Hello.class}''.  This class file
-can then be executed by typing
+can then be executed just like any class file generated from \texttt{javac} by typing
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{java Hello}
@@ -182,26 +208,26 @@ The architecture of the virtual machine is a
 A stack machine does not have any registers to store variables.  Instead, there is a stack and all
 variables reside on the stack.  Any command takes its arguments from the top of the stack and
 replaces these arguments with the result of the operation performed by the command.
-For example, if we want to add two variables, then we first have to
-load these variables onto the stack.  Next, performing the add operation will replace these two
-arguments with their sum.
+For example, if we want to add two values, then we first have to
+push both values onto the stack.  Next, performing the add operation will pop these values from the
+stack and then push their with their sum onto the stack.
 
 
 \section{Assembler Instructions}
 We proceed to discuss some of the \textsc{Jvm} instructions.  Since there are more than 160
 \textsc{Jvm} instructions, we can only discuss a subset of all instructions.  We restrict ourselves to those
-instructions that deal with integers:  For example, there is an instruction \texttt{iadd} that adds
+instructions that deal with integers:  For example, there is an instruction called \texttt{iadd} that adds
 two 32 bit integers.  There are also instructions like \texttt{fadd} that adds two floating point
 numbers and \texttt{dadd} that adds two double precision floating point numbers but, since our time
-is limited, we won't discuss
-these Instructions.  Before we are able to discuss the different instructions we have to discuss how
-the main 
-memory is organized in the \textsc{Jvm}: In the \textsc{Jvm}, the memory is split into three parts:
+is limited, we won't discuss these instructions.  Before we are able to discuss the different
+instructions we have to discuss how the main memory is organized in the \textsc{Jvm}: In the
+\textsc{Jvm}, the memory is split into four parts: 
 \begin{enumerate}
 \item The \emph{program memory} contains the program code as a sequence of bytes.
 \item The operands of the different machine instructions are put onto the \emph{stack}.
       Furthermore, the stack contains the arguments and the local variables of a procedure.
-      However, in the context of the \textsc{Jvm} the procedures are called \emph{methods}.
+      However, in the context of the \textsc{Jvm} the procedures are called \emph{methods} instead
+      of procedures.
 
       The register \texttt{SP} points to the top of the stack.
       If a method is called, the arguments of the method are placed on the stack.  
@@ -220,14 +246,14 @@ We proceed to discuss some of the assembler instructions.
 
 \subsubsection{Arithmetical and Logical Instructions}
 
-\paragraph{The instruction \squoted{\texttt{iadd}}}
-adds those values that are on top of the stack and replaces these values by their sum.
-Figure \ref{fig:ijvm-add} on page \pageref{fig:ijvm-add} show how this command works.
-The left part of the figure shows the stack as it is before the command \texttt{iadd} is executed,
-while the right part of the figure depicts the situation after the execution of this command.  Note
-that after the command is executed, the stack pointer points to the position where formerly the
-first argument had been stored.
-
+\begin{enumerate}
+\item The instruction \squoted{\texttt{iadd}}
+      adds those values that are on top of the stack and replaces these values by their sum.
+      Figure \ref{fig:ijvm-add} on page \pageref{fig:ijvm-add} show how this command works.
+      The left part of the figure shows the stack as it is before the command \texttt{iadd} is executed,
+      while the right part of the figure depicts the situation after the execution of this command.  Note
+      that after the command is executed, the stack pointer points to the position where formerly the
+      first argument had been stored.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -265,16 +291,14 @@ first argument had been stored.
   \label{fig:ijvm-add}
 \end{figure}
 
-\paragraph{The instruction \squoted{\texttt{isub}}}
-subtracts the integer value on top of the stack from the value that is found on the position next to
-the top of the stack.
-Figure \ref{fig:ijvm-sub} on page \pageref{fig:ijvm-sub} pictures this command.
-The left part of the figure shows the stack as it is before the command \texttt{isub} is executed,
-while the right part of the figure depicts the situation after the execution of this command.  Note
-that after the command is executed, the stack pointer points to the position where formerly the
-first argument had been stored.
-
-
+\item The instruction \squoted{\texttt{isub}}
+      subtracts the integer value on top of the stack from the value that is found on the position next to
+      the top of the stack.
+      Figure \ref{fig:ijvm-sub} on page \pageref{fig:ijvm-sub} pictures this command.
+      The left part of the figure shows the stack as it is before the command \texttt{isub} is executed,
+      while the right part of the figure depicts the situation after the execution of this command.  Note
+      that after the command is executed, the stack pointer points to the position where formerly the
+      first argument had been stored.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -312,43 +336,32 @@ first argument had been stored.
   \label{fig:ijvm-sub}
 \end{figure}
 
-
-\paragraph{The instruction \squoted{\texttt{imul}}}
-multiplies the two integer values which are on top of the stack.  This instruction works similar to
-the instruction \texttt{iadd}.  If the product does not fit in 32 bits, only the lowest 32 bits of
-the result are written onto the stack. 
-
-
-
-
-\paragraph{The instruction \squoted{\texttt{idiv}}}
-divides the integer value that is found on the position next to the  top of the stack by the value
-on top of the stack. 
-
-
-\paragraph{The instruction \squoted{\texttt{irem}}}
-computes the remainder $a \,\texttt{\%}\, b$ of the division of $a$ by $b$ where $a$ and $b$ are
-integer values found on top of the stack.
-
-
-\paragraph{The instruction \squoted{\texttt{iand}}}
-computes the bitwise conjunction of the values on top of the stack.
-
-
-\paragraph{The instruction \squoted{\texttt{ior}}}
-computes the bitwise disjunction of the integer values that are on top of the stack.
-
-
-\paragraph{The instruction \squoted{\texttt{ixor}}}
-computes the bitwise \href{http://en.wikipedia.org/wiki/Exclusive_or}{\emph{exclusive or}} of the integer values that are on top of the stack.
+\item The instruction \squoted{\texttt{imul}}
+      multiplies the two integer values which are on top of the stack.  This instruction works similar to
+      the instruction \texttt{iadd}.  If the product does not fit in 32 bits, only the lowest 32 bits of
+      the result are written onto the stack. 
+\item The instruction \squoted{\texttt{idiv}}
+      divides the integer value that is found on the position next to the  top of the stack by the value
+      on top of the stack. 
+\item The instruction \squoted{\texttt{irem}}
+      computes the remainder $a \,\texttt{\%}\, b$ of the division of $a$ by $b$ where $a$ and $b$ are
+      integer values found on top of the stack.
+\item The instruction \squoted{\texttt{iand}}
+      computes the bitwise conjunction of the values on top of the stack.
+\item The instruction \squoted{\texttt{ior}}
+      computes the bitwise disjunction of the integer values that are on top of the stack.
+\item The instruction \squoted{\texttt{ixor}}
+      computes the bitwise \href{http://en.wikipedia.org/wiki/Exclusive_or}{\emph{exclusive or}} of
+      the integer values that are on top of the stack. 
+\end{enumerate}
 
 \subsubsection{Shift Instructions}
-
-\paragraph{The instruction \squoted{\texttt{ishl}}}
-shifts the value $a$ to the left by $b[4:0]$ bits.  Here, $a$ and $b$ are assumed to be the two
-values on top of the stack:  $b$ is the value on top of the stack and $a$ is the value below $b$.
-$b[4:0]$ denotes the natural number that results from the 5 lowest bits of $b$.  Figure
-\ref{fig:ijvm-shl} on page \pageref{fig:ijvm-shl} pictures this command.
+\begin{enumerate}
+\item The instruction \squoted{\texttt{ishl}}
+      shifts the value $a$ to the left by $b[4:0]$ bits.  Here, $a$ and $b$ are assumed to be the two
+      values on top of the stack:  $b$ is the value on top of the stack and $a$ is the value below $b$.
+      $b[4:0]$ denotes the natural number that results from the 5 lowest bits of $b$.  Figure
+      \ref{fig:ijvm-shl} on page \pageref{fig:ijvm-shl} pictures this command.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -385,20 +398,20 @@ $b[4:0]$ denotes the natural number that results from the 5 lowest bits of $b$. 
   \caption{The effect of \texttt{ishl}.}
   \label{fig:ijvm-shl}
 \end{figure}
-
-\paragraph{The instruction \squoted{\texttt{ishr}}}
-shifts the value $a$ to the right by $b[4:0]$ bits.  Here, $a$ and $b$ are assumed to be the two
-values on top of the stack:  $b$ is the value on top of the stack and $a$ is the value below $b$.
-$b[4:0]$ denotes the natural number that results from the 5 lowest bits of $b$.  
-Note that this instruction performs an 
-\href{http://en.wikipedia.org/wiki/Arithmetic_shift}{\emph{arithmetic shift}}, 
-i.e.~the sign bit is preserved.
+\item The instruction \squoted{\texttt{ishr}}
+      shifts the value $a$ to the right by $b[4:0]$ bits.  Here, $a$ and $b$ are assumed to be the two
+      values on top of the stack:  $b$ is the value on top of the stack and $a$ is the value below $b$.
+      $b[4:0]$ denotes the natural number that results from the 5 lowest bits of $b$.  
+      Note that this instruction performs an 
+      \href{http://en.wikipedia.org/wiki/Arithmetic_shift}{\emph{arithmetic shift}}, 
+      i.e.~the sign bit is preserved.
+\end{enumerate}
 
 \subsection{Instructions to Manipulate the Stack}
-
-\paragraph{The instruction \squoted{\texttt{dup}}}
-duplicates the value that is on top of the stack.  Figure \ref{fig:ijvm-dup} on page
-\pageref{fig:ijvm-dup} pictures this command.
+\begin{enumerate}
+\item The instruction \squoted{\texttt{dup}}
+      duplicates the value that is on top of the stack.  Figure \ref{fig:ijvm-dup} on page
+      \pageref{fig:ijvm-dup} pictures this command.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -434,13 +447,11 @@ duplicates the value that is on top of the stack.  Figure \ref{fig:ijvm-dup} on 
   \label{fig:ijvm-dup}
 \end{figure}
 
-
-\paragraph{The instruction \squoted{\texttt{pop}}}
-removes the value that is on top of the stack.  Figure \ref{fig:ijvm-pop} on page
-\pageref{fig:ijvm-pop} pictures this command.  The value is not actually erased from memory, only
-the stack pointer is decremented.  The next instruction that puts a new value onto the stack will
-therefore overwrite this old value.
-
+\item The instruction \squoted{\texttt{pop}}
+      removes the value that is on top of the stack.  Figure \ref{fig:ijvm-pop} on page
+      \pageref{fig:ijvm-pop} pictures this command.  The value is not actually erased from memory, only
+      the stack pointer is decremented.  The next instruction that puts a new value onto the stack will
+      therefore overwrite this old value.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -478,15 +489,11 @@ therefore overwrite this old value.
   \label{fig:ijvm-pop}
 \end{figure}
 
-
-\paragraph{The instruction \squoted{\texttt{nop}}}
-does nothing.  The name is short for \squoted{no operation}.
-
-
-\paragraph{The instruction \squoted{\texttt{bipush} $b$}}
-pushes the byte $b$ that is given as argument onto the stack.
-Figure \ref{fig:ijvm-bipush} on page \pageref{fig:ijvm-bipush} pictures this command.
-
+\item The instruction \squoted{\texttt{nop}}
+      does nothing.  The name is short for \squoted{no operation}.
+\item The instruction \squoted{\texttt{bipush} $b$}
+      pushes the byte $b$ that is given as argument onto the stack.
+      Figure \ref{fig:ijvm-bipush} on page \pageref{fig:ijvm-bipush} pictures this command.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -523,29 +530,24 @@ Figure \ref{fig:ijvm-bipush} on page \pageref{fig:ijvm-bipush} pictures this com
 \end{figure}
  
 
-
-
-\paragraph{The instruction \squoted{\texttt{getstatic} $v$ $c$}}
-takes two parameters:  $v$ is the name of a static variable and $c$ is the type of this variable.
-For example,  
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{getstatic java/lang/System/out Ljava/io/PrintStream;}
-\\[0.2cm] 
-pushes a reference to the \texttt{PrintStream} that is known as 
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{java.lang.System.out}
-\\[0.2cm]
-onto the stack.
-
-
-\paragraph{The instruction \squoted{\texttt{iload} $v$}}
-reads the local variable with index  $v$ and pushes it on top of the stack.
-Figure \ref{fig:ijvm-load} on page \pageref{fig:ijvm-load} pictures this command.
-Note that \texttt{LV} denotes the register pointing to the beginning of the local variables of a
-method. 
-  
+\item The instruction \squoted{\texttt{getstatic} $v$ $c$}
+      takes two parameters:  $v$ is the name of a static variable and $c$ is the type of this variable.
+      For example,  
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{getstatic java/lang/System/out Ljava/io/PrintStream;}
+      \\[0.2cm] 
+      pushes a reference to the \texttt{PrintStream} that is known as 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{java.lang.System.out}
+      \\[0.2cm]
+      onto the stack.
+\item The instruction \squoted{\texttt{iload} $v$}
+      reads the local variable with index  $v$ and pushes it on top of the stack.
+      Figure \ref{fig:ijvm-load} on page \pageref{fig:ijvm-load} pictures this command.
+      Note that \texttt{LV} denotes the register pointing to the beginning of the local variables of a
+      method. 
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -604,13 +606,11 @@ method.
   \caption{The effect of \texttt{iload} $v$.}
   \label{fig:ijvm-load}
 \end{figure}
-
-\paragraph{The instruction \squoted{\texttt{istore} $v$}}
-removes the value which is on top of the stack and stores this value at the location for the local
-variable with number $v$.  Hence, $v$ is interpreted as an index into the local variable table of
-the method.
-Figure \ref{fig:ijvm-store} on page \pageref{fig:ijvm-store} pictures this command.
-
+\item The instruction \squoted{\texttt{istore} $v$}
+      removes the value which is on top of the stack and stores this value at the location for the local
+      variable with number $v$.  Hence, $v$ is interpreted as an index into the local variable table of
+      the method.
+      Figure \ref{fig:ijvm-store} on page \pageref{fig:ijvm-store} pictures this command.
 
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
@@ -672,115 +672,115 @@ Figure \ref{fig:ijvm-store} on page \pageref{fig:ijvm-store} pictures this comma
   \label{fig:ijvm-store}
 \end{figure}
 
-
-\paragraph{The instruction \squoted{\texttt{ldc} $c$}}
-pushes the constant $c$ onto the stack.  This constant can be an integer, a single precision floating
-point number, or a (pointer to) a string.  If $c$ is a string, this string is actually stored in the
-so called \emph{constant pool} and in this case the command ``\texttt{ldc} $c$'' will only push a
-pointer to the string onto the stack.
- 
+\item The instruction \squoted{\texttt{ldc} $c$}
+      pushes the constant $c$ onto the stack.  This constant can be an integer, a single precision floating
+      point number, or a (pointer to) a string.  If $c$ is a string, this string is actually stored in the
+      so called \emph{constant pool} and in this case the command ``\texttt{ldc} $c$'' will only push a
+      pointer to the string onto the stack.
+\end{enumerate}
+      
 \subsubsection{Branching Commands}
 In this subsection we discuss those commands that change the control flow.
+\begin{enumerate}
+\item The instruction \squoted{\texttt{goto} $l$}
+      jumps to the label $l$.  Here the label $l$ is a label name that has to be declared inside the
+      method containing this \texttt{goto} command.  A label with name \textsl{target} is declared using the syntax
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \textsl{target}\texttt{:}
+      \\[0.2cm]
+      The next section presents an example assembler program that demonstrates this command.
+\item The instruction \squoted{\texttt{if\_icmpeq} $l$}
+      checks whether the value on top of the stack is the same as the value preceding it.  If this is
+      the case, the program will branch 
+      to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
+      compared are removed from the stack.
+\item The instruction \squoted{\texttt{if\_icmpne} $l$}
+      checks whether the value on top of the stack is different from the value preceding it.  If this is
+      the case, the program will branch to the label $l$.  Otherwise, the control flow is not
+      changed.  Observe that both values that are compared are removed from the stack.
 
-\paragraph{The instruction \squoted{\texttt{goto} $l$}}
-jumps to the label $l$.  Here the label $l$ is a label name that has to be declared inside the
-method containing this \texttt{goto} command.  A label with name \textsl{target} is declared using the syntax
-\\[0.2cm]
-\hspace*{1.3cm}
-\textsl{target}\texttt{:}
-\\[0.2cm]
-The next section presents an example assembler program that demonstrates this command.
- 
-\paragraph{The instruction \squoted{\texttt{if\_icmpeq} $l$}}
-checks whether the value on top of the stack is the same as the value preceding it.  If this is the case, the program will branch
-to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
-compared are removed from the stack.
+\item The instruction \squoted{\texttt{if\_icmplt} $l$}
+      checks whether the value that is below the top of the stack is less than the value on top of
+      the stack.  If this is the case, the program will branch 
+      to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
+      compared are removed from the stack.
 
-\paragraph{The instruction \squoted{\texttt{if\_icmpne} $l$}}
-checks whether the value on top of the stack is different from the value preceding it.  If this is the case, the program will branch
-to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
-compared are removed from the stack.
+\item The instruction \squoted{\texttt{if\_icmple} $l$}
+      checks whether the value that is below the top of the stack is less or equal than the value on top
+      of the stack.  If this is the case, the program will branch 
+      to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
+      compared are removed from the stack.
+      
+      There are similar commands called \texttt{if\_icmpgt} and \texttt{if\_icmpge}.
 
-\paragraph{The instruction \squoted{\texttt{if\_icmplt} $l$}}
-checks whether the value that is below the top of the stack is less than the value on top of the stack.  If this is the case, the program will branch
-to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
-compared are removed from the stack.
+\item The instruction \squoted{\texttt{ifeq} $l$}
+      checks whether the value on top of the stack is zero.  If this is the case, the program will branch
+      to the label $l$.  Otherwise, the control flow is not changed.  Observe that the value that is
+      tested is removed from the stack.
 
-\paragraph{The instruction \squoted{\texttt{if\_icmple} $l$}}
-checks whether the value that is below the top of the stack is less or equal than the value on top
-of the stack.  If this is the case, the program will branch 
-to the label $l$.  Otherwise, the control flow is not changed.  Observe that both values that are
-compared are removed from the stack.
+\item The instruction \squoted{\texttt{iflt} $l$}
+      checks whether the value on top of the stack is less than zero.  If this is the case, the program
+      will branch to the label $l$.  Otherwise, the control flow is not changed.  Observe that the value
+      that is tested is removed from the stack.
 
-There are similar commands called \texttt{if\_icmpgt} and \texttt{if\_icmpge}.
+\item The instruction \squoted{\texttt{invokevirtual} $m$}
+      is used to call the method $m$.  Here $m$ has to  specify the full name of the method.
+      For example, in order to invoke the method \texttt{println} of the class
+      \texttt{java.io.PrintStream} we have to write 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{invokevirtual java/io/PrintStream/println(I)V}
+      \\[0.2cm]
+      Before the command \texttt{invokevirtual} is executed, we have to put the arguments of the method
+      onto the stack.  For example, if we want to invoke the method \texttt{println} that takes an integer
+      argument, we first have to push an object of type \texttt{PrintStream} onto the stack.  Furthermore,
+      we need to push an integer onto the stack.
 
-\paragraph{The instruction \squoted{\texttt{ifeq} $l$}}
-checks whether the value on top of the stack is zero.  If this is the case, the program will branch
-to the label $l$.  Otherwise, the control flow is not changed.  Observe that the value that is
-tested is removed from the stack.
+\item The instruction \squoted{\texttt{invokestatic} $m$}
+      is used to call the method $m$.  Here $m$ has to  specify the full name of the method.
+      Furthermore, $m$ needs to be s static method.
+      For example, in order to invoke a  method called \texttt{sum} that resides in the class \texttt{Sum}
+      and that takes one integer argument we have to write 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{invokestatic  Sum/sum(I)I}
+      \\[0.2cm]
+      In the type specification ``\texttt{sum(I)I}'' the first ``\texttt{I}'' specifies that \texttt{sum}
+      takes one integer argument, while the second ``\texttt{I}'' specifies that the method \texttt{sum}
+      returns an integer.
 
+      Before the command \texttt{invokestatic} is executed, we have to put the arguments of the method
+      onto the stack.  For example, if we want to invoke the method \texttt{sum} described  above, then we
+      have to push an integer onto the stack.
+\item The instruction \squoted{\texttt{ireturn}}
+      returns from the method that is currently invoked.  This method also returns a value to the calling
+      procedure.  In order for \texttt{ireturn} to be able to return a value $v$, this value $v$ has to be
+      pushed onto the stack before the command \texttt{ireturn} is executed.
 
-\paragraph{The instruction \squoted{\texttt{iflt} $l$}}
-checks whether the value on top of the stack is less than zero.  If this is the case, the program
-will branch to the label $l$.  Otherwise, the control flow is not changed.  Observe that the value
-that is tested is removed from the stack.
-
-
-\paragraph{The instruction \squoted{\texttt{invokevirtual} $m$}}
-is used to call the method $m$.  Here $m$ has to  specify the full name of the method.
-For example, in order to invoke the method \texttt{println} of the class
-\texttt{java.io.PrintStream} we have to write 
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{invokevirtual java/io/PrintStream/println(I)V}
-\\[0.2cm]
-Before the command \texttt{invokevirtual} is executed, we have to put the arguments of the method
-onto the stack.  For example, if we want to invoke the method \texttt{println} that takes an integer
-argument, we first have to push an object of type \texttt{PrintStream} onto the stack.  Furthermore,
-we need to push an integer onto the stack.
-
-\paragraph{The instruction \squoted{\texttt{invokestatic} $m$}}
-is used to call the method $m$.  Here $m$ has to  specify the full name of the method.
-Furthermore, $m$ needs to be s static method.
-For example, in order to invoke a  method called \texttt{sum} that resides in the class \texttt{Sum}
-and that takes one integer argument we have to write 
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{invokestatic  Sum/sum(I)I}
-\\[0.2cm]
-In the type specification ``\texttt{sum(I)I}'' the first ``\texttt{I}'' specifies that \texttt{sum}
-takes one integer argument, while the second ``\texttt{I}'' specifies that the method \texttt{sum}
-returns an integer.
-
-Before the command \texttt{invokestatic} is executed, we have to put the arguments of the method
-onto the stack.  For example, if we want to invoke the method \texttt{sum} described  above, then we
-have to push an integer onto the stack.
-
-
-\paragraph{The instruction \squoted{\texttt{ireturn}}}
-returns from the method that is currently invoked.  This method also returns a value to the calling
-procedure.  In order for \texttt{ireturn} to be able to return a value $v$, this value $v$ has to be
-pushed onto the stack before the command \texttt{ireturn} is executed.
-
-In general, if a method taking $n$ arguments $a_1$, $\cdots$, $a_n$ is to be called, then first the
-arguments $a_1$, $\cdots$, $a_n$ have to be pushed onto the stack.  When the method $m$ is done and
-has computed its result $r$, the arguments $a_1$, $\cdots$, $a_n$ will have been replaced with the
-single value $r$.
-
-\paragraph{The instruction \squoted{\texttt{return}}}
-returns from the method that is currently invoked.  However, in contrast to the command
-\texttt{ireturn}, this command is used if the method that has been invoked  does not return a result. 
+      In general, if a method taking $n$ arguments $a_1$, $\cdots$, $a_n$ is to be called, then first the
+      arguments $a_1$, $\cdots$, $a_n$ have to be pushed onto the stack.  When the method $m$ is done and
+      has computed its result $r$, the arguments $a_1$, $\cdots$, $a_n$ will have been replaced with the
+      single value $r$.
+\item The instruction \squoted{\texttt{return}}
+      returns from the method that is currently invoked.  However, in contrast to the command
+      \texttt{ireturn}, this command is used if the method that has been invoked  does not return a result. 
+\end{enumerate}
 
 \section{An Example Program}
-Figure \ref{fig:sum-jasmin.c} shows a small \texttt{C} program that computes the sum
+Figure \ref{fig:sum-jasmin.c} shows the \texttt{C} program 
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Jasmin/sum.c}{\texttt{sum.c}}
+that computes the sum
 \\[0.2cm]
 \hspace*{1.3cm}
 $\sum\limits_{i=1}^{6^2} i$.
 \\[0.2cm]
 The function $\mathtt{sum}(n)$ computes the sum $\sum_{i=1}^{n} i$ and the function
-\texttt{main} calls this function with the argument $6^2$.  Figure \ref{fig:Sum.jas} on page
+\texttt{main} calls this function with the argument $6 \cdot 6$.  Figure \ref{fig:Sum.jas} on page
 \pageref{fig:Sum.jas} shows how this program can be translated 
-into assembler.  We discuss the implementation line by line.
+into assembler program 
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Jasmin/Sum.jas}{\texttt{Sum.jas}}.
+We discuss the implementation of this program next. 
 
 
 \begin{figure}[!ht]
@@ -851,22 +851,22 @@ into assembler.  We discuss the implementation line by line.
         .limit locals 2
         .limit stack  2
         ldc    0
-        istore 1                    ; s = 0
+        istore 1                    ; s = 0;
     loop:
         iload  0                    ; n
-        ifeq   finish               ; if (n == 0) goto finish
+        ifeq   finish               ; if (n == 0) goto finish;
         iload  1                    ; s
         iload  0                    ; n
         iadd
-        istore  1                   ; s = s + n
+        istore  1                   ; s = s + n;
         iload   0                   ; n
         ldc     1
         isub
-        istore  0                   ; n = n - 1
+        istore  0                   ; n = n - 1;
         goto    loop
     finish:
         iload   1
-        ireturn                     ; return s
+        ireturn                     ; return s;
     .end method
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -922,7 +922,7 @@ into assembler.  We discuss the implementation line by line.
 Implement an assembler program that computes the factorial function.  Test your program by printing
 $n!$ for $n = 1, \cdots, 10$.
 
-\section{Disassembler}
+\section{Disassembler$^*$}
 Sometimes it is useful to transform a file consisting of \textsl{Java} byte code back into something
 that looks like assembler code.  After all, a \textsl{Java} class file is a binary file and can
 therefore only be viewed via commands like \href{http://en.wikipedia.org/wiki/Od_(Unix)}{\texttt{od}} 
@@ -930,7 +930,9 @@ that produce an \emph{octal} or \emph{hexadecimal dump} of the given file.  The 
 \href{http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javap.html}{\texttt{javap}} 
 is a \emph{disassembler},  i.e.~it takes a \textsl{Java} byte code file and transforms it in
 something that looks similar to \textsl{Jasmin} assembler.  For example, Figure \ref{fig:Sum.java}
-shows a program to compute the sum 
+shows the class \textsl{Java} class
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Jasmin/Sum.java}{\texttt{Sum}}
+ to compute the sum 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\sum\limits_{i=1}^{36} i$
