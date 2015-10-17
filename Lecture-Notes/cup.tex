@@ -1445,14 +1445,22 @@ Reduce/Reduce-Konflikte in verschiedene Kategorien einteilen.
 \begin{enumerate}
 \item \emph{Mehrdeutigkeits-Konflikte} sind Reduce/Reduce-Konflikte, die ihre Ursache in einer Mehrdeutigkeit
       der zu Grunde liegenden Grammatik haben.  Solche Konflikte weisen damit auf ein tatsächliches
-      Problem der Grammatik hin und können nur dadurch gelöst werden, dass die Grammatik umgeschrieben
-      wird. 
+      Problem der Grammatik hin.  Wir hatten ein Beispiel für solche Konflikte gesehen, als wir in
+      Abbildung \ref{fig:calc-ambiguous.cup} in der Grammatik
+      \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/Calculator-Ambiguous/calc.cup}{\texttt{calc.cup}} 
+      versucht hatten, die Syntax arithmetischer Ausdrücke ohne die syntaktischen
+      Kategorien \textsl{product} und \textsl{factor} zu beschreiben.
+
+      Wir hatten damals bereits gesehen, dass wir das Problem durch die Einführung von
+      Operator-Präzedenzen lösen können.  Falls dies nicht möglich ist, dann bleibt nur das
+      Umschreiben der Grammatik.
 \item \emph{Look-Ahead-Konflikte} sind Reduce/Reduce-Konflikte, bei denen die Grammatik zwar
       einerseits eindeutig ist, für die aber andererseits
       ein Look-Ahead von einem Token aber nicht ausreichend ist um den Konflikt zu lösen.
 \item \emph{Mysteriöse Konflikte} entstehen erst beim Übergang von den LR-Zuständen zu den LALR-Zuständen 
-      durch das Zusammenfassen von Zuständen mit dem gleichen Kern.  Diese Konflikte haben ihre Ursache 
-      also in der Unzulänglichkeit des LALR-Parser-Generators.
+      durch das Zusammenfassen von Zuständen mit dem gleichen Kern.  Diese Konflikte treten also
+      genau dann auf, wenn das Konzept einer LALR-Grammatik nicht ausreichend ist um die Syntax der
+      zu parsenden Sprache zu beschreiben.
 \end{enumerate}
 Wir betrachten die letzten beiden Fälle nun im Detail und zeigen Wege auf, wie die Konflikte gelöst
 werden können.
@@ -1460,7 +1468,8 @@ werden können.
 \subsection{Look-Ahead-Konflikte}
 Ein Look-Ahead-Konflikt liegt dann vor, wenn die Grammatik zwar eindeutig ist, aber ein Look-Ahead von einem
 Token nicht ausreicht um zu entscheiden,  mit welcher Regel reduziert werden soll.  Abbildung 
-\ref{fig:lr-conflict.g} zeigt eine Grammatik\footnote{ 
+\ref{fig:lr-conflict.g} zeigt die Grammatik 
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LookAheadConflict/lookAhead.cup}{\texttt{lookAhead.cup}}\footnote{ 
 Diese Grammatik habe ich im Netz auf der Seite von Pete Jinks unter der Adresse
 \\[0.1cm]
 \hspace*{1.3cm}
@@ -1485,11 +1494,9 @@ die zwar eindeutig ist, aber nicht die LR(1)-Eigenschaft hat.
 
     a ::= b U V
        |  c U W
-       ;
-    
+       ;    
     b ::= X
        ;
-    
     c ::= X 
        ;
 \end{Verbatim}
@@ -1503,19 +1510,19 @@ Berechnen wir die LR-Zustände dieser Grammatik,
 so finden wir unter anderem den folgenden Zustand:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\{ b \rightarrow \;\squoted{X} \bullet: \squoted{U},\; c \rightarrow \;\squoted{X} \bullet: \squoted{U} \}$
+$\{ b \rightarrow \;\squoted{X} \bullet: \squoted{U},\; c \rightarrow \;\squoted{X} \bullet: \squoted{U} \}$.
 \\[0.2cm]
 Da die Menge der Folge-Token für beide Regeln gleich sind, haben wir hier einen Reduce/Reduce-Konflikt.
 Dieser Konflikt hat seine Ursache darin, dass der Parser mit einem Look-Ahead von nur einem Token nicht
-entscheiden kann, ob ein $\quoted{X}$ als ein $b$ oder als ein $c$ zu interpretieren ist, denn dies
-entscheidet sich erst, wenn das auf $\quoted{U}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
-um ein $\quoted{V}$, so wird insgesamt die Regel
+entscheiden kann, ob ein $\squoted{X}$ als ein $b$ oder als ein $c$ zu interpretieren ist, denn dies
+entscheidet sich erst, wenn das auf $\squoted{U}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
+um ein $\squoted{V}$, so wird insgesamt die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
 $a \rightarrow b\; \squoted{U} \squoted{V}$
 \\[0.2cm]
-verwendet werden und folglich ist das $\quoted{X}$ als ein $b$ zu interpretieren. Ist das zweite Token
-hinter dem $\quoted{X}$ hingegen ein  $\quoted{W}$, so ist die zu verwendende Regel
+verwendet werden und folglich ist das $\squoted{X}$ als ein $b$ zu interpretieren. Ist das zweite Token
+hinter dem $\squoted{X}$ hingegen ein  $\squoted{W}$, so ist die zu verwendende Regel
 \\[0.2cm]
 \hspace*{1.3cm}
 $a \rightarrow c \;\squoted{U} \squoted{W}$
@@ -1550,13 +1557,36 @@ und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
 Das Problem bei dieser Grammatik ist, dass sie versucht, abhängig vom Kontext ein $\squoted{X}$ wahlweise
 als ein $b$ oder als ein $c$ zu interpretieren.  Es ist offensichtlich, wie das Problem gelöst werden
 kann:  Wenn der Kontext ``\texttt{U}'', der sowohl auf $b$ als auch auf $c$ folgt, mit in
-die Regeln für $B$ und $C$ aufgenommen wird, dann verschwindet der Konflikt.  Abbildung
-\ref{fig:lr-conflict-resolved.g} zeigt die modifizierte Grammatik.
+die Regeln für $b$ und $c$ aufgenommen wird, dann verschwindet der Konflikt, denn dann hat der
+Zustand, in dem früher der Konflikt auftrat, die Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\{ b \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{V},\; 
+    c \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{W} 
+\}
+$.
+\\[0.2cm]  
+Hier entscheidet sich nun an Hand des nächsten Tokens, mit welcher Regel wir in diesem Zustand
+reduzieren müssen:  Ist das nächste Token ein $\squoted{V}$, so reduzieren wir mit der Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$b \rightarrow \;\squoted{X} \squoted{U}$,
+\\[0.2cm]
+ist das nächste Token hingegen der Buchstabe $\squoted{W}$, so nehmen wir statt dessen die Regel
+\\[0.2cm]
+\hspace*{1.3cm}
+$c \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{W}$.
+\\[0.2cm]
+Abbildung
+\ref{fig:lr-conflict-resolved.g} zeigt die entsprechend modifizierte Grammatik
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LookAheadConflict/solved.cup}{\texttt{solved.cup}},
 
 \subsection{Mysteriöse Reduce/Reduce-Konflikte}
 Wir sprechen dann von einem \emph{mysteriösen Reduce/Reduce-Konflikt}, wenn die gegebene Grammatik eine
 LR(1)-Grammatik ist, sich aber beim Übergang von den LR-Zuständen zu den LALR-Zuständen Reduce/Reduce-Konflikte
-ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik habe ich dem 
+ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik 
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/MysteriousConflict/mysterious.cup}{\texttt{mysterious.cup}}
+habe ich dem 
 \href{http://www.gnu.org/software/bison/manual/}{\textsl{Bison}-Handbuch} entnommen. 
 
 
@@ -1628,17 +1658,17 @@ Zuständen in Abbildung \ref{fig:mysterious.txt} gezeigt sind.
                 ]
     s0 = { S -> <*> def: [$],
            def -> <*> param_spec return_spec ',': [$],
-           name -> <*> ID: [',', ':'],
-           name_list -> <*> name: [':'],
-           name_list -> <*> name ',' name_list: [':'],
            param_spec -> <*> name_list ':' type: [ID],
            param_spec -> <*> type: [ID],
+           name_list -> <*> name: [':'],
+           name_list -> <*> name ',' name_list: [':'],
+           name -> <*> ID: [',', ':'],
            type -> <*> ID: [ID]
          }
     s2 = { def -> param_spec <*> return_spec ',': [$],
-           name -> <*> ID: [':'],
            return_spec -> <*> name ':' type: [','],
            return_spec -> <*> type: [','],
+           name -> <*> ID: [':'],
            type -> <*> ID: [',']
          }
     s7 = { name -> ID <*>: [',', ':'],
@@ -1675,10 +1705,15 @@ Zustände herkommen.
 \end{enumerate}
 Die Idee zur Auflösung des Konflikts ist, dass wir den Zustand $s_2$ so ändern, dass die Kerne von
 $s_7 = \textsl{goto}(s_0, \mathtt{ID})$ und $s_8 = \textsl{goto}(s_0, \mathtt{ID})$ unterschiedlich werden.  
-Die erweiterten markierten Regeln in dem Zustand $s_2$, die letztlich für den Konflikt verantwortlich
-sind, sind die Grammatik-Regeln für die syntaktische Variable \textsl{return\_spec}.
-Wir ändern diese Regeln nun wie in Abbildung \ref{fig:myst-solved.g} ab, indem wir eine zusätzliche
-Grammatik-Regel 
+Die erweiterten markierten Regeln in den Zuständen $s_0$ und $s_2$, die letztlich für den Konflikt verantwortlich
+sind, sind die Grammatik-Regeln für die syntaktische Variablen \textsl{param\_spec} und
+\textsl{return\_spec}, denn von diesen Regeln werden die  Zustände $s_7$ und $s_8$ abgeleitet.
+Um zu verhindern, dass diese Zustände zusammengefasst werde, ändern wir die Regeln für die
+syntaktische Variable \textsl{return\_spec} wie in der in Abbildung \ref{fig:myst-solved.g}
+gezeigten Grammatik
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/MysteriousConflict/mysterious-solved.cup}{\texttt{mysterious-solved.cup}}
+ ab,
+indem wir eine zusätzliche Grammatik-Regel 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{return\_spec} \rightarrow \mathtt{ID}\;\, \mathtt{BOGUS}$
@@ -1688,8 +1723,8 @@ die Hinzunahme dieser Regel die von der Grammatik erzeugte Sprache nicht.  Aller
 LR-Zustände.  Abbildung \ref{fig:myst-solved.txt} zeigt, wie sich die entsprechenden Zustände ändern.
 Insbesondere sehen wir, dass der Zustand $s_8$ nun eine weitere markierte Regel enthält, zu der es in dem
 Zustand $s_7$ kein äquivalent gibt.  Die Konsequenz ist, dass diese Zustände beim Übergang von den
-LR-Zuständen zu den LALR-Zuständen nicht mehr zusammengefasst werden.  Dadurch gibt es dann auch
-keinen Konflikt mehr. 
+LR-Zuständen zu den LALR-Zuständen nicht mehr zusammengefasst werden können, da sie unterschiedliche
+Kerne haben.  Daher gibt es dann auch keinen Konflikt mehr. 
 
 \begin{figure}[!ht]
 \centering
@@ -1767,41 +1802,6 @@ keinen Konflikt mehr.
 \label{fig:myst-solved.txt}
 \end{figure}
 
-\hspace*{\fill}
-\pagebreak
-
-\hspace*{\fill}
-\pagebreak
-
-
-\exercise
-Nachstehend sehen Sie Regeln für eine Grammatik, die Listen von Zahlen beschreibt:
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{List} \;\rightarrow\; \textsc{Number} \quoted{,} \textsl{List}  \;\mid\; \textsc{Number}$
-\\[0.2cm]
-Diese Grammatik ist rechts-rekursiv.  Alternativ ist auch eine links-rekursive Grammatik möglich:
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{List} \;\rightarrow \; \textsl{List} \quoted{,} \textsc{Number} \;\mid\; \textsc{Number}$
-\\[0.2cm]
-Überlegen Sie, welche dieser beiden Grammatiken effizienter ist, wenn Sie aus diesen Regeln mit einem
-LALR-Parser-Generator einen Parser erzeugen wollen.  Berechnen Sie dazu für beide Fälle die Zustände
-und Aktionen und untersuchen Sie, wie eine Liste von natürlichen Zahlen der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-$x_1$, $x_2$, $\cdots$, $x_{n-1}$, $x_n$
-\\[0.2cm]
-in den beiden Fällen geparst wird.  Geben Sie insbesondere an, wie der Stack des Shift/Reduce-Parsers
-aussieht, wenn die Teilliste 
-\\[0.2cm]
-\hspace*{1.3cm}
-$x_1$, $x_2$, $\cdots$, $x_{k-1}$, $x_k$ \quad mit $k \leq n$ 
-\\[0.2cm]
-gelesen worden ist.  \eox
-
-
-
 \section{Auflösung von Shift/Reduce-Konflikten}
 Es gibt im wesentlichen zwei Arten von Shift/Reduce-Konflikten:
 \begin{enumerate}
@@ -1823,7 +1823,9 @@ Es gibt im wesentlichen zwei Arten von Shift/Reduce-Konflikten:
       Solche \emph{Look-Ahead}-Konflikte   werden wir in diesem Abschnitt diskutieren.
 \end{enumerate}
 Als Beispiel für einen Look-Ahead-Konflikt betrachten wir die in Abbildung \ref{fig:lambda.g}
-gezeigte Grammatik.  Diese Grammatik beschreibt drei Arten von Ausdrücken:
+gezeigte Grammatik
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LambdaExpr/lambda.cup}{\texttt{lambda.cup}}.  
+Diese Grammatik beschreibt drei Arten von Ausdrücken:
 \begin{enumerate}
 \item $\lambda$-Ausdrücke haben syntaktisch die Form
       \\[0.2cm]
@@ -1860,17 +1862,14 @@ gezeigte Grammatik.  Diese Grammatik beschreibt drei Arten von Ausdrücken:
     expr ::= lambdaDefinition
           |  IDENTIFIER  
           |  LBRACKET exprList RBRACKET
-          ;
-    
+          ;   
     lambdaDefinition
          ::= LBRACKET identifierList RBRACKET MAPSTO expr
           ;
-    
     identifierList
          ::= IDENTIFIER COMMA identifierList 
           |  IDENTIFIER
           ;
-    
     exprList
          ::= expr COMMA exprList
           |  expr
@@ -1893,7 +1892,7 @@ $\textsl{expr} \rightarrow \mathtt{IDENTIFIER}$
 reduziert werden darf, wenn das Look-Ahead-Token ein Komma ist.  Um zu entscheiden, ob der Parser
 versucht eine Liste von \texttt{IDENTIFIER}n zu parsen, müsste der Parser bis zu dem Token
 \texttt{MAPSTO} schauen können.  Wenn später ein solches Token noch kommt, dann würde der Parser im
-Zustand 6 versuchen eine \texttt{identifierList} zu parsen und das Komma sollte auf den Stack
+Zustand 6 versuchen, eine \texttt{identifierList} zu parsen und das Komma sollte auf den Stack
 geschoben werden.  Andernfalls könnte mit der Regel 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1924,8 +1923,10 @@ der Eingabe inspizieren.  Wir müssen daher eine andere Lösung suchen.
 \label{fig:lambda.g:state6}
 \end{figure}
 
-Wir können den Shift/Reduce-Konflikt lösen, indem wir die Grammatik wie in Abbildung
-\ref{fig:lambda-generalized.cup} gezeigt \textbf{verallgemeinern}.  Diese Grammatik lässt auch
+Wir können den Shift/Reduce-Konflikt lösen, indem wir die Grammatik wie in der in Abbildung
+\ref{fig:lambda-generalized.cup} gezeigten Grammatik
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LambdaExpr/lambda-generalized.cup}{\texttt{lambda-generalized.cup}}
+ \textbf{verallgemeinern}.  Diese Grammatik lässt auch
 Ausdrücke zu, bei denen in der Argument-Liste nicht nur Variablen-Namen enthält, sondern Ausdrücke
 beliebiger Komplexität.  Damit beschreibt diese Grammatik eine Sprache, die eigentlich zu allgemein
 ist.  Es ist aber ein leichtes, später den resultierenden Syntax-Baum drauf hin zu untersuchen, ob
