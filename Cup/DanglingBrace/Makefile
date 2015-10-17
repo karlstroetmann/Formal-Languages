@@ -1,7 +1,7 @@
-conficts.txt: dangling.cup
-	cup dangling.cup 
+conficts.txt: no-dangling.cup
+	cup no-dangling.cup 
 
 clean:
 	rm -f *.class
-	rm -f Dangling.java
-	rm -f DanglingSym.java
+	rm -f NoDangling.java
+	rm -f NoDanglingSym.java
