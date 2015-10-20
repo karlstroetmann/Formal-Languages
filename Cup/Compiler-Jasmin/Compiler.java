@@ -8,7 +8,7 @@ public class Compiler {
 
     public static void main(String[] args) {
         try { 
-            sClassName = args[0];
+            sClassName       = args[0];
             File           f = new File(args[0] + ".c");
             FileReader     r = new FileReader(f);
             IntegerCParser p = new IntegerCParser(new Yylex(r)); 
