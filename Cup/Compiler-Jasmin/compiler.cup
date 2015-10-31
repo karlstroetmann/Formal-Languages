@@ -36,38 +36,31 @@ program ::= functionList:l {: RESULT = new Program(l); :} ;
 functionList ::= /* epsilon */             {: RESULT = new LinkedList<Function>(); :}
               |  functionList:l function:f {: l.add(f); RESULT = l;                :}
               ;
-
 function ::= INT ID:f LPAREN paramList:p RPAREN LBRACE declarations:d stmntList:l RBRACE
              {: RESULT = new Function(f, p, d, l); :}
           ;
-
 paramList ::= /* epsilon */ {: RESULT = new LinkedList<String>(); :}
            |  neParamList:l {: RESULT = l;                        :}
            ;
-
-neParamList ::= INT ID:v                     {: RESULT = new LinkedList<String>(); RESULT.add(v); :}
-             |  neParamList:l COMMA INT ID:v {: RESULT = l; RESULT.add(v);                        :}
+neParamList ::= INT ID:v  {: RESULT = new LinkedList<String>(); RESULT.add(v); :}
+             |  neParamList:l COMMA INT ID:v {: RESULT = l; RESULT.add(v);     :}
              ;           
-
 declaration ::= INT ID:v SEMICOLON {: RESULT = new Declaration(v); :} ;
-
 declarations ::= /* epsilon */                {: RESULT = new LinkedList<Declaration>(); :}
               |  declarations:l declaration:d {: RESULT = l; RESULT.add(d);              :}
               ;
-
-stmnt ::= LBRACE stmntList:l RBRACE                        {: RESULT = new Block(l);            :}
-       |  ID:v ASSIGN expr:e SEMICOLON                     {: RESULT = new Assign(v, e);        :}
-       |  IF LPAREN boolExpr:b RPAREN stmnt:s              {: RESULT = new IfThen(b, s);        :}        
-       |  IF LPAREN boolExpr:b RPAREN stmnt:t ELSE stmnt:e {: RESULT = new IfThenElse(b, t, e); :}
-       |  WHILE LPAREN boolExpr:b RPAREN stmnt:s           {: RESULT = new While(b, s);         :}
-       |  RETURN expr:e SEMICOLON                          {: RESULT = new Return(e);           :}
-       |  expr:e SEMICOLON                                 {: RESULT = new ExprStatement(e);    :}
+stmnt ::= LBRACE stmntList:l RBRACE              {: RESULT = new Block(l);            :}
+       |  ID:v ASSIGN expr:e SEMICOLON           {: RESULT = new Assign(v, e);        :}
+       |  IF LPAREN boolExpr:b RPAREN stmnt:s    {: RESULT = new IfThen(b, s);        :} 
+       |  IF LPAREN boolExpr:b RPAREN stmnt:t ELSE stmnt:e
+          {: RESULT = new IfThenElse(b, t, e); :}
+       |  WHILE LPAREN boolExpr:b RPAREN stmnt:s {: RESULT = new While(b, s);         :}
+       |  RETURN expr:e SEMICOLON                {: RESULT = new Return(e);           :}
+       |  expr:e SEMICOLON                       {: RESULT = new ExprStatement(e);    :}
        ;
-
 stmntList ::= /* epsilon */       {: RESULT = new LinkedList<Statement>(); :}
            |  stmntList:l stmnt:s {: l.add(s); RESULT = l;                 :}
            ;
-
 boolExpr ::= expr:l EQ expr:r          {: RESULT = new Equation(      l, r); :}
           |  expr:l NE expr:r          {: RESULT = new Inequation(    l, r); :}
           |  expr:l LE expr:r          {: RESULT = new LessOrEqual(   l, r); :}
@@ -93,6 +86,6 @@ exprList ::= /* epsilon */ {: RESULT = new LinkedList<Expr>(); :}
           |  neExprList:l  {: RESULT = l;                      :}
           ;
 
-neExprList ::= expr:e                    {: RESULT = new LinkedList<Expr>(); RESULT.add(e); :}                  
+neExprList ::= expr:e                    {: RESULT = new LinkedList<Expr>(); RESULT.add(e); :} 
             |  neExprList:l COMMA expr:e {: RESULT = l; RESULT.add(e);                      :}
             ;
