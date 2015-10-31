@@ -1,0 +1,450 @@
+===== Terminals =====
+[0]EOF [1]error [2]LPAREN [3]RPAREN [4]IF 
+[5]ELSE [6]WHILE [7]LBRACE [8]RBRACE [9]ASSIGN 
+[10]SEMI [11]EQUAL [12]ID 
+
+===== Non terminals =====
+[0]stmnt [1]matchedStmnt [2]unmatchedStmnt [3]stmntList [4]expr 
+
+
+===== Productions =====
+[0] $START ::= stmnt EOF 
+[1] stmnt ::= matchedStmnt 
+[2] stmnt ::= unmatchedStmnt 
+[3] matchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt 
+[4] matchedStmnt ::= WHILE LPAREN expr RPAREN matchedStmnt 
+[5] matchedStmnt ::= LBRACE stmntList RBRACE 
+[6] matchedStmnt ::= ID ASSIGN expr SEMI 
+[7] unmatchedStmnt ::= IF LPAREN expr RPAREN stmnt 
+[8] unmatchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt 
+[9] unmatchedStmnt ::= WHILE LPAREN expr RPAREN unmatchedStmnt 
+[10] stmntList ::= stmntList stmnt 
+[11] stmntList ::= 
+[12] expr ::= ID EQUAL ID 
+[13] expr ::= ID 
+
+===== Viable Prefix Recognizer =====
+START lalr_state [0]: {
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF }]
+  [matchedStmnt ::= (*) LBRACE stmntList RBRACE , {EOF }]
+  [stmnt ::= (*) unmatchedStmnt , {EOF }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN stmnt , {EOF }]
+  [matchedStmnt ::= (*) WHILE LPAREN expr RPAREN matchedStmnt , {EOF }]
+  [stmnt ::= (*) matchedStmnt , {EOF }]
+  [unmatchedStmnt ::= (*) WHILE LPAREN expr RPAREN unmatchedStmnt , {EOF }]
+  [matchedStmnt ::= (*) ID ASSIGN expr SEMI , {EOF }]
+  [matchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt , {EOF }]
+  [$START ::= (*) stmnt EOF , {EOF }]
+}
+transition on IF to state [7]
+transition on stmnt to state [6]
+transition on unmatchedStmnt to state [5]
+transition on WHILE to state [4]
+transition on matchedStmnt to state [3]
+transition on LBRACE to state [2]
+transition on ID to state [1]
+
+-------------------
+lalr_state [1]: {
+  [matchedStmnt ::= ID (*) ASSIGN expr SEMI , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+transition on ASSIGN to state [28]
+
+-------------------
+lalr_state [2]: {
+  [matchedStmnt ::= LBRACE (*) stmntList RBRACE , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [stmntList ::= (*) stmntList stmnt , {IF WHILE LBRACE RBRACE ID }]
+  [stmntList ::= (*) , {IF WHILE LBRACE RBRACE ID }]
+}
+transition on stmntList to state [25]
+
+-------------------
+lalr_state [3]: {
+  [stmnt ::= matchedStmnt (*) , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [4]: {
+  [matchedStmnt ::= WHILE (*) LPAREN expr RPAREN matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= WHILE (*) LPAREN expr RPAREN unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on LPAREN to state [20]
+
+-------------------
+lalr_state [5]: {
+  [stmnt ::= unmatchedStmnt (*) , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [6]: {
+  [$START ::= stmnt (*) EOF , {EOF }]
+}
+transition on EOF to state [19]
+
+-------------------
+lalr_state [7]: {
+  [unmatchedStmnt ::= IF (*) LPAREN expr RPAREN stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= IF (*) LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= IF (*) LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on LPAREN to state [8]
+
+-------------------
+lalr_state [8]: {
+  [expr ::= (*) ID , {RPAREN }]
+  [unmatchedStmnt ::= IF LPAREN (*) expr RPAREN stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [expr ::= (*) ID EQUAL ID , {RPAREN }]
+  [matchedStmnt ::= IF LPAREN (*) expr RPAREN matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= IF LPAREN (*) expr RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on expr to state [10]
+transition on ID to state [9]
+
+-------------------
+lalr_state [9]: {
+  [expr ::= ID (*) , {RPAREN SEMI }]
+  [expr ::= ID (*) EQUAL ID , {RPAREN SEMI }]
+}
+transition on EQUAL to state [17]
+
+-------------------
+lalr_state [10]: {
+  [unmatchedStmnt ::= IF LPAREN expr (*) RPAREN stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= IF LPAREN expr (*) RPAREN matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= IF LPAREN expr (*) RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on RPAREN to state [11]
+
+-------------------
+lalr_state [11]: {
+  [unmatchedStmnt ::= IF LPAREN expr RPAREN (*) matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) LBRACE stmntList RBRACE , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [stmnt ::= (*) unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= IF LPAREN expr RPAREN (*) stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) WHILE LPAREN expr RPAREN matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [stmnt ::= (*) matchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= IF LPAREN expr RPAREN (*) matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) WHILE LPAREN expr RPAREN unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) ID ASSIGN expr SEMI , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+transition on IF to state [7]
+transition on stmnt to state [13]
+transition on unmatchedStmnt to state [5]
+transition on WHILE to state [4]
+transition on matchedStmnt to state [12]
+transition on LBRACE to state [2]
+transition on ID to state [1]
+
+-------------------
+lalr_state [12]: {
+  [matchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt (*) ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [stmnt ::= matchedStmnt (*) , {EOF IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt (*) ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on ELSE to state [14]
+
+-------------------
+lalr_state [13]: {
+  [unmatchedStmnt ::= IF LPAREN expr RPAREN stmnt (*) , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [14]: {
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) LBRACE stmntList RBRACE , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) WHILE LPAREN expr RPAREN matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE (*) matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) WHILE LPAREN expr RPAREN unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) ID ASSIGN expr SEMI , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE (*) unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on IF to state [7]
+transition on WHILE to state [4]
+transition on unmatchedStmnt to state [16]
+transition on matchedStmnt to state [15]
+transition on LBRACE to state [2]
+transition on ID to state [1]
+
+-------------------
+lalr_state [15]: {
+  [matchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt (*) , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [16]: {
+  [unmatchedStmnt ::= IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt (*) , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [17]: {
+  [expr ::= ID EQUAL (*) ID , {RPAREN SEMI }]
+}
+transition on ID to state [18]
+
+-------------------
+lalr_state [18]: {
+  [expr ::= ID EQUAL ID (*) , {RPAREN SEMI }]
+}
+
+-------------------
+lalr_state [19]: {
+  [$START ::= stmnt EOF (*) , {EOF }]
+}
+
+-------------------
+lalr_state [20]: {
+  [expr ::= (*) ID , {RPAREN }]
+  [matchedStmnt ::= WHILE LPAREN (*) expr RPAREN matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= WHILE LPAREN (*) expr RPAREN unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [expr ::= (*) ID EQUAL ID , {RPAREN }]
+}
+transition on expr to state [21]
+transition on ID to state [9]
+
+-------------------
+lalr_state [21]: {
+  [matchedStmnt ::= WHILE LPAREN expr (*) RPAREN matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= WHILE LPAREN expr (*) RPAREN unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+transition on RPAREN to state [22]
+
+-------------------
+lalr_state [22]: {
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) LBRACE stmntList RBRACE , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= WHILE LPAREN expr RPAREN (*) matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN stmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) WHILE LPAREN expr RPAREN matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= WHILE LPAREN expr RPAREN (*) unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) WHILE LPAREN expr RPAREN unmatchedStmnt , {EOF IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) ID ASSIGN expr SEMI , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+transition on IF to state [7]
+transition on WHILE to state [4]
+transition on unmatchedStmnt to state [24]
+transition on matchedStmnt to state [23]
+transition on LBRACE to state [2]
+transition on ID to state [1]
+
+-------------------
+lalr_state [23]: {
+  [matchedStmnt ::= WHILE LPAREN expr RPAREN matchedStmnt (*) , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [24]: {
+  [unmatchedStmnt ::= WHILE LPAREN expr RPAREN unmatchedStmnt (*) , {EOF IF WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [25]: {
+  [matchedStmnt ::= LBRACE stmntList (*) RBRACE , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE unmatchedStmnt , {IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) LBRACE stmntList RBRACE , {IF WHILE LBRACE RBRACE ID }]
+  [stmnt ::= (*) unmatchedStmnt , {IF WHILE LBRACE RBRACE ID }]
+  [stmntList ::= stmntList (*) stmnt , {IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) IF LPAREN expr RPAREN stmnt , {IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) WHILE LPAREN expr RPAREN matchedStmnt , {IF WHILE LBRACE RBRACE ID }]
+  [stmnt ::= (*) matchedStmnt , {IF WHILE LBRACE RBRACE ID }]
+  [unmatchedStmnt ::= (*) WHILE LPAREN expr RPAREN unmatchedStmnt , {IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) ID ASSIGN expr SEMI , {IF WHILE LBRACE RBRACE ID }]
+  [matchedStmnt ::= (*) IF LPAREN expr RPAREN matchedStmnt ELSE matchedStmnt , {IF WHILE LBRACE RBRACE ID }]
+}
+transition on IF to state [7]
+transition on stmnt to state [27]
+transition on unmatchedStmnt to state [5]
+transition on WHILE to state [4]
+transition on RBRACE to state [26]
+transition on matchedStmnt to state [3]
+transition on LBRACE to state [2]
+transition on ID to state [1]
+
+-------------------
+lalr_state [26]: {
+  [matchedStmnt ::= LBRACE stmntList RBRACE (*) , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [27]: {
+  [stmntList ::= stmntList stmnt (*) , {IF WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+lalr_state [28]: {
+  [expr ::= (*) ID , {SEMI }]
+  [expr ::= (*) ID EQUAL ID , {SEMI }]
+  [matchedStmnt ::= ID ASSIGN (*) expr SEMI , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+transition on expr to state [29]
+transition on ID to state [9]
+
+-------------------
+lalr_state [29]: {
+  [matchedStmnt ::= ID ASSIGN expr (*) SEMI , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+transition on SEMI to state [30]
+
+-------------------
+lalr_state [30]: {
+  [matchedStmnt ::= ID ASSIGN expr SEMI (*) , {EOF IF ELSE WHILE LBRACE RBRACE ID }]
+}
+
+-------------------
+-------- ACTION_TABLE --------
+From state #0
+ [term 4:SHIFT(to state 7)] [term 6:SHIFT(to state 4)]
+ [term 7:SHIFT(to state 2)] [term 12:SHIFT(to state 1)]
+From state #1
+ [term 9:SHIFT(to state 28)]
+From state #2
+ [term 4:REDUCE(with prod 11)] [term 6:REDUCE(with prod 11)]
+ [term 7:REDUCE(with prod 11)] [term 8:REDUCE(with prod 11)]
+ [term 12:REDUCE(with prod 11)]
+From state #3
+ [term 0:REDUCE(with prod 1)] [term 4:REDUCE(with prod 1)]
+ [term 6:REDUCE(with prod 1)] [term 7:REDUCE(with prod 1)]
+ [term 8:REDUCE(with prod 1)] [term 12:REDUCE(with prod 1)]
+From state #4
+ [term 2:SHIFT(to state 20)]
+From state #5
+ [term 0:REDUCE(with prod 2)] [term 4:REDUCE(with prod 2)]
+ [term 6:REDUCE(with prod 2)] [term 7:REDUCE(with prod 2)]
+ [term 8:REDUCE(with prod 2)] [term 12:REDUCE(with prod 2)]
+From state #6
+ [term 0:SHIFT(to state 19)]
+From state #7
+ [term 2:SHIFT(to state 8)]
+From state #8
+ [term 12:SHIFT(to state 9)]
+From state #9
+ [term 3:REDUCE(with prod 13)] [term 10:REDUCE(with prod 13)]
+ [term 11:SHIFT(to state 17)]
+From state #10
+ [term 3:SHIFT(to state 11)]
+From state #11
+ [term 4:SHIFT(to state 7)] [term 6:SHIFT(to state 4)]
+ [term 7:SHIFT(to state 2)] [term 12:SHIFT(to state 1)]
+From state #12
+ [term 0:REDUCE(with prod 1)] [term 4:REDUCE(with prod 1)]
+ [term 5:SHIFT(to state 14)] [term 6:REDUCE(with prod 1)]
+ [term 7:REDUCE(with prod 1)] [term 8:REDUCE(with prod 1)]
+ [term 12:REDUCE(with prod 1)]
+From state #13
+ [term 0:REDUCE(with prod 7)] [term 4:REDUCE(with prod 7)]
+ [term 6:REDUCE(with prod 7)] [term 7:REDUCE(with prod 7)]
+ [term 8:REDUCE(with prod 7)] [term 12:REDUCE(with prod 7)]
+From state #14
+ [term 4:SHIFT(to state 7)] [term 6:SHIFT(to state 4)]
+ [term 7:SHIFT(to state 2)] [term 12:SHIFT(to state 1)]
+From state #15
+ [term 0:REDUCE(with prod 3)] [term 4:REDUCE(with prod 3)]
+ [term 5:REDUCE(with prod 3)] [term 6:REDUCE(with prod 3)]
+ [term 7:REDUCE(with prod 3)] [term 8:REDUCE(with prod 3)]
+ [term 12:REDUCE(with prod 3)]
+From state #16
+ [term 0:REDUCE(with prod 8)] [term 4:REDUCE(with prod 8)]
+ [term 6:REDUCE(with prod 8)] [term 7:REDUCE(with prod 8)]
+ [term 8:REDUCE(with prod 8)] [term 12:REDUCE(with prod 8)]
+From state #17
+ [term 12:SHIFT(to state 18)]
+From state #18
+ [term 3:REDUCE(with prod 12)] [term 10:REDUCE(with prod 12)]
+From state #19
+ [term 0:REDUCE(with prod 0)]
+From state #20
+ [term 12:SHIFT(to state 9)]
+From state #21
+ [term 3:SHIFT(to state 22)]
+From state #22
+ [term 4:SHIFT(to state 7)] [term 6:SHIFT(to state 4)]
+ [term 7:SHIFT(to state 2)] [term 12:SHIFT(to state 1)]
+From state #23
+ [term 0:REDUCE(with prod 4)] [term 4:REDUCE(with prod 4)]
+ [term 5:REDUCE(with prod 4)] [term 6:REDUCE(with prod 4)]
+ [term 7:REDUCE(with prod 4)] [term 8:REDUCE(with prod 4)]
+ [term 12:REDUCE(with prod 4)]
+From state #24
+ [term 0:REDUCE(with prod 9)] [term 4:REDUCE(with prod 9)]
+ [term 6:REDUCE(with prod 9)] [term 7:REDUCE(with prod 9)]
+ [term 8:REDUCE(with prod 9)] [term 12:REDUCE(with prod 9)]
+From state #25
+ [term 4:SHIFT(to state 7)] [term 6:SHIFT(to state 4)]
+ [term 7:SHIFT(to state 2)] [term 8:SHIFT(to state 26)]
+ [term 12:SHIFT(to state 1)]
+From state #26
+ [term 0:REDUCE(with prod 5)] [term 4:REDUCE(with prod 5)]
+ [term 5:REDUCE(with prod 5)] [term 6:REDUCE(with prod 5)]
+ [term 7:REDUCE(with prod 5)] [term 8:REDUCE(with prod 5)]
+ [term 12:REDUCE(with prod 5)]
+From state #27
+ [term 4:REDUCE(with prod 10)] [term 6:REDUCE(with prod 10)]
+ [term 7:REDUCE(with prod 10)] [term 8:REDUCE(with prod 10)]
+ [term 12:REDUCE(with prod 10)]
+From state #28
+ [term 12:SHIFT(to state 9)]
+From state #29
+ [term 10:SHIFT(to state 30)]
+From state #30
+ [term 0:REDUCE(with prod 6)] [term 4:REDUCE(with prod 6)]
+ [term 5:REDUCE(with prod 6)] [term 6:REDUCE(with prod 6)]
+ [term 7:REDUCE(with prod 6)] [term 8:REDUCE(with prod 6)]
+ [term 12:REDUCE(with prod 6)]
+------------------------------
+-------- REDUCE_TABLE --------
+From state #0
+ [non term 0->state 6] [non term 1->state 3] [non term 2->state 5]
+From state #1
+From state #2
+ [non term 3->state 25]
+From state #3
+From state #4
+From state #5
+From state #6
+From state #7
+From state #8
+ [non term 4->state 10]
+From state #9
+From state #10
+From state #11
+ [non term 0->state 13] [non term 1->state 12] [non term 2->state 5]
+From state #12
+From state #13
+From state #14
+ [non term 1->state 15] [non term 2->state 16]
+From state #15
+From state #16
+From state #17
+From state #18
+From state #19
+From state #20
+ [non term 4->state 21]
+From state #21
+From state #22
+ [non term 1->state 23] [non term 2->state 24]
+From state #23
+From state #24
+From state #25
+ [non term 0->state 27] [non term 1->state 3] [non term 2->state 5]
+From state #26
+From state #27
+From state #28
+ [non term 4->state 29]
+From state #29
+From state #30
+-----------------------------
+------- CUP v0.11b 20150930 (SVN rev 66) Parser Generation Summary -------
+  0 errors and 0 warnings
+  13 terminals, 5 non-terminals, and 14 productions declared, 
+  producing 31 unique parse states.
+  0 terminals declared but not used.
+  0 non-terminals declared but not used.
+  0 productions never reduced.
+  0 conflicts detected (0 expected).
+  Code written to "Dangling.java", and "DanglingSym.java".
+---------------------------------------------------- (CUP v0.11b 20150930 (SVN rev 66))
