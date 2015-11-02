@@ -33,10 +33,26 @@ SIZE = [0-9\-\.]+(cm|in|mm|pt)
 \u00dc                { myPrint("Ü"); }
 \u00d6                { myPrint("ß"); }
 
+"\\\"{a}"             { myPrint("ä"); }
+"\\\"{o}"             { myPrint("ö"); }
+"\\\"{u}"             { myPrint("ü"); }
+"\\\"{A}"             { myPrint("Ä"); }
+"\\\"{O}"             { myPrint("Ö"); }
+"\\\"{U}"             { myPrint("Ü"); }
+"\\3"                 { myPrint("ß"); }
+
+"\\\"a"               { myPrint("ä"); }
+"\\\"o"               { myPrint("ö"); }
+"\\\"u"               { myPrint("ü"); }
+"\\\"A"               { myPrint("Ä"); }
+"\\\"O"               { myPrint("Ö"); }
+"\\\"U"               { myPrint("Ü"); }
+
 "$$"                  { myPrint("$"); }
 "\\noindent"          { /* skip */    }
 "\\centering"         { /* skip */    }
 "\\quad"              { /* skip */    }
+"\\qquad"             { /* skip */    }
 "\\limits"            { /* skip */    }
 "\\href"              { /* skip */    }
 "\\;"                 { /* skip */    }
@@ -71,6 +87,9 @@ SIZE = [0-9\-\.]+(cm|in|mm|pt)
 "\\pageref"           { /* skip */    }
 
 "\\begin{figure}"(\[[ht!]+\])?     { /* skip */    }
+"\\colorbox{"[^}]+"}"              { /* skip */    }
+"\\color{"[^}]+"}"                 { /* skip */    }
+
 "\\stackrel{\\mathrm{def}}{\\Longleftrightarrow}" { myPrint(":<==>"); }
 "\\stackrel{de\\!f}{\\Longleftrightarrow}"        { myPrint(":<==>"); }
 
