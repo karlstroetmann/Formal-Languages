@@ -1,9 +1,9 @@
 \chapter{Die Werkzeuge \textsl{Flex}\/ und \textsl{JFlex}}
 Ein \emph{Scanner} ist ein Werkzeug, das einen gegebenen Text in Gruppen einzelner
-\emph{Token} aufspaltet.  Beispielsweise spaltet der Scanner, der für einen
+\emph{Token} aufspaltet.  Beispielsweise spaltet der Scanner, der f\"ur einen
 \texttt{C}-Compiler eingesetzt wird, den Programmtext in die folgenden Token auf:
 \begin{enumerate}
-\item Schlüsselwörter wie ``\texttt{if}'', ``\texttt{while}'', etc.
+\item Schl\"usselw\"orter wie ``\texttt{if}'', ``\texttt{while}'', etc.
 \item Operator-Symbole wie ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'',
       ``\texttt{<=}'', etc.
 \item Konstanten, wobei es in der Sprache \texttt{C} drei Arten von Konstanten gibt:
@@ -12,33 +12,33 @@ Ein \emph{Scanner} ist ein Werkzeug, das einen gegebenen Text in Gruppen einzeln
       \item Strings, beispielsweise \texttt{\symbol{34}hallo\symbol{34}},
       \item einzelne Buchstaben, beispielsweise \texttt{\symbol{39}a\symbol{39}}.
       \end{enumerate}
-\item Namen, die als Bezeichner für Variablen, Funktionen, oder Typ-Definitionen
+\item Namen, die als Bezeichner f\"ur Variablen, Funktionen, oder Typ-Definitionen
       fungieren.
 \item Kommentare
-\item Sogenannte \emph{White-Space-Zeichen}.  Hierzu gehören Leerzeichen, horizontale und
-      vertikale Tabulatoren, Zeilenumbrüche und Seitenvorschübe.
+\item Sogenannte \emph{White-Space-Zeichen}.  Hierzu geh\"oren Leerzeichen, horizontale und
+      vertikale Tabulatoren, Zeilenumbr\"uche und Seitenvorsch\"ube.
 \end{enumerate}
 \textsl{Flex}\/ ist ein sogenannter Scanner-Generator, also ein Werkzeug, das aus einer
 Spezifikation verschiedener Token automatisch einen Scanner generiert.  Die einzelnen
-Token werden dabei durch reguläre Ausdrücke definiert.  
+Token werden dabei durch regul\"are Ausdr\"ucke definiert.  
 
-In nächsten Abschnitt besprechen wir die Struktur einer \textsl{Flex}-Eingabe-Datei und
-zeigen wie \textsl{Flex}\/ aufgerufen wird.  Anschließend zeigen wir, wie reguläre Ausdrücke
-in der Eingabe-Sprache von \textsl{Flex}\/ spezifiziert werden können.  Das Kapitel wird
+In n\"achsten Abschnitt besprechen wir die Struktur einer \textsl{Flex}-Eingabe-Datei und
+zeigen wie \textsl{Flex}\/ aufgerufen wird.  Anschlie{\ss}end zeigen wir, wie regul\"are Ausdr\"ucke
+in der Eingabe-Sprache von \textsl{Flex}\/ spezifiziert werden k\"onnen.  Das Kapitel wird
 durch ein Beispiel abgerundet, bei dem wir mit Hilfe von \textsl{Flex}\/ ein Programm
-erzeugen, mit dessen Hilfe die Ergebnisse einer Klausur ausgewertet werden können.
+erzeugen, mit dessen Hilfe die Ergebnisse einer Klausur ausgewertet werden k\"onnen.
 
-Die von \textsl{Flex}\/ erzeugten Scanner sind \texttt{C}-Programme.  Für das
-\textsl{Java}-Umfeld gibt es ein Äquivalent unter dem Namen \textsl{JFlex}.
+Die von \textsl{Flex}\/ erzeugten Scanner sind \texttt{C}-Programme.  F\"ur das
+\textsl{Java}-Umfeld gibt es ein \"Aquivalent unter dem Namen \textsl{JFlex}.
 
 \section{Das Werkzeug \textsl{Flex}}
-Wir beginnen mit einem einfachen Beispiel und diskutieren anschließend einige Fallstricke
-von \textsl{Flex}, über die Anfänger häufig stolpern.
+Wir beginnen mit einem einfachen Beispiel und diskutieren anschlie{\ss}end einige Fallstricke
+von \textsl{Flex}, \"uber die Anf\"anger h\"aufig stolpern.
 \subsection{Ein einfaches Beispiel}
-Eine Eingabe-Datei für \textsl{Flex}\/ besteht aus vier Abschnitten, die aufeinander folgen.
+Eine Eingabe-Datei f\"ur \textsl{Flex}\/ besteht aus vier Abschnitten, die aufeinander folgen.
 \begin{enumerate}
-\item Der \emph{Deklarations-Abschnitt} enthält die Deklarationen von Variablen und Hilfsfunktionen.
-      Zusätzlich kann dieser Teil auch Kommentare und \texttt{include}-Anweisungen
+\item Der \emph{Deklarations-Abschnitt} enth\"alt die Deklarationen von Variablen und Hilfsfunktionen.
+      Zus\"atzlich kann dieser Teil auch Kommentare und \texttt{include}-Anweisungen
       enthalten.  Der Deklarations-Abschnitt wird durch den String ``\texttt{\symbol{37}\{}''
       eingeleitet und durch den String ``\texttt{\symbol{37}\}}'' ausgeleitet.
       In dem in Abbildung \ref{fig:change.l} gezeigten Beispiel erstreckt sich der
@@ -46,13 +46,13 @@ Eine Eingabe-Datei für \textsl{Flex}\/ besteht aus vier Abschnitten, die aufeina
 
       Die von \textsl{Flex}\/ erzeugten Scanner sind \texttt{C}-Programme.  Bei der Sprache
       \texttt{C} ist es erforderlich, dass Funktionen und Variablen vor ihrer Benutzung
-      deklariert werden.  Daher werden Variablen, die später im Regel-Abschnitt benutzt
+      deklariert werden.  Daher werden Variablen, die sp\"ater im Regel-Abschnitt benutzt
       werden sollen, im Deklarations-Abschnitt deklariert.
 
       Der Deklarations-Abschnitt ist optional: Falls im Regel-Abschnitt keine Variablen
       verwendet werden, dann kann der Deklarations-Abschnitt auch entfallen.
-\item Der \emph{Definitions-Abschnitt} enthält die Definitionen von sogenannten \emph{regulären Definitionen}.
-      Hierbei handelt es sich um Abkürzungen für komplexere reguläre Ausdrücke.
+\item Der \emph{Definitions-Abschnitt} enth\"alt die Definitionen von sogenannten \emph{regul\"aren Definitionen}.
+      Hierbei handelt es sich um Abk\"urzungen f\"ur komplexere regul\"are Ausdr\"ucke.
       Der Definitions-Abschnitt beginnt hinter dem Deklarationsteil und erstreckt sich bis zum
       ersten Auftreten des Strings ``\texttt{\symbol{37}\symbol{37}}''.
       Der Definitions-Abschnitt kann leer sein.  In dem in Abbildung \ref{fig:change.l}
@@ -63,17 +63,17 @@ Eine Eingabe-Datei für \textsl{Flex}\/ besteht aus vier Abschnitten, die aufeina
       \\[0.2cm]
       \hspace*{1.3cm} \textsl{regexp} \texttt{\{}\textsl{cmds}\texttt{\}}
       \\[0.2cm]
-      Hier steht \textsl{regexp}\/ für einen regulären Ausdruck. Dieser muss am Zeilenanfang
+      Hier steht \textsl{regexp}\/ f\"ur einen regul\"aren Ausdruck. Dieser muss am Zeilenanfang
       stehen.  Jedesmal, wenn der generierte Scanner in seiner Eingabe einen String
-      erkennt, der diesem regulären Ausdruck entspricht, werden die in \textsl{cmds}\/
-      angegebenen \emph{Aktionen} ausgeführt.  Genauer handelt es sich bei \texttt{cmds} um eine
+      erkennt, der diesem regul\"aren Ausdruck entspricht, werden die in \textsl{cmds}\/
+      angegebenen \emph{Aktionen} ausgef\"uhrt.  Genauer handelt es sich bei \texttt{cmds} um eine
       oder mehrere Anweisungen der Sprache \texttt{C}.
 
       Der Regel-Abschnitt wird durch ein Auftreten des Strings
       ``\texttt{\symbol{37}\symbol{37}}''
       beendet.  In dem in Abbildung \ref{fig:change.l}
       gezeigten Beispiel erstreckt sich der Regel-Abschnitt von Zeile 9 bis Zeile 11.
-\item Der \emph{Programm-Abschnitt} enthält die Definition der Funktion $\texttt{main}()$,
+\item Der \emph{Programm-Abschnitt} enth\"alt die Definition der Funktion $\texttt{main}()$,
       sowie eventuell die Definition weiterer Hilfsfunktionen.
       In Abbildung \ref{fig:change.l} erstreckt sich der Programm-Abschnitt von Zeile 13
       bis Zeile 18.
@@ -115,31 +115,31 @@ Eine Eingabe-Datei für \textsl{Flex}\/ besteht aus vier Abschnitten, die aufeina
 
 Wir diskutieren jetzt das in Abbildung \ref{fig:change.l} gezeigte Beispiel im Detail.
 In diesem Beispiel wird ein Scanner spezifiziert, dessen Aufgabe es ist, alle Auftreten des
-Strings ``\texttt{Stephan}'' durch ``\texttt{Stefan}'' zu ersetzen.  Zusätzlich
-gibt der Scanner am Ende aus, wieviele Ersetzungen tatsächlich durchgeführt worden sind.
+Strings ``\texttt{Stephan}'' durch ``\texttt{Stefan}'' zu ersetzen.  Zus\"atzlich
+gibt der Scanner am Ende aus, wieviele Ersetzungen tats\"achlich durchgef\"uhrt worden sind.
 \begin{enumerate}
-\item Im Deklarations-Abschnitt binden wir die Datei ``\texttt{stdio.h}'' ein, damit wir später
-      die Funktion $\texttt{printf}()$ benutzen können.
-      Zusätzlich deklarieren wir die Variable \texttt{numberChanges} und initialisieren
-      sie mit dem Wert 0.  In dieser Variable zählen wir die Anzahl der durchgeführten
+\item Im Deklarations-Abschnitt binden wir die Datei ``\texttt{stdio.h}'' ein, damit wir sp\"ater
+      die Funktion $\texttt{printf}()$ benutzen k\"onnen.
+      Zus\"atzlich deklarieren wir die Variable \texttt{numberChanges} und initialisieren
+      sie mit dem Wert 0.  In dieser Variable z\"ahlen wir die Anzahl der durchgef\"uhrten
       Ersetzungen.  
-\item Da die in diesem Beispiel verwendeten regulären Ausdrücke trivial sind,
-      enthält das Beispiel keinen Definitions-Abschnitt.
-\item Das Beispiel enthält in Zeile 10 und 11 jeweils eine Regel:
+\item Da die in diesem Beispiel verwendeten regul\"aren Ausdr\"ucke trivial sind,
+      enth\"alt das Beispiel keinen Definitions-Abschnitt.
+\item Das Beispiel enth\"alt in Zeile 10 und 11 jeweils eine Regel:
       \begin{enumerate}
-      \item In Zeile 10 ist der reguläre Ausdruck durch den String ``\texttt{Stephan}''
-            gegeben.  Da dieser Ausdruck keinerlei Operatoren enthält, besteht die dadurch
+      \item In Zeile 10 ist der regul\"are Ausdruck durch den String ``\texttt{Stephan}''
+            gegeben.  Da dieser Ausdruck keinerlei Operatoren enth\"alt, besteht die dadurch
             spezifizierte Sprache genau aus dem String ``\texttt{Stephan}''.  Die
-            ausgeführte Aktion besteht aus zwei Kommandos:
+            ausgef\"uhrte Aktion besteht aus zwei Kommandos:
             \begin{enumerate}
-            \item Zunächst geben wir den String ``\texttt{Stefan}'' aus, denn wir wollen
+            \item Zun\"achst geben wir den String ``\texttt{Stefan}'' aus, denn wir wollen
                   den String ``\texttt{Stephan}'' durch den String ``\texttt{Stefan}'' 
                   ersetzen.
-            \item Anschließend wird der Zähler \texttt{numberChanges} inkrementiert,
-                  denn wir haben ja nun eine Ersetzung durchgeführt.
+            \item Anschlie{\ss}end wird der Z\"ahler \texttt{numberChanges} inkrementiert,
+                  denn wir haben ja nun eine Ersetzung durchgef\"uhrt.
             \end{enumerate}
-      \item In Zeile 11 besteht der reguläre Ausdruck nur aus dem Punkt ``\texttt{.}''.
-            Dieser reguläre Ausdruck spezifiziert ein beliebiges Zeichen, das von dem
+      \item In Zeile 11 besteht der regul\"are Ausdruck nur aus dem Punkt ``\texttt{.}''.
+            Dieser regul\"are Ausdruck spezifiziert ein beliebiges Zeichen, das von dem
             Zeilenumbruch ``\texttt{\symbol{92}n}'' verschieden ist.  Dieses Zeichen
             geben wir mit dem Befehl 
             \\[0.2cm]
@@ -147,60 +147,60 @@ gibt der Scanner am Ende aus, wieviele Ersetzungen tatsächlich durchgeführt word
             \texttt{printf(\symbol{34}\symbol{37}s\symbol{34}, yytext);}
             \\[0.2cm]
             aus.  Hier benutzen wir die in \textsl{Flex}\/ vordefinierte Variable
-            ``\texttt{yytext}'', die genau den Text enthält, der mit dem regulären Ausdruck
+            ``\texttt{yytext}'', die genau den Text enth\"alt, der mit dem regul\"aren Ausdruck
             erkannt worden ist.  In diesem Fall besteht dieser Text immer aus genau einem
             Zeichen.
 
             An dieser Stelle fragen Sie sich vielleicht, was passiert, wenn der Scanner
-            auf einen Zeilenumbruch stößt.  Ein Zeilenumbruch würde weder von der ersten
+            auf einen Zeilenumbruch st\"o{\ss}t.  Ein Zeilenumbruch w\"urde weder von der ersten
             noch von der zweiten Regel erfasst.  Die Konvention bei \textsl{Flex}\/ ist,
-            das alle Zeichen, die von keiner Regel erfasst werden, unverändert ausgegeben
-            werden.   Aus diesem Grunde hätten wir die zweite Regel ebenfalls weglassen können.
+            das alle Zeichen, die von keiner Regel erfasst werden, unver\"andert ausgegeben
+            werden.   Aus diesem Grunde h\"atten wir die zweite Regel ebenfalls weglassen k\"onnen.
       \end{enumerate}
-      Die regulären Ausdrücke der beiden Regeln überlappen sich, denn beispielsweise kann
-      der erste Buchstaben von ``\texttt{Stephan}'' auch durch den regulären Ausdruck
-      ``\texttt{.}'' erkannt werden.  Damit könnten im Prinzip die Aktionen
-      beider Regeln ausgeführt werden.  Falls zwei verschiedene Regeln angewendet werden können,
+      Die regul\"aren Ausdr\"ucke der beiden Regeln \"uberlappen sich, denn beispielsweise kann
+      der erste Buchstaben von ``\texttt{Stephan}'' auch durch den regul\"aren Ausdruck
+      ``\texttt{.}'' erkannt werden.  Damit k\"onnten im Prinzip die Aktionen
+      beider Regeln ausgef\"uhrt werden.  Falls zwei verschiedene Regeln angewendet werden k\"onnen,
       geht \textsl{Flex}\/ nach folgender  Konvention vor:
       \begin{enumerate}
-      \item Zunächst gewinnt die Regel, die auf den längeren Text passt.
+      \item Zun\"achst gewinnt die Regel, die auf den l\"angeren Text passt.
             In dem Beispiel wird also bei jedem Auftreten von ``\texttt{Stephan}''
-            die erste Regel angewendet, denn diese passt auf den gesamten Text, während
+            die erste Regel angewendet, denn diese passt auf den gesamten Text, w\"ahrend
             die zweite Regel nur auf einen einzigen Buchstaben passt.
-      \item Ist der Text für zwei Regeln gleich lang, so entscheidet die Reihenfolge,
-            in der die Regeln in der \textsl{Flex}-Spezifikation auftreten: Die Regel, die früher
+      \item Ist der Text f\"ur zwei Regeln gleich lang, so entscheidet die Reihenfolge,
+            in der die Regeln in der \textsl{Flex}-Spezifikation auftreten: Die Regel, die fr\"uher
             auftritt, gewinnt.
       \end{enumerate}
 \item Im Programm-Abschnitt definieren wir die Funktion $\texttt{main}()$.  Diese besteht
       im wesentlichen aus dem Aufruf der Funktion $\texttt{yylex}()$, die von
       \textsl{Flex}\/ automatisch erzeugt wird.  Diese Funktion startet den erzeugten Lexer.
-      Dieser Lexer liest seine Eingabe Zeichen für Zeichen ein und überprüft nach jedem
+      Dieser Lexer liest seine Eingabe Zeichen f\"ur Zeichen ein und \"uberpr\"uft nach jedem
       gelesenen Zeichen, ob eine der im Regel-Abschnitt angegebenen Regeln anwendbar ist
-      und führt gegebenenfalls die Aktionen dieser Regel aus.
+      und f\"uhrt gegebenenfalls die Aktionen dieser Regel aus.
       Nach dem Aufruf von $\texttt{yylex}()$  geben wir noch die 
-      Anzahl der durchgeführten Ersetzungen aus.
+      Anzahl der durchgef\"uhrten Ersetzungen aus.
 \end{enumerate}
 
 
-\subsection{Übersetzung des Beispiels}
+\subsection{\"Ubersetzung des Beispiels}
 Wir speichern die in Abbildung \ref{fig:change.l} gezeigte \textsl{Flex}-Spezifikation in einer
-Datei mit dem Namen ``\texttt{change.l}'' und rufen anschließend \textsl{Flex}\/ mit dem Befehl
+Datei mit dem Namen ``\texttt{change.l}'' und rufen anschlie{\ss}end \textsl{Flex}\/ mit dem Befehl
 \\[0.2cm]
 \hspace*{1.3cm} \texttt{flex change.l}
 \\[0.2cm]
 auf.  Dieser Aufruf erzeugt das \texttt{C}-Programm ``\texttt{lex.yy.c}'', das den generierten
-Scanner enthält.  Dieses Programm übersetzen wir mit dem Befehl
+Scanner enth\"alt.  Dieses Programm \"ubersetzen wir mit dem Befehl
 \\[0.2cm]
 \hspace*{1.3cm} \texttt{gcc -c lex.yy.c -o lex.yy.o}
 \\[0.2cm]
-in die Objekt-Datei ``\texttt{lex.yy.o}''.  Um daraus ein ausführbares Programm zu erzeugen, binden
+in die Objekt-Datei ``\texttt{lex.yy.o}''.  Um daraus ein ausf\"uhrbares Programm zu erzeugen, binden
 wir die \textsl{Flex}-Bibliothek ``\texttt{fl}'' (\underline{f}lex \underline{l}ibrary) mit dem
 Befehl
 \\[0.2cm]
 \hspace*{1.3cm} \texttt{gcc -o change lex.yy.o -lfl}
 \\[0.2cm]
-ein.  Dabei entsteht die ausführbare Datei ``\texttt{change}''.  Haben wir eine weitere Datei
-``\texttt{test.txt}'', so können wir den erzeugten Scanner durch den Aufruf
+ein.  Dabei entsteht die ausf\"uhrbare Datei ``\texttt{change}''.  Haben wir eine weitere Datei
+``\texttt{test.txt}'', so k\"onnen wir den erzeugten Scanner durch den Aufruf
 \\[0.2cm]
 \hspace*{1.3cm} \texttt{./change < test.txt}
 \\[0.2cm]
@@ -212,25 +212,25 @@ Bei der Erstellung von \textsl{Flex}-Spezifikationen ist auf die folgenden Punkt
 achten. 
 \begin{enumerate}
 \item Die Strings ``\texttt{\symbol{37}\symbol{37}}'', mit denen der Definitions-Abschnitt von dem 
-      Regel-Abschnitt und der Regel-Abschnitt von dem Programm-Abschnitt getrennt werden, müssen am
+      Regel-Abschnitt und der Regel-Abschnitt von dem Programm-Abschnitt getrennt werden, m\"ussen am
       Anfang einer ansonsten leeren Zeile stehen.
-\item Bei den Regeln muss der reguläre Ausdruck am Anfang der Zeile stehen.
-\item Die Kommandos, die auf eine Regel folgen, müssen in derselben Zeile beginnen wie der
-      zugehörige reguläre Ausdruck.  Es ist sinnvoll, diese Kommandos immer in
-      geschweifte Klammern einzuschließen.  Dann müssen wir lediglich darauf achten, dass
-      die öffnende Klammer ``\texttt{\{}'' in derselben Zeile steht wie der zugehörige 
-      reguläre Ausdruck.  
+\item Bei den Regeln muss der regul\"are Ausdruck am Anfang der Zeile stehen.
+\item Die Kommandos, die auf eine Regel folgen, m\"ussen in derselben Zeile beginnen wie der
+      zugeh\"orige regul\"are Ausdruck.  Es ist sinnvoll, diese Kommandos immer in
+      geschweifte Klammern einzuschlie{\ss}en.  Dann m\"ussen wir lediglich darauf achten, dass
+      die \"offnende Klammer ``\texttt{\{}'' in derselben Zeile steht wie der zugeh\"orige 
+      regul\"are Ausdruck.  
 \end{enumerate}
 
 
-\subsection{Reguläre Ausdrücke in \textsl{Flex}}
-Im letzten Kapitel haben wir reguläre Ausdrücke mit einer minimalen Syntax definiert.
-Dies ist nützlich, wenn wir später die Äquivalenz von den durch regulären Ausdrücken spezifizierten
-Sprachen mit den Sprachen, die von endlichen Automaten erkannt werden können,  beweisen wollen.
-Für die Praxis ist eine reichhaltigere Syntax wünschenswert.  Daher bietet die Eingabe-Sprache von
-\textsl{Flex}\/ eine Reihe von Abkürzungen an, mit der komplexe reguläre Ausdrücke kompakter
-beschrieben werden können.  Den regulären Ausdrücken von \texttt{Flex} liegt das
-\textsc{Ascii}-Alphabet zu Grunde, wobei zwischen den Zeichen, die als Operatoren dienen können,
+\subsection{Regul\"are Ausdr\"ucke in \textsl{Flex}}
+Im letzten Kapitel haben wir regul\"are Ausdr\"ucke mit einer minimalen Syntax definiert.
+Dies ist n\"utzlich, wenn wir sp\"ater die \"Aquivalenz von den durch regul\"aren Ausdr\"ucken spezifizierten
+Sprachen mit den Sprachen, die von endlichen Automaten erkannt werden k\"onnen,  beweisen wollen.
+F\"ur die Praxis ist eine reichhaltigere Syntax w\"unschenswert.  Daher bietet die Eingabe-Sprache von
+\textsl{Flex}\/ eine Reihe von Abk\"urzungen an, mit der komplexe regul\"are Ausdr\"ucke kompakter
+beschrieben werden k\"onnen.  Den regul\"aren Ausdr\"ucken von \texttt{Flex} liegt das
+\textsc{Ascii}-Alphabet zu Grunde, wobei zwischen den Zeichen, die als Operatoren dienen k\"onnen,
 und den restlichen Zeichen unterschieden wird.  Die Menge \textsl{OpSyms}\/ der Operator-Symbole 
 ist wie folgt definiert:
 \\[0.2cm]
@@ -256,18 +256,18 @@ $\{$ ``\texttt{.}'',
 ``\texttt{\symbol{36}}'', 
 ``\texttt{\symbol{34}}'' $\}$
 \\[0.2cm]
-Damit können wir nun die Menge $\textsl{Regexp}\/$ der von \textsl{Flex}\/ unterstützen regulären
-Ausdrücke induktiv definieren. 
+Damit k\"onnen wir nun die Menge $\textsl{Regexp}\/$ der von \textsl{Flex}\/ unterst\"utzen regul\"aren
+Ausdr\"ucke induktiv definieren. 
 \begin{enumerate}
 \item $c \in \textsl{Regexp}$ \quad falls $c \in \Sigma_{\textsc{\scriptsize Ascii}} \backslash \textsl{OpSyms}$
 
-      Alle Buchstaben $c$ aus dem \textsc{Ascii}-Alphabet, die keine Operator-Symbol sind, können
-      als reguläre Ausdrücke, verwendet werden.  Diese Ausdrücke spezifizieren genau diesen Buchstaben.
+      Alle Buchstaben $c$ aus dem \textsc{Ascii}-Alphabet, die keine Operator-Symbol sind, k\"onnen
+      als regul\"are Ausdr\"ucke, verwendet werden.  Diese Ausdr\"ucke spezifizieren genau diesen Buchstaben.
       
 \item $\texttt{\symbol{92}}x \in \textsl{Regexp}$ \quad 
       falls $x \in \{ \texttt{a}, \texttt{b}, \texttt{f}, \texttt{n}, \texttt{r}, \texttt{t}, \texttt{v} \}$ 
 
-      Die Syntax $\texttt{\symbol{92}}x$ ermöglicht es, Steuerzeichen 
+      Die Syntax $\texttt{\symbol{92}}x$ erm\"oglicht es, Steuerzeichen 
       zu spezifizieren.  Im Einzelnen gilt:
       \begin{enumerate}
       \item \texttt{\symbol{92}a} entspricht dem Steuerzeichen \texttt{Ctrl-G} (\emph{alert}).
@@ -287,14 +287,14 @@ Ausdrücke induktiv definieren.
       \textsc{Ascii}-Code an der durch die Oktalzahl $abc$ spezifizierten Stelle steht.
 \item $\texttt{\symbol{92}}o \in \textsl{Regexp}$ \quad falls $o \in \textsl{OpSyms}$ 
       
-      Die Operator-Symbole können durch Voranstellen eines Backslashs spezifiziert werden.
+      Die Operator-Symbole k\"onnen durch Voranstellen eines Backslashs spezifiziert werden.
 \item $r_1r_2 \in \textsl{Regexp}$ \quad falls $r_1,r_2 \in \textsl{Regexp}$
 
-      Die Konkatenation zweier regulärer Ausdrücke wird in \textsl{Flex}\/ ohne den Infix-Operator
+      Die Konkatenation zweier regul\"arer Ausdr\"ucke wird in \textsl{Flex}\/ ohne den Infix-Operator
       ``$\cdot$'' geschrieben.
 \item $r_1\texttt{|}r_2 \in \textsl{Regexp}$ \quad falls $r_1,r_2 \in \textsl{Regexp}$
 
-      Für die Addition zweier regulärer Ausdrücke wird in \textsl{Flex}\/ an Stelle des Infix-Operators
+      F\"ur die Addition zweier regul\"arer Ausdr\"ucke wird in \textsl{Flex}\/ an Stelle des Infix-Operators
       ``$+$'' der Operator ``\texttt{|}'' verwendet.
 \item $r\texttt{*} \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
 
@@ -302,65 +302,65 @@ Ausdrücke induktiv definieren.
 \item $r\texttt{+} \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
 
       Der Ausdruck ``$r\texttt{+}$'' ist eine Variante des Kleene-Abschlusses, bei der
-      gefordert wird, dass $r$ mindestens einmal auftritt.  Daher gilt die folgende Äquivalenz:
+      gefordert wird, dass $r$ mindestens einmal auftritt.  Daher gilt die folgende \"Aquivalenz:
       \\[0.2cm]
       \hspace*{1.3cm}
       $r\texttt{+} \doteq rr*$.
 \item $r\texttt{?} \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
 
       Der Ausdruck ``$r\texttt{?}$'' legt fest, dass $r$ einmal oder keinmal auftritt.
-      Es gilt die folgende Äquivalenz:
+      Es gilt die folgende \"Aquivalenz:
       \\[0.2cm]
       \hspace*{1.3cm}
       $r\texttt{?} \doteq r|\varepsilon$.
       \\[0.2cm]
       Hier ist allerdings zu beachten, dass der Ausdruck ``$\varepsilon$'' 
-      von \textsl{Flex} nicht unterstützt wird.
+      von \textsl{Flex} nicht unterst\"utzt wird.
 \item $r\texttt{\{}n\texttt{\}} \in \textsl{Regexp}$ \quad falls $n \in \mathbb{N}$
 
       Der Ausdruck ``$r\texttt{\{}n\texttt{\}}$'' legt fest, dass $r$ genau $n$ mal auftritt.
-      Der reguläre Ausdruck ``\texttt{a\{4\}}'' beschreibt also den String ``\texttt{aaaa}''.
+      Der regul\"are Ausdruck ``\texttt{a\{4\}}'' beschreibt also den String ``\texttt{aaaa}''.
 \item $\texttt{\symbol{94}}r$ \quad falls $r \in \textsl{Regexp}$
 
-      Der Ausdruck $\texttt{\symbol{94}}r$ legt fest, dass der reguläre Ausdruck $r$
+      Der Ausdruck $\texttt{\symbol{94}}r$ legt fest, dass der regul\"are Ausdruck $r$
       am Anfang einer Zeile stehen muss.  
 \item $r\texttt{\symbol{36}}$ \quad falls $r \in \textsl{Regexp}$
 
-      Der Ausdruck $r\texttt{\symbol{36}}$ legt fest, dass der reguläre Ausdruck $r$
+      Der Ausdruck $r\texttt{\symbol{36}}$ legt fest, dass der regul\"are Ausdruck $r$
       am Ende einer Zeile stehen muss.  
 \item $r_1\texttt{/}r_2$ \quad falls $r_1, r_2 \in \textsl{Regexp}$
   
       Der Ausdruck $r_1\texttt{/}r_2$ legt fest, dass auf den durch $r_1$ spezifizierten Text
-      ein Text folgen muss, der der Spezifikation $r_2$ genügt.  Im Unterschied zur einfachen
+      ein Text folgen muss, der der Spezifikation $r_2$ gen\"ugt.  Im Unterschied zur einfachen
       Konkatenation von $r_1$ und $r_2$ wird durch den $r_1\texttt{/}r_2$ aber derselbe Text
       spezifiziert, der durch $r_1$ spezifiziert wird.  Der Operator ``\texttt{/}'' liefert
-      also nur eine zusätzliche Bedingung, die für eine erfolgreiche Erkennung des regulären
-      Ausdrucks erfüllt sein muss.  Die Variable ``\texttt{yytext}'', in der der erkannte Text
-      aufgesammelt wird, bekommt nur den Text zugewiesen, der dem regulären Ausdruck $r_1$
-      entspricht.  Der Text, der dem regulären Ausdruck $r_2$ entspricht, wird dann von der
-      nächsten Regel gematcht.  In der angelsächsischen Literatur wird $r_2$ als
+      also nur eine zus\"atzliche Bedingung, die f\"ur eine erfolgreiche Erkennung des regul\"aren
+      Ausdrucks erf\"ullt sein muss.  Die Variable ``\texttt{yytext}'', in der der erkannte Text
+      aufgesammelt wird, bekommt nur den Text zugewiesen, der dem regul\"aren Ausdruck $r_1$
+      entspricht.  Der Text, der dem regul\"aren Ausdruck $r_2$ entspricht, wird dann von der
+      n\"achsten Regel gematcht.  In der angels\"achsischen Literatur wird $r_2$ als
       \emph{trailing context} bezeichnet.
 \item $(r) \in \textsl{Regexp}$ \quad falls $r \in \textsl{Regexp}$
 
-      Genau wie im letzten Kapitel auch können reguläre Ausdrücke geklammert werden.
-      Für die Präzedenzen der Operatoren gilt:
+      Genau wie im letzten Kapitel auch k\"onnen regul\"are Ausdr\"ucke geklammert werden.
+      F\"ur die Pr\"azedenzen der Operatoren gilt:
       Die Postfix-Operatoren ``\texttt{*}'', ``\texttt{?}'', ``\texttt{+}'' und ``\texttt{\{}$n$\texttt{\}}''
-      binden am stärksten, der Operator ``\texttt{|}'' bindet am schwächsten.
+      binden am st\"arksten, der Operator ``\texttt{|}'' bindet am schw\"achsten.
 \end{enumerate}
-Die Spezifikation der regulären Ausdrücke ist noch nicht vollständig, denn es gibt in \textsl{Flex}
-noch die Möglichkeit, sogenannte \emph{Bereiche} zu spezifizieren.  Ein \emph{Bereich}
+Die Spezifikation der regul\"aren Ausdr\"ucke ist noch nicht vollst\"andig, denn es gibt in \textsl{Flex}
+noch die M\"oglichkeit, sogenannte \emph{Bereiche} zu spezifizieren.  Ein \emph{Bereich}
 spezifiziert eine Menge von Buchstaben in kompakter Weise.  Dazu werden die eckigen
-Klammern benutzt.  Beispielsweise lassen sich die Vokale durch den regulären Ausdruck
+Klammern benutzt.  Beispielsweise lassen sich die Vokale durch den regul\"aren Ausdruck
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{[aeiou]}
 \\[0.2cm]
-spezifizieren.  Dieser Ausdruck ist als Abkürzung zu verstehen, es gilt:
+spezifizieren.  Dieser Ausdruck ist als Abk\"urzung zu verstehen, es gilt:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\texttt{[aeiou]} \doteq \texttt{a|e|i|o|u}$
 \\[0.2cm]
-Die Menge aller kleinen lateinischen Buchstaben lässt sich durch
+Die Menge aller kleinen lateinischen Buchstaben l\"asst sich durch
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{[a-z]}
@@ -377,15 +377,15 @@ kann durch
 \texttt{[a-zA-Z\_]}
 \\[0.2cm]
 beschrieben werden.  \textsl{Flex} gestattet auch, das Komplement einer solchen Menge zu bilden.
-Dazu ist es lediglich erforderlich, nach der öffnenden eckigen Klammer das Zeichen
+Dazu ist es lediglich erforderlich, nach der \"offnenden eckigen Klammer das Zeichen
 ``\texttt{\symbol{94}}'' zu verwenden.  Beispielsweise beschreibt der Ausdruck
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{[\symbol{94}0-9]}
 \\[0.2cm]
 alle \textsc{Ascii}-Zeichen, die keine Ziffern sind.  Innerhalb von Bereichen verlieren 
-die meisten Operator-Symbole ihre Sonderbedeutung und können ohne Backslash geschrieben
-werden.  Innerhalb eines Bereiches zählen nur die Symbole
+die meisten Operator-Symbole ihre Sonderbedeutung und k\"onnen ohne Backslash geschrieben
+werden.  Innerhalb eines Bereiches z\"ahlen nur die Symbole
 \\[0.2cm]
 \hspace*{1.3cm}
 ``\texttt{-}'', ``\texttt{\symbol{94}}'', ``\texttt{]}'' und ``\texttt{\symbol{92}}''
@@ -398,20 +398,20 @@ als Operator-Symbole.  Damit erkennt der Bereich
 also genau die Postfix-Operatoren ``\texttt{+}'', ``\texttt{?}'' und ``\texttt{*}''.
 
 \examples
-Um die Diskussion anschaulicher zu machen, präsentieren wir einige Beispiele regulärer Ausdrücke.
+Um die Diskussion anschaulicher zu machen, pr\"asentieren wir einige Beispiele regul\"arer Ausdr\"ucke.
 \begin{enumerate}
 \item \texttt{[a-zA-Z][a-zA-Z0-9\_]*}
 
-      Dieser reguläre Ausdruck spezifiziert die Worte, die aus lateinischen Buchstaben, Ziffern und
-      dem Unterstrich ``\texttt{\_}'' bestehen und die außerdem mit einem lateinischen 
+      Dieser regul\"are Ausdruck spezifiziert die Worte, die aus lateinischen Buchstaben, Ziffern und
+      dem Unterstrich ``\texttt{\_}'' bestehen und die au{\ss}erdem mit einem lateinischen 
       Buchstaben beginnen.
 \item \texttt{\symbol{92}/\symbol{92}/.*}
 
       Hier wird ein \texttt{C}-Kommentar beschrieben, der sich bis zum Zeilenende erstreckt.
 \item \texttt{0|[1-9][0-9]*}
 
-      Dieser Ausdruck beschreibt natürliche Zahlen.  Hier ist es wichtig darauf zu achten,
-      dass eine natürliche Zahl nur dann mit der Ziffer \texttt{0} beginnt, wenn es sich um die
+      Dieser Ausdruck beschreibt nat\"urliche Zahlen.  Hier ist es wichtig darauf zu achten,
+      dass eine nat\"urliche Zahl nur dann mit der Ziffer \texttt{0} beginnt, wenn es sich um die
       Zahl \texttt{0} handelt.
 \end{enumerate}
 
@@ -434,7 +434,7 @@ in Abbildung \ref{fig:ergebnis} beispielhaft gezeigte Format besitzt.
     Kurs:    TIT07AIX
     
     Aufgaben:            1. 2. 3. 4. 5. 6.
-    Max Müller:          9 12 10  6  6  0
+    Max M\"uller:          9 12 10  6  6  0
     Dietmar Dumpfbacke:  4  4  2  0  -  -
     Susi Sorglos:        9 12 12  9  9  6
 \end{Verbatim}
@@ -444,17 +444,17 @@ in Abbildung \ref{fig:ergebnis} beispielhaft gezeigte Format besitzt.
 \end{figure}
 
 \begin{enumerate}
-\item Die erste Zeile enthält nach dem Schlüsselwort \texttt{Klausur} den Titel der Klausur.
+\item Die erste Zeile enth\"alt nach dem Schl\"usselwort \texttt{Klausur} den Titel der Klausur.
 \item Die zweite Zeile gibt den Kurs an.
 \item Die dritte Zeile ist leer.
 \item Die vierte Zeile gibt die Nummern der einzelnen Aufgaben an.
 \item Danach folgt eine Tabelle.  Jede Zeile dieser Tabelle listet die Punkte auf,
       die ein Student erzielt hat.  Der Name des Studenten wird dabei am Zeilenanfang angegeben.
-      Auf den Namen folgt ein Doppelpunkt und daran schließen sich dann Zahlen an, die angeben,
+      Auf den Namen folgt ein Doppelpunkt und daran schlie{\ss}en sich dann Zahlen an, die angeben,
       wieviele Punkte bei den einzelnen Aufgaben erzielt wurden.  Wurde eine Aufgabe nicht
       bearbeitet, so steht in der entsprechenden Spalte ein Bindestrich ``\texttt{-}''.
 \end{enumerate}
-Das \textsl{Flex}-Programm, das wir entwickeln werden, berechnet zunächst die Summe
+Das \textsl{Flex}-Programm, das wir entwickeln werden, berechnet zun\"achst die Summe
 \texttt{sumPoints} aller Punkte, die ein Student erzielt hat.  Aus dieser Summe wird dann nach der
 Formel 
 \\[0.2cm]
@@ -462,8 +462,8 @@ Formel
 $\texttt{note} = 7 - 6 \cdot \bruch{\;\texttt{sumPoints}\;}{\texttt{maxPoints}}$
 \\[0.2cm]
 die Note errechnet, wobei die Variable \texttt{maxPoints} die  Punktzahl
-angibt, die für die Note 1,0 benötigt wird.  Diese Zahl ist ein Argument, das dem Programm
-beim Start übergeben wird. 
+angibt, die f\"ur die Note 1,0 ben\"otigt wird.  Diese Zahl ist ein Argument, das dem Programm
+beim Start \"ubergeben wird. 
 
 \begin{figure}[!h]
 \centering
@@ -485,7 +485,7 @@ beim Start übergeben wird.
     float note();
     %}    
     ZAHL   0|[1-9][0-9]*
-    NAME   [A-Za-zöäüÖÄÜß]+[ ][A-Za-zöäüÖÄÜß]+
+    NAME   [A-Za-z\"o\"a\"u\"O\"A\"U{\ss}]+[ ][A-Za-z\"o\"a\"u\"O\"A\"U{\ss}]+
     %% 
     [A-Za-z]+:.*\n { ++lineNumber;               }
     {NAME}/:       { printf("%s", yytext); 
@@ -518,40 +518,40 @@ beim Start übergeben wird.
 \end{figure}
 
 Abbildung \ref{fig:noten.l} zeigt ein \textsl{Flex}-Programm, das die Aufgabe der Notenberechnung
-löst.  Wir diskutieren dieses Programm jetzt Zeile für Zeile.
+l\"ost.  Wir diskutieren dieses Programm jetzt Zeile f\"ur Zeile.
 \begin{enumerate}
 \item In dem Deklarations-Abschnitt, der sich von Zeile 1 bis Zeile 9 erstreckt, binden wir
-      zunächst die Header-Dateien ``\texttt{stdlib.h}'' und ``\texttt{stdio.h}'' ein.  
-      Anschließend deklarieren wir Variablen und Funktionen:
+      zun\"achst die Header-Dateien ``\texttt{stdlib.h}'' und ``\texttt{stdio.h}'' ein.  
+      Anschlie{\ss}end deklarieren wir Variablen und Funktionen:
       \begin{enumerate}
       \item Die Variable \texttt{sumPoints} speichert die Summe aller Punkte, die ein Student 
             in der Klausur erreicht hat und \texttt{maxPoints} speichert die Anzahl der 
             Punkte, bei der die Note 1,0 erreicht wird.
       \item In der Variablen \texttt{lineNumber} speichern wir die Zeilennummer.
-            Dies ist nützlich um später aussagekräftige Fehlermeldungen für den Fall geben
-            zu können, wenn in der Eingabedatei etwas unerwartetes gefunden wird.
+            Dies ist n\"utzlich um sp\"ater aussagekr\"aftige Fehlermeldungen f\"ur den Fall geben
+            zu k\"onnen, wenn in der Eingabedatei etwas unerwartetes gefunden wird.
       \item Die in Zeile 7 deklarierte Funktion $\texttt{errorMsg}()$ kann verwendet werden
             um Fehlermeldungen auszugeben.
             Diese Funktion wird im Programm-Abschnitt in den Zeilen 29 -- 31 definiert.  
       \item Die in Zeile 8 deklarierte Funktion $\texttt{note}()$ dient der Berechnung von Noten.
             Diese Funktion wird in den Zeilen 26 -- 28 definiert.
       \end{enumerate}
-\item In dem Definitions-Abschnitt werden zwei Abkürzungen definiert:
+\item In dem Definitions-Abschnitt werden zwei Abk\"urzungen definiert:
       \begin{enumerate}
-      \item Zeile 10 enthält die Definition von \texttt{ZAHL}.  Mit dieser Definition können
-            wir später anstelle des regulären Ausdrucks
+      \item Zeile 10 enth\"alt die Definition von \texttt{ZAHL}.  Mit dieser Definition k\"onnen
+            wir sp\"ater anstelle des regul\"aren Ausdrucks
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{0|[1-9][0-9]*}
             \\[0.2cm]
-            kürzer ``\texttt{\{ZAHL\}}'' schreiben.  Beachten Sie, dass der Name einer Abkürzung
-            bei der Verwendung der Abkürzung in geschweiften Klammern eingefasst werden muss.
-      \item Zeile 11 enthält die Definition von \texttt{NAME}.  In dem regulären Ausdruck
+            k\"urzer ``\texttt{\{ZAHL\}}'' schreiben.  Beachten Sie, dass der Name einer Abk\"urzung
+            bei der Verwendung der Abk\"urzung in geschweiften Klammern eingefasst werden muss.
+      \item Zeile 11 enth\"alt die Definition von \texttt{NAME}.  In dem regul\"aren Ausdruck
             \\[0.2cm]
             \hspace*{1.3cm}
-            \texttt{[A-Za-zöäüÖÄÜß]+[ ][A-Za-zöäüÖÄÜß]+}
+            \texttt{[A-Za-z\"o\"a\"u\"O\"A\"U{\ss}]+[ ][A-Za-z\"o\"a\"u\"O\"A\"U{\ss}]+}
             \\[0.2cm]
-            wird festgelegt, dass ein Name großen und kleinen lateinischen
+            wird festgelegt, dass ein Name gro{\ss}en und kleinen lateinischen
             Buchstaben sowie Umlauten besteht und das Vor- und Nachname durch ein
             Leerzeichen getrennt werden.
       \end{enumerate}
@@ -561,83 +561,83 @@ löst.  Wir diskutieren dieses Programm jetzt Zeile für Zeile.
             der zu verarbeitenden Datei zu lesen.  Diese Zeilen bestehen jeweils aus einem Wort,
             auf das ein Dopplepunkt folgt.  Dahinter steht beliebiger Text, der mit einem
             Zeilenumbruch endet.  Da wir die Kopfzeilen nicht weiter verarbeiten wollen,
-            inkrementieren wir lediglich den Zähler \texttt{lineNumber}, denn wir haben ja gerade
+            inkrementieren wir lediglich den Z\"ahler \texttt{lineNumber}, denn wir haben ja gerade
             einen Zeilenumbruch gelesen.
       \item Die Regel in Zeile 14 liest den Namen eines Studenten, dem ein Doppelpunkt
             folgen muss.  Da wir den Doppelpunkt mit dem Operator ``\texttt{/}''von dem Namen
             abtrennen, ist der Doppelpunkt nicht Bestandteil des von dieser Regel gelesenen Textes.
-            Dadurch können wir den Doppelpunkt in der nächsten Regel noch benutzen.
+            Dadurch k\"onnen wir den Doppelpunkt in der n\"achsten Regel noch benutzen.
 
             Wenn wir einen Namen gelesen haben, geben wir diesen mit Hilfe eines
-            \texttt{printf}-Befehls aus und setzen anschließend die Variable \texttt{sumPoints}
+            \texttt{printf}-Befehls aus und setzen anschlie{\ss}end die Variable \texttt{sumPoints}
             auf 0.  Dies ist erforderlich, weil diese Variable ja vorher noch die Punkte eines
-            anderen Studenten enthalten könnte.
-      \item Die nächste Regel in Zeile 16 liest die Leerzeichen und Tabulatoren ein, die auf 
+            anderen Studenten enthalten k\"onnte.
+      \item Die n\"achste Regel in Zeile 16 liest die Leerzeichen und Tabulatoren ein, die auf 
             den Doppelpunkt folgen und gibt diese aus.  Dadurch erreichen wir, dass die Ausgabe
             der Noten genauso formatiert wird wie die Eingabe-Datei.
       \item Die Regel in Zeile 17 dient dazu, die Punkte, die der Student bei einer Aufgabe 
-            erreicht hat, einzulesen.  Da die Zahl zunächst nur als String zur Verfügung steht,
-            müssen wir diesen String mit Hilfe der Bibliotheks-Funktion $\texttt{atoi()}$ in eine Zahl
-            umwandeln.  Anschließend wird diese Zahl dann zu der Summe der Punkte hinzuaddiert.
+            erreicht hat, einzulesen.  Da die Zahl zun\"achst nur als String zur Verf\"ugung steht,
+            m\"ussen wir diesen String mit Hilfe der Bibliotheks-Funktion $\texttt{atoi()}$ in eine Zahl
+            umwandeln.  Anschlie{\ss}end wird diese Zahl dann zu der Summe der Punkte hinzuaddiert.
 
-            Die Verwendung der Funktion $\texttt{atoi}()$ ist übrigens der Grund, weshalb wir
-            die Header-Datei ``\texttt{stdlib.h}'' einbinden müssen.
-      \item Für nicht bearbeitete Aufgaben enthält die Eingabe-Datei einen Bindestrich
+            Die Verwendung der Funktion $\texttt{atoi}()$ ist \"ubrigens der Grund, weshalb wir
+            die Header-Datei ``\texttt{stdlib.h}'' einbinden m\"ussen.
+      \item F\"ur nicht bearbeitete Aufgaben enth\"alt die Eingabe-Datei einen Bindestrich
             ``\texttt{-}''.  Diese Bindestriche werden durch die Regel in Zeile 18
             eingelesen und ignoriert.  Daher ist das Kommando dieser Regel (bis auf den Kommentar)
             leer.
-      \item In der gleichen Weise überlesen wir mit der Regel in Zeile 19
+      \item In der gleichen Weise \"uberlesen wir mit der Regel in Zeile 19
             Leerzeichen und Tabulatoren, die nicht auf einen Doppelpunkt folgen.
       \item Die Regel in Zeile 20 dient dazu Zeilen einzulesen, die nur aus Leerzeichen
-            und Tabulatoren bestehen.  Hier muss lediglich der Zähler ``\texttt{lineNumber}''
+            und Tabulatoren bestehen.  Hier muss lediglich der Z\"ahler ``\texttt{lineNumber}''
             inkrementiert werden.
       \item Wenn wir einen einzelnen Zeilenumbruch lesen, dann muss dieser von einer Zeile
             stammen, die die Punkte eines Studenten auflistet.  In diesem Fall berechnen wir mit
             der Regel in Zeile 21 die erzielte Note und geben sie mit einer Stelle hinter
-            dem Komma aus.  Zusätzlich wird wieder der Zähler ``\texttt{lineNumber}''
+            dem Komma aus.  Zus\"atzlich wird wieder der Z\"ahler ``\texttt{lineNumber}''
             inkrementiert. 
-      \item Die bis hierhin vorgestellten Regeln ermöglichen es, eine syntaktisch korrekte 
-            Eingabe-Datei zu verarbeiten.  Für den Fall, dass die Eingabe-Datei Syntaxfehler
-            enthält, ist es sinnvoll, eine Fehlermeldung auszugeben, denn sonst könnte es passieren,
+      \item Die bis hierhin vorgestellten Regeln erm\"oglichen es, eine syntaktisch korrekte 
+            Eingabe-Datei zu verarbeiten.  F\"ur den Fall, dass die Eingabe-Datei Syntaxfehler
+            enth\"alt, ist es sinnvoll, eine Fehlermeldung auszugeben, denn sonst k\"onnte es passieren,
             dass auf Grund eines einfachen Tippfehlers eine falsche Note berechnet wird.
-            Daher enthält Zeile 24 eine Default-Regel, die immer dann greift, wenn keine der
+            Daher enth\"alt Zeile 24 eine Default-Regel, die immer dann greift, wenn keine der
             anderen Regeln zum Zuge gekommen ist.  Diese Regel liest ein einzelnes Zeichen und
-            gibt eine Fehlermeldung aus.  Diese Fehlermeldung enthält das gelesene Zeichen sowie
+            gibt eine Fehlermeldung aus.  Diese Fehlermeldung enth\"alt das gelesene Zeichen sowie
             die Zeilennummer, in der dieses Zeichen gefunden wurde. 
       \end{enumerate}
 \item Der Programm-Abschnitt erstreckt sich von Zeile 26 bis zum Ende der Datei.
       Bemerkenswert ist hier lediglich die Implementierung der Funktion $\texttt{main}()$.
-      Um die Notenberechnung durchführen zu können ist es erforderlich, dass wir dem Programm
+      Um die Notenberechnung durchf\"uhren zu k\"onnen ist es erforderlich, dass wir dem Programm
       die maximale erreichbare Punktzahl mitteilen, denn diese Punktzahl geht nicht aus der
-      Tabelle hervor.  Wir übergeben diese Zahl der Funktion $\texttt{main}()$ als erstes Argument.
-      Dieses Argument liegt in \texttt{argv[1]} zunächst als String vor.  Wir konvertieren
+      Tabelle hervor.  Wir \"ubergeben diese Zahl der Funktion $\texttt{main}()$ als erstes Argument.
+      Dieses Argument liegt in \texttt{argv[1]} zun\"achst als String vor.  Wir konvertieren
       es mit Hilfe der Funktion $\texttt{atoi}()$ in eine Zahl, die wir in der globalen
       Variablen \texttt{maxPoints} abspeichern.
 \end{enumerate}
-Das obige Beispiel löst eine vergleichsweise einfache Aufgabe.  Natürlich könnte diese Aufgabe
-auch durch ein ganz normales \texttt{C}-Programm gelöst werden.  Dieses
-\texttt{C}-Programm wäre allerdings länger als das oben gezeigte \textsl{Flex}-Programm
-und es wäre in jedem Fall deutlich schwieriger zu verstehen, denn reguläre Ausdrücke sind eine
-sehr prägnante Möglichkeit um die Syntax einzelner Token zu beschreiben.
+Das obige Beispiel l\"ost eine vergleichsweise einfache Aufgabe.  Nat\"urlich k\"onnte diese Aufgabe
+auch durch ein ganz normales \texttt{C}-Programm gel\"ost werden.  Dieses
+\texttt{C}-Programm w\"are allerdings l\"anger als das oben gezeigte \textsl{Flex}-Programm
+und es w\"are in jedem Fall deutlich schwieriger zu verstehen, denn regul\"are Ausdr\"ucke sind eine
+sehr pr\"agnante M\"oglichkeit um die Syntax einzelner Token zu beschreiben.
 
-\subsection{Start-Zustände}
-Viele syntaktische Konstrukte lassen sich zwar im Prinzip mit regulären Ausdrücken beschreiben,
-aber die Ausdrücke, die benötigt werden, sind sehr unübersichtlich.  Ein gutes Beispiel
-hierfür ist der reguläre Ausdruck zur Spezifikation von mehrzeilige
+\subsection{Start-Zust\"ande}
+Viele syntaktische Konstrukte lassen sich zwar im Prinzip mit regul\"aren Ausdr\"ucken beschreiben,
+aber die Ausdr\"ucke, die ben\"otigt werden, sind sehr un\"ubersichtlich.  Ein gutes Beispiel
+hierf\"ur ist der regul\"are Ausdruck zur Spezifikation von mehrzeilige
 \texttt{C}-Kommentaren, also Kommentaren der Form
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{/*} $\cdots$ \texttt{*/}
 \\[0.2cm]
-Der reguläre Ausdruck, der diese Art von Kommentaren spezifiziert, ist wie folgt:
+Der regul\"are Ausdruck, der diese Art von Kommentaren spezifiziert, ist wie folgt:
 %\/\*([^*]|(\*+[^*/]))*\*+\/ 
 \begin{equation}
   \label{eq:multiline-comment}
 \texttt{\symbol{92}/\symbol{92}*([\symbol{94}*]|\symbol{92}*+[\symbol{94}*/])*\symbol{92}*+\symbol{92}/}  
 \end{equation}
-Zunächst ist dieser Ausdruck schwer zu lesen.  Das liegt vor allem daran,
+Zun\"achst ist dieser Ausdruck schwer zu lesen.  Das liegt vor allem daran,
 dass die Operator-Sysmbole ``\texttt{/}'' und ``\texttt{*}'' durch einen Backslash
-geschützt werden müssen.  Aber auch die Logik, die hinter diesem Ausdruck steht, ist nicht
+gesch\"utzt werden m\"ussen.  Aber auch die Logik, die hinter diesem Ausdruck steht, ist nicht
 ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
 \begin{enumerate}
 \item \texttt{\symbol{92}/\symbol{92}*} 
@@ -645,15 +645,15 @@ ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
       Hierdurch wird der String ``\texttt{/*}'', der den Kommentar einleitet,  spezifiziert.
 \item \texttt{([\symbol{94}*]|\symbol{92}*+[\symbol{94}*/])*}
   
-      Dieser Teil spezifiziert alle Zeichen, die zwischen dem öffnenden String ``\texttt{/*}''
-      und einem schließenden String der Form \texttt{*$\cdots$*/} liegen.  Wie müssen
-      sicherstellen, dass dieser Teil die Zeichenreihe ``\texttt{*/}'' nicht enthält, denn
-      sonst würden wir in einer Zeile der Form
+      Dieser Teil spezifiziert alle Zeichen, die zwischen dem \"offnenden String ``\texttt{/*}''
+      und einem schlie{\ss}enden String der Form \texttt{*$\cdots$*/} liegen.  Wie m\"ussen
+      sicherstellen, dass dieser Teil die Zeichenreihe ``\texttt{*/}'' nicht enth\"alt, denn
+      sonst w\"urden wir in einer Zeile der Form
       \\[0.2cm]
       \hspace*{1.3cm} \texttt{/* first */ ++n; /* second */}
       \\[0.2cm]
-      den Befehl ``\texttt{++n;}'' für einen Teil des Kommentars halten.  Der erste Teil des
-      obigen regulären Ausdrucks ``\texttt{[\symbol{94}*]}'' steht für ein beliebiges
+      den Befehl ``\texttt{++n;}'' f\"ur einen Teil des Kommentars halten.  Der erste Teil des
+      obigen regul\"aren Ausdrucks ``\texttt{[\symbol{94}*]}'' steht f\"ur ein beliebiges
       von ``\texttt{*}'' verschiedenes Zeichen.  Denn solange wir kein ``\texttt{*}'' lesen,
       kann der Text auch kein ``\texttt{*/}'' enthalten.  Das Problem ist, dass das Innere
       eines Kommentars aber durchaus das Zeichen ``\texttt{*}'' enthalten kann, es darf
@@ -666,20 +666,20 @@ ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
       spezifiziert jetzt also entweder ein Zeichen, das von ``\texttt{*}'' verschieden
       ist, oder aber eine Folge von ``\texttt{*}''-Zeichen, auf die dann noch ein von
       ``\texttt{/}'' verschiedenes Zeichen folgt.  Da solche Folgen beliebig oft vorkommen
-      können, wird der ganze Ausdruck in Klammern eingefasst und mit dem Quantor
+      k\"onnen, wird der ganze Ausdruck in Klammern eingefasst und mit dem Quantor
       ``\texttt{*}'' dekoriert.   
 \item \texttt{\symbol{92}*+\symbol{92}/}
 
-      Dieser reguläre Ausdruck spezifiziert das Ende des Kommentars.  Es kann aus einer 
+      Dieser regul\"are Ausdruck spezifiziert das Ende des Kommentars.  Es kann aus einer 
       beliebigen positiven Anzahl von ``\texttt{*}''-Zeichen bestehen, auf die dann noch
       ein ``\texttt{/}'' folgt.  Wenn wir hier nur den Ausdruck
-      ``\texttt{\symbol{92}*\symbol{92}/}'' verwenden würden, dann könnten wir Kommentare der
+      ``\texttt{\symbol{92}*\symbol{92}/}'' verwenden w\"urden, dann k\"onnten wir Kommentare der
       Form 
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{/*** blah ***/}
       \\[0.2cm]
-      nicht mehr erkennen, denn der unter 2. diskutierte reguläre Ausdruck akzeptiert
+      nicht mehr erkennen, denn der unter 2. diskutierte regul\"are Ausdruck akzeptiert
       nur Folgen von ``\texttt{*}'', auf die kein ``\texttt{*}'' folgt.
 \end{enumerate}
 
@@ -716,20 +716,20 @@ ganz einfach.  Wir analysieren die einzelnen Komponenten dieses Ausdrucks:
 Abbildung \ref{fig:decoment.l} zeigt ein \textsl{Flex}-Programm, das aus einem
 \texttt{C}-Programm sowohl einzeilige Kommentare der Form ``\texttt{//} $\cdots$''
 als auch mehrzeilige Kommentare der Form ``\texttt{/*} $\cdots$ \texttt{*/} entfernt.
-Das Programm an sich ist zwar recht kurz, aber der reguläre Ausdruck zur Erkennung
+Das Programm an sich ist zwar recht kurz, aber der regul\"are Ausdruck zur Erkennung
 mehrzeiliger Kommentare ist sehr kompliziert und damit nur schwer zu verstehen.
-Um in ähnlichen Fällen ein lesbareres Programm schreiben zu können, gibt es in
-\textsl{Flex}\/ sogenannte \emph{Start-Zustände} (engl.~\emph{start conditions}), mit deren
-Hilfe komplizierte reguläre Ausdrücke vermieden werden können.
-Wir diskutieren diese Zustände anhand eines Beispiels: Wir wollen eine
+Um in \"ahnlichen F\"allen ein lesbareres Programm schreiben zu k\"onnen, gibt es in
+\textsl{Flex}\/ sogenannte \emph{Start-Zust\"ande} (engl.~\emph{start conditions}), mit deren
+Hilfe komplizierte regul\"are Ausdr\"ucke vermieden werden k\"onnen.
+Wir diskutieren diese Zust\"ande anhand eines Beispiels: Wir wollen eine
 \textsc{Html}-Datei in eine Text-Datei konvertieren.  Die \textsl{Flex}-Spezifikation, die
-in Abbildung \ref{fig:html2txt} gezeigt wird, führt dazu die folgenden Aktionen durch:
+in Abbildung \ref{fig:html2txt} gezeigt wird, f\"uhrt dazu die folgenden Aktionen durch:
 \begin{enumerate}
-\item Zunächst wird der Kopf der \textsc{Html}-Datei, der in den Tags ``\texttt{<head>}''
+\item Zun\"achst wird der Kopf der \textsc{Html}-Datei, der in den Tags ``\texttt{<head>}''
       und ``\texttt{</head>}'' eingeschlossen ist, entfernt.
 \item Die Skripte, die in der \textsc{Html}-Datei enthalten sind, werden ebenfalls
       entfernt.
-\item Außerdem werden die \textsc{Html}-Tags entfernt.
+\item Au{\ss}erdem werden die \textsc{Html}-Tags entfernt.
 \end{enumerate}
 
 \begin{figure}[!h]
@@ -765,23 +765,23 @@ in Abbildung \ref{fig:html2txt} gezeigt wird, führt dazu die folgenden Aktionen 
 Wir diskutieren jetzt die \textsl{Flex}-Spezifikation aus Abbildung \ref{fig:html2txt} im
 Detail.
 \begin{enumerate}
-\item Im Definitions-Teil deklarieren wir in Zeile 1 die beiden \textsl{Zustände}\/
-      \texttt{header} und \texttt{script} als \emph{exklusive} Start-Zustände.
+\item Im Definitions-Teil deklarieren wir in Zeile 1 die beiden \textsl{Zust\"ande}\/
+      \texttt{header} und \texttt{script} als \emph{exklusive} Start-Zust\"ande.
       Die allgemeine Syntax einer solchen Deklaration ist wie folgt:
       \begin{enumerate}
       \item Am Zeilen-Anfang einer Zustands-Deklaration steht der String ``\texttt{\symbol{37}x}''
             oder ``\texttt{\symbol{37}s}''.  
-            Der String ``\texttt{\symbol{37}x}'' spezifiziert \emph{exklusive} Zustände,
-            der String ``\texttt{\symbol{37}s}'' spezifiziert \emph{inklusive} Zustände.
-            Den Unterschied zwischen diesen beiden Zustandsarten erklären wir später.
-      \item Darauf folgt eine Liste der Namen der deklarierten Zustände.  Die Namen werden
+            Der String ``\texttt{\symbol{37}x}'' spezifiziert \emph{exklusive} Zust\"ande,
+            der String ``\texttt{\symbol{37}s}'' spezifiziert \emph{inklusive} Zust\"ande.
+            Den Unterschied zwischen diesen beiden Zustandsarten erkl\"aren wir sp\"ater.
+      \item Darauf folgt eine Liste der Namen der deklarierten Zust\"ande.  Die Namen werden
             durch Leerzeichen getrennt.
       \end{enumerate}
 \item In Zeile 3 haben wir den String ``\texttt{<head>}'' in doppelte Hochkommata
       eingeschlossen.  Dadurch verlieren die Operator-Symbole ``\texttt{<}'' ihre
-      Bedeutung.  Dies ist eine allgemeine Möglichkeit, um Operator-Symbole in
-      \textsl{Flex}\/ spezifizieren zu können.  Wollen wir beispielsweise den String
-      ``\texttt{a*}''  wörtlich erkennen, so können wir an Stelle von ``\texttt{a\symbol{92}*}''
+      Bedeutung.  Dies ist eine allgemeine M\"oglichkeit, um Operator-Symbole in
+      \textsl{Flex}\/ spezifizieren zu k\"onnen.  Wollen wir beispielsweise den String
+      ``\texttt{a*}''  w\"ortlich erkennen, so k\"onnen wir an Stelle von ``\texttt{a\symbol{92}*}''
       auch klarer
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -790,57 +790,57 @@ Detail.
       schreiben.
       
       Wird der String ``\texttt{<head>}'' erkannt, so wird in Zeile 3 die Aktion 
-      ``\texttt{BEGIN(header)}'' ausgeführt.  Damit wechselt der Scanner aus dem
+      ``\texttt{BEGIN(header)}'' ausgef\"uhrt.  Damit wechselt der Scanner aus dem
       Default-Zustand ``\texttt{INITIAL}'', in dem der Scanner startet,
       in den oben deklarierten Zustand \texttt{header}.
-      Da dieser Zustand als \emph{exklusiver} Zustand deklariert worden ist, können jetzt
+      Da dieser Zustand als \emph{exklusiver} Zustand deklariert worden ist, k\"onnen jetzt
       nur noch solche Regeln angewendet werden, die mit dem Prefix ``\texttt{<header>}''
-      beginnen.  Wäre der Zustand als \emph{inklusiver} Zustand deklariert worden, so könnten auch solche 
+      beginnen.  W\"are der Zustand als \emph{inklusiver} Zustand deklariert worden, so k\"onnten auch solche 
       Regeln verwendet werden, die nicht mit einem Zustand markiert sind.  Solche Regeln
       sind implizit mit dem Zustand ``\texttt{<INITIAL>}'' markiert.
       
       Die Regeln, die mit dem Zustand ``\texttt{header}'' markiert sind, finden wir weiter
       unten in den Zeilen 8 und 9.
 \item In Zeile 4 wechseln wir entsprechend in den Zustand ``\texttt{script}'' wenn
-      wir ein öffnendes \texttt{Script}-Tag sehen.
+      wir ein \"offnendes \texttt{Script}-Tag sehen.
 \item In Zeile 5 werden alle restlichen Tags gelesen.  Da die Aktion hier leer ist,
       werden diese Tags entfernt.
 \item In Zeile 6 ersetzen wir die Zeichenreihe ``\texttt{\&nbsp;}'' durch ein Blank.
-      Wollten wir das Skript wirklich einsetzen, so hätten wir hier noch analoge
+      Wollten wir das Skript wirklich einsetzen, so h\"atten wir hier noch analoge
       Zeilen zur Verarbeitung von Umlauten und Sonderzeichen.
 \item Zeile 8 beginnt mit der Zustands-Spezifikation ``\texttt{header}''.  Daher ist
       diese Regel nur dann aktiv, wenn der Scanner in dem Zustand ``\texttt{head}'' ist.
-      Diese Regel sucht nach dem schließenden Tag ``\texttt{</head>}''.  Wird dieses Tag
-      gefunden, so wechselt der Scanner zurück in den Default-Zustand \texttt{INITIAL},
+      Diese Regel sucht nach dem schlie{\ss}enden Tag ``\texttt{</head>}''.  Wird dieses Tag
+      gefunden, so wechselt der Scanner zur\"uck in den Default-Zustand \texttt{INITIAL},
       in dem nur die Regeln verwendet werden, die nicht mit einem Zustand markiert sind.
-\item Zeile 9 enthält ebenfalls eine Regel, die nur im Zustand ``\texttt{header}''
-      ausgeführt wird.  Diese Regel liest ein beliebiges Zeichen, welches nicht weiter 
+\item Zeile 9 enth\"alt ebenfalls eine Regel, die nur im Zustand ``\texttt{header}''
+      ausgef\"uhrt wird.  Diese Regel liest ein beliebiges Zeichen, welches nicht weiter 
       verarbeitet wird und daher im Endeffekt verworfen wird.
-\item Die Zeilen 11 und 12 enthalten entsprechende Regeln für den Zustand
+\item Die Zeilen 11 und 12 enthalten entsprechende Regeln f\"ur den Zustand
       ``\texttt{script}''.
 \end{enumerate}
 Ist der Automat im Default-Zustand ``\texttt{INITIAL}'' und liest ein Zeichen, das nicht
-durch die obigen Regeln verarbeitet wird, so wird dieses Zeichen unverändert ausgegeben.
+durch die obigen Regeln verarbeitet wird, so wird dieses Zeichen unver\"andert ausgegeben.
 Dadurch erreichen wir, dass der in der HTML-Datei enthaltene Text ausgegeben wird.
 
 \exercise
 Implementieren Sie eine \textsl{Flex}-Spezifikation, die aus einem
-\texttt{C}-Programm alle Kommentare entfernt.  Das Programm soll mit Hilfe von Zuständen arbeiten.
+\texttt{C}-Programm alle Kommentare entfernt.  Das Programm soll mit Hilfe von Zust\"anden arbeiten.
 
 
 \subsection{Zusammenfassung}
-\textsl{Flex}\/ ist ein mächtiges Werkzeug um effiziente Scanner zu erzeugen,
-das in den Werkzeugkasten jedes Informatikers gehört.  Die obige Darstellung ist eher als
-Appetitanreger gedacht, denn für eine ausführliche Darstellung fehlt uns jetzt die Zeit.
-Wir werden das Thema \textsl{Flex}\/ allerdings später noch einmal aufgreifen und zwar dann, wenn wir den
+\textsl{Flex}\/ ist ein m\"achtiges Werkzeug um effiziente Scanner zu erzeugen,
+das in den Werkzeugkasten jedes Informatikers geh\"ort.  Die obige Darstellung ist eher als
+Appetitanreger gedacht, denn f\"ur eine ausf\"uhrliche Darstellung fehlt uns jetzt die Zeit.
+Wir werden das Thema \textsl{Flex}\/ allerdings sp\"ater noch einmal aufgreifen und zwar dann, wenn wir den
 Parser-Generator \textsl{Bison}\/ diskutieren.
 
-Falls Sie später einmal \textsl{Flex}\/ selber einsetzen wollen, dann finden Sie weitere Informationen
+Falls Sie sp\"ater einmal \textsl{Flex}\/ selber einsetzen wollen, dann finden Sie weitere Informationen
 in dem Buch von Levine, Mason und Brown \cite{levine92}, sowie in den Manual-Seiten und 
 im Unix-Info-System.
 
 \paragraph{Historisches}
-Das Werkzeug \textsl{Lex}\/, das der Vorläufer von \textsl{Flex}\/ ist, wurde 1975 vom Michael
+Das Werkzeug \textsl{Lex}\/, das der Vorl\"aufer von \textsl{Flex}\/ ist, wurde 1975 vom Michael
 E.~Lesk in den Bell Laboratories entwickelt \cite{lesk:1975}.
 \pagebreak
 

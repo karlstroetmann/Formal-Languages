@@ -1,36 +1,36 @@
 \chapter{Register-Zuordnung}
-Die Übersetzung eines Integer-\texttt{C}-Programms in \textsl{Java}-Byte-Code ist deswegen einfach, weil
-wir uns keine Gedanken darüber machen müssen, wie wir die Variablen auf Register verteilen, denn bei der
-\textsc{Ijvm} gibt es keine für den Benutzer sichtbaren Register, so dass alle Variablen und auch die
-Zwischenergebnisse auf dem Stack abgelegt werden müssen.  In diesem Kapitel ist unser Ziel,
-als Endergebnis ein Assembler-Programm für den \textsc{Srp}-Prozessor zu erzeugen.  Dazu müssen wir
-uns überlegen, wie wir die einzelnen Variablen auf die verschiedenen Register verteilen.
-Wir geben zunächst ein Verfahren an, mit dessen Hilfe wir die Anzahl der Register
-bestimmen können,  die für die Speicherung von Zwischenergebnissen, die bei der Auswertung
-arithmetischer Ausdrücke auftreten, benötigt werden.
+Die \"Ubersetzung eines Integer-\texttt{C}-Programms in \textsl{Java}-Byte-Code ist deswegen einfach, weil
+wir uns keine Gedanken dar\"uber machen m\"ussen, wie wir die Variablen auf Register verteilen, denn bei der
+\textsc{Ijvm} gibt es keine f\"ur den Benutzer sichtbaren Register, so dass alle Variablen und auch die
+Zwischenergebnisse auf dem Stack abgelegt werden m\"ussen.  In diesem Kapitel ist unser Ziel,
+als Endergebnis ein Assembler-Programm f\"ur den \textsc{Srp}-Prozessor zu erzeugen.  Dazu m\"ussen wir
+uns \"uberlegen, wie wir die einzelnen Variablen auf die verschiedenen Register verteilen.
+Wir geben zun\"achst ein Verfahren an, mit dessen Hilfe wir die Anzahl der Register
+bestimmen k\"onnen,  die f\"ur die Speicherung von Zwischenergebnissen, die bei der Auswertung
+arithmetischer Ausdr\"ucke auftreten, ben\"otigt werden.
   Die Parameter und lokalen Variablen einer Funktion verteilen wir dann auf die
-verbleibenden Register oder, falls nicht genügend Register vorhanden sind, allokieren wir
+verbleibenden Register oder, falls nicht gen\"ugend Register vorhanden sind, allokieren wir
 die lokalen Variablen auf dem Stack.
 
 \section{Die Ershov-Zahlen}
-Das Verfahren, mit dem Register für die Auswertung arithmetischer Ausdrücke zugeordnet werden können,
-berechnet zunächst für einen gegebenen arithmetischen Ausdruck $e$ die Anzahl $\textsl{ershov}(e)$
-der Register, die benötigt werden, um den Ausdruck auszuwerten.  Es ist nach dem russischen
+Das Verfahren, mit dem Register f\"ur die Auswertung arithmetischer Ausdr\"ucke zugeordnet werden k\"onnen,
+berechnet zun\"achst f\"ur einen gegebenen arithmetischen Ausdruck $e$ die Anzahl $\textsl{ershov}(e)$
+der Register, die ben\"otigt werden, um den Ausdruck auszuwerten.  Es ist nach dem russischen
 Informatiker A.~P.~Ershov benannt, der die Idee des  Verfahrens in \cite{ershov:58} publiziert hat.
 Wir spezifizieren die Funktion
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{ershov}: \mathtt{Expr} \rightarrow \mathbb{N}$,
 \\[0.2cm]
-die für einen gegebenen arithmetischen Ausdruck $e$ die Anzahl der zur Auswertung benötigten
+die f\"ur einen gegebenen arithmetischen Ausdruck $e$ die Anzahl der zur Auswertung ben\"otigten
 Register angibt, durch eine Fallunterscheidung nach dem Aufbau des Ausdrucks.
 \begin{enumerate}
-\item Um eine Konstante auszuwerten, benötigen wir genau ein Register, in dem wir diese
-      Konstante speichern können:
+\item Um eine Konstante auszuwerten, ben\"otigen wir genau ein Register, in dem wir diese
+      Konstante speichern k\"onnen:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{isNumber}(c) \rightarrow \textsl{ershov}(c) = 1$.
-\item Analog benötigen wir zur Auswertung einer Variablen genau ein Register, in dem der Wert der
+\item Analog ben\"otigen wir zur Auswertung einer Variablen genau ein Register, in dem der Wert der
       Variablen abgelegt wird:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -40,40 +40,40 @@ Register angibt, durch eine Fallunterscheidung nach dem Aufbau des Ausdrucks.
       \hspace*{1.3cm}
       $\textsl{op}\; e$,
       \\[0.2cm] 
-      bei dem der unäre Operator \textsl{op} auf den Ausdruck $e$ angewendet wird, benötigen wir
-      genau so viele Register, wie wir zur Auswertung des Ausdrucks $e$ benötigen, denn wenn das
-      Ergebnis der Auswertung von $e$ in einem Register $Rx$ liegt, so können wir anschließend
-      dieses Register überschreiben um das Endergebnis der Auswertung abzuspeichern:
+      bei dem der un\"are Operator \textsl{op} auf den Ausdruck $e$ angewendet wird, ben\"otigen wir
+      genau so viele Register, wie wir zur Auswertung des Ausdrucks $e$ ben\"otigen, denn wenn das
+      Ergebnis der Auswertung von $e$ in einem Register $Rx$ liegt, so k\"onnen wir anschlie{\ss}end
+      dieses Register \"uberschreiben um das Endergebnis der Auswertung abzuspeichern:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{ershov}(\textsl{op}\; e) = \textsl{ershov}(e)$.
       \\[0.2cm]
       \textbf{Bemerkung}: Bei dem \textsc{Risc}-Prozessor, den wir in der Rechnertechnik-Vorlesung
-      besprochen haben, hatten wir als einzigen unären Operator die bitweise Negation, aber
-      prinzipiell sind auch andere unäre Operatoren denkbar.
-\item Bei der Auswertung eines binären Ausdrucks der Form
+      besprochen haben, hatten wir als einzigen un\"aren Operator die bitweise Negation, aber
+      prinzipiell sind auch andere un\"are Operatoren denkbar.
+\item Bei der Auswertung eines bin\"aren Ausdrucks der Form
       \\[0.2cm]
       \hspace*{1.3cm}
       $e_1 \;\textsl{op}\; e_2$
       \\[0.2cm]
-      sind drei Fälle zu unterscheiden.
+      sind drei F\"alle zu unterscheiden.
       \begin{enumerate}
       \item $\textsl{ershov}(e_1) < \textsl{ershov}(e_2)$.
 
-            In diesem Fall berechnen wir zunächst den Ausdruck $e_2$ und benötigen dazu
+            In diesem Fall berechnen wir zun\"achst den Ausdruck $e_2$ und ben\"otigen dazu
             $\textsl{ershov}(e_2)$ Register.  Das letzte dieser Register, nennen wir es
-            $R_y$,             enthält dann das Ergebnis
-            der Auswertung von $e_2$, alle anderen Register können für die Berechnung von $e_1$
+            $R_y$,             enth\"alt dann das Ergebnis
+            der Auswertung von $e_2$, alle anderen Register k\"onnen f\"ur die Berechnung von $e_1$
             verwendet werden.  Da $\textsl{ershov}(e_1) < \textsl{ershov}(e_2)$ ist, reichen diese
             Register auch aus und das Ergebnis von $e_1$ wird in einem dieser Register, sagen
-            wir mal $R_x$, abgespeichert.  Anschließend führen wir dann noch den Befehl
+            wir mal $R_x$, abgespeichert.  Anschlie{\ss}end f\"uhren wir dann noch den Befehl
             \\[0.2cm]
             \hspace*{1.3cm}
             \textsl{op} $R_y$, $R_x$, $R_y$ 
             \\[0.2cm]
             aus, bei dem wir das Ergebnis des Ausdrucks $e_1 \;\textsl{op}\; e_2$ berechnen und in
             dem Register $R_y$ abspeichern.  Wir sehen, dass wir in diesem Fall zur Berechnung
-            von $e_1 \;\textsl{op}\; e_2$ nicht mehr Register benötigen als zur Berechnung von $e_2$
+            von $e_1 \;\textsl{op}\; e_2$ nicht mehr Register ben\"otigen als zur Berechnung von $e_2$
             und halten die folgende Formel fest:
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -81,17 +81,17 @@ Register angibt, durch eine Fallunterscheidung nach dem Aufbau des Ausdrucks.
              \textsl{ershov}(e_1 \;\textsl{op}\; e_2) = \textsl{ershov}(e_2)$.
       \item $\textsl{ershov}(e_1) = \textsl{ershov}(e_2)$.
 
-            In diesem Fall berechnen wir den Ausdruck $e_1$ und benötigen dafür
-            $\textsl{ershov}(e_1)$ viele Register.  Bis auf das letzte dabei benötigte Register, 
-            nennen wir es $R_x$, in dem wir das Ergebnis dieser Rechnung speichern müssen, können
-            wir alle diese Register für die Berechnung des Ausdrucks $e_2$ wiederverwenden.
-            Folglich benötigen wir für die Berechnung von $e_2$ also ein weiteres Register, das wir
-            jetzt mit $R_y$ bezeichnen.  Das Endergebnis können wir nun mit dem Befehl
+            In diesem Fall berechnen wir den Ausdruck $e_1$ und ben\"otigen daf\"ur
+            $\textsl{ershov}(e_1)$ viele Register.  Bis auf das letzte dabei ben\"otigte Register, 
+            nennen wir es $R_x$, in dem wir das Ergebnis dieser Rechnung speichern m\"ussen, k\"onnen
+            wir alle diese Register f\"ur die Berechnung des Ausdrucks $e_2$ wiederverwenden.
+            Folglich ben\"otigen wir f\"ur die Berechnung von $e_2$ also ein weiteres Register, das wir
+            jetzt mit $R_y$ bezeichnen.  Das Endergebnis k\"onnen wir nun mit dem Befehl
             \\[0.2cm]
             \hspace*{1.3cm}
             \textsl{op} $R_y$, $R_x$, $R_y$ 
             \\[0.2cm]
-            berechnen, so dass wir an dieser Stelle kein weiteres Register mehr benötigen.
+            berechnen, so dass wir an dieser Stelle kein weiteres Register mehr ben\"otigen.
             Wir halten fest:
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -110,11 +110,11 @@ Register angibt, durch eine Fallunterscheidung nach dem Aufbau des Ausdrucks.
       \hspace*{1.3cm}
       $f(e_1, \cdots, e_n)$
       \\[0.2cm]
-      gelingt in Registern nur dann, wenn die einzelnen Ausdrücke $e_1$, $\cdots$, $e_n$
+      gelingt in Registern nur dann, wenn die einzelnen Ausdr\"ucke $e_1$, $\cdots$, $e_n$
       selber keine Funktions-Aufrufe mehr enthalten.  Wir werden daher unsere Grammatik so
-      einschränken, dass wir nur solche Funktions-Aufrufe betrachten, bei denen dies der
+      einschr\"anken, dass wir nur solche Funktions-Aufrufe betrachten, bei denen dies der
       Fall ist.  Des Weiteren werden wir Funktions-Aufrufe nur auf der rechten Seite einer
-      Zuweisungen zulassen.  Dann können wir jedes der Argumente von $f$ getrennt
+      Zuweisungen zulassen.  Dann k\"onnen wir jedes der Argumente von $f$ getrennt
       auswerten.  Da die Ergebnisse dieser Auswertungen ohnehin auf den Stack geschrieben
       werden, ist es nicht erforderlich, diese Ergebnisse in Registern zu speichern.
       Daher haben wir
@@ -125,44 +125,44 @@ Register angibt, durch eine Fallunterscheidung nach dem Aufbau des Ausdrucks.
 \end{enumerate}
 
 \exercise
-Geben Sie an, wie groß ein Ausdruck $e$ mindestens sein muss, damit 
+Geben Sie an, wie gro{\ss} ein Ausdruck $e$ mindestens sein muss, damit 
 $\textsl{ershov}(e) = n$ gilt.
 
 
 
-\section{Implementierung eines Compilers für den \textsc{SRP}}
-Nach den Vorüberlegungen aus dem letzten Abschnitt entwickeln wir 
-in diesem Abschnitt einen Compiler, der Code für den \textsc{Srp} erzeugt.
-Wir gehen dabei wieder von der Sprache Integer-\texttt{C} aus, für die wir 
+\section{Implementierung eines Compilers f\"ur den \textsc{SRP}}
+Nach den Vor\"uberlegungen aus dem letzten Abschnitt entwickeln wir 
+in diesem Abschnitt einen Compiler, der Code f\"ur den \textsc{Srp} erzeugt.
+Wir gehen dabei wieder von der Sprache Integer-\texttt{C} aus, f\"ur die wir 
 im letzten Kapitel einen Compiler in Byte-Code entwicklet haten.
   Diese Grammatik hatten wir in Abbildung \ref{fig:compiler.cup} gezeigt.
 
-Die Idee bei der Entwicklung eines Compilers für den \textsc{Srp} ist, dass wir zunächst
-berechnen, wieviele Register wir benötigen, um die 
-Zwischenergebnisse, die bei der Auswertung arithmetischer Ausdrücke entstehen, zu
-speichern.  Die restlichen Register können dann für die lokalen Variablen genutzt werden.
+Die Idee bei der Entwicklung eines Compilers f\"ur den \textsc{Srp} ist, dass wir zun\"achst
+berechnen, wieviele Register wir ben\"otigen, um die 
+Zwischenergebnisse, die bei der Auswertung arithmetischer Ausdr\"ucke entstehen, zu
+speichern.  Die restlichen Register k\"onnen dann f\"ur die lokalen Variablen genutzt werden.
 Sollten wir mehr lokale Variablen als freie Register haben, so speichern wir die
-überzähligen lokalen Variablen auf dem Stack.
+\"uberz\"ahligen lokalen Variablen auf dem Stack.
 Wir werden nur die Register \texttt{R1} bis \texttt{R29} benutzen, denn  wir gehen davon 
 aus,  dass folgendes gilt:
 \begin{enumerate}
 \item Das Register \texttt{R0}  speichert die Konstante $0$.
 \item Das Register \texttt{R30} speichert den Stack-Pointer.
-\item Das Register \texttt{R31} ist für die Berechnung von Sprungadressen und
+\item Das Register \texttt{R31} ist f\"ur die Berechnung von Sprungadressen und
       Speicherstellen reserviert.  
 \end{enumerate}
 In der Rechnertechnik-Vorlesung hatten wir eine Unterscheidung in solche
-Register, die beim Aufruf einer Funktion gesichert werden müssen und solche Register, die
-nicht gesichert werden, durchgeführt.  Diese Unterscheidung lassen wir fallen und
+Register, die beim Aufruf einer Funktion gesichert werden m\"ussen und solche Register, die
+nicht gesichert werden, durchgef\"uhrt.  Diese Unterscheidung lassen wir fallen und
 vereinbaren statt dessen, dass bei einem Funktionsaufruf alle Register, die von der
-Funktion verändert werden, gesichert werden müssen.  
+Funktion ver\"andert werden, gesichert werden m\"ussen.  
 Das vereinfacht die Entwicklung des Compilers etwas.
 
 \subsection{Diskussion der verschiedenen Klassen}
-Die Struktur des \textsc{SRP}-Compilers ist ähnlich zu der Struktur des
-\textsl{Java}-Byte-Code-Compilers:  Wir erzeugen zunächst einen abstrakten Syntax-Baum und
+Die Struktur des \textsc{SRP}-Compilers ist \"ahnlich zu der Struktur des
+\textsl{Java}-Byte-Code-Compilers:  Wir erzeugen zun\"achst einen abstrakten Syntax-Baum und
 haben dann in allen Klassen eine Methode $\textsl{compile}()$, die Code erzeugt, der den jeweils
-dargestellten Ausdruck übersetzt.  Die Erzeugung des Codes ist allerdings deutlich
+dargestellten Ausdruck \"ubersetzt.  Die Erzeugung des Codes ist allerdings deutlich
 komplexer als bei dem Byte-Code-Compiler.
 
 
@@ -267,7 +267,7 @@ Wir beginnen unsere Diskussion des \textsc{Srp}-Compilers mit der Klasse
 \ref{fig:Function.java-SRP-4} gezeigt ist.
 Abbildung \ref{fig:Function.java-SRP-1} auf Seite \pageref{fig:Function.java-SRP-1} zeigt die
 Member-Variablen der Klasse \texttt{Function}, den Konstruktor, sowie die Methode
-$\textsl{compile}()$.  Die Klasse repräsentiert eine Funktions-Definition der Form
+$\textsl{compile}()$.  Die Klasse repr\"asentiert eine Funktions-Definition der Form
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{int $f$($p_1, \cdots, p_n$) \{ \textsl{decls}\ \textsl{body} \}}
@@ -275,16 +275,16 @@ $\textsl{compile}()$.  Die Klasse repräsentiert eine Funktions-Definition der Fo
 Die Member-Variablen haben folgende Bedeutung:
 \begin{enumerate}
 \item \texttt{mName} entspricht dem Funktions-Namen $f$.
-\item \texttt{mParameterList} entspricht den Übergabe-Parametern $p_1, \cdots, p_n$.
+\item \texttt{mParameterList} entspricht den \"Ubergabe-Parametern $p_1, \cdots, p_n$.
 \item \texttt{mDeclarations} ist die Liste der Deklarationen aller lokalen Variablen.
 \item \texttt{mBody} ist die Liste der Befehle im Rumpf der Funktion.
 \item \texttt{mNumberUsedRegs} ist die Anzahl der Register, die von dieser Funktion
       benutzt werden.
 \item \texttt{mNumberVarsOnStack} ist die Anzahl der lokalen Variablen, die auf dem Stack
-      gespeichert werden müssen, weil in den Registern kein Platz mehr für diese Variablen ist.
-\item \texttt{mSymbolTable} gibt für jede lokale Variable den Ort an, wo diese lokale
+      gespeichert werden m\"ussen, weil in den Registern kein Platz mehr f\"ur diese Variablen ist.
+\item \texttt{mSymbolTable} gibt f\"ur jede lokale Variable den Ort an, wo diese lokale
       Variable gespeichert ist.  Zur Spezifikation dieses Ortes haben wir die abstrakte
-      Klasse \texttt{Location} eingeführt, die über die Gleichung
+      Klasse \texttt{Location} eingef\"uhrt, die \"uber die Gleichung
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{Location = Memory(Integer offset) + Register(Integer number);}
@@ -299,39 +299,39 @@ Die Member-Variablen haben folgende Bedeutung:
       \texttt{SP + offset}
       \\[0.2cm]
       gespeichert.  Dabei gehen wir davon aus, dass der Stackpointer \texttt{SP} immer auf
-      die Rücksprung-Adresse der Funktion zeigt, so dass wir die Adresse der lokalen
-      Variablen tatsächlich immer nach der obigen Formel berechnen können.
-\item Zusätzlich hat die Klasse eine statische Variable \texttt{sName}, die den Namen
-      der Funktion enthält, die gerade geparst wird.
+      die R\"ucksprung-Adresse der Funktion zeigt, so dass wir die Adresse der lokalen
+      Variablen tats\"achlich immer nach der obigen Formel berechnen k\"onnen.
+\item Zus\"atzlich hat die Klasse eine statische Variable \texttt{sName}, die den Namen
+      der Funktion enth\"alt, die gerade geparst wird.
 \end{enumerate}
 Der Konstruktor der Klasse \texttt{Function} speichert die Member-Variablen, die den
-abstrakten Syntax-Baum repräsentieren und die bereits vom Parser erzeugt werden können.
+abstrakten Syntax-Baum repr\"asentieren und die bereits vom Parser erzeugt werden k\"onnen.
 
-Interessanter ist die Methode $\textsl{compile}()$, die diese Funktion übersetzt.
+Interessanter ist die Methode $\textsl{compile}()$, die diese Funktion \"ubersetzt.
 Im Gegensatz zu unserer Implementierung des \textsl{Java}-Byte-Code-Compilers behandeln
-wir bei dieser Implementierung die Sonderfälle, die bei den Funktionen 
+wir bei dieser Implementierung die Sonderf\"alle, die bei den Funktionen 
 $\textsl{putchar()}$ und $\textsl{getchar}()$ auftreten, nicht sondern gehen davon aus,
-dass diese Funktionen bereits in einer Bibliothek zur Verfügung gestellt werden und dann
-später von einem Linker eingebunden werden.  Die Funktion $\textsl{compile}()$ arbeitet
+dass diese Funktionen bereits in einer Bibliothek zur Verf\"ugung gestellt werden und dann
+sp\"ater von einem Linker eingebunden werden.  Die Funktion $\textsl{compile}()$ arbeitet
 dann wie folgt:
 \begin{enumerate}
-\item Zunächst berechnen wir für die Parameter und die lokalen Variablen der Funktion,
+\item Zun\"achst berechnen wir f\"ur die Parameter und die lokalen Variablen der Funktion,
       wo diese abgespeichert werden.  Diese Berechnung wird von der Methode
-      $\textsl{initTable}()$ durchgeführt.  Das Ergebnis dieser Rechnung wird
-      in der Variablen \texttt{mSymbolTable} abgelegt.  Zusätzlich initialisiert diese
+      $\textsl{initTable}()$ durchgef\"uhrt.  Das Ergebnis dieser Rechnung wird
+      in der Variablen \texttt{mSymbolTable} abgelegt.  Zus\"atzlich initialisiert diese
       Methode die Member-Variablen \texttt{mNumberUsedRegs} und \texttt{mNumberVarsOnStack}. 
-\item Anschließend erzeugen wir eine Liste von Assembler-Befehlen, die mit der Assembler-Deklaration
+\item Anschlie{\ss}end erzeugen wir eine Liste von Assembler-Befehlen, die mit der Assembler-Deklaration
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{PROC} \textsl{mName}
       \\[0.2cm]
       beginnt.  Als erstes sichert die Prozedur dann alle die Register, die von der Prozedur
-      eventuell verändert werden.  Die dafür notwendigen Assembler-Befehle werden von der
+      eventuell ver\"andert werden.  Die daf\"ur notwendigen Assembler-Befehle werden von der
       Funktion $\textsl{saveRegisters}()$ erzeugt.
-\item Danach werden die Übergabe-Parameter, die wir in Registern speichern wollen,
-      in die entsprechenden Register geladen.  Der dafür notwendige Code wird von der
+\item Danach werden die \"Ubergabe-Parameter, die wir in Registern speichern wollen,
+      in die entsprechenden Register geladen.  Der daf\"ur notwendige Code wird von der
       Methode $\textsl{fillRegisters}()$ erzeugt.
-\item Zum Schluss werden die einzelnen Befehle, die im Rumpf der Funktion stehen, übersetzt.      
+\item Zum Schluss werden die einzelnen Befehle, die im Rumpf der Funktion stehen, \"ubersetzt.      
 \end{enumerate}
 Die Methode $\textsl{saveRegisters}()$ erzeugt Code, mit dem die Register, die in der
 Methode benutzt werden, auf dem Stack gesichert werden.  Dazu benutzt Sie den
@@ -341,31 +341,31 @@ Pseudo-Assembler-Befehl
 \texttt{storec R$i$, SP + $o$},
 \\[0.2cm]
 mit dem das Register \texttt{R$i$} an die Adresse  $\texttt{SP} + o$ im Hauptspeicher
-geschrieben wird.  Dieser Pseudo-Befehl wird in die folgenden Assembler-Befehle übersetzt:
+geschrieben wird.  Dieser Pseudo-Befehl wird in die folgenden Assembler-Befehle \"ubersetzt:
 
 \noindent
 \hspace*{1.3cm} \texttt{const R31, $o$} \\
 \hspace*{1.3cm} \texttt{add \ \ R31, R30, R31} \\
 \hspace*{1.3cm} \texttt{store R$i$, R31} 
 \\[0.2cm]
-Anschließend speichern wir die Adresse der ersten freien Stelle auf dem Stack in der
+Anschlie{\ss}end speichern wir die Adresse der ersten freien Stelle auf dem Stack in der
 Symboltabelle unter dem Namen ``\symbol{36}free@'' + \textsl{name}, wobei \texttt{name}
-für den Namen der Prozedur steht.
+f\"ur den Namen der Prozedur steht.
 Genauso werden die Anzahl der Variablen, die wir auf dem Stack haben sowie die Anzahl der
-benutzten Register in der Symboltabelle abgespeichert.  Diese Werte werden später in der
-Klasse \texttt{ReturnStmnt} benötigt um die alten Werte der auf dem Stack gesicherten
+benutzten Register in der Symboltabelle abgespeichert.  Diese Werte werden sp\"ater in der
+Klasse \texttt{ReturnStmnt} ben\"otigt um die alten Werte der auf dem Stack gesicherten
 Register wieder herzustellen.
 
 
 Die Methode $\textsl{fillRegisters}()$ hat die Aufgabe, die Parameter, mit denen die
-Funktion aufgerufen worden ist, vom Stack in die dafür vorgesehenen Register zu laden.
+Funktion aufgerufen worden ist, vom Stack in die daf\"ur vorgesehenen Register zu laden.
 Dazu benutzt diese Methode den Pseudo-Assembler-Befehl
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{loadc R$i$, SP + $o$},
 \\[0.2cm]
 mit dem das Register \texttt{R$i$} von der Adresse  $\texttt{SP} + o$ im Hauptspeicher
-geladen wird.  Dieser Pseudo-Befehl wird in die folgenden Assembler-Befehle übersetzt:
+geladen wird.  Dieser Pseudo-Befehl wird in die folgenden Assembler-Befehle \"ubersetzt:
 \\[0.2cm]
 \noindent
 \hspace*{1.3cm} \texttt{const R31, $o$} \\
@@ -422,25 +422,25 @@ Pseudobefehl direkt umsetzen kann.
 
 Die in Abbildungen \ref{fig:Function.java-SRP-3} gezeigte Methode $\textsl{initTable}()$
 berechnet die Symboltabelle, in der hinterlegt ist, wo die einzelnen Variablen
-abgespeichert sind.  Dazu wird zunächst die Funktion $\textsl{maxErshov}()$ aufgerufen.
-Diese Funktion berechnet, wieviele Register maximal für Zwischenergebnisse benötigt
-werden.  Das erste Register, über das wir frei verfügen können, hat dann den Wert
+abgespeichert sind.  Dazu wird zun\"achst die Funktion $\textsl{maxErshov}()$ aufgerufen.
+Diese Funktion berechnet, wieviele Register maximal f\"ur Zwischenergebnisse ben\"otigt
+werden.  Das erste Register, \"uber das wir frei verf\"ugen k\"onnen, hat dann den Wert
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{maxErshov}() + 1$.
 \\[0.2cm]
-Als nächstes ordnen wir in den Zeilen 65 bis 74 den Übergabe-Parametern der Funktion
-Register zu.  Falls wir für einen Parameter kein freies Register mehr finden können,
-berücksichtigen wir in Zeile 71, dass die Parameter einer Funktion ja schon auf dem Stack
-unterhalb der Rücksprungadresse liegen und tragen die entsprechende Adresse in der
+Als n\"achstes ordnen wir in den Zeilen 65 bis 74 den \"Ubergabe-Parametern der Funktion
+Register zu.  Falls wir f\"ur einen Parameter kein freies Register mehr finden k\"onnen,
+ber\"ucksichtigen wir in Zeile 71, dass die Parameter einer Funktion ja schon auf dem Stack
+unterhalb der R\"ucksprungadresse liegen und tragen die entsprechende Adresse in der
 Symboltabelle ein.  Da auf Register wesentlich schneller zugegriffen werden kann als auf
 den Stack, der ja im Hauptspeicher liegt, ist das
-Ziel, möglichst alle Parameter in Registern zur Verfügung zu haben.  Wenn es aber nicht
-genügend  Register gibt, die noch frei sind, dann müssen wir uns eben damit begnügen, die
-überzähligen Parameter im Bedarfsfall vom Stack zu laden.
+Ziel, m\"oglichst alle Parameter in Registern zur Verf\"ugung zu haben.  Wenn es aber nicht
+gen\"ugend  Register gibt, die noch frei sind, dann m\"ussen wir uns eben damit begn\"ugen, die
+\"uberz\"ahligen Parameter im Bedarfsfall vom Stack zu laden.
 
 
-In den Zeilen 76 bis 85 suchen wir anschließend für die lokalen Variablen einen Platz.
+In den Zeilen 76 bis 85 suchen wir anschlie{\ss}end f\"ur die lokalen Variablen einen Platz.
 Falls noch Register frei sind, ordnen wir den Variablen Register zu, sonst kommen die lokalen Variablen
 auf den Stack.
 
@@ -482,8 +482,8 @@ auf den Stack.
 \label{fig:Function.java-SRP-4}
 \end{figure}
 
-Abbildung \ref{fig:Function.java-SRP-4} zeigt schließlich die Implementierung der Funktion
-$\textsl{maxErshov}()$, bei der einfach das Maximum über alle Befehle des Rumpfs der
+Abbildung \ref{fig:Function.java-SRP-4} zeigt schlie{\ss}lich die Implementierung der Funktion
+$\textsl{maxErshov}()$, bei der einfach das Maximum \"uber alle Befehle des Rumpfs der
 Funktion gebildet wird.
 
 \begin{figure}[!ht]
@@ -550,52 +550,52 @@ Funktion gebildet wird.
 \label{fig:Sum.java-SRP}
 \end{figure}
 
-Abbildung \ref{fig:Sum.java-SRP} zeigt exemplarisch, wie die Ershov-Zahlen für einzelne
-Ausdrücke berechnet werden und wie der Code für einen arithmetischen Ausdruck der Form
+Abbildung \ref{fig:Sum.java-SRP} zeigt exemplarisch, wie die Ershov-Zahlen f\"ur einzelne
+Ausdr\"ucke berechnet werden und wie der Code f\"ur einen arithmetischen Ausdruck der Form
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{lhs} + \textsl{rhs}$
 \\[0.2cm]
 produziert
-wird.  Die Klasse \texttt{Sum} repräsentiert einen Ausdruck der Form
+wird.  Die Klasse \texttt{Sum} repr\"asentiert einen Ausdruck der Form
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{mLhs} + \textsl{mRhs}$.
 \\[0.2cm]
 Von der abstrakten Klasse \textsl{Expr} erbt die Klasse \textsl{Sum} die beiden
 Member-Variablen \texttt{mErshov} und \texttt{mRegister}.  Die Variable \texttt{mErshov}
-gibt an, wieviele Register zur Übersetzung dieses Ausdrucks benötigt werden.  Die Variable
+gibt an, wieviele Register zur \"Ubersetzung dieses Ausdrucks ben\"otigt werden.  Die Variable
 \texttt{mRegister} gibt das Register an, in dem der Wert dieses Ausdrucks abgespeichert wird.
-Die Ershov-Zahl für diesen Ausdruck wird bereits im Konstruktor ermittelt, wobei die
+Die Ershov-Zahl f\"ur diesen Ausdruck wird bereits im Konstruktor ermittelt, wobei die
 Fallunterscheidung unmittelbar aus der im letzten Abschnitt gegebenen Diskussion folgt.
 
-Die Methode $\textsl{compile}()$ bekommt als erstes Argument eine natürliche Zahl
+Die Methode $\textsl{compile}()$ bekommt als erstes Argument eine nat\"urliche Zahl
 \textsl{base} und als zweites Argument die Symboltabelle.  Das Argument \textsl{base} gibt
-dabei den Index des ersten Registers an, das für Zwischen-Ergebnisse genutzt werden kann.
+dabei den Index des ersten Registers an, das f\"ur Zwischen-Ergebnisse genutzt werden kann.
 \begin{enumerate}
-\item Betrachten wir zunächst den Fall, dass die Zahl der Register, die für die Berechnung von
-      \texttt{mLhs} benötigt wird, kleiner ist, als die Zahl der für \texttt{mRhs} benötigten
-      Register.  In diesem Fall berechnen wir erst \texttt{mRhs}.  Anschließend berechnen
-      wir \texttt{mLhs}.  Da wir dafür weniger Register benötigen als für die Berechnung
+\item Betrachten wir zun\"achst den Fall, dass die Zahl der Register, die f\"ur die Berechnung von
+      \texttt{mLhs} ben\"otigt wird, kleiner ist, als die Zahl der f\"ur \texttt{mRhs} ben\"otigten
+      Register.  In diesem Fall berechnen wir erst \texttt{mRhs}.  Anschlie{\ss}end berechnen
+      wir \texttt{mLhs}.  Da wir daf\"ur weniger Register ben\"otigen als f\"ur die Berechnung
       von \texttt{mRhs} werden wir das Ergebnis, das wir bei der Berechnung von
-      \texttt{mRhs} im letzten Register gesichert haben, nicht überschreiben.
+      \texttt{mRhs} im letzten Register gesichert haben, nicht \"uberschreiben.
 
-      Wir speichern für jeden Ausdruck in der Member-Variablen \texttt{mRegister}, die in
-      der abstrakten Klasse \texttt{Expr} definiert ist und die über die Funktion $\textsl{getReg}()$
+      Wir speichern f\"ur jeden Ausdruck in der Member-Variablen \texttt{mRegister}, die in
+      der abstrakten Klasse \texttt{Expr} definiert ist und die \"uber die Funktion $\textsl{getReg}()$
       abgefragt werden kann, dasjenige Register, in dem das Ergebnis des Ausdrucks
-      abgespeichert wird.  Wir setzen diese Variable in Zeile 38 und können dann die Summe
+      abgespeichert wird.  Wir setzen diese Variable in Zeile 38 und k\"onnen dann die Summe
       durch den Befehl
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{add mRegister, mLhs.getReg(), mRhs.getReg()}
       \\[0.2cm]
       berechnen.  Dieser Fall wird in den Zeilen 22 -- 26 abgehandelt.
-\item Der umgekehrte Fall, bei dem die Zahl der Register, die für die Berechnung von
-      \texttt{mRhs} benötigt wird, kleiner ist, als die Zahl der für \texttt{mLhs} benötigten
+\item Der umgekehrte Fall, bei dem die Zahl der Register, die f\"ur die Berechnung von
+      \texttt{mRhs} ben\"otigt wird, kleiner ist, als die Zahl der f\"ur \texttt{mLhs} ben\"otigten
       Register, kann analog behandelt werden und ist in den Zeilen
       27 -- 31 gezeigt.
-\item Abschließend betrachten wir den Fall, in dem die Zahl der Register, die für die Berechnung von
-      \texttt{mLhs} benötigt wird, genauso groß ist wie die Zahl der für \texttt{mRhs} benötigten
+\item Abschlie{\ss}end betrachten wir den Fall, in dem die Zahl der Register, die f\"ur die Berechnung von
+      \texttt{mLhs} ben\"otigt wird, genauso gro{\ss} ist wie die Zahl der f\"ur \texttt{mRhs} ben\"otigten
       Register.  In diesem Fall benutzen wir zur Berechnung von \texttt{mLhs} die Register
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -609,14 +609,14 @@ dabei den Index des ersten Registers an, das für Zwischen-Ergebnisse genutzt wer
       \hspace*{1.3cm}
       $\textsl{base} + 1 + \textsl{mLhs}.\textsl{getErshov}()$ 
       \\[0.2cm]
-      gespeicherte Ergebnis nicht überschrieben werden kann.  
+      gespeicherte Ergebnis nicht \"uberschrieben werden kann.  
       Dieser Fall ist der Grund, warum wir bei der Methode $\textsl{compile}()$ das
-      zusätzliche Argument \textsl{base} benötigen.  Der Fall ist in den Zeilen 33 bis 36
+      zus\"atzliche Argument \textsl{base} ben\"otigen.  Der Fall ist in den Zeilen 33 bis 36
       gezeigt.
 \item Der Fall, dass die Anzahl der Register nicht ausreichend ist, um die
-      Zwischen-Ergebnisse, die bei der Berechnung eines Ausdrucks auftreten können, zu
-      berechnen, wird in Zeile 42 behandelt.  Dieser Fall kann, wie in einer Übungsaufgabe
-      gezeigt wird, bei 29 frei verfügbaren Registern de facto nicht auftreten.
+      Zwischen-Ergebnisse, die bei der Berechnung eines Ausdrucks auftreten k\"onnen, zu
+      berechnen, wird in Zeile 42 behandelt.  Dieser Fall kann, wie in einer \"Ubungsaufgabe
+      gezeigt wird, bei 29 frei verf\"ugbaren Registern de facto nicht auftreten.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -673,15 +673,15 @@ dabei den Index des ersten Registers an, das für Zwischen-Ergebnisse genutzt wer
 
 \noindent
 Die  in Abbildung \ref{fig:ReturnStmnt.java-SRP} gezeigte Klasse \texttt{ReturnStmnt}
-zeigt die Übersetzung eines Befehls der Form 
+zeigt die \"Ubersetzung eines Befehls der Form 
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{return \textsl{expr};} 
 \\[0.2cm]
-In der Methode $\textsl{compile}()$ wird zunächst der Ausdruck \textsl{expr} berechnet und
+In der Methode $\textsl{compile}()$ wird zun\"achst der Ausdruck \textsl{expr} berechnet und
 das Ergebnis dieser Rechnung wird in Zeile 15 auf den Stack gelegt.
-Anschließend werden mit dem von der Methode $\textsl{restoreRegisters}()$ erzeugten Code
-die Register wieder auf die Werte zurück gesetzt, die auf dem Stack gespeichert wurden.
+Anschlie{\ss}end werden mit dem von der Methode $\textsl{restoreRegisters}()$ erzeugten Code
+die Register wieder auf die Werte zur\"uck gesetzt, die auf dem Stack gespeichert wurden.
 
 
 \begin{figure}[!ht]
@@ -742,42 +742,42 @@ Zum Abschluss diskutieren wir die in Abbildung \ref{fig:FunctionCall.java-SRP} g
 \hspace*{1.3cm}
 $f(e_1, \cdots, e_n)$
 \\[0.2cm]
-repräsentiert.  Der Konstruktor initialisiert sowohl den Namen als auch die Argumente der
-Funktion und berechnet anschließend die Ershov-Zahl als Maximum der Ershov-Zahlen der
+repr\"asentiert.  Der Konstruktor initialisiert sowohl den Namen als auch die Argumente der
+Funktion und berechnet anschlie{\ss}end die Ershov-Zahl als Maximum der Ershov-Zahlen der
 Argumente.  Die Aufgabe der Methode \textsl{compile} ist es nun, Code zu erzeugen, der
 diese Argumente berechnet und auf dem Stack ablegt.  In der Symboltabelle haben wir unter
 der Pseudo-Variablen ``\symbol{36}free'' gespeichert, wo der erste freie Platz auf dem
 Stack ist. Dort legen wir in der Schleife in Zeile 20 -- 23 die Argumente ab.
-Anschließend erhöhen wir in Zeile 26 den Stack-Pointer, so dass er nun auf das letzte auf
+Anschlie{\ss}end erh\"ohen wir in Zeile 26 den Stack-Pointer, so dass er nun auf das letzte auf
 dem Stack abgelegte Argument zeigt und rufen die Funktion mit einem \texttt{call}-Befehl auf.
-In Zeile 29 laden wir das Ergebnis vom Stack und speichern es in dem dafür vorgesehenen
-Register.  Danach wird der Stack-Pointer wieder auf seinen ursprünglichen Wert zurück gesetzt.
+In Zeile 29 laden wir das Ergebnis vom Stack und speichern es in dem daf\"ur vorgesehenen
+Register.  Danach wird der Stack-Pointer wieder auf seinen urspr\"unglichen Wert zur\"uck gesetzt.
 
 \section{Schlussbetrachtung}
 Der im letzten Abschnitt dargestellte Compiler geht sehr sorglos mit Registern um.
 Insbesondere das Sichern und Wiederherstellen der Register auf dem Stack, das von diesem
-Compiler durchgeführt würde, ist für die Praxis viel zu aufwendig.  Um einen
+Compiler durchgef\"uhrt w\"urde, ist f\"ur die Praxis viel zu aufwendig.  Um einen
 halbwegs brauchbaren Code zu erzeugen, sind wenigstens die folgenden Schritte
 erforderlich:
 \begin{enumerate}
-\item Zunächst muss überprüft werden, welche Variablen an welcher Stelle des Programms
+\item Zun\"achst muss \"uberpr\"uft werden, welche Variablen an welcher Stelle des Programms
       \emph{lebendig} sind.  Dabei wird eine Variable an einer Stelle des Programms 
       dann als \emph{lebendig} bezeichnet, wenn der Wert, den diese Variable an der Stelle
-      hat, später noch für eine Rechnung benötigt wird.
+      hat, sp\"ater noch f\"ur eine Rechnung ben\"otigt wird.
 
       Der Grund, warum eine Berechnung der lebendigen Variablen Sinn macht, ist der, dass
       ein Register, das von einer Variablen belegt wird, die an dieser Stelle des
       Programms nicht mehr lebendig ist, von einer anderen Variablen genutzt werden kann.
-\item Anschließend geschieht nun die Register-Allokation, bei der nun auch verschiedenen
+\item Anschlie{\ss}end geschieht nun die Register-Allokation, bei der nun auch verschiedenen
       Variablen dasselbe Register zugeordnet werden kann.   Wird zwei verschiedenen
-      Variablen $x$ und $y$ dasselbe Register zugewiesen, so muss lediglich gewährleistet 
+      Variablen $x$ und $y$ dasselbe Register zugewiesen, so muss lediglich gew\"ahrleistet 
       werden, dass es keinen Punkt im Programm gibt, bei dem gleichzeitig sowohl $x$ als
       auch $y$ lebendig sind.
 \item Bei dem Sichern und Wiederherstellen der Register auf dem Stack muss ausgehend von der Analyse
       der Lebendigkeit der Variablen garantiert werden, dass nur solche Register gesichert
-      werden, deren Werte tatsächlich später noch benötigt werden. 
+      werden, deren Werte tats\"achlich sp\"ater noch ben\"otigt werden. 
 \end{enumerate}
-Wir werden uns im nächsten Kapitel näher mit der Frage der Lebendigkeit von Variablen beschäftigen.
+Wir werden uns im n\"achsten Kapitel n\"aher mit der Frage der Lebendigkeit von Variablen besch\"aftigen.
 
 
 %%% Local Variables: 
