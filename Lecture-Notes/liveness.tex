@@ -1,15 +1,15 @@
 \chapter{Lebendigkeits-Analyse}
-Bei komplexeren Funktionen ist es in der Regel nicht möglich,  für jede in der Funktion
-auftretende Variable ein neues Register zu allokieren, denn dafür ist die Zahl der Register
+Bei komplexeren Funktionen ist es in der Regel nicht m\"oglich,  f\"ur jede in der Funktion
+auftretende Variable ein neues Register zu allokieren, denn daf\"ur ist die Zahl der Register
 insbesondere bei einem \textsc{Cisc}-Prozessor nicht ausreichend.  Dies ist in der Regel aber auch
-nicht notwendig, denn zwei verschiedene Variablen können sich dann ein Register teilen, wenn diese
+nicht notwendig, denn zwei verschiedene Variablen k\"onnen sich dann ein Register teilen, wenn diese
 Variablen nie gleichzeitig \emph{lebendig} sind.  Dabei nennen wir eine Variable an einer bestimmten
-Position lebendig, wenn auf den Wert dieser Variablen zu einem späteren Zeitpunkt noch zugegriffen
+Position lebendig, wenn auf den Wert dieser Variablen zu einem sp\"ateren Zeitpunkt noch zugegriffen
 werden kann.  Betrachten wir zur Veranschaulichung die in Abbildung
 \ref{fig:liveness-example-1.c} gezeigte \texttt{C}-Funktion.  In dieser Funktion werden
 die vie Variablen \texttt{a}, \texttt{b}, \texttt{c} und \texttt{n} verwendet.  Es sieht
-zunächst so aus, als ob vier Register notwendig wären, um alle Variablen in Registern
-speichern zu können.  Wir werden zeigen, dass drei Register bereits ausreichend sind.
+zun\"achst so aus, als ob vier Register notwendig w\"aren, um alle Variablen in Registern
+speichern zu k\"onnen.  Wir werden zeigen, dass drei Register bereits ausreichend sind.
 
 \begin{figure}[!ht]
 \centering
@@ -40,20 +40,20 @@ speichern zu können.  Wir werden zeigen, dass drei Register bereits ausreichend 
 \end{figure}
 
 Wenn wir analysieren wollen, welche Variablen gleichzeitig dasselbe Register belegen
-können,  müssen wir uns zunächst darüber klar werden, wann der Wert einer Variablen, der
-eventuell in einem Register liegt, noch benötigt wird.  Dazu definieren wir, dass eine
-Variable $v$ in einer Zeile $l$ im Programm \emph{lebendig} ist, wenn wir später noch
-auf den Wert dieser Variablen zugreifen müssen.  Wir bezeichnen die Menge aller Zeilen, in denen eine
-Variable $v$ lebendig ist, mit $\textsl{live}(v)$.  Diese Definition der Lebendigkeit ist zunächst noch etwas
-ungenau und wird auf den folgenden Seiten präzisiert.
+k\"onnen,  m\"ussen wir uns zun\"achst dar\"uber klar werden, wann der Wert einer Variablen, der
+eventuell in einem Register liegt, noch ben\"otigt wird.  Dazu definieren wir, dass eine
+Variable $v$ in einer Zeile $l$ im Programm \emph{lebendig} ist, wenn wir sp\"ater noch
+auf den Wert dieser Variablen zugreifen m\"ussen.  Wir bezeichnen die Menge aller Zeilen, in denen eine
+Variable $v$ lebendig ist, mit $\textsl{live}(v)$.  Diese Definition der Lebendigkeit ist zun\"achst noch etwas
+ungenau und wird auf den folgenden Seiten pr\"azisiert.
 
-Zur Beantwortung der Frage, wieviele Register  zur Übersetzung des \ref{fig:liveness-example-1.c}
-gezeigte Programm benötigt werden, transformieren wir dieses Programm in ein 
-\emph{Assembler-ähnliches} Programm, wobei wir unter einem \emph{Assembler-ähnlichen} Programm ein
-Programm verstehen wollen, dass keine komplexen Kontroll-Strukturen wie Schleifen enthält.
-Das Assembler-ähnliche Programm ist in Abbildung \ref{fig:liveness-example-1-asm.c} gezeigt.  Wir
+Zur Beantwortung der Frage, wieviele Register  zur \"Ubersetzung des \ref{fig:liveness-example-1.c}
+gezeigte Programm ben\"otigt werden, transformieren wir dieses Programm in ein 
+\emph{Assembler-\"ahnliches} Programm, wobei wir unter einem \emph{Assembler-\"ahnlichen} Programm ein
+Programm verstehen wollen, dass keine komplexen Kontroll-Strukturen wie Schleifen enth\"alt.
+Das Assembler-\"ahnliche Programm ist in Abbildung \ref{fig:liveness-example-1-asm.c} gezeigt.  Wir
 untersuchen nun, wann die einzelnen in diesem Programm benutzten Variablen lebendig sind.  Ein erster Versuch
-könnte wie folgt aussehen:
+k\"onnte wie folgt aussehen:
 
 \begin{figure}[!ht]
 \centering
@@ -89,44 +89,44 @@ könnte wie folgt aussehen:
       Da Zeile von Zeile 3 und 4 sowie auch von Zeile 8 und 9
       erreicht werden kann, ist \texttt{a} auch in diesen Zeile lebendig.  In Zeile
       7 ist \texttt{a} nicht lebendig, denn der Wert, den \texttt{a} zu diesem Zeitpunkt
-      hat, wird in Zeile 8 überschrieben.  In Zeile 10 ist \texttt{a} ebenfalls nicht
+      hat, wird in Zeile 8 \"uberschrieben.  In Zeile 10 ist \texttt{a} ebenfalls nicht
       lebendig.  Insgesamt haben wir
       \[ \textsl{live}(\mathtt{a}) = \{ 3, 4, 6, 8, 9 \} \]
       \textbf{Bemerkung}:  Zeilen, die keine echten Anweisungen sondern nur Deklarationen
       enthalten, werden bei der Berechnung der Lebendigkeit einer Variablen nicht
-      berücksichtigt.
+      ber\"ucksichtigt.
       In dem obigen Beispiel sind dies die Zeilen 2 und 5.
 \item \texttt{b} wird in Zeile 7 und 8 gelesen und ist daher dort lebendig.  Der Wert von
-      \texttt{b} wird in Zeile 6 berechnet.  Wir könnten daher vermuten, dass 
+      \texttt{b} wird in Zeile 6 berechnet.  Wir k\"onnten daher vermuten, dass 
       \[ \textsl{live}(\mathtt{b}) = \{ 6, 7, 8 \} \]
-      gilt.  Wenn wir so rechnen würden, dann  würden sich die Lebendigkeits-Bereiche
-      der Variablen \texttt{a} und \texttt{b} überlappen.  Tatsächlich können wir die
+      gilt.  Wenn wir so rechnen w\"urden, dann  w\"urden sich die Lebendigkeits-Bereiche
+      der Variablen \texttt{a} und \texttt{b} \"uberlappen.  Tats\"achlich k\"onnen wir die
       Variable \texttt{a} aber in dem selben Register wie die Variable \texttt{b}
       speichern, denn \texttt{a} wird nur bei der Berechnung des Wertes \texttt{b}
-      benötigt, aber sobald dieser Wert berechnet ist, ist der Wert von \texttt{a}
+      ben\"otigt, aber sobald dieser Wert berechnet ist, ist der Wert von \texttt{a}
       irrelevant.
 
       Das Problem ist, dass die Frage, ob eine Variable lebendig ist, nicht an einer
-      Programmzeile festgemacht werden kann, sondern an dem Übergang von einer
+      Programmzeile festgemacht werden kann, sondern an dem \"Ubergang von einer
       Programmzeile zu einer anderen Programmzeile.  Wir schreiben daher
       \[ \textsl{live}(\mathtt{b}) = \{ 6 \ra 7,\; 7 \ra 8 \}. \]
       Damit schreibt sich $\textsl{live}(\mathtt{a})$ als
       \[ \textsl{live}(\mathtt{a}) = \{ 3 \ra 4,\; 4 \ra 6,\; 8 \ra 9,\; 9 \ra 6 \} \]
       Wir stellen nun fest, dass die Mengen $\textsl{live}(\mathtt{a})$ und
       $\textsl{live}(\mathtt{b})$ disjunkt sind, so dass wir die beiden Variablen
-      tatsächlich in dem selben Register speichern können.
-\item \texttt{c} wird in Zeile 7 gelesen und auch geschrieben.  Außerdem wird \texttt{c}
+      tats\"achlich in dem selben Register speichern k\"onnen.
+\item \texttt{c} wird in Zeile 7 gelesen und auch geschrieben.  Au{\ss}erdem wird \texttt{c}
       auch in Zeile 10 gelesen.  Die Definition dieser Variablen ist in Zeile 4.  Daher
       haben wir
       \[ \textsl{live}(\mathtt{c})  = 
          \{ 4 \ra 6,\; 6 \ra 7,\; 7 \ra 8,\; 8 \ra 9,\; 9 \ra 6,\; 9 \ra 10 \}
       \]
-      Die Argumentation für diese Gleichung ist in Detail wie folgt:
+      Die Argumentation f\"ur diese Gleichung ist in Detail wie folgt:
       \begin{enumerate}
       \item Da \texttt{c} in Zeile 7 gelesen wird und der Befehl 7 auf den Befehl 6 folgt, gilt
             \[ 6 \rightarrow 7 \in \textsl{live}(\mathtt{c}). \]
       \item Da \texttt{c} in Zeile 6 lebendig ist und auch nicht neu geschrieben wird,
-            ist \texttt{c} auch in den Zeilen, die unmittelbar vor Zeile 6 kommen können, lebendig.
+            ist \texttt{c} auch in den Zeilen, die unmittelbar vor Zeile 6 kommen k\"onnen, lebendig.
             Damit haben wir
             \[ 9 \rightarrow 6 \in \textsl{live}(\mathtt{c}) \quad \mbox{und} \quad
                4 \rightarrow 6 \in \textsl{live}(\mathtt{c}) 
@@ -144,9 +144,9 @@ könnte wie folgt aussehen:
       \]
       Nur in Zeile 10 ist also \texttt{n} nicht mehr lebendig.
 \end{enumerate}
-Wir formalisieren nun die in dem obigen Beispiel durchführte Argumentation.  Wir fassen
-dazu das Assembler-ähnliche Programm als einen Graphen auf.  Die Zeilen des Programms, die
-später in einen Assembler-Befehl übersetzt werden, sind die Knoten des Programms. 
+Wir formalisieren nun die in dem obigen Beispiel durchf\"uhrte Argumentation.  Wir fassen
+dazu das Assembler-\"ahnliche Programm als einen Graphen auf.  Die Zeilen des Programms, die
+sp\"ater in einen Assembler-Befehl \"ubersetzt werden, sind die Knoten des Programms. 
 Zwischen zwei Zeilen $a$ und $b$ gibt es genau dann eine Kante von $a$ nach $b$, wenn bei
 der Abarbeitung des Programms die Instruktion $b$ auf die Instruktion $a$ unmittelbar
 folgen kann.  Den so erstellten Graph bezeichnen wir als den \emph{Kontrollfluss-Graphen}.
@@ -154,19 +154,19 @@ In dem obigen Beispiel besteht der Kontrollfluss-Graph aus den folgenden Kanten:
 \[ 
   \{ 1 \ra 3,\; 3 \ra 4,\; 4 \ra 6,\; 6 \ra 7,\; 7 \ra 8,\; 8 \ra 9,\; 9 \ra 6,\; 9 \ra 10 \}.
 \]
-Für eine Programm-Zeile $n$ bezeichnen wir mit $\textsl{pred}(n)$ die Menge aller Knoten,
+F\"ur eine Programm-Zeile $n$ bezeichnen wir mit $\textsl{pred}(n)$ die Menge aller Knoten,
 von denen eine Kante zum Knoten $n$ hin geht.  Der Funktionsname \textsl{pred} steht hier
-für \emph{predecessor}.   Weiter bezeichnen wir mit $\textsl{succ}(n)$ die Menge aller
-Knoten, zu denen eine Kante von $n$ aus hin führt.  Der Name \textsl{succ} steht für
+f\"ur \emph{predecessor}.   Weiter bezeichnen wir mit $\textsl{succ}(n)$ die Menge aller
+Knoten, zu denen eine Kante von $n$ aus hin f\"uhrt.  Der Name \textsl{succ} steht f\"ur
 \emph{successor}.  In dem obigen Beispiel gilt
 \[ \textsl{pred}(6) = \{ 4, 9 \} \quad \mbox{und} \quad \textsl{succ}(9) = \{ 6, 10 \}.  \]
-Weiter bezeichnen wir für eine Variable $x$ mit $\textsl{def}(x)$ die Menge aller Knoten,
+Weiter bezeichnen wir f\"ur eine Variable $x$ mit $\textsl{def}(x)$ die Menge aller Knoten,
 in denen der Variablen ein Wert zugewiesen wird.  Beispielsweise gilt
 \[ 
    \textsl{def}(\mathtt{a}) = \{ 3, 8 \} \quad \mbox{und} \quad
    \textsl{def}(\mathtt{b}) = \{ 6 \}.
 \]
-Schließlich bezeichnen wir für eine Variablen $x$ mit $\textsl{use}(x)$ die Menge aller
+Schlie{\ss}lich bezeichnen wir f\"ur eine Variablen $x$ mit $\textsl{use}(x)$ die Menge aller
 Knoten im Kontrollfluss-Graphen, in denen die Variable $x$ gelesen wird.  Beispielsweise gilt
 \[ 
    \textsl{use}(\mathtt{a}) = \{ 6, 9 \} \quad \mbox{und} \quad
@@ -194,7 +194,7 @@ Pfad $[7, 8, 9, 6, 7]$ fortgesetzt werden und auf den Punkten der Menge $\{8,9,6
 \texttt{c} nicht neu definiert.
 
 \begin{Definition}[\textsl{liveIn}, \textsl{liveOut}]
-Für eine Variable $x$ und einen Knoten $n$ sagen wir dass $x \in \textsl{liveIn}(n)$ ist,
+F\"ur eine Variable $x$ und einen Knoten $n$ sagen wir dass $x \in \textsl{liveIn}(n)$ ist,
 falls es einen Knoten $m$  gibt, so dass $x$ auf der Kante $m \ra n$ lebendig ist.
 Es gilt $x \in \textsl{liveOut}(n)$ wenn es einen Knoten $k$ gibt, so dass $x$ auf der
 Kante $n \ra k$ lebendig ist.
@@ -203,11 +203,11 @@ Kante $n \ra k$ lebendig ist.
 \noindent
 \textbf{Bemerkung}: Anschaulich gilt $x \in \textsl{liveIn}(n)$, falls die Variable in dem
 Knoten $n$ oder in einem Knoten, der im Kontrollfluss-Graphen auf $n$ folgt, gelesen wird,
-ohne vorher überschrieben zu werden.  Die Bedingung $x \in \textsl{liveOut}(n)$ bedeutet,
-dass der Wert von $x$ in dem Knoten $n$ (oder einem seiner Vorgänger-Knoten) definiert
-wird und später noch gelesen wird, ohne vorher überschrieben zu werden.
+ohne vorher \"uberschrieben zu werden.  Die Bedingung $x \in \textsl{liveOut}(n)$ bedeutet,
+dass der Wert von $x$ in dem Knoten $n$ (oder einem seiner Vorg\"anger-Knoten) definiert
+wird und sp\"ater noch gelesen wird, ohne vorher \"uberschrieben zu werden.
 
-Die Funktionen $\textsl{liveIn}()$ und $\textsl{liveOut}()$ genügen damit den folgenden
+Die Funktionen $\textsl{liveIn}()$ und $\textsl{liveOut}()$ gen\"ugen damit den folgenden
 beiden Gleichungen:
 \begin{enumerate}
 \item $\textsl{liveIn}(n) = 
@@ -222,12 +222,12 @@ beiden Gleichungen:
       in dem Knoten $n$ sind genau die Variablen \emph{live-out}, die in einem der
       Nachfolgerknoten \emph{live-in} sind.
 \end{enumerate}
-Über diese Gleichungen können nun die Funktionen $\textsl{liveIn}()$ und
+\"Uber diese Gleichungen k\"onnen nun die Funktionen $\textsl{liveIn}()$ und
 $\textsl{liveOut}()$ iterativ berechnet werden.   Abbildung \ref{fig:live-loop} zeigt
-den Pseudo-Code.  Zunächst werden  $\textsl{liveIn}(n)$ und
-$\textsl{liveOut}(n)$ für jeden Knoten $n$ mit der leeren Menge initialsiert.
+den Pseudo-Code.  Zun\"achst werden  $\textsl{liveIn}(n)$ und
+$\textsl{liveOut}(n)$ f\"ur jeden Knoten $n$ mit der leeren Menge initialsiert.
 Die \texttt{while}-Schleife in Zeile 5 wird solange iteriert, bis sich
-die Mengen $\textsl{liveIn}(n)$ und $\textsl{liveOut}(n)$ nicht mehr ändern.
+die Mengen $\textsl{liveIn}(n)$ und $\textsl{liveOut}(n)$ nicht mehr \"andern.
 
 
 \begin{figure}[!ht]
@@ -258,22 +258,22 @@ die Mengen $\textsl{liveIn}(n)$ und $\textsl{liveOut}(n)$ nicht mehr ändern.
 \end{figure}
 
 \noindent
-Die Berechnung der Funktion $\textsl{live}(x)$ für eine Kante $k \ra n$ ergibt sich nun
+Die Berechnung der Funktion $\textsl{live}(x)$ f\"ur eine Kante $k \ra n$ ergibt sich nun
 nach der folgenden Formel
 \[ 
    (k \ra n) \in \textsl{live}(x) \quad \mbox{g.d.w.} \quad
    n \in \textsl{liveIn}(x) \wedge k \in \textsl{pred}(n).
 \]
 Die Variable $x$ ist also auf der Kante $k \ra n$ genau dann lebendig, wenn $x$ eine
-Element der Menge $\textsl{liveIn}(n)$ ist und wenn außerdem die Kante $k \ra n$ eine
+Element der Menge $\textsl{liveIn}(n)$ ist und wenn au{\ss}erdem die Kante $k \ra n$ eine
 Kante des Kontrollfluss-Graphen ist.  
 
 
-Ist die Funktion $\textsl{live}(x)$ für alle Variablen berechnet, so definieren wir, dass
+Ist die Funktion $\textsl{live}(x)$ f\"ur alle Variablen berechnet, so definieren wir, dass
 zwei Variablen $x$ und $y$ \emph{im Konflikt} miteinander stehen, wenn 
 \[ \textsl{live}(x) \cap \textsl{live}(y) \not= \{\}.  \]
-gilt.  In diesem Fall benötigen wir verschiedene Register für die Variablen $x$ und $y$.
-Ist die Schnittmenge $\textsl{live}(x) \cap \textsl{live}(y)$ hingegen leer, so können wir
+gilt.  In diesem Fall ben\"otigen wir verschiedene Register f\"ur die Variablen $x$ und $y$.
+Ist die Schnittmenge $\textsl{live}(x) \cap \textsl{live}(y)$ hingegen leer, so k\"onnen wir
 die Variablen $x$ und $y$ im selben Register speichern.
 
 

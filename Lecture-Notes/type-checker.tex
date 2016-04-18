@@ -59,17 +59,17 @@ language and then we develop a type checker for this language.
 
 \section{Eine Beispielsprache}
 Wir stellen jetzt die Sprache \textsc{Ttl} (\emph{typed term language} vor.  Dabei handelt es sich
-um eine sehr einfache Beispielsprache, die es dem Benutzer ermöglicht
+um eine sehr einfache Beispielsprache, die es dem Benutzer erm\"oglicht
 \begin{itemize}
 \item Typen zu definieren,
 \item Funktionen zu deklarieren und
 \item Terme anzugeben,
 \end{itemize}
-für die dann die Typ-Korrektheit nachgewiesen wird.
+f\"ur die dann die Typ-Korrektheit nachgewiesen wird.
 Die Sprache \textsc{Ttl} ist sehr einfach gehalten,
-damit wir uns auf die wesentlichen Ideen der Typ-Überprüfung konzentrieren können.
-Daher können wir in \textsc{Ttl} auch keine wirklichen Programme schreiben,
-sondern einzig und allein überprüfen, ob Ausdrücke wohlgetypt sind.
+damit wir uns auf die wesentlichen Ideen der Typ-\"Uberpr\"ufung konzentrieren k\"onnen.
+Daher k\"onnen wir in \textsc{Ttl} auch keine wirklichen Programme schreiben,
+sondern einzig und allein \"uberpr\"ufen, ob Ausdr\"ucke wohlgetypt sind.
 
 \begin{figure}[!ht]
 \centering
@@ -97,11 +97,11 @@ sondern einzig und allein überprüfen, ob Ausdrücke wohlgetypt sind.
 \label{fig:types.ttl}
 \end{figure}
 
-Abbildung \ref{fig:types.ttl} zeigt ein einfaches Beispiel-Programm.  Die Schlüsselwörter habe ich
+Abbildung \ref{fig:types.ttl} zeigt ein einfaches Beispiel-Programm.  Die Schl\"usselw\"orter habe ich
 unterstrichen.  Wir diskutieren dieses Programm jetzt im Detail.
 \begin{enumerate}
 \item In Zeile 1 definieren wir den \emph{generischen} Typ $\texttt{list}(X)$.  Das $X$ ist hier der
-      Typ-Parameter, der später durch einen konkreten Typ wie z.B. \texttt{int},
+      Typ-Parameter, der sp\"ater durch einen konkreten Typ wie z.B. \texttt{int},
       \texttt{string} oder $\mathtt{list}(\mathtt{string})$ ersetzt werden kann.
 
       Semantisch ist die Zeile als induktive Definition zu lesen, durch die eine Menge von Termen
@@ -121,12 +121,12 @@ unterstrichen.  Wir diskutieren dieses Programm jetzt im Detail.
       diesen Typ.
 \item In den Zeilen 4 -- 6 legen wir fest, dass die Variablen $x$, $y$ und $z$ jeweils den Typ
       \texttt{int} haben.
-\item In Zeile 8 und 9 werden schließlich die beiden Terme
+\item In Zeile 8 und 9 werden schlie{\ss}lich die beiden Terme
       \[ \mathtt{concat(nil, nil)} \quad \mbox{und} \quad
          \mathtt{concat(cons(x, nil), cons(y, cons(z, nil)))}
       \] 
       angegeben und es wird behauptet, dass diese den Typ $\texttt{list}(\texttt{int})$ haben.
-      Die Aufgabe der Typ-Überprüfung besteht darin, diese Aussage zu verifizieren.
+      Die Aufgabe der Typ-\"Uberpr\"ufung besteht darin, diese Aussage zu verifizieren.
 \end{enumerate}
 
 
@@ -169,7 +169,7 @@ unterstrichen.  Wir diskutieren dieses Programm jetzt im Detail.
     FCT     : ('a'..'z')('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
 \end{Verbatim}
 \vspace*{-0.3cm}
-  \caption{Eine EBNF-Grammatik für die getypte Beispielsprache}
+  \caption{Eine EBNF-Grammatik f\"ur die getypte Beispielsprache}
 \label{fig:typeChecker-grammar}
 \end{figure}
 
@@ -178,16 +178,16 @@ unterstrichen.  Wir diskutieren dieses Programm jetzt im Detail.
 \noindent
 Die genaue Syntax der Sprache \textsc{Ttl} wird durch die in Abbildung \ref{fig:typeChecker-grammar}
 gezeigte Grammatik definiert.  Diese Grammatik verwendet neben den Zeichen-Reihen, die in doppelten
-Anführungs-Zeichen gesetzt sind, die folgenden Terminale:
+Anf\"uhrungs-Zeichen gesetzt sind, die folgenden Terminale:
 \begin{enumerate}
 \item \textsc{Function} bezeichnet entweder einen Typ-Konstruktor wie \texttt{list}, eine Variable
       wie \texttt{x} oder \texttt{y} oder einen Funktionsnamen wie \texttt{concat}.  Syntaktisch
       werden Typ-Konstruktoren, Variablen und Funktionsnamen dadurch erkannt, dass sie mit
       einem Kleinbuchstaben beginnen. 
 \item \textsc{Parameter} bezeichnet einen Typ-Parameter wie z.B.~das $X$ in $\texttt{list}(X)$.
-      Diese beginnen immer mit einem Großbuchstaben.
+      Diese beginnen immer mit einem Gro{\ss}buchstaben.
 \end{enumerate}
-Bevor wir einen Algorithmus zur Typ-Überprüfung vorstellen können ist es erforderlich,
+Bevor wir einen Algorithmus zur Typ-\"Uberpr\"ufung vorstellen k\"onnen ist es erforderlich,
 einige grundlegende Begriffe wie 
 den Begriff der Substitution und die Anwendung von Substitutionen auf Typen zu diskutieren.
 
@@ -209,31 +209,31 @@ an.  Damit spezifizieren wir:
 \item Das $i$-te Argument hat den Typ $\sigma_i$.  
 \item Das von der Funktion berechnete Ergebnis hat den Typ $\varrho$.
 \end{enumerate}
-Als nächstes definieren wir, was wir unter einem Typ verstehen wollen.
-Anschaulich sind das Ausdrücke wie 
+Als n\"achstes definieren wir, was wir unter einem Typ verstehen wollen.
+Anschaulich sind das Ausdr\"ucke wie 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{map}(K,V)$, \quad $\textsl{double}$, \quad oder \quad $\textsl{list}(\textsl{int})$.
 \\[0.2cm]
 Formal werden Typen aus Typ-Parametern und Typ-Konstruktoren aufgebaut.
 In dem obigen Beispiel sind \textsl{map}, \textsl{double}, \textsl{list} und \textsl{int}
-Typ-Konstruktoren, während $K$ und $V$ Typ-Parameter sind.
+Typ-Konstruktoren, w\"ahrend $K$ und $V$ Typ-Parameter sind.
 Wir nehmen an, dass einerseits eine Menge $\mathbb{P}$ von Typ-Parametern und
 andererseits eine Menge von Typ-Konstruktoren $\mathbb{K}$ gegeben sind.  In dem letzten Beispiel
-könnten wir
+k\"onnten wir
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mathbb{K} = \bigl\{ \textsl{map}, \textsl{list}, \textsl{int}, \textsl{double}\bigr\}$
 \quad und \quad
 $\mathbb{P} = \bigl\{ K, V \bigr\}$
 \\[0.2cm]
-setzen.  Zusätzlich muss noch eine Funktion
+setzen.  Zus\"atzlich muss noch eine Funktion
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{arity}: \mathbb{K} \rightarrow \mathbb{N}$
 \\[0.2cm]
-gegeben sein, die für jeden Typ-Konstruktor festlegt, wieviel Argumente er erwartet.
-In dem obigen Beispiel hätten wir
+gegeben sein, die f\"ur jeden Typ-Konstruktor festlegt, wieviel Argumente er erwartet.
+In dem obigen Beispiel h\"atten wir
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{arity}(\textsl{map}) = 2$, \quad
@@ -659,18 +659,18 @@ is a solution of the type equation given above.
 
 %\input{ep}
 
-\section{Implementierung eines Typ-Checkers für \textsc{TTL}}
-Zur Illustration der dargestellten Theorie implementieren wir einen Typ-Checker für \textsc{TTL}.
+\section{Implementierung eines Typ-Checkers f\"ur \textsc{TTL}}
+Zur Illustration der dargestellten Theorie implementieren wir einen Typ-Checker f\"ur \textsc{TTL}.
 Die Grammatik hatten wir ja bereits in Abbildung \ref{fig:typeChecker-grammar} auf Seite
-\pageref{fig:typeChecker-grammar} präsentiert.  Die Abbildungen 
+\pageref{fig:typeChecker-grammar} pr\"asentiert.  Die Abbildungen 
 \ref{fig:typeChecker.cup-1}, \ref{fig:typeChecker.cup-2} und \ref{fig:typeChecker.cup-3} 
-auf den folgenden Seiten zeigen die \textsl{JavaCup}-Spezifikation eines Parsers für diese Grammatik.
-Der zugehörige Scanner ist in Abbildungen  \ref{fig:typeChecker.jflex} auf Seite
+auf den folgenden Seiten zeigen die \textsl{JavaCup}-Spezifikation eines Parsers f\"ur diese Grammatik.
+Der zugeh\"orige Scanner ist in Abbildungen  \ref{fig:typeChecker.jflex} auf Seite
 \pageref{fig:typeChecker.jflex} gezeigt.  Der Scanner unterscheidet in den Zeilen 34 und 35 zwischen
-Namen, die mit einem großen Buchstaben beginnen und solchen Namen, die mit einem kleinen Buchstaben
+Namen, die mit einem gro{\ss}en Buchstaben beginnen und solchen Namen, die mit einem kleinen Buchstaben
 beginnen.  Erstere bezeichnen Typ-Parameter, letztere bezeichnen sowohl Funktionen als auch Typ-Konstruktoren.
 Der von \textsl{JavaCup} generierte Parser baut einen abstrakten
-Syntax-Baum auf.  Die zugehörigen Klassen wurden mit Hilfe des im vorhergehenden Abschnitts diskutierten
+Syntax-Baum auf.  Die zugeh\"origen Klassen wurden mit Hilfe des im vorhergehenden Abschnitts diskutierten
 Klassen-Generators 
 \textsc{EP} aus der in Abbildung \ref{fig:typeExpr.ep} gezeigten Spezifikation erzeugt.
 
@@ -873,7 +873,7 @@ Klassen-Generators
         MartelliMontanari(List<Equation> equations, Substitution theta);
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Definition der benötigten \textsl{Java}-Klassen mit Hilfe von \textsc{EP}.}
+\caption{Definition der ben\"otigten \textsl{Java}-Klassen mit Hilfe von \textsc{EP}.}
 \label{fig:typeExpr.ep}
 \end{figure}
 
@@ -985,12 +985,12 @@ Klassen-Generators
 \label{fig:MartelliMontanari:solve.java}
 \end{figure}
 
-Die Klasse \texttt{MartelliMontanari} enthält die in Abbildung \ref{fig:MartelliMontanari:solve.java}
-gezeigte Methode $\textsl{solve}()$, mit der sich ein syntaktisches Gleichungs-System lösen lässt.
+Die Klasse \texttt{MartelliMontanari} enth\"alt die in Abbildung \ref{fig:MartelliMontanari:solve.java}
+gezeigte Methode $\textsl{solve}()$, mit der sich ein syntaktisches Gleichungs-System l\"osen l\"asst.
 Wir diskutieren diese Methode jetzt im Detail.
 \begin{enumerate}
-\item Am Anfang wählen wir in  Zeilen 3 willkürlich die erste syntaktische Gleichung aus der Menge
-      \texttt{mEquations} der zu lösenden syntaktischen Gleichungen aus.  
+\item Am Anfang w\"ahlen wir in  Zeilen 3 willk\"urlich die erste syntaktische Gleichung aus der Menge
+      \texttt{mEquations} der zu l\"osenden syntaktischen Gleichungen aus.  
       
       Das weitere Vorgehen richtet sich dann nach der Art der Gleichung.
 \item In den Zeilen 6 -- 14 behandeln wir den Fall, dass auf der linken Seite der syntaktischen Gleichung
@@ -1001,13 +1001,13 @@ Wir diskutieren diese Methode jetzt im Detail.
       $\Big\langle E \cup \big\{ X \doteq \tau \big\}, \vartheta \Big\rangle \quad\leadsto\quad 
        \Big\langle E[X \mapsto \tau], \vartheta\big[ X \mapsto \tau \big] \Big\rangle$. 
       \\[0.2cm]
-      Der Typ-Parameter, der in der obigen Formel mit \texttt{X} bezeichnet wird, trägt im Programm 
+      Der Typ-Parameter, der in der obigen Formel mit \texttt{X} bezeichnet wird, tr\"agt im Programm 
       den Namen \texttt{var} und der Typ $\tau$ wird im Programm mit \texttt{rhs} bezeichnet.
 \item In Zeile 15 betrachten wir den Fall, dass auf der linken Seite der syntaktischen Gleichung
-      ein zusammengesetzter Typ steht.  Wenn die Typ-Gleichung lösbar sein soll, muss dann auch auf der
-      rechten Seite ein zusammengesetzter Typ stehen.  Dies wird in  Zeile 16 überprüft.
+      ein zusammengesetzter Typ steht.  Wenn die Typ-Gleichung l\"osbar sein soll, muss dann auch auf der
+      rechten Seite ein zusammengesetzter Typ stehen.  Dies wird in  Zeile 16 \"uberpr\"uft.
 
-      Der restliche Code beschäftigt sich nun mit dem Fall, dass auf beiden Seiten der syntaktischen
+      Der restliche Code besch\"aftigt sich nun mit dem Fall, dass auf beiden Seiten der syntaktischen
       Gleichung ein zusammengesetzter Typ steht.
 \item Die Zeilen 22 -- 25 behandeln den Fall, dass die Typ-Konstruktoren auf beiden Seiten verschieden sind,
       es wird also der Fall
@@ -1018,8 +1018,8 @@ Wir diskutieren diese Methode jetzt im Detail.
        \;\leadsto\; \Omega$. 
       \\[0.2cm]
       behandelt.  Die Methode liefert in diesem Fall statt einer Substitution den Wert \texttt{null}
-      zurück.
-\item Die Zeilen 27 -- 32 behandeln schließlich den Fall, in dem wir das Gleichungs-System nach der Regel
+      zur\"uck.
+\item Die Zeilen 27 -- 32 behandeln schlie{\ss}lich den Fall, in dem wir das Gleichungs-System nach der Regel
       \\[0.2cm]
       \hspace*{1.3cm}
       $\Big\langle E \cup \big\{ f(\sigma_1,\cdots,\sigma_n) \doteq f(\tau_1,\cdots,\tau_n) \big\}, 
@@ -1080,7 +1080,7 @@ eine Signatur
 \hspace*{1.3cm}
 $f: \sigma_1 \times \cdots \times \sigma_n \rightarrow \varrho$
 \\[0.2cm]
-hat und es darüber hinaus eine Parameter-Substitution $\vartheta$ gibt, so dass
+hat und es dar\"uber hinaus eine Parameter-Substitution $\vartheta$ gibt, so dass
 $\tau = \varrho\vartheta$ gilt und weiterhin die Terme $s_i$ vom Typ $\sigma_i\vartheta$ sind:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1088,14 +1088,14 @@ $f(s_1,\cdots,s_n):\tau \;\Leftrightarrow\;
  \exists \vartheta\in\textsc{Subst}: \varrho\vartheta = \tau \wedge 
  s_1:\sigma_1\vartheta \wedge \cdots \wedge s_n:\sigma_n\vartheta$.
 \begin{enumerate}
-\item Um die obige Definition von $t:\tau$ umzusetzen, suchen wir für einen Term der Form
-      $f(s_1,\cdots,s_n)$ zunächst in Zeile 2 nach der Signatur des Funktions-Zeichens $f$.
+\item Um die obige Definition von $t:\tau$ umzusetzen, suchen wir f\"ur einen Term der Form
+      $f(s_1,\cdots,s_n)$ zun\"achst in Zeile 2 nach der Signatur des Funktions-Zeichens $f$.
       Diese Signaturen sind in der Symboltabelle \texttt{map} hinterlegt.
-      Findet sich für das Funktions-Zeichen keine Signatur, so liegt offenbar ein Fehler vor, 
+      Findet sich f\"ur das Funktions-Zeichen keine Signatur, so liegt offenbar ein Fehler vor, 
       der in Zeile 4 ausgegeben wird.
 \item Ansonsten speichern wir in Zeile 8 die Argument-Typen $\sigma_1, \cdots, \sigma_n$ in der Variablen
-      \texttt{argTypes}.  Die Signatur von $f$ muss natürlich genau so viele Argument-Typen
-      haben, wie das Funktions-Zeichen $f$ Argumente hat.  Dies wird in Zeile  9 überprüft.
+      \texttt{argTypes}.  Die Signatur von $f$ muss nat\"urlich genau so viele Argument-Typen
+      haben, wie das Funktions-Zeichen $f$ Argumente hat.  Dies wird in Zeile  9 \"uberpr\"uft.
 \item Falls bis hierhin keine Probleme aufgetreten sind, erzeugen wir nun die Typ-Gleichungen nach der Formel
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1103,7 +1103,7 @@ $f(s_1,\cdots,s_n):\tau \;\Leftrightarrow\;
       \textsl{typeEqs}\bigl( f(t_1,\cdots,t_n), \tau \bigr) := 
       \{ \varrho = \tau \} \cup \bigcup\limits_{i=1}^n \textsl{typeEqs}(t_i, \sigma_i)$.
       \\[0.2cm]
-      Dazu erstellen wir in Zeile 17 zuächst die Typ-Gleichungen
+      Dazu erstellen wir in Zeile 17 zu\"achst die Typ-Gleichungen
       \\[0.2cm]      
       \hspace*{1.3cm}
       $\varrho \doteq \tau$
@@ -1112,10 +1112,10 @@ $f(s_1,\cdots,s_n):\tau \;\Leftrightarrow\;
       den Forderungen 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $s_i:\sigma_i \quad \mbox{für} \; i=1,\cdots,n$
+      $s_i:\sigma_i \quad \mbox{f\"ur} \; i=1,\cdots,n$
       \\[0.2cm]
       ergeben.  Als Ergebnis erhalten wir eine Menge von Typ-Gleichungen, die genau
-      dann lösbar sind, wenn der Term $f(s_1,\cdots,s_n)$ den Typ $\tau$ hat.
+      dann l\"osbar sind, wenn der Term $f(s_1,\cdots,s_n)$ den Typ $\tau$ hat.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -1181,13 +1181,13 @@ zeigt den Konstruktor dieser Klasse.  Dieser Konstruktor bekommt als Argumente
 \item eine Liste von Typ-Definitionen \texttt{typeDefs},
 \item eine Liste von Signaturen \texttt{signatures} und
 \item eine Liste von getypten Termen \texttt{typedTerms}, deren Typ-Korrektheit
-      überprüft werden soll.
+      \"uberpr\"uft werden soll.
 \end{itemize}
 Die wesentliche Aufgabe des Konstruktors besteht darin,  die Member-Variable
 \texttt{mSignatureMap} zu initialisieren.  Hierbei handelt es sich um eine Symboltabelle,
-in der zu jedem Funktions-Namen die zugehörige Signatur abgelegt ist.
-Dazu werden zunächst in der Schleife in Zeile 9 -- 11 alle
-Signaturen aus der als Argument übergebenen Liste \texttt{signatures} in dieser Liste eingetragen.
+in der zu jedem Funktions-Namen die zugeh\"orige Signatur abgelegt ist.
+Dazu werden zun\"achst in der Schleife in Zeile 9 -- 11 alle
+Signaturen aus der als Argument \"ubergebenen Liste \texttt{signatures} in dieser Liste eingetragen.
 Dies alleine ist allerdings nicht ausreichend, denn durch die Typ-Definitionen werden implizit noch
 weitere Funktions-Zeichen deklariert.  Beispielsweise werden durch die Typ-Definition
 \\[0.2cm]
@@ -1202,12 +1202,12 @@ haben die folgenden Signaturen:
 \end{enumerate}
 Die Aufgabe des Konstruktors der Klasse \texttt{Program} besteht also darin, aus den in dem Argument
 \texttt{typeDefs} enthaltenen Typ-Definitionen die Signaturen der implizit deklarierten
-Funktionszeichen zu generieren.  Dazu iteriert die Schleife in Zeile 12 zunächst über alle
+Funktionszeichen zu generieren.  Dazu iteriert die Schleife in Zeile 12 zun\"achst \"uber alle
 Typ-Definitionen.   Es gibt zwei Arten von Typ-Definitionen:  Typ-Definitionen, bei denen der
-erzeugte Typ noch von einem oder mehreren Parametern abhängt, wie dies z.B.~bei der Typ-Definition
+erzeugte Typ noch von einem oder mehreren Parametern abh\"angt, wie dies z.B.~bei der Typ-Definition
 von \texttt{List(T)} der Fall ist, oder solche Typ-Definitionen, bei denen der erzeugte Typ keine
 Parameter hat.  Letztere Typ-Definitionen werden durch die Klasse \texttt{SimpleTypeDef}
-dargestellt, erstere durch die Klasse \texttt{CompositeType}.  Diese beiden Fälle werden durch die
+dargestellt, erstere durch die Klasse \texttt{CompositeType}.  Diese beiden F\"alle werden durch die
 \texttt{if}-Abfrage in Zeile 13 unterschieden.
 \begin{enumerate}
 \item Falls die untersuchte Typ-Definition \texttt{td} eine einfache Typ-Definition der Form
@@ -1222,21 +1222,21 @@ dargestellt, erstere durch die Klasse \texttt{CompositeType}.  Diese beiden Fäll
       wird dann in der Symboltabelle \texttt{mSignatureMap} abgelegt.
 \item Falls es sich bei der untersuchten Typ-Definition um die Definition eines parametrisierten
       Typs handelt, muss darauf geachtet werden, dass der Ergebnis-Typ der Signatur der Funktionen
-      $f_i$ auch von diesen Parametern abhängt.  Zu diesem Zweck wird in Zeile 24 zunächst eine neue
+      $f_i$ auch von diesen Parametern abh\"angt.  Zu diesem Zweck wird in Zeile 24 zun\"achst eine neue
       Parameter-Liste \texttt{paramList} angelegt, in die dann in der Schleife in Zeile 25 --- 27
       die Parameter des Typs hineinkopiert werden.  Der Rest dieses Falls ist analog zum ersten Fall.
 \end{enumerate}
-Neben dem Konstruktor enthält die Klasse \texttt{Program} noch die Methode \texttt{typeCheck()},
-welche die Typüberprüfung ausführt.  Die Implementierung dieser Methode ist in der Abbildung
+Neben dem Konstruktor enth\"alt die Klasse \texttt{Program} noch die Methode \texttt{typeCheck()},
+welche die Typ\"uberpr\"ufung ausf\"uhrt.  Die Implementierung dieser Methode ist in der Abbildung
 \ref{fig:Program.typeCheck} gezeigt.  Diese Methode iteriert in der Schleife, die in Zeile 2
-beginnt, über alle getypten Terme $t: \tau$, die dem Konstruktor der Klasse \texttt{Program}
-übergeben wurden.   Dazu wird in Zeile 6 zu jedem Term $t$ und Typ $\tau$ die Menge der
+beginnt, \"uber alle getypten Terme $t: \tau$, die dem Konstruktor der Klasse \texttt{Program}
+\"ubergeben wurden.   Dazu wird in Zeile 6 zu jedem Term $t$ und Typ $\tau$ die Menge der
 Typ-Gleichungen $\textsl{typeEqs}(t,\tau)$ berechnet.  Dazu wird der Methode \texttt{typeEqs()}, die
 die Funktion $\textsl{typeEqs}()$ implementiert, noch die vom Konstruktor berechnete Symboltabelle
-übergeben.  In dieser Symboltabelle sind die Signaturen der verschiedenen Funktions-Zeichen
-abgespeichert.   Die berechneten Typ-Gleichungen werden anschließend mit Hilfe der Methode
-\texttt{solve()}  der Klasse \texttt{MartelliMontanari} gelöst.  Falls die Typ-Gleichungen
-gelöst werden konnten, hat der Term $t$ tatsächlich den Typ $\tau$.  Andernfalls wird eine
+\"ubergeben.  In dieser Symboltabelle sind die Signaturen der verschiedenen Funktions-Zeichen
+abgespeichert.   Die berechneten Typ-Gleichungen werden anschlie{\ss}end mit Hilfe der Methode
+\texttt{solve()}  der Klasse \texttt{MartelliMontanari} gel\"ost.  Falls die Typ-Gleichungen
+gel\"ost werden konnten, hat der Term $t$ tats\"achlich den Typ $\tau$.  Andernfalls wird eine
 Fehlermeldung ausgegeben.
 
 
@@ -1283,26 +1283,26 @@ gleichzeitig den Typ \texttt{Object}, es gilt also
 $\texttt{String} \subseteq \texttt{Object}$.
 \\[0.2cm]
 Allgemein gilt: Ist $e$ ein Ausdruck, der den Typ $A$ hat und ist $A$ weiter eine Klasse, die von der
-Klasse $B$ abgeleitet ist, so kann der Ausdruck $e$ überall dort verwendet werden, wo ein Ausdruck vom Typ
-$B$ benötigt wird.  Damit kann der Ausdruck $e$ sowohl als ein $A$, als auch als ein $B$ verwendet werden:
+Klasse $B$ abgeleitet ist, so kann der Ausdruck $e$ \"uberall dort verwendet werden, wo ein Ausdruck vom Typ
+$B$ ben\"otigt wird.  Damit kann der Ausdruck $e$ sowohl als ein $A$, als auch als ein $B$ verwendet werden:
 $e$ kann also \emph{polymorph} verwendet werden.  Im Gegensatz zu dem \emph{parametrischen Polymorphismus},
 den wir bisher betrachtet haben, sprechen wir hier von \emph{Inklusions-Polymorphismus}.  Die Behandlung von
 Inklusions-Polymorphismus ist besonders dann interessant, wenn dieser zusammen mit parametrischen
 Polymorphismus auftritt.  Wir zeigen exemplarisch ein Beispiel in Abbildung \ref{fig:TypeSurprise.java}.
 \begin{enumerate}
-\item In Zeile 4 wird hier zunächst ein Feld \texttt{x} von Strings angelegt.
+\item In Zeile 4 wird hier zun\"achst ein Feld \texttt{x} von Strings angelegt.
 \item In Zeile 5 definieren wir ein Feld \texttt{y} von Objekten und initialisieren dieses Feld mit
       dem bereits erzeugten Feld \texttt{x}.  Da jeder String zugleich auch ein Objekt ist,
-      ist dies möglich.
+      ist dies m\"oglich.
 \item In Zeile 6 weisen wir dem zweiten Element des Feldes \texttt{y} die Zahl 2 zu.
       Da \texttt{y} ein Feld von Objekten ist und eine Zahl ebenfalls als Objekt angesehen werden kann,
       sollte auch dies kein Problem sein.
 \end{enumerate}
-In der Tat lässt sich das Programm fehlerfrei übersetzen.  Bei der Ausführung wird aber eine Ausnahme
-ausgelöst.  Der Grund ist, dass mit der Zuweisung in Zeile 5 die Variable \texttt{y} eine Referenz auf das
+In der Tat l\"asst sich das Programm fehlerfrei \"ubersetzen.  Bei der Ausf\"uhrung wird aber eine Ausnahme
+ausgel\"ost.  Der Grund ist, dass mit der Zuweisung in Zeile 5 die Variable \texttt{y} eine Referenz auf das
 Feld von Strings ist, das in Zeile 4 angelegt worden ist.  Wenn wir nun versuchen, in dieses Feld eine Zahl
-einzufügen, dann gibt es eine \texttt{ArrayStoreException}.  Dieses Beispiel zeigt, dass die Sprache
-\textsl{Java} nicht statisch auf Typ-Sicherheit geprüft werden kann.  Es zeigt auch, dass die Behandlung der
+einzuf\"ugen, dann gibt es eine \texttt{ArrayStoreException}.  Dieses Beispiel zeigt, dass die Sprache
+\textsl{Java} nicht statisch auf Typ-Sicherheit gepr\"uft werden kann.  Es zeigt auch, dass die Behandlung der
 Kombiation von Inklusions-Polymorphismus und parametrischen Polymorphismus deutlich komplexer ist, als die
 Behandlung von parametrischem Polymorphismus alleine.
 
@@ -1332,7 +1332,7 @@ Behandlung von parametrischem Polymorphismus alleine.
 \label{fig:TypeSurprise.java}
 \end{figure}
 In dem Papier ``\emph{Type Inference for Java 5}''  von Mazurak und Zdancewic wird das Typ-System
-der Sprache \textsl{Java} näher untersucht.  Die Autoren kommen zu dem Schluss, dass die Frage, ob
+der Sprache \textsl{Java} n\"aher untersucht.  Die Autoren kommen zu dem Schluss, dass die Frage, ob
 ein gegebenes \textsl{Java}-Programm korrekt getypt ist, unentscheidbar ist.  Es ist daher auch
 nicht verwunderlich,  dass sich der \textsl{Java}-Compiler bei manchen Programmen mit einem
 Stack-Overflow verabschiedet, der seine Ursache im Typ-Checker des Compilers hat.
@@ -1351,7 +1351,7 @@ instead.
 \vspace*{0.3cm}
 \noindent
 Dies zeigt, dass die Kombination von parametrischem Polymorphismus und Inklusions-Polymor\-phismus zu
-sehr komplexen Problemen führen kann, die wir aber aus Zeitgründen nicht tiefer betrachten können.
+sehr komplexen Problemen f\"uhren kann, die wir aber aus Zeitgr\"unden nicht tiefer betrachten k\"onnen.
 
 
 
