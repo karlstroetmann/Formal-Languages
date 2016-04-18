@@ -1,32 +1,32 @@
 \chapter{Entwicklung eines einfachen Compilers} 
 In diesem Kapitel konstruieren wir einen Compiler, der ein Fragment der Sprache \texttt{C}
-in \textsl{Java}-Assembler übersetzt.  
-Das von dem Compiler übersetzte Fragment der Sprache \texttt{C} bezeichnen wir als
-\textsl{Integer}-\texttt{C}, denn es steht dort nur der Datentyp \texttt{int} zur Verfügung.
+in \textsl{Java}-Assembler \"ubersetzt.  
+Das von dem Compiler \"ubersetzte Fragment der Sprache \texttt{C} bezeichnen wir als
+\textsl{Integer}-\texttt{C}, denn es steht dort nur der Datentyp \texttt{int} zur Verf\"ugung.
 Ein Compiler besteht prinzipiell aus den folgenden Komponenten:
 \begin{enumerate}
-\item Der Scanner liest die zu übersetzende Datei ein und zerlegt diese in eine Folge von Token.
+\item Der Scanner liest die zu \"ubersetzende Datei ein und zerlegt diese in eine Folge von Token.
       
       Wir werden unseren Scanner mit Hilfe des Werkzeugs \textsl{JFlex} entwickeln.
 \item Der Parser liest die Folge von Token und produziert als Ergebnis einen abstrakten Syntax-Baum.
 
       Wir werden den Parser mit Hilfe von \textsc{Cup} generieren.
-\item Der Typ-Checker überprüft den abstrakten Syntax-Baum auf Typ-Fehler.
+\item Der Typ-Checker \"uberpr\"uft den abstrakten Syntax-Baum auf Typ-Fehler.
 
-      Da die von uns übersetzte Sprache nur einen einzelnen Datentyp enthält, erübrigt
-      sich diese Phase für den von uns entwickelten Compiler.
-\item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgründen aber nicht betrachten.
-\item Der Code-Generator übersetzt schließlich den Parse-Baum in eine Folge von
+      Da die von uns \"ubersetzte Sprache nur einen einzelnen Datentyp enth\"alt, er\"ubrigt
+      sich diese Phase f\"ur den von uns entwickelten Compiler.
+\item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgr\"unden aber nicht betrachten.
+\item Der Code-Generator \"ubersetzt schlie{\ss}lich den Parse-Baum in eine Folge von
       \textsc{Java}-Assembler-Befehlen.  
 \end{enumerate}
 Bei unseren Compiler sind wir an dieser Stelle schon fertig.  Bei Compilern, deren Zielcode ein
-\textsc{Risc}-Assembler-Programm ist, wird normalerweise zunächst auch ein Code erzeugt, der dem
-\textsc{Jvm}-Code ähnelt.  Ein solcher Code wird als \emph{Zwischen-Code} bezeichnet.  Es bleibt
-dann die Aufgabe eines sogenannten \emph{Backends}, daraus ein Assembler-Programm für einen gegebene
-Prozessor-Architektur zur erzeugen.  Die schwierigste Aufgabe besteht hier darin, für die
-verwendeten Variablen eine Register-Zuordnung zu finden, bei der möglichst alle Variablen in
-Registern vorgehalten werden können.  
-Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung nicht behandeln.
+\textsc{Risc}-Assembler-Programm ist, wird normalerweise zun\"achst auch ein Code erzeugt, der dem
+\textsc{Jvm}-Code \"ahnelt.  Ein solcher Code wird als \emph{Zwischen-Code} bezeichnet.  Es bleibt
+dann die Aufgabe eines sogenannten \emph{Backends}, daraus ein Assembler-Programm f\"ur einen gegebene
+Prozessor-Architektur zur erzeugen.  Die schwierigste Aufgabe besteht hier darin, f\"ur die
+verwendeten Variablen eine Register-Zuordnung zu finden, bei der m\"oglichst alle Variablen in
+Registern vorgehalten werden k\"onnen.  
+Aus Zeitgr\"unden k\"onnen wir das Thema der Register-Zuordnung in dieser Vorlesung nicht behandeln.
 % Dieses Thema ist allerdings so komplex, dass wir es in einem separaten Kapitel diskutieren.
 
 \section{Die Programmiersprache \textsl{Integer}-\texttt{C}}
@@ -58,43 +58,43 @@ Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung 
 
   \end{minipage}
   \end{center}
-  \caption{Eine \textsc{Ebnf}-Grammatik für \textsl{Integer}-\textsc{C}}
+  \caption{Eine \textsc{Ebnf}-Grammatik f\"ur \textsl{Integer}-\textsc{C}}
 \label{fig:compiler.cup}
 \end{figure}
 
 \noindent
-Wir stellen nun die Sprache \textsl{Integer}-\texttt{C} vor, die unser Compiler übersetzen
+Wir stellen nun die Sprache \textsl{Integer}-\texttt{C} vor, die unser Compiler \"ubersetzen
 soll.  In diesem Zusammenhang sprechen wir auch von der \emph{Quellsprache} unseres Compilers.
 Abbildung \ref{fig:compiler.cup} zeigt die Grammatik der Quellsprache in 
 erweiterter Backus-Naur-Form (\textsc{Ebnf}). 
-Die Grammatik für \textsl{Integer}-\texttt{C} verwendet die folgenden beiden Terminale:
+Die Grammatik f\"ur \textsl{Integer}-\texttt{C} verwendet die folgenden beiden Terminale:
 \begin{enumerate}
-\item \textsc{Id} steht für eine Folge von Ziffern, Buchstaben und dem Unterstrich, die 
+\item \textsc{Id} steht f\"ur eine Folge von Ziffern, Buchstaben und dem Unterstrich, die 
       mit einem Buchstaben beginnt.  Eine \textsc{Id} bezeichnet entweder eine Variable oder
       den Namen einer Funktion.
-\item \textsc{Number} steht für eine Folge von Ziffern, die als Dezimalzahl interpretiert wird.
+\item \textsc{Number} steht f\"ur eine Folge von Ziffern, die als Dezimalzahl interpretiert wird.
 \end{enumerate}
 Nach der oben angegebenen Grammatik ist ein Programm eine Liste von Funktionen.
 Eine Funktion besteht aus der Deklaration der Signatur, worauf in geschweiften Klammern
 eine Liste von Deklarationen (\textsl{decl}) und Befehlen (\textsl{stmt}) folgt.  Jeder Befehl wird
 durch ein Semikolon abgeschlossen.  Der Aufbau der einzelnen Befehle ist dann
-ähnlich wie bei der Sprache \textsc{Sl}, für die wir im Kapitel \ref{chapter:interpreter}
+\"ahnlich wie bei der Sprache \textsc{Sl}, f\"ur die wir im Kapitel \ref{chapter:interpreter}
 einen Interpreter entwickelt haben.
 Die in Abbildung \ref{fig:compiler.cup} gezeigte Grammatik ist mehrdeutig:
 \begin{enumerate}
 \item Die Grammatik hat das \emph{Dangling-Else-Problem}.
 
       Da wir im Kapitel \ref{chapter:cup} bereits gesehen haben, wie dieses Problem
-      professionell gelöst werden kann, nehme ich mir hier die Freiheit, \textsc{Cup} mit der Option
+      professionell gel\"ost werden kann, nehme ich mir hier die Freiheit, \textsc{Cup} mit der Option
       \\[0.2cm]
       \hspace*{1.3cm}
       ``\texttt{-expect 1}
       \\[0.2cm]
-      aufzurufen und dadurch die Fehlermeldung zu unterdrücken, denn wir hatten ja bereits gesehen, dass
+      aufzurufen und dadurch die Fehlermeldung zu unterdr\"ucken, denn wir hatten ja bereits gesehen, dass
       \textsc{Cup} per default den durch die Mehrdeutigkeit entstehenden Shift-Reduce-Konflikt in unserem
-      Sinne auflöst. 
-\item Für die bei arithmetischen und Boole'schen Ausdrücken verwendeten Operatoren
-      müssen Präzedenzen festgelegt werden.
+      Sinne aufl\"ost. 
+\item F\"ur die bei arithmetischen und Boole'schen Ausdr\"ucken verwendeten Operatoren
+      m\"ussen Pr\"azedenzen festgelegt werden.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -207,7 +207,7 @@ discuss this scanner in more detail.
     "/*" ~"*/"            { /* skip multi  line comments */ }   
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Der Scanner für \textsl{Integer}-\texttt{C}}
+\caption{Der Scanner f\"ur \textsl{Integer}-\texttt{C}}
 \label{fig:compiler.jflex}
 \end{figure}
 
