@@ -33,6 +33,13 @@ SIZE = [0-9\-\.]+(cm|in|mm|pt)
 \u00dc                { myPrint("Ü"); }
 \u00d6                { myPrint("ß"); }
 
+"\\\"a"               { myPrint("ä"); }
+"\\\"o"               { myPrint("ö"); }
+"\\\"u"               { myPrint("ü"); }
+"\\\"A"               { myPrint("Ä"); }
+"\\\"O"               { myPrint("Ö"); }
+"\\\"U"               { myPrint("Ü"); }
+
 "\\\"{a}"             { myPrint("ä"); }
 "\\\"{o}"             { myPrint("ö"); }
 "\\\"{u}"             { myPrint("ü"); }
@@ -40,13 +47,6 @@ SIZE = [0-9\-\.]+(cm|in|mm|pt)
 "\\\"{O}"             { myPrint("Ö"); }
 "\\\"{U}"             { myPrint("Ü"); }
 "\\3"                 { myPrint("ß"); }
-
-"\\\"a"               { myPrint("ä"); }
-"\\\"o"               { myPrint("ö"); }
-"\\\"u"               { myPrint("ü"); }
-"\\\"A"               { myPrint("Ä"); }
-"\\\"O"               { myPrint("Ö"); }
-"\\\"U"               { myPrint("Ü"); }
 
 "$$"                  { myPrint("$"); }
 "\\noindent"          { /* skip */    }
