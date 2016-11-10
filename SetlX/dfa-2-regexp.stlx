@@ -13,7 +13,7 @@ regexpSum := procedure(s) {
         case { r }:
              return r;
         case { r | rs }:
-             return Or(r, regexpSum(rs));
+             return @or(r, regexpSum(rs));
     }
 };
 // compute the regular expression to get from state p1 to state p2
@@ -27,7 +27,7 @@ rpq := procedure(p1, p2, sigma, delta, allowed) {
                  if (allChars == {}) {
                      return "";
                  } else {
-                     return Or("", sum);
+                     return @or("", sum);
                  }
              } else {
                  return sum;
@@ -37,7 +37,7 @@ rpq := procedure(p1, p2, sigma, delta, allowed) {
              rkp1qk := rpq(p1, qk, sigma, delta, restAllowed);
              rkqkqk := rpq(qk, qk, sigma, delta, restAllowed);
              rkqkp2 := rpq(qk, p2, sigma, delta, restAllowed);
-             return simplify(Or(rkp1p2, Cat(Cat(rkp1qk, Star(rkqkqk)), rkqkp2)));
+             return simplify(@or(rkp1p2, @cat(@cat(rkp1qk, @star(rkqkqk)), rkqkp2)));
     }    
 };
 simplify := procedure(r) {
@@ -57,54 +57,54 @@ simplifyOnce := procedure(r) {
              return "";
         case c | isString(c):
              return c;
-        case Or(0, s):  
+        case @or(0, s):  
              return simplifyOnce(s);
-        case Or(s, 0):  
+        case @or(s, 0):  
              return simplifyOnce(s);
-        case Or(s, s):  
+        case @or(s, s):  
              return simplifyOnce(s);
-        case Or("", Cat(t, Star(t))):
-             return Star(t);
-        case Or("", Cat(Star(t), t)):
-             return Star(t);
-        case Or(Cat(t, Star(t)), ""):
-             return Star(t);
-        case Or(Cat(Star(t), t), ""):
-             return Star(t);
-        case Or(s, Cat(s,t)):
-             return simplifyOnce(Cat(s, Or("", t)));
-        case Or(s, Cat(t,s)):
-             return simplifyOnce(Cat(Or("", t), s));
-        case Or(s, t):  
-             return Or(simplifyOnce(s), simplifyOnce(t));
-        case Cat(0, s): 
+        case @or("", @cat(t, @star(t))):
+             return @star(t);
+        case @or("", @cat(@star(t), t)):
+             return @star(t);
+        case @or(@cat(t, @star(t)), ""):
+             return @star(t);
+        case @or(@cat(@star(t), t), ""):
+             return @star(t);
+        case @or(s, @cat(s,t)):
+             return simplifyOnce(@cat(s, @or("", t)));
+        case @or(s, @cat(t,s)):
+             return simplifyOnce(@cat(@or("", t), s));
+        case @or(s, t):  
+             return @or(simplifyOnce(s), simplifyOnce(t));
+        case @cat(0, s): 
              return 0;
-        case Cat(s, 0): 
+        case @cat(s, 0): 
              return 0;
-        case Cat("", s): 
+        case @cat("", s): 
              return s;
-        case Cat(s, ""): 
+        case @cat(s, ""): 
              return s;
-        case Cat(Or("", s), Star(s)):
-             return Star(simplifyOnce(s));
-        case Cat(Or(s, ""), Star(s)):
-             return Star(simplifyOnce(s));
-        case Cat(Star(s), Or(s, "")):
-             return Star(simplifyOnce(s));
-        case Cat(Star(s), Or("", s)):
-             return Star(simplifyOnce(s));
-        case Cat(s, t): 
-             return Cat(simplifyOnce(s), simplifyOnce(t));
-        case Star(0):
+        case @cat(@or("", s), @star(s)):
+             return @star(simplifyOnce(s));
+        case @cat(@or(s, ""), @star(s)):
+             return @star(simplifyOnce(s));
+        case @cat(@star(s), @or(s, "")):
+             return @star(simplifyOnce(s));
+        case @cat(@star(s), @or("", s)):
+             return @star(simplifyOnce(s));
+        case @cat(s, t): 
+             return @cat(simplifyOnce(s), simplifyOnce(t));
+        case @star(0):
              return "";
-        case Star(""):
+        case @star(""):
              return "";
-        case Star(Or("", s)):
-             return simplifyOnce(Star(s));
-        case Star(Or(s, "")):
-             return simplifyOnce(Star(s));
-        case Star(c):
-             return Star(simplifyOnce(c));
+        case @star(@or("", s)):
+             return simplifyOnce(@star(s));
+        case @star(@or(s, "")):
+             return simplifyOnce(@star(s));
+        case @star(c):
+             return @star(simplifyOnce(c));
         default:        
         abort("Syntax error in simplifyOnce($r$)");
     }
