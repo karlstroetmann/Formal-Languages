@@ -1,0 +1,636 @@
+\chapter{\textsl{Bison}}
+Wir wollen in diesem Kapitels einen ersten Einblick in die Verwendung
+des Parser-Generators \textsl{Bison} geben.  Die von \textsl{Bison} erzeugten Parser sind
+sogenannte \emph{LALR(1)-Parser}.  Die Theorie dieser Parser wurde von Franklin DeRemer
+\cite{deRemer:71,deRemer:82} entwickelt und baut auf der Theorie der \emph{LR(k)-Parser}
+auf, die von Donald Knuth \cite{knuth:65} begr\"undet wurde.  Da diese Theorie wesentlich
+komplexer ist als die Theorie der \emph{LL(1)-Parser}, k\"onnen wir diese Theorie erst in
+einem sp\"ater Kapitel darstellen und m\"ussen uns in diesem Kapitel mit einer
+oberfl\"achlichen Betrachtung von \textsl{Bison} begn\"ugen.  Dieses Vorgehen funktioniert,
+weil die Theorie der LALR(1)-Parser solange unwichtig ist, wie die zu parsende Grammatik die
+LALR(1)-Eigenschaft hat.  Bei den einfachen Beispielen, die wir in diesem Kapitel
+betrachten werden, ist dies der Fall.  F\"ur die Praxis ist ein LALR(1)-Parser jedoch oft
+dann zu schwach, wenn die Sprache vorgegeben ist und nicht mehr ver\"andert werden kann.
+Falls Sie selber eine Sprache entwerfen wollen, so k\"onnen Sie durch das Einf\"ugen geeigneter
+Schl\"usselw\"orter immer erreichen, dass die Sprache die LALR(1)-Eigenschaft besitzt.
+
+Unser Ziel in diesem Abschnitt ist es, f\"ur die in Abbildung \ref{fig:expr.gr}
+gezeigte Grammatik einen Parser mit Hilfe des Parser-Generators \textsl{Bison} zu
+erstellen.  Die von \textsl{Bison} erstellten Parser sind wahlweise \texttt{C}- oder
+\texttt{C++}-Programme.  
+Diese Grammatik erm\"oglicht es, einen arithmetischen Ausdruck auszuwerten und das
+Ergebnis dieser Auswertung einer Variablen zuzuweisen.  Dabei k\"onnen die
+arithmetischen Ausdr\"ucke neben den Operatoren, die f\"ur die Grundrechenarten stehen,
+auch den Aufruf un\"arer Funktionen, wie der Funktion $\textsl{sqrt}()$ zur Berechnung
+der Quadratwurzel, enthalten.  Mit Hilfe dieser Grammatik werden wir einen
+Kommando-Zeilen-basierten Taschenrechner entwickeln.
+
+
+\begin{figure}[!ht]
+    \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+  
+\begin{eqnarray*}
+  \textsl{program}   & \rightarrow & \textsl{statement} \quoted{\symbol{92}n}   \\
+                     & \mid        & \textsl{program} \;\; \textsl{statement} 
+                                    \quoted{\symbol{92}n}   \\[0.2cm] 
+  \textsl{statement} & \rightarrow & \texttt{NAME} \quoted{=} \textsl{arithExpr} \\
+                     & \mid        & \textsl{arithExpr} \\[0.2cm]
+  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{Product}  \\
+                     & \mid        & \textsl{arithExpr} \quoted{-} \textsl{Product}  \\
+                     & \mid        & \textsl{product} \\[0.2cm]
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{*} \textsl{factor}    \\
+                     & \mid        & \textsl{product} \quoted{/} \textsl{factor}     \\
+                     & \mid        & \textsl{factor} \\[0.2cm]
+  \textsl{factor}    & \rightarrow & \quoted{(} \textsl{ArithExpr} \quoted{)} \\
+                     & \mid        & \texttt{NAME} \\
+                     & \mid        & \texttt{FUNC} 
+                                    \quoted{(} \textsl{arithExpr} \quoted{)} \\ 
+                     & \mid        & \texttt{NUMBER}
+\end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage}}}
+  \end{center}
+\caption{Eine Grammatik f\"ur den Taschenrechner.}
+\label{fig:expr.gr}
+\end{figure}
+
+
+\section{Der Scanner}
+Bevor mit der Entwicklung des Parsers beginnen k\"onnen, ben\"otigen wir einen Scanner, der
+die Eingabe in unterschiedliche Token zerlegt.  Der Parser-Generator \textsl{Bison}
+arbeitet mit dem Scanner-Generator \textsl{Flex} zusammen.  Abbildung \ref{fig:calc.l}
+zeigt die \textsl{Flex}-Spezifikation eines Scanners, der f\"ur unsere Zwecke geeignet ist.
+Der Scanner gibt vier verschiedene Typen von Token zur\"uck.
+\begin{enumerate}
+\item Der Typ \texttt{NUMBER} steht f\"ur Flie{\ss}komma-Zahlen.
+\item Der Typ \texttt{NAME} steht f\"ur den Namen einer Variablen.
+\item Der Typ \texttt{FUNC} steht f\"ur den Namen einer un\"aren Funktion.
+
+      Syntaktisch besteht kein Unterschied zwischen \texttt{NAME} und \texttt{FUNC},
+      denn beide bestehen aus einer Folge von Buchstaben und Ziffern, die mit einem
+      Buchstaben beginnt.  Der Scanner trifft die Unterscheidung anhand einer
+      Tabelle, in der alle vordefinierten Funktions-Namen eingetragen sind.
+\item Schlie{\ss}lich gibt es noch die Operator- und Klammer-Symbole, die vom Scanner als
+      einzelne Zeichen zur\"uck gegeben werden.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    %{
+    #include "calc.h"      // Deklarationen Benutzer-Funktionen
+    #include "calc.tab.h"  // von Bison erzeugt
+    %}
+    Fraction [0-9]+|([0-9]*\.[0-9]+)
+    Exponent [eE][-+]?[0-9]+    
+    %%
+    {Fraction}{Exponent}? { /* floating point numbers */
+                            yylval.value = atof(yytext);
+                            return NUMBER;
+                          }    
+    [ \t\r]               { /* ignore white space */ }
+    [A-Za-z][A-Za-z0-9]*  { /* variable names and fuction names */
+                            SymbolTable* sp = lookUpSymbol(yytext);
+                            yylval.symPtr = sp;
+                            if (sp->funcPtr != 0) {
+                                return FUNC;
+                            } else {
+                                return NAME;
+                            }
+                          }    
+    [\n=\-+*/()]          { /* operator symbols */ 
+                            return yytext[0]; 
+                          }    
+    %%
+    void yyerror(char* msg) {
+        printf("%s at '%s'\n", msg, yytext);
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Der Scanner f\"ur den Taschenrechner.}
+\label{fig:calc.l}
+\end{figure}
+Wir diskutieren nun die Details der Abbildung \ref{fig:calc.l}.
+\begin{enumerate}
+\item In den Zeilen 2 wird die Dateien ``\texttt{calc.h}'' eingebunden.  Diese Datei
+      enth\"alt die Definition der Daten-Struktur \texttt{SymbolTable}, sowie die
+      Deklaration verschiedener Variablen und Konstanten.  Abbildung \ref{fig:calc.h}
+      auf Seite \pageref{fig:calc.l} zeigt diese Datei, die wir sp\"ater im Detail
+      diskutieren werden.
+\item Die in Zeile 3 eingebundene Datei ``\texttt{calc.tab.h}'' enth\"alt Makro-Definitionen 
+      f\"ur die verschiedenen Token, die vom Scanner zur\"uck gegeben werden.
+      Zus\"atzlich wird hier die Datenstruktur \texttt{YYSTYPE} definiert.
+      Diese Datei wird von dem Werkzeug \textsl{Bison} erzeugt.
+      Die Datei ist in Abbildung \ref{fig:calc.tab.h} auf Seite \pageref{fig:calc.tab.h} gezeigt.
+      Wir werden diese Datei sp\"ater genauer analysieren.
+\item Die Zeilen 5 und 6 enthalten zwei regul\"are Definitionen.
+      \textsl{Fraction} steht f\"ur eine Zahl, die auch einen Flie{\ss}punkt enthalten kann
+      und \textsl{Exponent} steht f\"ur einen String wie ``\texttt{e+12}'', der sp\"ater 
+      als Exponent  einer Flie{\ss}komma-Zahl interpretiert wird.
+\item Die Regel in Zeile 8 erkennt eine Flie{\ss}komma-Zahl.  Die Variable
+      \texttt{yylval} bekommt den Wert dieser Zahl zugewiesen.  Diese Variable 
+      ist von dem in der Datei ``\texttt{calc.tab.h}'' definierten Typ
+      \texttt{YYSTYPE}.  Dieser Typ ist dort in Zeile 1 -- 4 als \texttt{union}
+      von einem \texttt{double} und einem Zeiger auf den Typ \texttt{SymbolTable}
+      definiert, er enth\"alt also wahlweise eine Zahl oder einen Zeiger.
+      Da wir jetzt eine Zahl gelesen haben, die wir \texttt{yylval} zuweisen wollen,
+      greifen wir auf \texttt{yylval} \"uber die Notation
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{yylval.value}
+      \\[0.2cm]
+      zu um dem Compiler zu signalisieren, dass \texttt{yylval} in diesem Fall als
+      Flie{\ss}komma-Zahl zu interpretieren ist.
+      
+      Au{\ss}erdem geben wir das Token \texttt{NUMBER} zur\"uck, da wir ja gerade eine Zahl
+      gelesen haben.  Dieses Token ist in der Datei ``\texttt{calc.tab.h}'' als Makro
+      definiert.  Die R\"uckgabe eines Tokens haben wir bei unseren bisherigen
+      \textsl{Flex}-Beispielen noch nicht gesehen, denn bislang hatten wir keinen
+      Parser, mit dem \textsl{Flex} kommunizieren musste.  Wenn \textsl{Flex} und
+      \textsl{Bison} zusammenarbeiten, dann muss jede \textsl{Flex}-Regel, die ein
+      Token erkannt hat, das sp\"ater noch vom Parser gebraucht wird, dieses auch
+      zur\"uckgeben.  Ein Token wird dabei durch eine nat\"urliche Zahl dargestellt,
+      wobei es folgende Konventionen gibt:
+      \begin{enumerate}
+      \item Das Token \texttt{EOF} (\emph{end of file}) wird durch die Zahl
+            0 repr\"asentiert.
+      \item Token, die nur aus einem einzigen Buchstaben bestehen, werden durch den
+            entsprechenden \textsc{Ascii}-Code repr\"asentiert.  Beispielsweise hat
+            das Zeichen `\texttt{*}' den \textsc{Ascii}-Code 42 und damit hat das
+            entsprechende Token den Wert 42.
+      \item Alle \"ubrigen Token werden durch nat\"urliche Zahlen gr\"o{\ss}er als 256
+            repr\"asentiert.   Dabei wird von \textsl{Bison} f\"ur jedes dieser Token mittels
+            ``\texttt{\#define}'' in der Datei \texttt{calc.tab.h} ein Makro definiert, 
+            das zu der entsprechenden Zahl expandiert wird.
+            
+            In der in Abbildung \ref{fig:calc.tab.h} gezeigten Datei
+            ``\texttt{calc.tab.h}'' sind beispielsweise  
+            die Token \texttt{NAME}, \texttt{FUNC} und \texttt{NUMBER} als die
+            Zahlen 257, 258 und 259 definiert.
+      \end{enumerate}
+      Generell verl\"auft die Kommunikation zwischen dem von \textsl{Flex} erzeugten Scanner
+      und dem von \textsl{Bison} erzeugten Parser \"uber drei Kan\"ale:
+      \begin{enumerate}
+      \item \"Uber den R\"uckgabewert der Funktion $\textsl{yylex}()$ wird das Token
+            spezifiziert.  Die Funktion $\textsl{yylex}()$ ist die Funktion, die in der
+            \textsl{Flex}-Eingabe-Datei spezifiziert wird.  Jeder Aufruf dieser Funktion
+            liefert ein Token zur\"uck.
+      \item Die Variable \texttt{yylval} speichert den Wert, der diesem Token zugeordnet
+            ist.  Diese Variable hat den Typ \textsl{YYSTYPE}.  Dieser Typ wird von 
+            \textsl{Bison} in der Datei \texttt{calc.tab.h} definiert.
+      \item Die Variable \texttt{yytext} enth\"alt den Text, der dem letzten gelesenen Token
+            entspricht.
+      \end{enumerate}
+\item Die Regel in Zeile 12 entfernt Leerzeichen, Tabulatoren und Wagen-R\"uckl\"aufe.
+      Da der Parser sich nicht f\"ur diese Zeichen nicht interessiert, steht hier
+      kein \texttt{return}-Befehl und damit wird auch kein Token zur\"uckgegeben.
+      Daher sucht der  Scanner stattdessen das n\"achste Token.
+\item Die Regel in Zeile 13 erkennt Variablen und Funktions-Namen.  Das Problem
+      ist hier, dass  Variablen und Funktions-Namen rein syntaktisch gar nicht
+      unterschieden werden k\"onnen, denn beide bestehen aus Buchstaben und
+      Ziffern. Daher muss der Scanner mit Hilfe der sp\"ater im Parser
+      definierten Funktion
+      \\[0.2cm]
+      \hspace*{1.3cm} \texttt{SymbolTable* lookUpSymbol(char* symbol)}
+      \\[0.2cm]
+      \"uberpr\"ufen, ob ein gerade gelesener Name ein Funktions-Name oder aber ein
+      Variablen-Name ist.  Die vordefinierten Funktions-Namen wie ``\texttt{sqrt}'',
+      ``\texttt{exp}'', etc.~sind in einer internen Symbol-Tabelle abgespeichert.  In
+      dieser Tabelle werden auch die Variablen-Namen abgelegt.  Die Funktion
+      $\textsl{lookUpSymbol}(\textsl{name})$ \"uberpr\"uft f\"ur einen gegeben Namen
+      $\textsl{name}$, ob zu diesem 
+      Namen in der Tabelle bereits ein Eintrag existiert.  Wenn dies der Fall ist,
+      wird ein Zeiger auf den vorhandenen Eintrag zur\"uckgegeben, ansonsten wird der 
+      String \textsl{name} in der Tabelle als Variablen-Name eingetragen.  Anschlie{\ss}end
+      wird ein Zeiger auf diesen Eintrag zur\"uck gegeben.
+      
+      Der Zeiger \texttt{sp} zeigt also in Zeile 14 in jedem Fall auf ein Objekt vom Typ
+      \texttt{SymbolTable}.  Dieser Datentyp ist in der Datei ``\texttt{calc.h}'' als
+      Alias f\"ur ein \texttt{struct} definiert.  Dieser \texttt{struct} hat drei
+      Eintr\"age. 
+      \begin{enumerate}
+      \item Der erste Eintrag \texttt{name} gibt den Namen der Variablen oder
+            der Funktion an.  
+      \item Der zweite Eintrag mit Namen \texttt{funcPtr} ist ein Zeiger
+            auf eine Funktion vom Typ
+            \\[0.2cm]
+            \hspace*{1.3cm} \texttt{double f(double x)}.
+            \\[0.2cm]
+            Ist dieser Zeiger von 0 verschieden, so hat der Scanner einen Funktions-Namen 
+            erkannt, sonst handelt es sich um einen Variablen-Namen.  Entsprechend wird in
+            Zeile 17 entweder das Token \texttt{FUNC} zur\"uckgegeben oder es wird in Zeile 19
+            das Token \texttt{NAME} zur\"uckgegeben.
+      \item Der dritte Eintrag der \texttt{struct} hat den Namen \texttt{value} und gibt f\"ur
+            Variablen den momentanen Wert an.
+      \end{enumerate}
+\item Zeile 22 erkennt Token, die nur aus einem Zeichen bestehen.  Dies sind die
+      arithmetischen Operatoren ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'' und
+      ``\texttt{/}'', die beiden Klammer-Symbole ``\texttt{(}'' und ``\texttt{)}'', das
+      Gleichheitszeichen ``\texttt{=}'', das wir als Zuweisungs-Operator verwenden, sowie
+      der Zeilen-Umbruch ``\texttt{\symbol{92}n}'', der dem Parser das Ende eines
+      arithmetischen Ausdrucks signalisiert.  Der Scanner gibt in allen diesen F\"allen das
+      gelesene \textsc{Ascii}-Zeichen als Token zur\"uck.
+\item Am Ende der Scanner-Datei definieren wir die Funktion $\textsl{yyerror}()$, mit
+      der sp\"ater vom Parser Fehlermeldungen ausgegeben werden k\"onnen.  Da diese Funktion
+      von der Variablen \texttt{yytext} Gebrauch macht, wird die Funktion
+      $\textsl{yyerror}()$ im Scanner definiert.  Die Variable \texttt{yytext} enth\"alt den
+      Text des zuletzt vom Scanner erkannten Tokens.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    #define NSYMS 1000    // maximum number of symbols 
+    
+    typedef struct symtab {
+        char*  name;
+        double (*funcPtr)();
+        double value;
+    } SymbolTable;
+    
+    SymbolTable symtab[NSYMS];
+    
+    SymbolTable* lookUpSymbol();
+    void yyerror(char* msg);
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Header-Datei ``\texttt{calc.h}''.}
+\label{fig:calc.h}
+\end{figure}
+Die Datei ``\texttt{calc.h}'' definiert Variablen und Funktionen, die sp\"ater sowohl
+vom Scanner als auch vom Parser verwendet werden.  
+\begin{enumerate}
+\item Zun\"achst wird in Zeile 3 -- 7 die \texttt{struct} \textsl{symtab} definiert
+      und der Name \texttt{SymbolTable} wird zum Alias f\"ur diese \texttt{struct}
+      erkl\"art.  Diese \texttt{struct} speichert sp\"ater die Eintr\"age der
+      Symbol-Tabelle. Diese Eintr\"age sind entweder Variablen-Namen mit dem
+      der Variablen zugeordneten Werten \texttt{value} oder aber Namen von
+      Funktionen mit einem Zeiger \texttt{funcPtr} auf diese Funktion.
+\item Die eigentliche Symbol-Tabelle wird dann in Zeile 9 als Feld mit
+      \texttt{NSYMS} Eintr\"agen definiert.  Die Zahl \texttt{NSYMS} ist vorher in
+      Zeile 1 als 1000 definiert worden.
+\item Schlie{\ss}lich werden noch die beiden Funktionen $\textsl{lookUpSymbol}()$
+      und $\textsl{yyerror}()$ deklariert.  Die Definition der Funktion
+      $\textsl{lookUpSymbol}()$ finden wir sp\"ater in der Datei \texttt{calc.y},
+      die in den Abbildungen \ref{fig:calc.y} und \ref{fig:calc-2.y}
+      gezeigt wird, w\"ahrend wir die Definition der Funktion
+      $\textsl{yyerror}()$ bereits in dem Scanner \texttt{calc.l} in  Abbildung
+      \ref{fig:calc.l} gesehen haben.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    typedef union {
+        double       value;
+        SymbolTable* symPtr;
+    } YYSTYPE;
+    #define    NAME    257
+    #define    FUNC    258
+    #define    NUMBER  259
+    
+    extern YYSTYPE yylval;
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Datei ``\texttt{calc.tab.h}''.}
+\label{fig:calc.tab.h}
+\end{figure}
+Die Datei ``\texttt{calc.tab.h}'' wird automatisch von \textsl{Bison} erzeugt,
+wenn wir \textsl{Bison} mit der Option ``\texttt{-d}'' wie folgt aufrufen:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{bison -d calc.y}
+\\[0.2cm]
+(Die Datei \texttt{calc.y} enth\"alt die Definition der Grammatik und wird sp\"ater besprochen.)
+Die Datei \texttt{calc.tab.h} definiert die verschiedenen Token und den Typ
+\texttt{YYSTYPE}.  Damit hat es Folgendes auf sich: Jedes Token ist zun\"achst als eine
+nat\"urliche Zahl definiert.  Zus\"atzlich wird aber jedem Token noch ein Wert zugeordnet.
+Dieser Wert wird in der Variablen \texttt{yylval} gespeichert.  Nun ist es so, dass
+unterschiedlichen Token auch unterschiedliche Arten von Werten zugeordnet werden.  So wird
+einem Token vom Typ \texttt{NUMBER} sinnvollerweise ein Wert vom Typ \texttt{double}
+zugeordnet, aber einer Variablen wird stattdessen ein Zeiger auf die Symbol-Tabelle
+zugeordnet.  Dort liegt dann f\"ur jede Variablen ein \texttt{struct} und wenn dieser
+Variablen schon ein Wert zugewiesen wurde, dann ist dieser Wert dort abgelegt.  Da es also
+je nach Art des Tokens verschiedene Werte gibt, wird \texttt{YYSTYPE} als \texttt{union}
+definiert.
+
+\section{Der Parser}
+Jetzt k\"onnen wir die Spezifikation des Parsers angeben.
+Generell hat eine \textsl{Bison}-Spezifikation die folgende, an \textsl{Flex}
+angelehnte Struktur: 
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\}
+                ]
+    %\{
+        \textsl{Deklarations-Teil}
+    %\}
+        \textsl{Definitions-Teil} 
+    %%
+        \textsl{Grammatik-Regeln}
+    %%
+        \textsl{C-Funktionen}
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Struktur einer Grammatik-Spezifikation f\"ur \textsl{Bison}}
+\label{fig:bison}
+\end{figure}
+Die einzelnen Teile sind dabei durch die Interpunktions-Strings
+``\texttt{\symbol{37}\{}'',
+``\texttt{\symbol{37}\}}'' und zweimal 
+``\texttt{\symbol{37}\symbol{37}}''
+getrennt und haben die folgende Bedeutung:
+\begin{enumerate}
+\item Der \emph{Deklarations-Teil} enth\"alt Include-Direktiven, sowie
+      Deklarationen von Funktionen und Variablen.  Dieser Teil wird sp\"ater w\"ortlich
+      an den Anfang des f\"ur den Parser generierten \texttt{C}-Codes kopiert.
+\item Der \emph{Definitions-Teil} enth\"alt die Definition der Token sowie der Typen 
+      von Nicht-Terminalen.  (Genau wie den verschiedenen Token Werte
+      unterschiedlicher Typen zugeordnet werden k\"onnen, k\"onnen auch den
+      Nicht-Terminalen Werte verschiedener Typen zugeordnet werden.)
+\item Die \emph{Grammatik-Regeln} spezifizieren die Grammatik, f\"ur die ein Parser
+      erzeugt werden soll.
+\item Die \texttt{C}-Funktionen enthalten die Definition der Funktion $\textsl{main}()$ 
+      sowie die Definitionen weiterer Funktionen, die in Scanner oder Parser ben\"otigt
+      werden.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    %{
+    #include "calc.h"
+    #include <string.h>
+    #include <math.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    %}
+    
+    %union {
+        double       value;
+        SymbolTable* symPtr;
+    }
+    
+    %token <symPtr> NAME FUNC
+    %token <value>  NUMBER
+    %type  <value>  arithExpr product factor
+    
+    %%
+    lines     : statement '\n'
+              | lines statement '\n'
+              ;
+    
+    statement : NAME '=' arithExpr     { $1->value = $3;     }
+              | arithExpr              { printf("%g\n", $1); }
+              ;
+    
+    arithExpr : arithExpr '+' product  { $$ = $1 + $3; }
+              | arithExpr '-' product  { $$ = $1 - $3; }
+              | product
+              ;
+    
+    product   : product '*' factor     { $$ = $1 * $3; }
+              | product '/' factor     { $$ = $1 / $3; }
+              | factor 
+              ;
+    
+    factor    : '(' arithExpr ')'      { $$ = $2;                }
+              | NAME                   { $$ = $1->value;         }
+              | FUNC '(' arithExpr ')' { $$ = ($1->funcPtr)($3); }
+              | NUMBER 
+              ;
+    
+    %%
+\end{Verbatim} 
+\vspace*{-0.3cm}
+\caption{Grammatik-Spezifikation f\"ur den Taschenrechner, Teil 1.}
+\label{fig:calc.y}
+\end{figure} %$
+Die Abbildungen \ref{fig:calc.y} und \ref{fig:calc-2.y} zeigen den Inhalt der Datei
+\texttt{calc.y}, die die Grammatik aus Abbildung \ref{fig:expr.gr} in
+\textsl{Bison}-gerechter Form darstellt.  Wir diskutieren zun\"achst den Deklarations-Teil,
+den Definitions-Teil und die Grammatik-Spezifikation.
+\begin{enumerate}
+\item Die Zeilen 2 -- 6 binden verschiedene Header-Dateien ein.
+\item In den Zeilen 9 -- 12 legen wir fest, dass der Daten-Typ \texttt{YYSTYPE} eine
+      \texttt{union} mit den beiden Feldern \texttt{value} und \texttt{symPtr} ist.
+      Wir erinnern daran, dass jedes Token und auch jedes Nicht-Terminal einen Wert vom
+      Typ \texttt{YYSTYPE} hat.  
+      \begin{enumerate}
+      \item Das Terminal \texttt{NUMBER} und die syntaktischen Variablen
+            \texttt{arithExpr}, \texttt{product} und \texttt{factor} haben den Wert
+            \texttt{double}.  Dies wird in Zeile 15 und 16 festgelegt, denn \texttt{value}
+            ist in Zeile 10 als \texttt{double} deklariert.
+      \item Die Terminale \texttt{NAME} und \texttt{FUNC} haben den Typ
+            \texttt{SymbolTable*}, denn \texttt{symPtr} ist in Zeile 11 als
+            \texttt{SymbolTable*} deklariert.
+      \end{enumerate}
+\item Die Deklaration des Typs eines Terminals hat generell die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{token <}\textsl{field}\texttt{> }\textsl{Token}
+      \\[0.2cm]
+      Hierbei bezeichnet \textsl{field} den Namen eines Feldes der \texttt{union}, durch
+      die \texttt{YYSTYPE} definiert wird.
+\item Die Deklaration des Typs eines Nicht-Terminals hat die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{type <}\textsl{field}\texttt{> }\textsl{NonTerminal}.
+
+      Es ist eine Konvention, dass in \textsl{Bison}-Spezifikationen Terminale nur aus
+      Gro{\ss}-Buchstaben bestehen, w\"ahrend Nicht-Terminale nur aus Klein-Buchstaben aufgebaut
+      sind.
+\item Die Syntax von Grammatik-Regeln f\"ur \textsl{Bison} ist erfreulich kompakt.
+      Die Grammatik-Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \alpha \mid \beta \mid \gamma$
+      \\[0.2cm]
+      schreiben wir in \textsl{Bison} wie folgt:
+      \begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\(\)
+                ]
+      \(A\) : \(\alpha\)
+      \(\;\)  | \(\beta\)
+      \(\;\)  | \(\gamma\)
+      \(\;\)  ;
+      \end{Verbatim}
+      %$
+      Aus dem Pfeil ``$\rightarrow$'' wird also ein Doppelpunkt ``\texttt{:}'' und au{\ss}erdem
+      werden die Regeln einer Gruppe durch ein Semikolon abgeschlossen\footnote{
+        In den neueren Versionen von \textsl{Bison} ist das Semikolon optional.
+        Es ist aber guter Stil, es trotzdem zu verwenden.}.
+      Genau wie bei \textsc{Antlr} kann eine Grammatik-Regel noch \emph{semantische Aktionen}
+      enthalten.  Dies ist \texttt{C}-Code, der in gescheiften Klammern eingeschlossen
+      ist.  Typischerweise stehen solche semantische Optionen am Ende einer Regel.
+\item Zeile 23 behandelt eine Zuweisung.  Falls eine Zuweisung erkannt wurde, muss diese
+      anschlie{\ss}end ausgef\"uhrt werden.  Dazu dient die semantische Aktion
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\{ \symbol{36}1->value = \symbol{36}3; \}}
+      \\[0.2cm]
+      Um zu verstehen, wie diese semantische Aktion funktioniert, m\"ussen wir wissen, dass die
+      Terminale und Nicht-Terminal im Rumpf einer Regel mit 1 beginnend durchnummeriert
+      werden.  In der Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{statement : NAME '=' arithExpr}
+      \\[0.2cm]
+      bekommt \texttt{NAME} also die Nummer 1, das Token `\texttt{=}' bekommt die Nummer
+      2 und das Nicht-Terminal \texttt{arithExpr} bekommt die Nummer 3.  Dem Terminal
+      \texttt{NUMBER} und dem Nicht-Terminal \texttt{arithExpr} werden vom Parser Werte
+      zugeordnet.  Auf diese Werte k\"onnen wir zur\"uckgreifen, wenn wir der entsprechenden
+      Nummer, die das Token oder Nicht-Terminal identifiziert, ein Dollar-Zeichen
+      ``\texttt{\symbol{36}}'' voranstellen.  Die Variable ``\texttt{\symbol{36}1}''
+      enth\"alt als den Wert, der dem Token \texttt{NAME} zugeordnet ist, w\"ahrend die
+      Variable ``\texttt{\symbol{36}3}'' den Wert des Nicht-Terminals \texttt{arithExpr}
+      enth\"alt.   Dem Token \texttt{NAME} wird ein Zeiger auf die Symbol-Table zugeordnet,
+      w\"ahrend dem Nicht-Terminal \texttt{arithExpr} eine Zahl vom Typ \texttt{double}
+      zugeordnet ist.  Der Zeiger, der \texttt{NAME} zugeordnet ist, zeigt auf eine
+      Struktur, die ein Feld \texttt{value} enth\"alt und in dieses Feld schreiben wir den
+      Wert des geparsten arithmetischen Ausdrucks.
+\item Zeile 27 zeigt exemplarisch die Behandlung einer Addition.  Hier sehen wir, wie der
+      Parser die Werte, die den Nicht-Terminalen zugeordnet sind, berechnet.  Der Wert
+      eines Nicht-Terminals, das auf der linken Seite einer Regel steht, kann mit 
+      der Notation ``\texttt{\symbol{36}\symbol{36}}'' referenziert werden.
+      In Zeile 27 setzen wir diesen Wert auf die Summe der gelesenen Werte.
+
+      Gleichzeitig sehen sie in Zeile 27 auch, dass die verwendete Grammatik-Regel
+      links-rekursiv ist.  Bei LALR(1)-Parsern ist Links-Rekursion unproblematisch,
+      sie ist sogar effizienter als die Rechts-Rekursion, die bei Top-Down-Parsern wie
+      \textsc{Antlr} benutzt werden muss.
+\end{enumerate}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 44,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    // look up a symbol table entry, add if not present 
+    SymbolTable* lookUpSymbol(char* symbol) {
+        SymbolTable* symbolPtr;    
+        for (symbolPtr = symtab; symbolPtr < &symtab[NSYMS]; ++symbolPtr) {
+            // Have we found the symbol? 
+            if (symbolPtr->name && !strcmp(symbolPtr->name, symbol)) {
+                return symbolPtr;
+            }
+            // Have we reached the end of the table?
+            if (!symbolPtr->name) {
+                symbolPtr->name = strdup(symbol);
+                return symbolPtr;
+            }
+            // otherwise continue to next table entry
+        }
+        yyerror("Too many symbols");
+        exit(1); // abort
+    } 
+    
+    void addfunc(char* name, double (*func)(double x)) {
+        SymbolTable* symbolPtr = lookUpSymbol(name);
+        symbolPtr->funcPtr     = func;
+    }
+    
+    int main() {
+        addfunc("sqrt", sqrt);
+        addfunc("exp",  exp);
+        addfunc("log",  log);
+        yyparse();
+        return 0;
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{\texttt{C}-Funktionen f\"ur den Taschenrechner}
+\label{fig:calc-2.y}
+\end{figure}
+
+Abbildung \ref{fig:calc-2.y} zeigt die Implementierung der \texttt{C}-Funktionen, die von
+unserem Parser benutzt werden.
+\begin{enumerate}
+\item Die Funktion $\textsl{lookUpSymbol}()$ bekommt als Argument einen String
+      \texttt{symbol} \"ubergeben.  Dieser String ist entweder der Name einer Variablen oder der
+      Name eine Funktion.  Die in \texttt{calc.h} definierte globale Variable \texttt{symtab}
+      bezeichnet ein Feld von Eintr\"agen, die den Typ \texttt{SymbolTable} haben.  Aufgabe von
+      $\textsl{lookUpSymbol}()$ ist es, den Namen \texttt{symbol} in diesem Feld
+      zu suchen, oder aber aber einen neuen Eintrag f\"ur diesen Namen anzulegen.
+      Dazu l\"auft die
+      \texttt{for}-Schleife in Zeile 8 -- 19 \"uber alle Eintr\"age in dem Feld \texttt{symtab}.
+      F\"ur jeden Eintrag wird gepr\"uft, ob der Name dieses Eintrags mit dem Argument
+      \texttt{symbol} \"ubereinstimmt.  Wenn dies der Fall ist, wird ein Zeiger auf diesen
+      Eintrag zur\"uck gegeben.  Andernfalls \"uberpr\"ufen wir in Zeile 14, ob der
+      entsprechende Eintrag noch unbenutzt ist.  In diesem Fall tragen wir den Namen
+      an der entsprechenden Stelle ein und geben einen Zeiger auf den neuen  Eintrag
+      zur\"uck. 
+\item Die Funktion $\mathtt{addfunc}$ dient dazu, Funktionen in das Feld \texttt{symtab}
+      einzutragen.  Die Funktion $\mathtt{addfunc}$ bekommt dazu den Namen der
+      einzutragenden Funktion, sowie einen Zeiger auf die einzutragende Funktion als Argument.
+
+      Zun\"achst sucht die Funktion durch den Aufruf von \texttt{lookUpSymbol} einen freien
+      Platz in der Symbol-Tabelle.  Dort wird dann 
+      der Name der Funktion und der Zeiger auf die Funktion eingetragen.
+\item Die Funktion $\mathtt{main}()$ initialsiert die Symbol-Tabelle \texttt{symtab},
+      indem sie die vordefinierten Funktionen $\textsl{sqrt}()$, $\textsl{exp}()$ und
+      $\textsl{log}()$ eintr\"agt.  Anschlie{\ss}end wird der Parser durch den Aufruf von 
+      $\textsl{yyparse}()$ gestartet.  Hier k\"onnten wir problemlos auch alle
+      trigonometrischen Funktionen sowie deren Umkehrfunktionen in die Tabelle eintragen.
+\end{enumerate}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formale-sprachen"
+%%% End: 

@@ -1,0 +1,246 @@
+\chapter{Introduction and Motivation}
+This lecture covers both the theory of formal languages as well as their applications.
+In particular, we discuss the construction of scanners, parsers, interpreters, and compilers.  Furthermore, we 
+present a number of tools that can be used to build scanners and parsers.  In particular, 
+the following tools will be introduced:
+\begin{enumerate}
+\item \textsl{JFlex}    generates scanners.
+\item \textsl{JavaCup}  generates parsers.
+\item \textsc{Antlr}    constructs both a scanner and a parser.
+\end{enumerate}
+All of these tools are \emph{program generators}, i.e.~they take as input the description of a
+language and produce as output a \textsl{Java} program that acts like a scanner, a parser, or both. 
+
+Most parts of these lecture notes are currently written in the German language, while other parts 
+are written in English.  As time permits, I hope to eventually translate everything into the English language.
+As I am currently rewriting parts of these lecture notes, these notes will undoubtedly contain their
+fair amount of typos and other errors.  If you spot an error, I would like you to
+send an email to 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{mailto:karl.stroetmann@dhbw-mannheim.de}{\texttt{karl.stroetmann@dhbw-mannheim.de}}.
+\\[0.2cm]
+Alternatively, you are welcome to clone my
+\href{https://github.com/karlstroetmann/Formal-Languages/}{github}
+repository and send me a pull request.
+There is little use telling me about a typo in person after the class since by the time I am back at my office I 
+will often have forgotten about the problem.  
+
+
+\section{Basic Definitions}
+The central notion of this lecture is the notion of a 
+\href{http://en.wikipedia.org/wiki/Formal_language}{\emph{formal language}}.
+In order to be able to define this notion we need some definitions. 
+
+
+\begin{Definition}[Alphabet]
+An \emph{alphabet} $\Sigma$ is a finite, non-empty set of \emph{characters}:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\Sigma = \{ c_1, \cdots, c_n \}$. 
+\\[0.2cm]
+Sometimes, we use the term \emph{symbol} to denote a character.
+\qed
+\end{Definition}
+
+\examplesEng
+\begin{enumerate}
+\item $\Sigma = \{ 0, 1\}$ is an alphabet that can be used to represent binary numbers.
+\item $\Sigma = \{ \mathtt{a}, \cdots, \mathtt{z}, \mathtt{A}, \cdots, \mathtt{Z} \}$ 
+      is the alphabet used for the English language.
+\item The set $\Sigma_{\textsc{\scriptsize Ascii}} = \{ 0, 1, \cdots, 127 \}$ is known as the
+      \href{http://en.wikipedia.org/wiki/ASCII}{\textsc{Ascii}-Alphabet}.  The numbers are
+      interpreted as letters, digits, punctuation symbols, and control characters.
+      For example, the numbers in the set $\{65, \cdots, 90 \}$ represent the letters
+      $\{\mathtt{A}, \cdots, \mathtt{Z}\}$.  
+      \eox
+\end{enumerate}
+
+\begin{Definition}[Strings]
+Given an alphabet $\Sigma$, a \emph{string} is a list of characters from $\Sigma$.
+In the theory of formal languages, these lists are written without bracket symbols and without
+separating comma symbols.  If $c_1,\cdots,c_n \in \Sigma$, then we write 
+\\[0.2cm]
+\hspace*{1.3cm}
+$w = c_1\cdots c_n$ \quad instead of \quad $w = [c_1,\cdots,c_n]$.
+\\[0.2cm]
+The empty string is denoted as $\varepsilon$ and  the set of all strings that can be constructed
+from the alphabet $\Sigma$ is written as $\Sigma^*$.  For emphasis, strings are often surrounded by quotation marks.
+\qed
+\end{Definition}
+
+\examplesEng
+\begin{enumerate}
+\item Assume that $\Sigma = \{0, 1\}$.  If we define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $w_1 := \mathtt{\symbol{34}01110\symbol{34}}$ \quad and \quad $w_2 := \mathtt{\symbol{34}11001\symbol{34}}$,
+      \\[0.2cm]
+      then both $w_1$and $w_2$ are strings.  Therefore we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $w_1 \in \Sigma^*$ \quad and \quad $w_2 \in \Sigma^*$.
+\item Assume that $\Sigma = \{\mathtt{a}, \;\cdots\!,\; \mathtt{z}\}$.   If we define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $w := \mathtt{\symbol{34}example}\symbol{34}$,
+      \\[0.2cm]
+      then we have $w \in \Sigma^*$. \eox
+\end{enumerate}
+The \emph{length} of a string $w$ is defined as the number of characters composing $w$.
+The length of $w$ is written as $|w|$.  We use square brackets to extract the characters from a string:
+Given a string $w$ and a natural number $i \leq |w|$, we agree that $w[i]$ denotes the $i$-th
+character of the string $w$.   As $1$ is the first natural number, we start to count the characters at 1.  
+Therefore,  $w[1]$ is the first character of the string $w$.  Although it seems quite natural to
+start counting at $1$, many modern programming languages, e.g.~\texttt{C}, \textsl{Java}, and
+\textsl{Python} instead start counting at $0$.  A notable exception is 
+\href{http://randoom.org/Software/SetlX}{\textsc{SetlX}}.
+
+Next, we define the \emph{concatenation} of two strings $w_1$ and $w_2$ as the string $w$ that
+results from appending the string $w_2$ at the end of  $w_1$.  The concatenation of $w_1$ and $w_2$
+is written as $w_1 + w_2$ or sometimes even shorter as $w_1w_2$.  
+\vspace*{0.3cm}
+
+\exampleEng
+If $\Sigma = \{\mathtt{0},\mathtt{1}\}$ and, furthermore,  $w_1 = \mathtt{\symbol{34}01\symbol{34}}$ and
+ $w_2 = \mathtt{\symbol{34}10\symbol{34}}$, then we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$w_1+w_2 = \mathtt{\symbol{34}0110\symbol{34}}$ \quad and \quad $w_2+w_1 = \mathtt{\symbol{34}1001\symbol{34}}$.  \eox
+
+
+\begin{Definition}[Formal Language] \hspace*{\fill} \linebreak
+If $\Sigma$ is an alphabet, then a subset $L \subseteq \Sigma^*$
+is called a \emph{formal language}.  \qed
+\end{Definition}
+
+The previous definition is very general.  As the lecture proceeds, we will define several
+specializations of this concept.  For us, the two most important specializations are 
+\href{http://en.wikipedia.org/wiki/Regular_language}{regular languages} and
+\href{http://en.wikipedia.org/wiki/Context-free_language}{context-free languages}, 
+because these two categories  play the most prominent role in computer science. 
+
+
+\examplesEng
+\begin{enumerate}
+\item Assume that $\Sigma = \{\mathtt{0},\mathtt{1}\}$.  Define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L_\mathbb{N} = \{ \mathtt{1}+w \mid w \in \Sigma^* \} \cup \{ \mathtt{0} \}$
+      \\[0.2cm]
+      Then $L_\mathbb{N}$ is the language consisting of all strings that can be interpreted as
+      natural numbers given in binary notation.  The language contains all strings from $\Sigma^*$  that start with 
+      the character \texttt{1} as well as the string \texttt{0}, which only contains the character
+      \texttt{0}.  For example, we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mathtt{\symbol{34}100\symbol{34}} \in L_\mathbb{\symbol{34}N\symbol{34}}$, \quad but \quad $\mathtt{010} \not\in L_\mathbb{N}$.
+      \\[0.2cm]
+      Let us define a function 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{value}: L_\mathbb{N} \rightarrow \mathbb{N}$
+      \\[0.2cm]
+      on the set $L_\mathbb{N}$.  We define $\textsl{value}(w)$ by induction on the length of $w$.
+      We call $\textsl{value}(w)$ the \emph{interpretation} of $w$.  The idea is that
+      $\textsl{value}(w)$ computes the number represented by the string $w$:
+      \begin{enumerate}
+      \item $\textsl{value}(\mathtt{0}) = 0$, $\textsl{value}(1) = 1$,
+      \item $|w| > 0 \rightarrow \textsl{value}(w\mathtt{0}) = 2 \cdot \textsl{value}(w)   $,
+      \item $|w| > 0 \rightarrow \textsl{value}(w\mathtt{1}) = 2 \cdot \textsl{value}(w) + 1$.
+      \end{enumerate}
+\item Again we have $\Sigma = \{0,1\}$. Define the language $L_\mathbb{P}$
+      to be the set of all strings from $L_\mathbb{N}$ that are prime numbers:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L_\mathbb{P} := \{ w \in L_\mathbb{N} \mid \textsl{value}(w) \in \mathbb{P} \}$
+      \\[0.2cm]
+      Here, $\mathbb{P}$ denotes the set of \emph{prime numbers}, which is the set of all natural
+      numbers $p$ bigger than $1$ that have no positive divisor other than $1$ or $p$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mathbb{P} = \bigl\{ p \in \mathbb{N} \;\big|\; \{ t \in \mathbb{N} \mid \exists k \in
+      \mathbb{N} : k \cdot t = p \} = \{1, p\} \bigr\}$.
+\item Define $\Sigma_{\textsc{\scriptsize Ascii}} = \{ 0, \cdots, 127\}$.  Furthermore, define $L_C$
+      as the set of all strings of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{char* $f$(char* $x$) \{ $\cdots$ \}}
+      \\[0.2cm]
+      that are, furthermore, valid \texttt{C} function definitions.
+      Therefore,  $L_C$ contains all those strings that can be interpreted as a \texttt{C} function $f$
+      such that $f$ takes a single argument which is a string and returns a value which is also a
+      string.
+\item Define $\Sigma := \Sigma_{\textsc{\scriptsize Ascii}} \cup \{\dag\}$, where
+      $\mathtt{\dag}$ is some new symbol that is different from all symbols in
+      $\Sigma_{\textsc{\scriptsize Ascii}}$.
+      The universal language $L_u$ is the set of all strings of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $p$\dag$x$\dag$y$
+      \\[0.2cm]
+      such that
+      \begin{enumerate}
+      \item $p \in L_C$,
+      \item $x,y \in \Sigma_{\textsc{Ascii}}^*$,
+      \item if $f$ is the function that is represented by $p$, then $f(x)$ yields the result $y$.
+            \eox
+      \end{enumerate}
+\end{enumerate}
+The examples given above demonstrate that the notion of a formal language is very broad.
+While it is easy to recognize the strings of the language $L_\mathbb{N}$, it is quite a bit more
+difficult to decide whether a string is a member of 
+$L_\mathbb{P}$ or $L_C$.  Finally, since the
+\href{https://en.wikipedia.org/wiki/Halting_problem}{halting problem} is undecidable, there can be 
+no algorithm that is able to decide whether a string  
+$w$ is an element of the language $L_u$. 
+
+\subsection{Programming Languages Used in this Lecture}
+The tools presented in this lecture are based on 
+\textsl{Java}.  For some of the more complex algorithms discussed in this lecture
+it would be a pain to implement them in \textsl{Java}.
+Hence, I will implement these algorithms in \textsc{SetlX}.  \textsc{SetlX} is a set-based
+programming language which is very suitable for rapid prototyping. 
+\textsc{SetlX} programs are about as concise as the pseudo code found in many books.  However, in
+contrast to pseudo code a \textsc{SetlX} program can be executed.  In order to execute
+\textsc{SetlX} programs you have to install the \textsc{SetlX} interpreter.  This interpreter is
+found at the following location:
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://randoom.org/Software/SetlX}{{http://randoom.org/Software/SetlX}}
+\\[0.2cm]
+There is a tutorial explaining the language at the following address:
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://wwwlehre.dhbw-stuttgart.de/~stroetma/SetlX/tutorial.pdf}{\texttt{http://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/SetlX/tutorial.pdf}}
+\\[0.2cm]
+I would like to encourage you to install \textsc{SetlX} since I think it is quite beneficial if you
+are able to run the programs presented in this lecture. 
+\pagebreak
+
+\section{Literature}
+In addition to these lecture notes there are two good books that I would like to recommend:
+\begin{enumerate}
+\item \emph{Introduction to Automata Theory, Languages, and Computation}
+      \cite{hopcroft:06}
+
+      This book is the bible with respect to the theory of formal languages and it contains all the theoretical
+      results discussed in this lecture. 
+      Obviously, we will only be able to cover a small part of the results discussed in this book.
+\item \emph{Introduction to the Theory of Computation}
+      \cite{sipser:2006}
+
+      This is another readable introduction to the theory of formal languages.  It also discusses
+      the theory of computability, which is not covered in this lecture.
+\item \emph{Compilers --- Principles, Techniques and Tools}
+      \cite{aho:2006}
+
+      This book is one of the standard references with respect to the theory of compilers.  It also covers a fair amount of
+      the theory of formal languages.
+\end{enumerate}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages.tex"
+%%% End: 

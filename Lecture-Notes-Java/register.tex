@@ -1,0 +1,786 @@
+\chapter{Register-Zuordnung}
+Die \"Ubersetzung eines Integer-\texttt{C}-Programms in \textsl{Java}-Byte-Code ist deswegen einfach, weil
+wir uns keine Gedanken dar\"uber machen m\"ussen, wie wir die Variablen auf Register verteilen, denn bei der
+\textsc{Ijvm} gibt es keine f\"ur den Benutzer sichtbaren Register, so dass alle Variablen und auch die
+Zwischenergebnisse auf dem Stack abgelegt werden m\"ussen.  In diesem Kapitel ist unser Ziel,
+als Endergebnis ein Assembler-Programm f\"ur den \textsc{Srp}-Prozessor zu erzeugen.  Dazu m\"ussen wir
+uns \"uberlegen, wie wir die einzelnen Variablen auf die verschiedenen Register verteilen.
+Wir geben zun\"achst ein Verfahren an, mit dessen Hilfe wir die Anzahl der Register
+bestimmen k\"onnen,  die f\"ur die Speicherung von Zwischenergebnissen, die bei der Auswertung
+arithmetischer Ausdr\"ucke auftreten, ben\"otigt werden.
+  Die Parameter und lokalen Variablen einer Funktion verteilen wir dann auf die
+verbleibenden Register oder, falls nicht gen\"ugend Register vorhanden sind, allokieren wir
+die lokalen Variablen auf dem Stack.
+
+\section{Die Ershov-Zahlen}
+Das Verfahren, mit dem Register f\"ur die Auswertung arithmetischer Ausdr\"ucke zugeordnet werden k\"onnen,
+berechnet zun\"achst f\"ur einen gegebenen arithmetischen Ausdruck $e$ die Anzahl $\textsl{ershov}(e)$
+der Register, die ben\"otigt werden, um den Ausdruck auszuwerten.  Es ist nach dem russischen
+Informatiker A.~P.~Ershov benannt, der die Idee des  Verfahrens in \cite{ershov:58} publiziert hat.
+Wir spezifizieren die Funktion
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{ershov}: \mathtt{Expr} \rightarrow \mathbb{N}$,
+\\[0.2cm]
+die f\"ur einen gegebenen arithmetischen Ausdruck $e$ die Anzahl der zur Auswertung ben\"otigten
+Register angibt, durch eine Fallunterscheidung nach dem Aufbau des Ausdrucks.
+\begin{enumerate}
+\item Um eine Konstante auszuwerten, ben\"otigen wir genau ein Register, in dem wir diese
+      Konstante speichern k\"onnen:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{isNumber}(c) \rightarrow \textsl{ershov}(c) = 1$.
+\item Analog ben\"otigen wir zur Auswertung einer Variablen genau ein Register, in dem der Wert der
+      Variablen abgelegt wird:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{isVariable}(v) \rightarrow \textsl{ershov}(v) = 1$.
+\item Zur Auswertung eines Ausdrucks der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{op}\; e$,
+      \\[0.2cm] 
+      bei dem der un\"are Operator \textsl{op} auf den Ausdruck $e$ angewendet wird, ben\"otigen wir
+      genau so viele Register, wie wir zur Auswertung des Ausdrucks $e$ ben\"otigen, denn wenn das
+      Ergebnis der Auswertung von $e$ in einem Register $Rx$ liegt, so k\"onnen wir anschlie{\ss}end
+      dieses Register \"uberschreiben um das Endergebnis der Auswertung abzuspeichern:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{ershov}(\textsl{op}\; e) = \textsl{ershov}(e)$.
+      \\[0.2cm]
+      \textbf{Bemerkung}: Bei dem \textsc{Risc}-Prozessor, den wir in der Rechnertechnik-Vorlesung
+      besprochen haben, hatten wir als einzigen un\"aren Operator die bitweise Negation, aber
+      prinzipiell sind auch andere un\"are Operatoren denkbar.
+\item Bei der Auswertung eines bin\"aren Ausdrucks der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $e_1 \;\textsl{op}\; e_2$
+      \\[0.2cm]
+      sind drei F\"alle zu unterscheiden.
+      \begin{enumerate}
+      \item $\textsl{ershov}(e_1) < \textsl{ershov}(e_2)$.
+
+            In diesem Fall berechnen wir zun\"achst den Ausdruck $e_2$ und ben\"otigen dazu
+            $\textsl{ershov}(e_2)$ Register.  Das letzte dieser Register, nennen wir es
+            $R_y$,             enth\"alt dann das Ergebnis
+            der Auswertung von $e_2$, alle anderen Register k\"onnen f\"ur die Berechnung von $e_1$
+            verwendet werden.  Da $\textsl{ershov}(e_1) < \textsl{ershov}(e_2)$ ist, reichen diese
+            Register auch aus und das Ergebnis von $e_1$ wird in einem dieser Register, sagen
+            wir mal $R_x$, abgespeichert.  Anschlie{\ss}end f\"uhren wir dann noch den Befehl
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \textsl{op} $R_y$, $R_x$, $R_y$ 
+            \\[0.2cm]
+            aus, bei dem wir das Ergebnis des Ausdrucks $e_1 \;\textsl{op}\; e_2$ berechnen und in
+            dem Register $R_y$ abspeichern.  Wir sehen, dass wir in diesem Fall zur Berechnung
+            von $e_1 \;\textsl{op}\; e_2$ nicht mehr Register ben\"otigen als zur Berechnung von $e_2$
+            und halten die folgende Formel fest:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{ershov}(e_1) < \textsl{ershov}(e_2) \rightarrow 
+             \textsl{ershov}(e_1 \;\textsl{op}\; e_2) = \textsl{ershov}(e_2)$.
+      \item $\textsl{ershov}(e_1) = \textsl{ershov}(e_2)$.
+
+            In diesem Fall berechnen wir den Ausdruck $e_1$ und ben\"otigen daf\"ur
+            $\textsl{ershov}(e_1)$ viele Register.  Bis auf das letzte dabei ben\"otigte Register, 
+            nennen wir es $R_x$, in dem wir das Ergebnis dieser Rechnung speichern m\"ussen, k\"onnen
+            wir alle diese Register f\"ur die Berechnung des Ausdrucks $e_2$ wiederverwenden.
+            Folglich ben\"otigen wir f\"ur die Berechnung von $e_2$ also ein weiteres Register, das wir
+            jetzt mit $R_y$ bezeichnen.  Das Endergebnis k\"onnen wir nun mit dem Befehl
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \textsl{op} $R_y$, $R_x$, $R_y$ 
+            \\[0.2cm]
+            berechnen, so dass wir an dieser Stelle kein weiteres Register mehr ben\"otigen.
+            Wir halten fest:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{ershov}(e_1) = \textsl{ershov}(e_2) \rightarrow 
+             \textsl{ershov}(e_1 \;\textsl{op}\; e_2) = \textsl{ershov}(e_1) + 1$.
+      \item $\textsl{ershov}(e_1) > \textsl{ershov}(e_2)$.
+
+            Dieser Fall ist offenbar analog zum ersten Fall und wir haben:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{ershov}(e_1) > \textsl{ershov}(e_2) \rightarrow 
+             \textsl{ershov}(e_1 \;\textsl{op}\; e_2) = \textsl{ershov}(e_1)$.
+      \end{enumerate}
+\item Die Auswertung eines Funktions-Aufrufs der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $f(e_1, \cdots, e_n)$
+      \\[0.2cm]
+      gelingt in Registern nur dann, wenn die einzelnen Ausdr\"ucke $e_1$, $\cdots$, $e_n$
+      selber keine Funktions-Aufrufe mehr enthalten.  Wir werden daher unsere Grammatik so
+      einschr\"anken, dass wir nur solche Funktions-Aufrufe betrachten, bei denen dies der
+      Fall ist.  Des Weiteren werden wir Funktions-Aufrufe nur auf der rechten Seite einer
+      Zuweisungen zulassen.  Dann k\"onnen wir jedes der Argumente von $f$ getrennt
+      auswerten.  Da die Ergebnisse dieser Auswertungen ohnehin auf den Stack geschrieben
+      werden, ist es nicht erforderlich, diese Ergebnisse in Registern zu speichern.
+      Daher haben wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{ershov}\bigl(f(e_1, \cdots, e_n)\bigr) = 
+       \textsl{max}\bigl( \textsl{ershov}(e_1), \cdots, \textsl{ershov}(e_n)\bigr)$.     
+\end{enumerate}
+
+\exercise
+Geben Sie an, wie gro{\ss} ein Ausdruck $e$ mindestens sein muss, damit 
+$\textsl{ershov}(e) = n$ gilt.
+
+
+
+\section{Implementierung eines Compilers f\"ur den \textsc{SRP}}
+Nach den Vor\"uberlegungen aus dem letzten Abschnitt entwickeln wir 
+in diesem Abschnitt einen Compiler, der Code f\"ur den \textsc{Srp} erzeugt.
+Wir gehen dabei wieder von der Sprache Integer-\texttt{C} aus, f\"ur die wir 
+im letzten Kapitel einen Compiler in Byte-Code entwicklet haten.
+  Diese Grammatik hatten wir in Abbildung \ref{fig:compiler.cup} gezeigt.
+
+Die Idee bei der Entwicklung eines Compilers f\"ur den \textsc{Srp} ist, dass wir zun\"achst
+berechnen, wieviele Register wir ben\"otigen, um die 
+Zwischenergebnisse, die bei der Auswertung arithmetischer Ausdr\"ucke entstehen, zu
+speichern.  Die restlichen Register k\"onnen dann f\"ur die lokalen Variablen genutzt werden.
+Sollten wir mehr lokale Variablen als freie Register haben, so speichern wir die
+\"uberz\"ahligen lokalen Variablen auf dem Stack.
+Wir werden nur die Register \texttt{R1} bis \texttt{R29} benutzen, denn  wir gehen davon 
+aus,  dass folgendes gilt:
+\begin{enumerate}
+\item Das Register \texttt{R0}  speichert die Konstante $0$.
+\item Das Register \texttt{R30} speichert den Stack-Pointer.
+\item Das Register \texttt{R31} ist f\"ur die Berechnung von Sprungadressen und
+      Speicherstellen reserviert.  
+\end{enumerate}
+In der Rechnertechnik-Vorlesung hatten wir eine Unterscheidung in solche
+Register, die beim Aufruf einer Funktion gesichert werden m\"ussen und solche Register, die
+nicht gesichert werden, durchgef\"uhrt.  Diese Unterscheidung lassen wir fallen und
+vereinbaren stattdessen, dass bei einem Funktionsaufruf alle Register, die von der
+Funktion ver\"andert werden, gesichert werden m\"ussen.  
+Das vereinfacht die Entwicklung des Compilers etwas.
+
+\subsection{Diskussion der verschiedenen Klassen}
+Die Struktur des \textsc{SRP}-Compilers ist \"ahnlich zu der Struktur des
+\textsl{Java}-Byte-Code-Compilers:  Wir erzeugen zun\"achst einen abstrakten Syntax-Baum und
+haben dann in allen Klassen eine Methode $\textsl{compile}()$, die Code erzeugt, der den jeweils
+dargestellten Ausdruck \"ubersetzt.  Die Erzeugung des Codes ist allerdings deutlich
+komplexer als bei dem Byte-Code-Compiler.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public class Function {
+        private String            mName;
+        private List<String>      mParameterList;
+        private List<Declaration> mDeclarations;
+        private List<Statement>   mBody;
+        private Integer           mNumberUsedRegs;
+        private Integer           mNumberVarsOnStack;
+        private Map<String, Location> mSymbolTable;    
+        public  static String sName;
+    
+        public Function(String            name, 
+                        List<String>      parameterList, 
+                        List<Declaration> declarations, 
+                        List<Statement>   body) 
+        {
+            mName          = name;
+            mParameterList = parameterList;
+            mDeclarations  = declarations;
+            mBody          = body;
+        }
+        public List<AssemblerCmd> compile() {
+            initTable();
+            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+            result.add(new PROC(mName));
+            result.addAll(saveRegisters());
+            result.addAll(fillRegisters());
+            for (Statement stmnt: mBody) {
+                result.addAll(stmnt.compile(mSymbolTable));
+            }
+            result.add(new NEWLINE());
+            return result;
+        }
+\end{Verbatim} 
+\vspace*{-0.3cm} %$
+\caption{Die Klasse \texttt{Function}, 1.~Teil.}
+\label{fig:Function.java-SRP-1}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = last,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    private List<AssemblerCmd> saveRegisters() {
+        List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+        for (int i = 1; i <= mNumberUsedRegs; ++i) {
+            result.add(new STOREC(i, mNumberVarsOnStack + i));
+        }
+        int nextFree = mNumberVarsOnStack + mNumberUsedRegs + 1;
+        mSymbolTable.put("$free@" + mName, 
+                         new Memory(nextFree));
+        mSymbolTable.put("$numberVarsOnStack@" + mName, 
+                         new Memory(mNumberVarsOnStack));
+        mSymbolTable.put("$numberUsedRegs@" + mName, 
+                         new Memory(mNumberUsedRegs   ));
+        return result;
+    }
+    private List<AssemblerCmd> fillRegisters() {
+        List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+        for (int i = 0; i < mParameterList.size(); ++i) {
+            String p = mParameterList.get(i);
+            Location l = mSymbolTable.get(p);
+            if (l instanceof Register) {
+                Integer register = ((Register) l).getNumber();
+                Integer offset   = mParameterList.size() - i;
+                result.add(new LOADC(register, -offset));
+            } else {
+                return result;
+            }
+        }
+        return result;
+    }
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Die Klasse \texttt{Function}, 2.~Teil.}
+\label{fig:Function.java-SRP-2}
+\end{figure}
+
+
+Wir beginnen unsere Diskussion des \textsc{Srp}-Compilers mit der Klasse
+\texttt{Function}, die in den Abbildungen \ref{fig:Function.java-SRP-1},
+\ref{fig:Function.java-SRP-2}, \ref{fig:Function.java-SRP-3} und
+\ref{fig:Function.java-SRP-4} gezeigt ist.
+Abbildung \ref{fig:Function.java-SRP-1} auf Seite \pageref{fig:Function.java-SRP-1} zeigt die
+Member-Variablen der Klasse \texttt{Function}, den Konstruktor, sowie die Methode
+$\textsl{compile}()$.  Die Klasse repr\"asentiert eine Funktions-Definition der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{int $f$($p_1, \cdots, p_n$) \{ \textsl{decls}\ \textsl{body} \}}
+\\[0.2cm]
+Die Member-Variablen haben folgende Bedeutung:
+\begin{enumerate}
+\item \texttt{mName} entspricht dem Funktions-Namen $f$.
+\item \texttt{mParameterList} entspricht den \"Ubergabe-Parametern $p_1, \cdots, p_n$.
+\item \texttt{mDeclarations} ist die Liste der Deklarationen aller lokalen Variablen.
+\item \texttt{mBody} ist die Liste der Befehle im Rumpf der Funktion.
+\item \texttt{mNumberUsedRegs} ist die Anzahl der Register, die von dieser Funktion
+      benutzt werden.
+\item \texttt{mNumberVarsOnStack} ist die Anzahl der lokalen Variablen, die auf dem Stack
+      gespeichert werden m\"ussen, weil in den Registern kein Platz mehr f\"ur diese Variablen ist.
+\item \texttt{mSymbolTable} gibt f\"ur jede lokale Variable den Ort an, wo diese lokale
+      Variable gespeichert ist.  Zur Spezifikation dieses Ortes haben wir die abstrakte
+      Klasse \texttt{Location} eingef\"uhrt, die \"uber die Gleichung
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{Location = Memory(Integer offset) + Register(Integer number);}
+      \\[0.2cm]
+      definiert ist.  Die Klasse \texttt{Location} unterscheidet also, ob die Variable in
+      einem Register gespeichert ist, oder ob die Variable auf dem Stack liegt.
+      Falls die Variable in einem Register gespeichert wird, dann gibt \texttt{mNumber}
+      an, um welches Register es sich handelt.  Liegt die Variable auf dem Stack, so wird
+      diese Variable an der Stelle
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{SP + offset}
+      \\[0.2cm]
+      gespeichert.  Dabei gehen wir davon aus, dass der Stackpointer \texttt{SP} immer auf
+      die R\"ucksprung-Adresse der Funktion zeigt, so dass wir die Adresse der lokalen
+      Variablen tats\"achlich immer nach der obigen Formel berechnen k\"onnen.
+\item Zus\"atzlich hat die Klasse eine statische Variable \texttt{sName}, die den Namen
+      der Funktion enth\"alt, die gerade geparst wird.
+\end{enumerate}
+Der Konstruktor der Klasse \texttt{Function} speichert die Member-Variablen, die den
+abstrakten Syntax-Baum repr\"asentieren und die bereits vom Parser erzeugt werden k\"onnen.
+
+Interessanter ist die Methode $\textsl{compile}()$, die diese Funktion \"ubersetzt.
+Im Gegensatz zu unserer Implementierung des \textsl{Java}-Byte-Code-Compilers behandeln
+wir bei dieser Implementierung die Sonderf\"alle, die bei den Funktionen 
+$\textsl{putchar()}$ und $\textsl{getchar}()$ auftreten, nicht sondern gehen davon aus,
+dass diese Funktionen bereits in einer Bibliothek zur Verf\"ugung gestellt werden und dann
+sp\"ater von einem Linker eingebunden werden.  Die Funktion $\textsl{compile}()$ arbeitet
+dann wie folgt:
+\begin{enumerate}
+\item Zun\"achst berechnen wir f\"ur die Parameter und die lokalen Variablen der Funktion,
+      wo diese abgespeichert werden.  Diese Berechnung wird von der Methode
+      $\textsl{initTable}()$ durchgef\"uhrt.  Das Ergebnis dieser Rechnung wird
+      in der Variablen \texttt{mSymbolTable} abgelegt.  Zus\"atzlich initialisiert diese
+      Methode die Member-Variablen \texttt{mNumberUsedRegs} und \texttt{mNumberVarsOnStack}. 
+\item Anschlie{\ss}end erzeugen wir eine Liste von Assembler-Befehlen, die mit der Assembler-Deklaration
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{PROC} \textsl{mName}
+      \\[0.2cm]
+      beginnt.  Als erstes sichert die Prozedur dann alle die Register, die von der Prozedur
+      eventuell ver\"andert werden.  Die daf\"ur notwendigen Assembler-Befehle werden von der
+      Funktion $\textsl{saveRegisters}()$ erzeugt.
+\item Danach werden die \"Ubergabe-Parameter, die wir in Registern speichern wollen,
+      in die entsprechenden Register geladen.  Der daf\"ur notwendige Code wird von der
+      Methode $\textsl{fillRegisters}()$ erzeugt.
+\item Zum Schluss werden die einzelnen Befehle, die im Rumpf der Funktion stehen, \"ubersetzt.      
+\end{enumerate}
+Die Methode $\textsl{saveRegisters}()$ erzeugt Code, mit dem die Register, die in der
+Methode benutzt werden, auf dem Stack gesichert werden.  Dazu benutzt Sie den
+Pseudo-Assembler-Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{storec R$i$, SP + $o$},
+\\[0.2cm]
+mit dem das Register \texttt{R$i$} an die Adresse  $\texttt{SP} + o$ im Hauptspeicher
+geschrieben wird.  Dieser Pseudo-Befehl wird in die folgenden Assembler-Befehle \"ubersetzt:
+
+\noindent
+\hspace*{1.3cm} \texttt{const R31, $o$} \\
+\hspace*{1.3cm} \texttt{add \ \ R31, R30, R31} \\
+\hspace*{1.3cm} \texttt{store R$i$, R31} 
+\\[0.2cm]
+Anschlie{\ss}end speichern wir die Adresse der ersten freien Stelle auf dem Stack in der
+Symboltabelle unter dem Namen ``\symbol{36}free@'' + \textsl{name}, wobei \texttt{name}
+f\"ur den Namen der Prozedur steht.
+Genauso werden die Anzahl der Variablen, die wir auf dem Stack haben sowie die Anzahl der
+benutzten Register in der Symboltabelle abgespeichert.  Diese Werte werden sp\"ater in der
+Klasse \texttt{ReturnStmnt} ben\"otigt um die alten Werte der auf dem Stack gesicherten
+Register wieder herzustellen.
+
+
+Die Methode $\textsl{fillRegisters}()$ hat die Aufgabe, die Parameter, mit denen die
+Funktion aufgerufen worden ist, vom Stack in die daf\"ur vorgesehenen Register zu laden.
+Dazu benutzt diese Methode den Pseudo-Assembler-Befehl
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{loadc R$i$, SP + $o$},
+\\[0.2cm]
+mit dem das Register \texttt{R$i$} von der Adresse  $\texttt{SP} + o$ im Hauptspeicher
+geladen wird.  Dieser Pseudo-Befehl wird in die folgenden Assembler-Befehle \"ubersetzt:
+\\[0.2cm]
+\noindent
+\hspace*{1.3cm} \texttt{const R31, $o$} \\
+\hspace*{1.3cm} \texttt{add \ \ R31, R30, R31} \\
+\hspace*{1.3cm} \texttt{load \ R$i$, R31} 
+\\[0.2cm]
+\textbf{Bemerkung}: Reale Prozessoren haben in der Regel ein Kommando, das den obigen
+Pseudobefehl direkt umsetzen kann.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = last,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+        private void initTable() {
+            mSymbolTable = new TreeMap<String, Location>();
+            int nextAvailable = maxErshov() + 1;
+            for (int i = 0; i < mParameterList.size(); ++i) {
+                String p = mParameterList.get(i);
+                if (nextAvailable < 30) {
+                    mSymbolTable.put(p, new Register(nextAvailable));
+                    ++nextAvailable;
+                } else {
+                    int offset = - mParameterList.size() + i;
+                    mSymbolTable.put(p, new Memory(offset));
+                }
+            }
+            int offset = 0;    
+            for (int i = 0; i < mDeclarations.size(); ++i) {
+                String v = mDeclarations.get(i).getVar();
+                if (nextAvailable < 30) {
+                    mSymbolTable.put(v, new Register(nextAvailable));
+                    ++nextAvailable;
+                } else {
+                    ++offset;
+                    mSymbolTable.put(v, new Memory(offset));
+                }
+            }
+            mNumberVarsOnStack = offset;
+            mNumberUsedRegs    = nextAvailable - 1;
+        }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Klasse \texttt{Function}, 3.~Teil.}
+\label{fig:Function.java-SRP-3}
+\end{figure}
+
+
+Die in Abbildungen \ref{fig:Function.java-SRP-3} gezeigte Methode $\textsl{initTable}()$
+berechnet die Symboltabelle, in der hinterlegt ist, wo die einzelnen Variablen
+abgespeichert sind.  Dazu wird zun\"achst die Funktion $\textsl{maxErshov}()$ aufgerufen.
+Diese Funktion berechnet, wieviele Register maximal f\"ur Zwischenergebnisse ben\"otigt
+werden.  Das erste Register, \"uber das wir frei verf\"ugen k\"onnen, hat dann den Wert
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{maxErshov}() + 1$.
+\\[0.2cm]
+Als n\"achstes ordnen wir in den Zeilen 65 bis 74 den \"Ubergabe-Parametern der Funktion
+Register zu.  Falls wir f\"ur einen Parameter kein freies Register mehr finden k\"onnen,
+ber\"ucksichtigen wir in Zeile 71, dass die Parameter einer Funktion ja schon auf dem Stack
+unterhalb der R\"ucksprungadresse liegen und tragen die entsprechende Adresse in der
+Symboltabelle ein.  Da auf Register wesentlich schneller zugegriffen werden kann als auf
+den Stack, der ja im Hauptspeicher liegt, ist das
+Ziel, m\"oglichst alle Parameter in Registern zur Verf\"ugung zu haben.  Wenn es aber nicht
+gen\"ugend  Register gibt, die noch frei sind, dann m\"ussen wir uns eben damit begn\"ugen, die
+\"uberz\"ahligen Parameter im Bedarfsfall vom Stack zu laden.
+
+
+In den Zeilen 76 bis 85 suchen wir anschlie{\ss}end f\"ur die lokalen Variablen einen Platz.
+Falls noch Register frei sind, ordnen wir den Variablen Register zu, sonst kommen die lokalen Variablen
+auf den Stack.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = last,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+        private int maxErshov() {
+            int result = 1;
+            for (Statement stmnt: mBody) { 
+                result = Math.max(result, stmnt.maxErshov());
+            }
+            return result;
+        }
+        public String getName() {
+            return mName;
+        }
+        public List<String> getParameterList() {
+            return mParameterList;
+        }
+        public List<Statement> getBody() {
+            return mBody;
+        }
+        public String toString() {
+            return "Function(" + mName + ", " + 
+                   mParameterList + ", " + mBody + ")";
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Die Klasse \texttt{Function}, 4.~Teil.}
+\label{fig:Function.java-SRP-4}
+\end{figure}
+
+Abbildung \ref{fig:Function.java-SRP-4} zeigt schlie{\ss}lich die Implementierung der Funktion
+$\textsl{maxErshov}()$, bei der einfach das Maximum \"uber alle Befehle des Rumpfs der
+Funktion gebildet wird.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    import java.util.*;
+    
+    public class Sum extends Expr {
+        private Expr mLhs;
+        private Expr mRhs;
+    
+        public Sum(Expr lhs, Expr rhs) {
+            mLhs = lhs;
+            mRhs = rhs;
+            if (mLhs.getErshov() < mRhs.getErshov()) {
+                mErshov = mRhs.getErshov();
+            } else if (mLhs.getErshov() > mRhs.getErshov()) {
+                mErshov = mLhs.getErshov();
+            } else {
+                mErshov = mLhs.getErshov() + 1;
+            }
+        }
+        public List<AssemblerCmd> compile(Integer base, 
+                                          Map<String, Location> symbolTable) 
+        {
+            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+            if (mLhs.getErshov() < mRhs.getErshov()) {
+                List<AssemblerCmd> rhsCmds = mRhs.compile(base, symbolTable);
+                List<AssemblerCmd> lhsCmds = mLhs.compile(base, symbolTable);
+                result.addAll(rhsCmds);
+                result.addAll(lhsCmds);
+            } else if (mLhs.getErshov() > mRhs.getErshov()) {
+                List<AssemblerCmd> lhsCmds = mLhs.compile(base, symbolTable);
+                List<AssemblerCmd> rhsCmds = mRhs.compile(base, symbolTable);
+                result.addAll(lhsCmds);
+                result.addAll(rhsCmds);
+            } else {
+                List<AssemblerCmd> lhsCmds = mLhs.compile(base + 1, symbolTable);
+                List<AssemblerCmd> rhsCmds = mRhs.compile(base    , symbolTable);
+                result.addAll(lhsCmds);
+                result.addAll(rhsCmds);
+            }
+            mRegister = base + mErshov;
+            if (mRegister < 30) {
+                result.add(new ADD(mRegister, mLhs.getReg(), mRhs.getReg()));
+            } else {
+                System.err.println("insufficient registers to compile:");
+            }
+            return result;
+        }
+        public Expr getLhs() { return mLhs; }
+        public Expr getRhs() { return mRhs; }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Klasse Sum.java}
+\label{fig:Sum.java-SRP}
+\end{figure}
+
+Abbildung \ref{fig:Sum.java-SRP} zeigt exemplarisch, wie die Ershov-Zahlen f\"ur einzelne
+Ausdr\"ucke berechnet werden und wie der Code f\"ur einen arithmetischen Ausdruck der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{lhs} + \textsl{rhs}$
+\\[0.2cm]
+produziert
+wird.  Die Klasse \texttt{Sum} repr\"asentiert einen Ausdruck der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{mLhs} + \textsl{mRhs}$.
+\\[0.2cm]
+Von der abstrakten Klasse \textsl{Expr} erbt die Klasse \textsl{Sum} die beiden
+Member-Variablen \texttt{mErshov} und \texttt{mRegister}.  Die Variable \texttt{mErshov}
+gibt an, wieviele Register zur \"Ubersetzung dieses Ausdrucks ben\"otigt werden.  Die Variable
+\texttt{mRegister} gibt das Register an, in dem der Wert dieses Ausdrucks abgespeichert wird.
+Die Ershov-Zahl f\"ur diesen Ausdruck wird bereits im Konstruktor ermittelt, wobei die
+Fallunterscheidung unmittelbar aus der im letzten Abschnitt gegebenen Diskussion folgt.
+
+Die Methode $\textsl{compile}()$ bekommt als erstes Argument eine nat\"urliche Zahl
+\textsl{base} und als zweites Argument die Symboltabelle.  Das Argument \textsl{base} gibt
+dabei den Index des ersten Registers an, das f\"ur Zwischen-Ergebnisse genutzt werden kann.
+\begin{enumerate}
+\item Betrachten wir zun\"achst den Fall, dass die Zahl der Register, die f\"ur die Berechnung von
+      \texttt{mLhs} ben\"otigt wird, kleiner ist, als die Zahl der f\"ur \texttt{mRhs} ben\"otigten
+      Register.  In diesem Fall berechnen wir erst \texttt{mRhs}.  Anschlie{\ss}end berechnen
+      wir \texttt{mLhs}.  Da wir daf\"ur weniger Register ben\"otigen als f\"ur die Berechnung
+      von \texttt{mRhs} werden wir das Ergebnis, das wir bei der Berechnung von
+      \texttt{mRhs} im letzten Register gesichert haben, nicht \"uberschreiben.
+
+      Wir speichern f\"ur jeden Ausdruck in der Member-Variablen \texttt{mRegister}, die in
+      der abstrakten Klasse \texttt{Expr} definiert ist und die \"uber die Funktion $\textsl{getReg}()$
+      abgefragt werden kann, dasjenige Register, in dem das Ergebnis des Ausdrucks
+      abgespeichert wird.  Wir setzen diese Variable in Zeile 38 und k\"onnen dann die Summe
+      durch den Befehl
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{add mRegister, mLhs.getReg(), mRhs.getReg()}
+      \\[0.2cm]
+      berechnen.  Dieser Fall wird in den Zeilen 22 -- 26 abgehandelt.
+\item Der umgekehrte Fall, bei dem die Zahl der Register, die f\"ur die Berechnung von
+      \texttt{mRhs} ben\"otigt wird, kleiner ist, als die Zahl der f\"ur \texttt{mLhs} ben\"otigten
+      Register, kann analog behandelt werden und ist in den Zeilen
+      27 -- 31 gezeigt.
+\item Abschlie{\ss}end betrachten wir den Fall, in dem die Zahl der Register, die f\"ur die Berechnung von
+      \texttt{mLhs} ben\"otigt wird, genauso gro{\ss} ist wie die Zahl der f\"ur \texttt{mRhs} ben\"otigten
+      Register.  In diesem Fall benutzen wir zur Berechnung von \texttt{mLhs} die Register
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{base} + 1, \;\cdots,\; \textsl{base} + 1 + \textsl{mLhs}.\textsl{getErshov}()$.
+      \\[0.2cm]
+      Das Ergebnis dieser Rechnung ist dann in dem Register 
+      $\textsl{base} + 1 + \textsl{mLhs}.\textsl{getErshov}()$ gespeichert.
+      Wenn wir nun bei der Berechnung von \textsl{mRhs} bereits mit dem Register \textsl{base}
+      starten, dann ist sicher gestellt, dass dabei das in 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{base} + 1 + \textsl{mLhs}.\textsl{getErshov}()$ 
+      \\[0.2cm]
+      gespeicherte Ergebnis nicht \"uberschrieben werden kann.  
+      Dieser Fall ist der Grund, warum wir bei der Methode $\textsl{compile}()$ das
+      zus\"atzliche Argument \textsl{base} ben\"otigen.  Der Fall ist in den Zeilen 33 bis 36
+      gezeigt.
+\item Der Fall, dass die Anzahl der Register nicht ausreichend ist, um die
+      Zwischen-Ergebnisse, die bei der Berechnung eines Ausdrucks auftreten k\"onnen, zu
+      berechnen, wird in Zeile 42 behandelt.  Dieser Fall kann, wie in einer \"Ubungsaufgabe
+      gezeigt wird, bei 29 frei verf\"ugbaren Registern de facto nicht auftreten.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public class ReturnStmnt extends Statement {
+        private Expr   mExpr;
+    	private String mName;
+    
+        public ReturnStmnt(Expr expr, String name) {
+            mExpr = expr;
+            mName = name;
+        }
+        public List<AssemblerCmd> compile(Map<String, Location> symbolTable) {
+            int numVarsOnStack = 
+                ((Memory) symbolTable.get("$numberVarsOnStack@" + mName)).getOffset();
+            int numUsedRegs = 
+                ((Memory) symbolTable.get("$numberUsedRegs@" + mName)).getOffset();
+            List<AssemblerCmd> result = mExpr.compile(0, symbolTable);
+            result.add(new STOREC(mExpr.getReg(), 1));
+            result.addAll(restoreRegisters(numVarsOnStack, numUsedRegs));
+            result.add(new RETURN());
+            return result;
+        }
+        private List<AssemblerCmd> restoreRegisters(int numVarsOnStack, int numUsedRegs) {
+            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+            for (int i = 1; i <= numUsedRegs; ++i) {
+                result.add(new LOADC(i, numVarsOnStack + i));
+            }
+            return result;
+        }
+        protected int maxErshov() {
+            return mExpr.getErshov();
+        }
+        public Expr getExpr() {
+            return mExpr;
+        }
+        public String toString() {
+            return "ReturnStmnt(" + mExpr.toString() + ")";
+        }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Klasse \texttt{ReturnStmnt}.}
+\label{fig:ReturnStmnt.java-SRP}
+\end{figure}
+
+\noindent
+Die  in Abbildung \ref{fig:ReturnStmnt.java-SRP} gezeigte Klasse \texttt{ReturnStmnt}
+zeigt die \"Ubersetzung eines Befehls der Form 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{return \textsl{expr};} 
+\\[0.2cm]
+In der Methode $\textsl{compile}()$ wird zun\"achst der Ausdruck \textsl{expr} berechnet und
+das Ergebnis dieser Rechnung wird in Zeile 15 auf den Stack gelegt.
+Anschlie{\ss}end werden mit dem von der Methode $\textsl{restoreRegisters}()$ erzeugten Code
+die Register wieder auf die Werte zur\"uck gesetzt, die auf dem Stack gespeichert wurden.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    public class FunctionCall extends Expr {
+        private String     mName;
+        private List<Expr> mArgs;
+    
+        public FunctionCall(String name, List<Expr> args) {
+            mName = name;
+            mArgs = args;
+            mErshov = 1;
+            for (Expr arg: mArgs) {
+                mErshov = Math.max(arg.getErshov(), mErshov);
+            }
+        }
+        public List<AssemblerCmd> 
+            compile(Integer base, Map<String, Location> symbolTable) 
+        {
+            Location l = symbolTable.get("$free");
+            Memory m = (Memory) l;
+            Integer k = m.getOffset();
+            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
+            for (Expr arg: mArgs) {
+                result.addAll(arg.compile(base, symbolTable));
+                result.add(new STOREC(arg.getReg(), k)); // store Rx, SP + k
+                ++k;
+            }
+            mRegister = 1;
+            result.add(new CONST(31, k + mArgs.size() - 1));
+            result.add(new ADD(30, 30, 31));   // SP = SP + k + n - 1
+            result.add(new CALL(mName));
+            result.add(new LOADC(mRegister, 1));
+            result.add(new CONST(31, - k - mArgs.size()));
+            result.add(new ADD(30, 30, 31));   // SP = SP -(k + n)
+            return result;
+        }
+        public String     getName() { return mName; }
+        public List<Expr> getArgs() { return mArgs; }
+    }
+\end{Verbatim}
+\vspace*{-0.3cm} %$
+\caption{Die Klasse \texttt{FunctionCall}.}
+\label{fig:FunctionCall.java-SRP}
+\end{figure}
+
+Zum Abschluss diskutieren wir die in Abbildung \ref{fig:FunctionCall.java-SRP} gezeigte 
+ Klasse \texttt{FunctionCall}, die einen Funktions-Aufruf der Form
+\\[0.2cm]
+\hspace*{1.3cm}
+$f(e_1, \cdots, e_n)$
+\\[0.2cm]
+repr\"asentiert.  Der Konstruktor initialisiert sowohl den Namen als auch die Argumente der
+Funktion und berechnet anschlie{\ss}end die Ershov-Zahl als Maximum der Ershov-Zahlen der
+Argumente.  Die Aufgabe der Methode \textsl{compile} ist es nun, Code zu erzeugen, der
+diese Argumente berechnet und auf dem Stack ablegt.  In der Symboltabelle haben wir unter
+der Pseudo-Variablen ``\symbol{36}free'' gespeichert, wo der erste freie Platz auf dem
+Stack ist. Dort legen wir in der Schleife in Zeile 20 -- 23 die Argumente ab.
+Anschlie{\ss}end erh\"ohen wir in Zeile 26 den Stack-Pointer, so dass er nun auf das letzte auf
+dem Stack abgelegte Argument zeigt und rufen die Funktion mit einem \texttt{call}-Befehl auf.
+In Zeile 29 laden wir das Ergebnis vom Stack und speichern es in dem daf\"ur vorgesehenen
+Register.  Danach wird der Stack-Pointer wieder auf seinen urspr\"unglichen Wert zur\"uck gesetzt.
+
+\section{Schlussbetrachtung}
+Der im letzten Abschnitt dargestellte Compiler geht sehr sorglos mit Registern um.
+Insbesondere das Sichern und Wiederherstellen der Register auf dem Stack, das von diesem
+Compiler durchgef\"uhrt w\"urde, ist f\"ur die Praxis viel zu aufwendig.  Um einen
+halbwegs brauchbaren Code zu erzeugen, sind wenigstens die folgenden Schritte
+erforderlich:
+\begin{enumerate}
+\item Zun\"achst muss \"uberpr\"uft werden, welche Variablen an welcher Stelle des Programms
+      \emph{lebendig} sind.  Dabei wird eine Variable an einer Stelle des Programms 
+      dann als \emph{lebendig} bezeichnet, wenn der Wert, den diese Variable an der Stelle
+      hat, sp\"ater noch f\"ur eine Rechnung ben\"otigt wird.
+
+      Der Grund, warum eine Berechnung der lebendigen Variablen Sinn macht, ist der, dass
+      ein Register, das von einer Variablen belegt wird, die an dieser Stelle des
+      Programms nicht mehr lebendig ist, von einer anderen Variablen genutzt werden kann.
+\item Anschlie{\ss}end geschieht nun die Register-Allokation, bei der nun auch verschiedenen
+      Variablen dasselbe Register zugeordnet werden kann.   Wird zwei verschiedenen
+      Variablen $x$ und $y$ dasselbe Register zugewiesen, so muss lediglich gew\"ahrleistet 
+      werden, dass es keinen Punkt im Programm gibt, bei dem gleichzeitig sowohl $x$ als
+      auch $y$ lebendig sind.
+\item Bei dem Sichern und Wiederherstellen der Register auf dem Stack muss ausgehend von der Analyse
+      der Lebendigkeit der Variablen garantiert werden, dass nur solche Register gesichert
+      werden, deren Werte tats\"achlich sp\"ater noch ben\"otigt werden. 
+\end{enumerate}
+Wir werden uns im n\"achsten Kapitel n\"aher mit der Frage der Lebendigkeit von Variablen besch\"aftigen.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formale-sprachen"
+%%% End: 
