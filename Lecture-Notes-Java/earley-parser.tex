@@ -1,0 +1,1371 @@
+\chapter{Earley-Parser$^*$}
+In diesem Kapitel stellen wir ein effizientes Verfahren vor, mit dem es m\"oglich ist, f\"ur eine
+\underline{beliebi}g\underline{e} vorgegebene kontextfreie Grammatik
+\\[0.2cm]
+\hspace*{1.3cm}
+$G = \langle V, \Sigma, R, S \rangle$ \quad und einen vorgegebenen String $s \in \Sigma^*$
+\\[0.2cm]
+zu entscheiden, ob $s$ ein Element der Sprache $L(G)$ ist, ob also $s \in L(G)$ gilt.
+Der Algorithmus, denn wir gleich diskutieren werden, wurde 1970 von Jay Earley publiziert
+\cite{earley:70}.  Neben dem Algorithmus von Earley gibt es noch den
+Cocke-Younger-Kasami-Algorithmus, in der Literatur auch als \textsc{Cyk}-Algorithmus bekannt,
+der unabh\"angig von John Cocke \cite{cocke:1970}, Daniel
+H.~Younger \cite{younger:1967} und Tadao Kasami \cite{kasami:1965} entdeckt wurde.
+Der \textsc{Cyk}-Algorithmus hat allerdings eine Laufzeit von $\mathcal{O}(n^3)$ und ist au{\ss}erdem nur anwendbar, wenn
+die Grammatik in Chomsky-Normalform vorliegt.  Da es sehr aufwendig ist, eine Grammatik in
+Chomsky-Normalform zu transformieren, wird der \textsc{Cyk}-Algorithmus in der
+Praxis nicht eingesetzt.  
+Demgegen\"uber kann der von Earley angegebene Algorithmus auf beliebige kontextfreie Grammatiken
+angewendet werden.  Im allgemeinen Fall hat dieser Algorithmus ebenfalls die Komplexit\"at
+$\mathcal{O}(n^3)$, aber falls die vorgegebene Grammatik eindeutig ist, dann ist die Komplexit\"at
+lediglich $\mathcal{O}(n^2)$,
+Geschickte Implementierungen von Earley's Algorithmus
+erreichen f\"ur viele praktisch relevante Grammatiken sogar eine lineare Laufzeit.  Dies ist
+beispielsweise sowohl f\"ur $LL(k)$-Grammatiken als auch f\"ur $LR(1)$-Grammatiken, die wir in einem sp\"ateren Kapitel analysieren werden, der Fall.
+Dieses Kapitel gliedert sich in die folgenden Abschnitte.
+\begin{enumerate}
+\item Zun\"achst skizzieren wir die Theorie, die Earley's Algorithmus zu Grunde liegt.
+\item Danach geben wir eine einfache Implementierung des Algorithmus in \textsc{SetlX} an.
+\item Anschlie{\ss}end beweisen wir die Korrektheit und Vollst\"andigkeit des Algorithmus.
+\item Zum Abschluss des Kapitels untersuchen wir die Komplexit\"at.
+\end{enumerate}
+
+\section{Der Algorithmus von Earley}
+Der zentrale Begriff des von Earley angegebenen Algorithmus ist der Begriff des Earley-Objekts,
+das wie folgt definiert ist.
+
+\begin{Definition}[Earley-Objekt]
+  Gegeben sei eine kontextfreie Grammatik $G = \langle V, \Sigma, R, S \rangle$ und ein String
+  $s = x_1x_2 \cdots x_n \in \Sigma^*$ der L\"ange $n$.  Wir bezeichnen ein Paar der Form
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\langle A \rightarrow \alpha \bullet \beta, k \rangle$
+  \\[0.2cm]
+  dann als ein \emph{Earley-Objekt}, falls folgendes gilt:
+  \begin{enumerate}
+  \item $(A \rightarrow \alpha \beta) \in R$ \quad und
+  \item $k \in \{0,1,\cdots,n\}$. \qed
+  \end{enumerate}
+\end{Definition}
+
+\noindent
+\textbf{Erkl\"arung}: 
+Ein Earley-Objekt beschreibt einen Zustand, in dem ein Parser sich befinden kann.  
+Ein Earley-Parser, der einen String $x_1 \cdots x_n$ parsen soll,
+verwaltet $n+1$ Mengen von Earley-Objekten.  Diese Mengen bezeichnen wir mit
+\\[0.2cm]
+\hspace*{1.3cm}
+$Q_0, Q_1, \cdots, Q_n$.
+\\[0.2cm]
+Die Interpretation von 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle A \rightarrow \alpha \bullet \beta, k \rangle \in Q_j$ \quad mit  $j \geq k$
+\\[0.2cm]
+ist dann wie folgt:
+\begin{enumerate}
+\item Der Parser versucht die Regel $A \rightarrow \alpha \beta$ auf den Teilstring 
+      $x_{k+1} \cdots x_n$ anzuwenden und am Anfang dieses Teilstrings ein $A$ mit Hilfe
+      der Regel $A \rightarrow \alpha \beta$ zu erkennen.
+\item Am Anfang des Teilstrings $x_{k+1} \cdots x_j$ hat der Parser bereits $\alpha$ erkannt, es gilt also
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\alpha \Rightarrow^* x_{k+1} \cdots x_j$.
+\item Folglich versucht der Parser am Anfang des Teilstrings $x_{j+1} \cdots x_n$ ein
+      $\beta$ erkennen.
+\end{enumerate}
+Der Algorithmus von Earley verwaltet f\"ur $j=0,1,\cdots,n$  Mengen $Q_j$ von
+Earley-Objekten, die den Zustand beschreiben, in dem der Parser ist, wenn der Teilstring
+$x_1 \cdots x_j$ verarbeitet ist.  Zu Beginn des Algorithmus wird der Grammatik ein neues Start-Symbol $\widehat{S}$ 
+sowie die Regel $\widehat{S} \rightarrow S$ hinzugef\"ugt.  Die Menge $Q_0$ wird definiert als
+\\[0.2cm]
+\hspace*{1.3cm}
+$Q_0 := \bigl\{ \pair(\widehat{S} \rightarrow \bullet S, 0) \bigr\}$,
+\\[0.2cm]
+denn der Parser soll ja das Start-Symbol $S$ am Anfang des Strings $x_1 \cdots x_n$ erkennen.
+Die restlichen Mengen $Q_j$ sind f\"ur $j=1,\cdots,n$ zun\"achst leer.  Die Mengen $Q_j$ werden nun durch die
+folgende drei Operationen so lange wie m\"oglich erweitert: 
+\begin{enumerate}
+\item \emph{Lese-Operation}
+
+      Falls der Zustand $Q_j$ ein Earley-Objekt der Form 
+      $\pair(A \rightarrow \beta \bullet a \gamma, k)$ enth\"alt, wobei $a$ ein
+      Terminal ist, so versucht der Parser, die rechte Seite der Regel
+      $A \rightarrow \beta a \gamma$ zu erkennen und hat bis zur Position $j$ bereits den Teil $\beta$ erkannt.
+      Folgt auf dieses $\beta$ nun, wie in der Regel $A \rightarrow \beta a \gamma$
+      vorgesehen, an der Position $j+1$ das Terminal $a$,
+      so muss der Parser nach der Position $j+1$ nur noch $\gamma$ erkennen.  Daher wird in diesem Fall das
+      Earley-Objekt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \beta a \bullet \gamma, k)$
+      \\[0.2cm]
+      dem Zustand $Q_{j+1}$ hinzugef\"ugt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \beta \bullet a \gamma, k) \in Q_j \wedge x_{j+1} = a
+       \;\Rightarrow\;
+       Q_{j+1} := Q_{j+1} \cup \bigl\{ \pair(A \rightarrow \beta a \bullet \gamma, k) \bigr\}$.
+\item \emph{Vorhersage-Operation}
+
+      Falls der Zustand $Q_j$ ein Earley-Objekt der Form $\pair(A \rightarrow \beta \bullet C \delta, k)$
+      enth\"alt, wobei $C$ eine syntaktische Variable ist, so versucht der Parser im Zustand
+      $Q_j$ den Teilstring $C\delta$ zu erkennen.  Dazu muss der Parser an diesem Punkt ein $C$ erkennen.  
+      Wir f\"ugen daher f\"ur jede Regel $C \rightarrow \gamma$ der Grammatik das Earley-Objekt 
+      $\pair(C \rightarrow \bullet \gamma, j)$ zu der Menge $Q_j$ hinzu:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \beta \bullet C \delta, k) \in Q_j 
+       \wedge (C \rightarrow \gamma) \in R 
+       \;\Rightarrow\;
+       Q_j := Q_j \cup\bigl\{ \pair(C \rightarrow \bullet\gamma, j)\bigr\}$.
+\item \emph{Vervollst\"andigungs-Operation}
+
+      Falls der Zustand $Q_i$ ein Earley-Objekt der Form $\pair(C \rightarrow \gamma \bullet, j)$
+      enth\"alt und weiter der Zustand $Q_j$ ein Earley-Objekt der Form 
+      $\pair(A \rightarrow \beta \bullet C \delta,k)$ enth\"alt, dann hat der Parser im Zustand $Q_j$
+      versucht, ein $C$ zu parsen und das $C$ ist im Zustand $Q_i$ erkannt worden.  
+      Daher f\"ugen wir dem Zustand
+      $Q_i$ nun das Earley-Objekt $\pair(A \rightarrow \beta C \bullet \delta,k)$ hinzu:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(C \rightarrow \gamma \bullet, j) \in Q_i \wedge
+       \pair(A \rightarrow \beta \bullet C \delta,k) \in Q_j \;\Rightarrow\;
+       Q_i := Q_i \cup \bigl\{ \pair(A \rightarrow \beta C \bullet \delta,k) \bigr\}
+      $.
+\end{enumerate}
+Der Algorithmus von Earley um einen String der Form $s = x_1 \cdots x_n$ zu parsen funktioniert so:
+\begin{enumerate}
+\item Wir initialisieren die Zust\"ande $Q_i$ wie folgt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_0 := \bigl\{ \pair(\widehat{S} \rightarrow \bullet S, 0) \bigr\}$,
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_i := \bigl\{ \bigr\}$ \quad f\"ur $i=1,\cdots,n$.
+\item Anschlie{\ss}end lassen wir in einer Schleife $i$ von $0$ bis $n$ laufen und f\"uhren die folgenden 
+      Schritte durch:
+      \begin{enumerate}
+      \item Wir vergr\"o{\ss}ern $Q_i$ mit der Vervollst\"andigungs-Operation so lange, bis mit dieser Operation
+            keine neuen Earley-Objekte mehr gefunden werden k\"onnen.
+      \item Anschlie{\ss}end vergr\"o{\ss}ern wir $Q_i$ mit Hilfe der Vorhersage-Operation.  Diese Operation
+            wird ebenfalls so lange durchgef\"uhrt, wie neue Earley-Objekte gefunden werden.
+      \item Falls $i < n$ ist, wenden wir die Lese-Operation auf $Q_i$ an und initialisierend damit
+            $Q_{i+1}$. 
+      \end{enumerate}
+      Falls die betrachtete Grammatik $G$ auch $\varepsilon$-Regeln enth\"alt, also Regeln der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $C \rightarrow \varepsilon$,
+      \\[0.2cm]
+      dann kann es passieren, dass durch die Anwendung einer Vorhersage-Operation eine neue Anwendung
+      der Vervollst\"andigungs-Operation m\"oglich wird.  In diesem Fall m\"ussen Vorhersage-Operation und
+      Vervollst\"andigungs-Operation so lange iteriert werden, bis durch Anwendung dieser beiden
+      Operationen keine neuen Earley-Objekte mehr erzeugt werden k\"onnen.
+\item Falls nach Beendigung des Algorithmus die Menge $Q_n$ das Earley-Objekt 
+      $\pair(\widehat{S} \rightarrow S \bullet,0)$ enth\"alt, dann war das Parsen erfolgreich und 
+      der String $x_1 \cdots x_n$ liegt in der von der Grammatik erzeugten Sprache.
+\end{enumerate}
+  
+\example
+Abbildung \ref{fig:expr-small} zeigt eine vereinfachte Grammatik f\"ur arithmetische
+Ausdr\"ucke, die nur aus den Zahlen ``1'', ``2'' und ``3'' und den beiden Operator-Symbolen
+``\texttt{+}'' und ``\texttt{*}'' aufgebaut sind.  Die Menge $T$ der Terminale dieser
+Grammatik ist also durch
+\\[0.2cm]
+\hspace*{1.3cm}
+ $T = \{ \quoted{1}, \quoted{2}, \quoted{3}, \quoted{+}, \quoted{*} \}$
+\\[0.2cm]
+gegeben.
+Wie zeigen, wie sich der String
+``\texttt{1+2*3}'' mit dieser Grammatik und dem Algorithmus von Earley parsen l\"asst.
+In der folgenden Darstellung werden wir die syntaktische Variable \texttt{expr} mit
+dem Buchstaben $E$ abk\"urzen, f\"ur \texttt{prod} schreiben wir $P$ und f\"ur \texttt{fact} verwenden wir die
+Abk\"urzung $F$.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    expr : expr '+' prod
+         | prod
+         ;
+    
+    prod : prod '*' fact
+         | fact
+         ;
+    
+    fact : '1'
+         | '2'
+         | '3'
+         ;
+\end{Verbatim}
+\vspace*{-0.3cm}
+  \caption{Eine vereinfachte Grammatik f\"ur arithmetische Ausdr\"ucke.}
+  \label{fig:expr-small} 
+\end{figure}
+
+
+\begin{enumerate}
+\item Wir initialisieren $Q_0$ als
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_0 = \{ \pair(\widehat{S} \rightarrow \bullet\, E, 0) \}$. 
+      \\[0.2cm]
+      Die Mengen $Q_1$, $Q_2$, $Q_3$, $Q_4$ und $Q_5$ sind zun\"achst alle leer.
+      Wenden wir die Vervollst\"andigungs-Operation auf $Q_0$ an, so finden wir keine neuen
+      Earley-Objekte.
+
+      Anschlie{\ss}end wenden wir die Vorhersage-Operation auf das Earley-Objekt 
+      $\pair(\widehat{S} \rightarrow \bullet\, E, 0)$ an.  Dadurch werden der Menge $Q_0$ 
+      zun\"achst die beiden Earley-Objekte 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(E \rightarrow \bullet\; E \squoted{+} P, 0)$ 
+      \quad und \quad
+      $\pair(E \rightarrow \bullet\; P, 0)$ 
+      \\[0.2cm]
+      hinzugef\"ugt.  Auf das Earley-Objekt $\pair(E \rightarrow \bullet\, P, 0)$ 
+      k\"onnen wir die Vorhersage-Operation ein weiteres Mal anwenden und erhalten dann die beiden
+      neuen Earley-Objekte
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(P \rightarrow \bullet\; P \squoted{*} F, 0)$ 
+      \quad und\quad 
+      $\pair(P \rightarrow \bullet\; F, 0)$. 
+      \\[0.2cm]
+      Wenden wir auf das Earley-Objekt $\pair(P \rightarrow \bullet\; F, 0)$
+      die Vorhersage-Operation an, so erhalten wir schie{\ss}lich noch die folgenden Earley-Objekte in $Q_0$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(F \rightarrow \bullet \squoted{1}, 0)$, \quad 
+      $\pair(F \rightarrow \bullet \squoted{2}, 0)$, \quad und \quad
+      $\pair(F \rightarrow \bullet \squoted{3}, 0)$. 
+      \\[0.2cm]
+      Insgesamt enth\"alt $Q_0$ nun die folgenden Earley-Objekte:
+      \begin{enumerate}
+      \item $\pair(\widehat{S} \rightarrow \bullet\; E, 0)$,
+      \item $\pair(E \rightarrow \bullet\; E \squoted{+} P, 0)$
+      \item $\pair(E \rightarrow \bullet\; P, 0)$,
+      \item $\pair(P \rightarrow \bullet\; P \squoted{*} F, 0)$,
+      \item $\pair(P \rightarrow \bullet\; F, 0)$,
+      \item $\pair(F \rightarrow \bullet \squoted{1}, 0)$,
+      \item $\pair(F \rightarrow \bullet \squoted{2}, 0)$,
+      \item $\pair(F \rightarrow \bullet \squoted{3}, 0)$.
+      \end{enumerate}
+
+      Jetzt wenden wir die Lese-Operation auf $Q_0$ an.  Da das erste Zeichen des zu parsenden Strings eine
+      ``1'' ist, hat die Menge  $Q_1$ danach die folgende Form:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_1 = \bigl\{ \pair(F \rightarrow \squoted{1} \bullet, 0) \bigr\}$.
+\item Nun setzen wir $i= 1$ und wenden zun\"achst auf $Q_1$ die Vervollst\"andigungs-Operation an.
+      Aufgrund des Earley-Objekts $\pair(F \rightarrow \squoted{1} \bullet, 0) $ in $Q_1$
+      suchen wie in $Q_0$ ein Earley-Objekt, bei dem die Markierung ``$\bullet$'' vor der Variablen
+      $F$ steht.  Wir finden das Earley-Objekt
+      $\pair(P \rightarrow \bullet\; F, 0)$.  Daher f\"ugen wir nun
+      $Q_1$ das Earley-Objekt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(P \rightarrow F \;\bullet, 0)$ 
+      \\[0.2cm]
+      hinzu.  Hierauf k\"onnen wir wieder die
+      Vervollst\"andigungs-Operation anwenden und finden (nach mehrmaliger Anwendung der
+      Vervollst\"andigungs-Operation) f\"ur $Q_1$ insgesamt die folgenden Earley-Objekte durch
+      Vervollst\"andigung:
+      \begin{enumerate}
+      \item $\pair(P \rightarrow F \;\bullet, 0)$, 
+      \item $\pair(P \rightarrow  P\;\bullet \squoted{*} F, 0)$, 
+      \item $\pair(E \rightarrow P \; \bullet, 0)$,
+      \item $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$,
+      \item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$.
+      \end{enumerate}
+      
+      Als n\"achstes wenden wir auf diese Earley-Objekte die Vorhersage-Operation an.  Da das
+      Markierungs-Zeichen ``$\bullet$'' aber in keinem der in $Q_i$ auftretenden Earley-Objekte vor einer 
+      Variablen steht, ergeben sich hierbei keine neuen Earley-Objekte.
+
+      Als letztes wenden wir die Lese-Operation auf $Q_1$ an.  Da in dem String
+      ``\texttt{1+2*3}'' das Zeichen ``\texttt{+}'' an der Position 2 liegt ist und $Q_1$ das Earley-Objekt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$
+      \\[0.2cm]
+      enth\"alt, f\"ugen wir in $Q_2$  das Earley-Objekt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(E \rightarrow E \squoted{+}\bullet\; P, 0)$
+      \\[0.2cm]
+      ein.
+\item Nun setzen wir $i= 2$ und wenden zun\"achst auf $Q_2$ die Vervollst\"andigungs-Operation
+      an.  Zu diesem Zeitpunkt gilt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_2 = \{ \pair(E \rightarrow E \squoted{+}\bullet\; P, 0) \}$.
+      \\[0.2cm]
+      Da in dem einzigen Earley-Objekt, das hier auftritt, das Markierungs-Zeichen ``$\bullet$''
+      nicht am Ende der Grammatik-Regel steht, finden wir durch die Vervollst\"andigungs-Operation in
+      diesem Schritt keine       neuen Earley-Objekte. 
+
+      Als n\"achstes wenden wir auf $Q_2$ die Vorhersage-Operation an.  Da das Markierungs-Zeichen
+      vor der Variablen $P$ steht, finden wir zun\"achst die beiden Earley-Objekte
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(P \rightarrow \bullet\; F, 2)$ \quad und \quad
+      $\pair(P \rightarrow \bullet\; P \squoted{*} F, 2)$.
+      \\[0.2cm]
+      Da in dem ersten Earley-Objekte das Markierungs-Zeichen vor der Variablen $F$ steht, kann 
+      die Vorhersage-Operation ein weiteres 
+      Mal angewendet werden und wir finden noch die folgenden Earley-Objekte:
+      \begin{enumerate}
+      \item $\pair(F \rightarrow \bullet \squoted{1}, 2)$, 
+      \item $\pair(F \rightarrow \bullet \squoted{2}, 2)$,
+      \item $\pair(F \rightarrow \bullet \squoted{3}, 2)$.
+      \end{enumerate}
+
+      Als letztes wenden wir die Lese-Operation auf $Q_2$ an.  Da das dritte Zeichen in dem zu lesenden
+      String ``\texttt{1+2*3}'' die Ziffer ``2'' ist, hat $Q_3$ nun die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_3 = \{ \pair(F \rightarrow \squoted{2}\bullet, 2) \}$.
+\item Wir setzen $i = 3$ und wenden auf $Q_3$ die Vervollst\"andigungs-Operation an.
+      Dadurch f\"ugen wir 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(P \rightarrow F \;\bullet, 2)$ 
+      \\[0.2cm]
+      in $Q_3$ ein.  Hier k\"onnen wir eine weiteres Mal die Vervollst\"andigungs-Operation anwenden. 
+      Durch iterierte Anwendung der Vervollst\"andigungs-Operation erhalten wir zus\"atzlich die folgenden 
+      Earley-Objekte:
+      \begin{enumerate}
+      \item $\pair(P \rightarrow P \bullet \squoted{*} F, 2)$,
+      \item $\pair(E \rightarrow E \squoted{+} P\;\bullet, 0)$,
+      \item $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$
+      \item $\pair(\widehat{S} \rightarrow E\bullet, 0)$.
+      \end{enumerate}
+      Als letztes wenden wir die Lese-Operation an.  Da der n\"achste zu lesende Buchstabe das Zeichen
+      ``\texttt{*}'' ist, erhalten wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_4 = \{ \pair(P \rightarrow P \squoted{*} \bullet\, F, 2) \}$.
+\item Wir setzen $i= 4$.  Die Vervollst\"andigungs-Operation liefert keine neuen Earley-Objekte.
+      Die Vorhersage-Operation liefert folgende Earley-Objekte:
+      \begin{enumerate}
+      \item $\pair(F \rightarrow \bullet \squoted{1}, 4)$, 
+      \item $\pair(F \rightarrow \bullet \squoted{2}, 4)$,
+      \item $\pair(F \rightarrow \bullet \squoted{3}, 4)$.
+      \end{enumerate}
+      Da das n\"achste Zeichen die Ziffer ``3'' ist, liefert die Lese-Operation f\"ur $Q_5$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_5 = \pair(F \rightarrow \squoted{3}\bullet, 4) \}$.
+\item Wir setzen $i=5$.  Die Vervollst\"andigungs-Operation liefert nacheinander die folgenden
+      Earley-Objekte:
+      \begin{enumerate}
+      \item $\pair(P \rightarrow P \squoted{*} F\;\bullet, 2)$,
+      \item $\pair(E \rightarrow E \squoted{+} P\;\bullet, 0)$,
+      \item $\pair(P \rightarrow  P \;\bullet\squoted{*} F, 2)$,
+      \item $\pair(E \rightarrow E \;\bullet\squoted{+} P, 0)$ 
+      \item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$.
+      \end{enumerate}
+\end{enumerate}
+Da die Menge $Q_5$ das Earley-Objekt $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$ enth\"alt,
+k\"onnen wir schlie{\ss}en, dass der String ``\texttt{1+2*3}'' tats\"achlich in der von der Grammatik erzeugten
+Sprache liegt.
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Aufgabe}:  Zeigen Sie, dass der String ``\texttt{1*2+3}'' in der Sprache der von der in
+Abbildung \ref{fig:expr-small} angegebenen Grammatik liegt.  Benutzen Sie dazu den von Earley
+angegebenen Algorithmus.
+
+\section{Implementing Earley's Algorithm in SetlX}
+In this section we present a simple implementation of Earley's algorithm in \textsc{SetlX}.  
+Our implementation consists of three classes.
+\begin{enumerate}
+\item The class \texttt{earleyItem}   is our implementation of an Earley item.
+\item The class \texttt{grammar}      is used to represent a grammar. 
+\item The class \texttt{earleyParser} implements Earley's algorithm.
+\end{enumerate}
+We will discuss these classes in the order given above.
+
+\subsection{The class \texttt{earleyItem}}
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    class earleyItem(variable, alpha, beta, index) {
+        this.mVariable := variable;
+        this.mAlpha    := alpha;
+        this.mBeta     := beta;
+        this.mIndex    := index;
+    
+        isComplete := procedure() {
+            return mBeta == [];
+        };
+        sameVar := procedure(c) {
+            return #mBeta > 0 && mBeta[1] == Var(c);
+        };
+        myScan := procedure(t) {
+            return #mBeta > 0 && mBeta[1] == Token("\'$t$\'");
+        };
+        nextVar := procedure() {
+            if (#mBeta > 0) {
+                match (mBeta[1]) {
+                    case Var(c): return c;
+                }
+            }
+        };
+        moveDot := procedure() {
+            return earleyItem(mVariable, mAlpha + [ mBeta[1]], mBeta[2..], mIndex);
+        };  
+    }
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The class \texttt{earleyItem}.}
+\label{fig:earleyItem.stlx}
+\end{figure}
+
+\noindent
+Figure \ref{fig:earleyItem.stlx} on page \pageref{fig:earleyItem.stlx} gives the implementation 
+of the class \texttt{earleyItem} that is used to represent an Earley item of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(A \Rightarrow \alpha \bullet \beta, k)$.
+\\[0.2cm]
+The member variables of the class \texttt{earleyItem} represent this Earley item as follows:
+\begin{enumerate}
+\item \texttt{mVariable} codes the syntactical variable $A$,
+\item \texttt{mAlpha}    corresponds to $\alpha$,
+\item \texttt{mBeta}     represents $\beta$, and
+\item \texttt{mIndex}    gives the index $k$.
+\end{enumerate}
+The methods provided in this class work as follows:
+\begin{enumerate}
+\item $\texttt{isComplete}()$ checks whether the Earley item has the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A  \Rightarrow \alpha \bullet \varepsilon, k)$.
+      \\[0.2cm]
+      This is the case if the list \texttt{mBeta} is empty.
+\item $\texttt{sameVar}(C)$ checks whether the Earley item has the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet C\, \beta,k)$,
+      \\[0.2cm]
+      i.e.~it checks, whether the variable $C$ that is given as argument to this method 
+      is following the ``$\bullet$''.
+      In order to do this, we first have to check, whether there is anything following the 
+      ``$\bullet$'', i.e.~whether $\beta$ is not empty.  Only then can we check whether the first
+      item of $\beta$ is indeed the variable $C$.
+\item The method $\texttt{myScan}(t)$ checks whether the Earley item has the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet t\, \beta,k)$,
+      \\[0.2cm]
+      that is it checks whether the token $t$ that is given as argument to this method follows the ``$\bullet$''.
+\item The method $\textsl{nextVar}()$ first checks whether the Earley item has the form 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet C \delta,k)$,
+      \\[0.2cm] 
+      that is it checks whether a variable follows the ``$\bullet$''.  If this is the case, the name
+      of this variable is returned.  
+\item The method $\texttt{moveDot}()$ moves the ``$\bullet$'' over the next variable or token.
+      Therefore,  an Earley item of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet X \delta,k)$
+      \\[0.2cm]
+      is transformed into
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha X \bullet \delta,k)$.
+      \\[0.2cm]
+      Here, $X\,$ can be either a variable or a token.
+      The method \texttt{moveDot} should only be called for an Earley item
+      $\pair(A \rightarrow \alpha \bullet \beta,k)$ if we know that $\beta \not= \varepsilon$.
+\end{enumerate}
+
+\subsection{The class \texttt{grammar}}
+Next, we show how we represent a grammar.  Figure \ref{fig:earley-parser.stlx:grammar} on
+page \pageref{fig:earley-parser.stlx:grammar} shows the implementation of the class \texttt{grammar}
+that represents a context free grammar.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    class grammar(rules) {
+        this.mRules := rules;
+    
+        startItem := procedure() {
+            return earleyItem("sHat", [], [ Var(startVar()) ], 0);
+        };
+        finishItem := procedure() {
+            return earleyItem("sHat", [ Var(startVar()) ], [], 0);
+        };
+        startVar := procedure() {
+            return mRules[1][1];
+        };
+    }
+\end{Verbatim} 
+\vspace*{-0.3cm}
+\caption{The class \texttt{grammar}}
+\label{fig:earley-parser.stlx:grammar}
+\end{figure} %\$
+
+\begin{enumerate}
+\item The constructor gets a list of rules.  It stores these rules in the member variable
+      \texttt{mRules}.  In this list, a rule of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow \beta$
+      \\[0.2cm]
+      is represented as the pair $[ A, \beta ]$, where $\beta$ is a list of syntactical variables
+      and tokens.  In this list, a variable is represented as a term of the form \texttt{Var($x$)},
+      where $x$ is the name of the variable.  A token is represented as a term of the form
+      \texttt{Token($t$)}, where $t$ is the quoted string of the token.
+\item The method \texttt{startItem} creates the Earley item 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\langle \hat{S} \rightarrow \bullet S, 0 \rangle$.
+      \\[0.2cm]
+      Here, $S$ is the start symbol of the grammar.  The symbol $\hat{S}$ is represented by the
+      string \texttt{sHat}.
+\item The method \texttt{finishItem} creates the Earley item
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\langle \hat{S} \rightarrow S \bullet, 0 \rangle$.
+      \\[0.2cm]
+      Again, $S$ is the start symbol of the grammar and  $\hat{S}$ is represented as the
+      string \texttt{sHat}.
+\item The method \texttt{startVar} computes the start variable of the grammar.
+      It is assumed that the first grammar rule in
+      \texttt{mRules} defines the start variable of the grammar.
+\end{enumerate}
+
+\subsection{The class \texttt{earleyParser}}
+We are finally ready to implement Earley's algorithm.  It is implemented in the class
+\texttt{earleyParser} shown in Figure
+\ref{fig:earleyParser.stlx} on page \pageref{fig:earleyParser.stlx}.  The class
+\texttt{earleyParser} maintains three member variables:
+\begin{enumerate}
+\item \texttt{mGrammar} is the given  grammar. 
+\item \texttt{mString} is the given string that is to be parsed.
+
+      The parser that is implemented in the class \texttt{earleyParser} does not use a scanner but
+      rather works directly with the characters that make up the string \texttt{mString}.
+\item \texttt{mStateList} is the list $[Q_0, Q_1, \cdots, Q_n]$.  Since in \textsc{SetlX} lists are
+      $1$-based, we have to store the set $Q_0$ at the index $1$ in \texttt{mStateList}.  Therefore,
+      in general we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $Q_i = \mathtt{mStateList}[i+1]$.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\},
+                  codes={\catcode`$=3\catcode`_=8}
+                ] 
+    class earleyParser(gr, w) \{
+        this.mGrammar   := gr; 
+        this.mString    := w;  
+        this.mStateList := [ \{\}: i in \{1 .. #mString+1\} ]; // $Q_i$ == mStateList[i+1]
+        this.mStateList[1] := { mGrammar.startItem() };
+
+        earleyParse := procedure()  \{ $\cdots$ \};
+        complete    := procedure(i) \{ $\cdots$ \};
+        predict     := procedure(i) \{ $\cdots$ \};    
+        myScan      := procedure(i) \{ $\cdots$ \};
+    \}
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Outline of the class \texttt{earleyParser}.}
+\label{fig:earleyParser.stlx}
+\end{figure} %$
+
+\noindent
+Figure \ref{fig:earleyParser.stlx} shows the outline of the class \texttt{earleyParser}.  The
+constructor of this class has two formal arguments:
+\begin{enumerate}
+\item \texttt{gr} is the grammar and
+\item \texttt{w}  is the string to be parsed.
+\end{enumerate}
+The main task of the constructor is to store the given arguments in the member variables and,
+furthermore, to initialize the sets $Q_i$ that are stored in the member variable \texttt{mStateList}.
+Initially, all $Q_i$ are assigned the empty set. Additionally, the Earley item
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(\widehat{S} \rightarrow \bullet S, 0)$
+\\[0.2cm]
+is inserted into $Q_0$.  This Earley item is computed by the method $\mathtt{startItem}()$ of the
+class \texttt{grammar} that is discussed later.  The main work of the class
+\texttt{earleyParser} is delegated to the method \texttt{earleyParse}.  Furthermore, the class
+\texttt{earleyParser} implements the following methods:
+\begin{enumerate}
+\item \texttt{complete} performs the completion operation on a given set $Q_i$,
+\item \texttt{predict}  implements the prediction operation on $Q_i$, and
+\item \texttt{myScan}   executes the scanning operation on $Q_i$.
+\end{enumerate}
+
+The method  $\texttt{earleyParse}()$ is shown in Figure
+\ref{fig:earleyparser.stlx:earleyParse} on page \pageref{fig:earleyparser.stlx:earleyParse}.
+The outer \texttt{for}-loop iterates over the sets $Q_0$, $Q_1$, $\cdots$, $Q_n$.  For a fixed
+index $i \in \{0, \cdots, n\}$ the method \texttt{earleyParse} will execute the completion operation
+for the set $Q_i$ followed by the prediction operation.  Since performing the prediction operation
+can have the effect of making additional completion operations possible, these two steps are
+iterated in an inner \texttt{do}-\texttt{while}-loop.  Once the set $Q_i$ can no longer be extended
+using either completion or prediction, the scanning operation is executed in order to initialize the
+set $Q_{i+1}$.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    earleyParse := procedure() {
+        for (i in [0 .. #mString]) {
+            change := false;
+            do {
+                change := complete(i);
+                change := change || predict(i);
+            } while (change);
+            myScan(i);
+        }
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The method $\textsl{earleyParse}()$.}
+\label{fig:earleyparser.stlx:earleyParse}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    complete := procedure(i) {
+        change := false;
+        qi     := mStateList[i+1];
+        do {
+            added := false;
+            newQi := {};
+            for (item in qi | item.isComplete()) {
+                c  := item.mVariable;
+                j  := item.mIndex;
+                qj := mStateList[j+1];
+                for (cItem in qj) {
+                    if (cItem.sameVar(c)) {
+                        moved := cItem.moveDot();
+                        newQi += { moved };
+                    }
+                }
+            }
+            if (!(newQi <= qi)) {
+                change := added := true;
+                this.mStateList[i+1] += newQi;
+                qi := mStateList[i+1];
+            }
+        } while (added);
+        return change;
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Implementing the completion operation via the method $\texttt{complete}()$.}
+\label{fig:earleyParser.stlx:complete}
+\end{figure}
+
+Figure \ref{fig:earleyParser.stlx:complete} on page \pageref{fig:earleyParser.stlx:complete} shows
+the implementation of the completion operation.  The argument $i$ specifies the set $Q_i$ that has
+to be completed.  The method \texttt{complete} returns a \texttt{Boolean} value.  The return value
+is \texttt{true} if the completion operation has added any new Earley items into the set $Q_i$.
+Otherwise \texttt{false} is returned.  In the previous section, the completion operation has been
+specified as follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(C \rightarrow \gamma \bullet, j) \in Q_i \wedge
+ \pair(A \rightarrow \beta \bullet C \delta,k) \in Q_j \;\Rightarrow\;
+ Q_i := Q_i \cup \bigl\{ \pair(A \rightarrow \beta C \bullet \delta,k) \bigr\}
+$
+\\[0.2cm] 
+This formula is implemented as follows:
+\begin{enumerate}
+\item The variable $i$ is the parameter \texttt{i} of the method \texttt{complete}.
+\item The variable \texttt{change} stores the return value of the method \texttt{complete}.
+      This return value is \texttt{true} if the completion operation adds any items into the set,
+      $Q_i$.  Therefore, the variable \texttt{change} is initialized as \texttt{false}, since
+      initially nothing has been added to $Q_i$.
+\item If the completion operation is executed once and has added a new Earley item into the set
+      $Q_i$ it is possible that the completion operation can be applied to these new Earley items
+      also.  This is the reason that the completion operation is executed in a 
+      \texttt{do}-\texttt{while}-loop.  This loop runs as long as new Earley items are added to
+      $Q_i$.  The \texttt{do}-\texttt{while}-loop is controlled by the variable \texttt{added}:  
+      At the start of the loop, this variable is set to \texttt{false}.  Every times a new Earley item
+      is added into the set $Q_i$, the variable \texttt{added} is set to \texttt{true}.
+\item Inside the \texttt{do}-\texttt{while}-loop, the set \texttt{newQi} is intended to collect
+      all those Earley items that are found using the completion operation.
+\item The \texttt{for}-loop in line 7 iterates over all Earley items in the set \texttt{Qi} that are of
+      the form $\langle C \rightarrow \gamma \bullet, j \rangle$, i.e.~it iterates over those items
+      that have the dot at their rightmost position.
+      \begin{enumerate}
+      \item For those items, \texttt{c} is set to the variable $C$ on the left hand side of the grammar
+            rule, \texttt{j} is set to the index of this Earley item, and \texttt{qj} is assigned
+            the set $Q_j$.
+      \item Next, we have to check whether the set $Q_j$ contains an Earley item \texttt{cItem} such
+            that the dot is positioned in front of the variable $C$.  In this case \texttt{cItem}
+            is an Earley item of the form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(A \rightarrow \beta \bullet C \delta, k)$.  
+            \\[0.2cm]
+            This checking of all Earley items in the set $Q_j$ is performed in the innermost \texttt{for}-loop.
+            Then, the method invocation \texttt{cItem.moveDot()} computes the  Earley item
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair(A \rightarrow \beta C\bullet \delta, k)$,
+            \\[0.2cm]
+            which is then added to the set \texttt{newQi}.  
+      \end{enumerate}
+\item If we do indeed find new Earley items, we add these new items to the set $Q_i$.  Furthermore,
+      we need to maintain the variables \texttt{change} and \texttt{added}.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    predict := procedure(i) {
+        change := false;
+        qi     := mStateList[i+1];
+        do {
+            added := false;
+            newQi := {};
+            for (item in qi) {
+                c := item.nextVar();
+                if (c != om) {
+                    for (rule in mGrammar.mRules | c == rule[1]) {
+                        newQi += { earleyItem(c, [], rule[2], i) };
+                    }
+                }
+            }
+            if (!(newQi <= qi)) {
+                change := added := true;
+                this.mStateList[i+1] += newQi;
+                qi := mStateList[i+1];
+            }
+        } while (added);
+        return change;
+    };    
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Implementing the prediction operation via the method \texttt{predict}.}
+\label{fig:earleyParser.stlx:predict}
+\end{figure}
+
+Figure \ref{fig:earleyParser.stlx:predict} on page \pageref{fig:earleyParser.stlx} shows the method
+\texttt{predict}.  This method implements the prediction operation.  
+In the previous section, this  operation had been specified via the following formula:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(A \rightarrow \beta \bullet C \delta, k) \in Q_i 
+ \wedge (C \rightarrow \gamma) \in R 
+ \;\Rightarrow\;
+ Q_i := Q_i \cup\bigl\{ \pair(C \rightarrow \bullet\gamma, i)\bigr\}
+$
+\\[0.2cm]
+We discuss the details of the implementation of $\mathtt{predict}$ next.
+\begin{enumerate}
+\item The parameter \texttt{i} specifies the set $Q_i$.  The prediction operation is then applied to
+      this set.
+\item The method \texttt{predict} will return \texttt{true} if it has added any new Earley item to
+      the set $Q_i$.  Otherwise, \texttt{false} is returned.  The return value is stored in the
+      variable \texttt{change}. 
+\item If a new Earley item is added to $Q_i$ because of prediction, it is well possible that 
+      the prediction operation can again be applied to this new Earley item.  Therefore, in order to
+      find all possible applications of the prediction operation, we have to loop 
+      as long as new Earley items are found.
+      This loop is controlled by the variable \texttt{added} in much the same way as the
+      corresponding \texttt{do}-\texttt{while}-loop in the method \texttt{complete}.
+\item In order to perform the prediction operation, we need to loop over all Earley items in the set
+      $Q_i$ and we have to check, whether there are Earley items of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \beta \bullet C \delta, k)$
+      \\[0.2cm]
+      in $Q_i$.   Once we have found an item of this form, we need to loop over all grammar rules
+      and check, whether the variable on left hand side of the rule is the variable $C$.
+      If this is the case, and the grammar rule has the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $C \rightarrow \gamma$,
+      \\[0.2cm]
+      then we have to add the Earley item
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(C \rightarrow \bullet\; \gamma, i)$
+      \\[0.2cm]
+      to the set $Q_i$.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    myScan := procedure(i) {
+        qi := mStateList[i+1];
+        if (i < #mString) {
+            a := mString[i+1];
+            for (item in qi | item.myScan(a)) {
+                this.mStateList[i+2] += { item.moveDot() };
+            }
+        }
+    };
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Implementing the scan operation via the method \texttt{myScan}.}
+\label{fig:earleyParser.stlx:scan}
+\end{figure}
+
+Figure \ref{fig:earleyParser.stlx:scan} gives the implementation of the scanning operation.  The formula
+describing this operation is given as:
+\\[0.2cm]
+\hspace*{1.3cm}
+$ 
+ \pair(A \rightarrow \beta \bullet a \gamma, k) \in Q_i \wedge x_{i+1} = a
+ \;\Rightarrow\;
+ Q_{i+1} := Q_{i+1} \cup \bigl\{ \pair(A \rightarrow \beta a \bullet \gamma, k) \bigr\}.
+$
+\\[0.2cm]
+We discuss how this formula is implemented in the method \texttt{myScan}. (By the way, we had to
+name this method \texttt{scan} instead of \texttt{myScan} since \texttt{scan} is a keyword in \textsc{SetlX}.)
+\begin{enumerate}
+\item The argument \texttt{i} specifies the set $Q_i$ that is to be used as the basis of the
+      scanning operation.
+\item If the string that is to be parsed consists of $n$ characters, then the scanning operation can
+      only be performed as long as $i < n$.  The reason is that the scanning operation reads the
+      $(i+1)$-st character of the input string and this is not defined if $i=n$. 
+      This explains the test of the first \texttt{if}-statement.
+\item Once we have found the character \texttt{a} at position $i+1$ we have to check all Earley
+      items in the set $Q_i$ whether they have the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \beta \bullet a\, \gamma, k)$.
+      \\[0.2cm]
+      This is done by calling the method \texttt{myScan} of all Earley items in the set $Q_i$.
+      If indeed the Earley item has the form $\pair(A \rightarrow \beta \bullet a\, \gamma, k)$ the
+      Earley item
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \beta\, a\bullet \gamma, k)$
+      \\[0.2cm]
+      is added to the set $Q_{i+1}$.  This Earley item can be conveniently computed using the method \texttt{moveDot}.
+\end{enumerate}
+Finally, Figure \ref{fig:earley-output} on page \pageref{fig:earley-output} shows the sets $Q_i$
+that are computed by our implementation if we parse the input string ``\texttt{1+2*3}'' using the
+grammar from Figure \ref{fig:expr-small}.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  numbers       = none,
+                  labelposition = bottomline,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    Q0:
+    <expr -> (*) expr '+' prod, 0>
+    <expr -> (*) prod, 0>
+    <fact -> (*) '1', 0>
+    <fact -> (*) '2', 0>
+    <fact -> (*) '3', 0>
+    <prod -> (*) fact, 0>
+    <prod -> (*) prod '*' fact, 0>
+    <sHat -> (*) expr, 0>
+    
+    Q1:
+    <fact -> '1' (*), 0>
+    <expr -> expr (*) '+' prod, 0>
+    <sHat -> expr (*), 0>
+    <prod -> fact (*), 0>
+    <expr -> prod (*), 0>
+    <prod -> prod (*) '*' fact, 0>
+    
+    Q2:
+    <fact -> (*) '1', 2>
+    <fact -> (*) '2', 2>
+    <fact -> (*) '3', 2>
+    <prod -> (*) fact, 2>
+    <prod -> (*) prod '*' fact, 2>
+    <expr -> expr '+' (*) prod, 0>
+    
+    Q3:
+    <fact -> '2' (*), 2>
+    <expr -> expr (*) '+' prod, 0>
+    <sHat -> expr (*), 0>
+    <expr -> expr '+' prod (*), 0>
+    <prod -> fact (*), 2>
+    <prod -> prod (*) '*' fact, 2>
+    
+    Q4:
+    <fact -> (*) '1', 4>
+    <fact -> (*) '2', 4>
+    <fact -> (*) '3', 4>
+    <prod -> prod '*' (*) fact, 2>
+    
+    Q5:
+    <fact -> '3' (*), 4>
+    <expr -> expr (*) '+' prod, 0>
+    <sHat -> expr (*), 0>
+    <expr -> expr '+' prod (*), 0>
+    <prod -> prod (*) '*' fact, 2>
+    <prod -> prod '*' fact (*), 2>
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Output of our Earleyd parser for the input ``\texttt{1+2*3}'' and the grammar from
+   Figure \ref{fig:expr-small}.}
+\label{fig:earley-output}
+\end{figure}
+
+
+\section{Korrektheit und Vollst\"andigkeit}
+In diesem Kapitel beweisen wir zwei Eigenschaften des von Earley angegebenen Algorithmus.
+Zun\"achst zeigen wir, dass immer dann, wenn wir den Algorithmus auf einen String $s = x_1 x_2 \cdots x_n$
+anwenden und nach Beendigung des Algorithmus das Earley-Objekt 
+$\pair(\widehat{S} \rightarrow S \,\bullet, 0)$ in der Menge $Q_n$ enthalten ist, wir
+schlie{\ss}en k\"onnen, dass der String $s$ sich von dem Start-Symbol $S$ ableiten l\"asst.
+Diese Eigenschaft
+bezeichnen wir als die Korrektheit des Algorithmus.  Au{\ss}erdem beweisen wir, dass auch die
+Umkehrung gilt:  Falls der String $s$ in der von der Variablen $S$ erzeugten Sprache
+liegt, dann ist das Earley-Objekt 
+$\pair(\widehat{S} \rightarrow S \,\bullet, 0)$ nach Beendigung des Algorithmus ein Element der Menge
+$Q_n$.  Diese Eigenschaft bezeichnen wir als die Vollst\"andigkeit des Algorithmus.
+Bei allen folgenden Betrachtungen gehen wir davon aus, dass $G = \pair(V, T, S, R)$ die 
+verwendete kontextfreie Grammatik bezeichnet.
+
+Das nachfolgende Lemma wird sp\"ater ben\"otigt, um die Korrektheit zu zeigen.  Es formalisiert die Idee, die
+der Definition eines Earley-Objekts zu Grunde liegt.
+\begin{Lemma}
+  Es sei $s = x_1 x_2 \cdots x_n \in T^*$ der String, auf den wir den Algorithmus von Earley anwenden.
+  Weiter gelte
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\pair(A \rightarrow \alpha \bullet \beta, k) \in Q_i$ \quad mit $i \in \{0,\cdots,n\}$.
+  \\[0.2cm]
+  Dann gilt
+  \\[0.2cm]
+  \hspace*{1.3cm}
+   $\alpha \Rightarrow^* x_{k+1} \cdots x_i$. 
+\end{Lemma}
+
+\noindent
+\textbf{Beweis}: Wir f\"uhren den Beweis durch Induktion \"uber die Anzahl $l$ der Berechnungs-Schritte, die
+der Algorithmus durchgef\"uhrt hat, um $\pair(A \rightarrow \alpha \bullet \beta, k) \in Q_i$ nachzuweisen.
+\begin{enumerate}
+\item[I.A.:] $l=0$.  Zu Beginn enth\"alt die Menge $Q_0$ nur das Earley-Objekt
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\pair( \widehat{S} \rightarrow \bullet\,S, 0)$
+            \\[0.2cm]
+            und alle anderen Mengen $Q_i$ sind leer.  Damit m\"ussen wir die Behauptung nur f\"ur dieses
+            eine Earley-Objekt nachweisen.  F\"ur dieses Earley-Objekt haben die Variablen $A$, $\alpha$,
+            $\beta$ und $k$ folgende Werte: 
+            \begin{enumerate}
+            \item $A = \widehat{S}$,
+            \item $\alpha = \varepsilon$,
+            \item $\beta = S$,
+            \item $i = 0$,
+            \item $k = 0$.
+            \end{enumerate}
+            Wir m\"ussen dann zeigen, dass 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\varepsilon \Rightarrow^* x_1 \cdots x_0$ 
+            \\[0.2cm]
+            gilt. Diese Behauptung folgt aus $x_1 \cdots x_0 = \varepsilon$.
+\item[I.S.:] $0,\cdots,l \mapsto l+1$.  Wir m\"ussen eine Fallunterscheidung nach der Art der Operation
+            durchf\"uhren, mit der das Earley-Objekt $E = \pair(A \rightarrow \alpha \bullet \beta, k)$
+            erzeugt worden ist.
+            \begin{enumerate}
+            \item $E$ ist durch eine Vorhersage-Operation in $Q_i$ eingef\"ugt worden. 
+                  Daher enth\"alt $Q_i$ ein Earley-Objekt der Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $F = \pair(A' \rightarrow \alpha' \bullet A\, \delta, k')$.
+                  \\[0.2cm]
+                  Dann muss die Grammatik eine Regel der Form $A \rightarrow \beta$
+                  enthalten, mit der die Vorhersage-Operation das Earley-Objekt  
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(A \rightarrow \bullet \beta', i)$
+                  \\[0.2cm]
+                  erzeugt hat.  Damit gilt also $\alpha = \varepsilon$, $\beta = \beta'$ und $k = i$.  
+                  Es ist zu zeigen, dass
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\varepsilon \Rightarrow^* x_{i+1} \cdots x_i$ 
+                  \\[0.2cm]
+                  gilt. Wegen $x_{i+1} \cdots x_i = \varepsilon$ ist das trivial.
+            \item $E$ ist durch eine Lese-Operation in $Q_i$ eingef\"ugt worden.
+                  Dann gibt es ein Earley-Objekt der Form 
+                  $\pair(A \rightarrow \alpha' \bullet x_i \beta, k) \in Q_{i-1}$, es gilt 
+                  $\alpha = \alpha' x_i$ und nach
+                  Induktions-Voraussetzung  gilt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\alpha' \Rightarrow^* x_{k+1} \cdots x_{i-1}$
+                  \\[0.2cm]
+                  Wir m\"ussen zeigen, dass
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\alpha \Rightarrow^* x_{k+1} \cdots x_{i}$ 
+                  \\[0.2cm]
+                  gilt.  Dies folgt aus
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\alpha = \alpha' x_i \Rightarrow^* x_{k+1} \cdots x_{i-1} x_i = x_{k+1} \cdots x_i$.
+            \item $E$ ist durch eine Vervollst\"andigungs-Operation in $Q_i$ eingef\"ugt worden.
+                  Dann hat $E$ die Form
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $E = \pair(A \rightarrow \alpha' C \bullet \beta, k)$
+                  \\[0.2cm]
+                  und es gibt ein Earley-Objekt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair( C \rightarrow \delta \bullet, j) \in Q_i$
+                  \\[0.2cm]
+                  und ein weiteres Earley-Objekt
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\pair(A \rightarrow \alpha' \bullet C \beta, k) \in Q_j$.
+                  \\[0.2cm]
+                  Also haben wir $\alpha = \alpha'C$.  Aus 
+                  $\pair(A \rightarrow \alpha' \bullet C \beta, k) \in Q_j$ folgt nach
+                  Induktions-Voraussetzung 
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\alpha' \Rightarrow^* x_{k+1} \cdots x_j$
+                  \\[0.2cm]
+                  und aus $\pair( C \rightarrow \delta \bullet, j) \in Q_i$ folgt nach Induktions-Voraussetzung
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $\delta \Rightarrow^* x_{j+1} \cdots x_i$,
+                  \\[0.2cm]
+                  so dass wir insgesamt die folgende Ableitung haben:
+                  \\[0.2cm]
+                  \hspace*{1.3cm}
+                  $
+                  \begin{array}[t]{llll}
+                    \alpha & =             & \alpha' C \\
+                           & \Rightarrow^* & x_{k+1} \cdots x_j C      \\
+                           & \Rightarrow   & x_{k+1} \cdots x_j \delta \\
+                           & \Rightarrow^* & x_{k+1} \cdots x_j x_{j+1} \cdots x_i \\
+                           & =             & x_{k+1} \cdots x_i
+                  \end{array}
+                  $
+                  \\[0.2cm]
+                  Damit ist $\alpha \Rightarrow^* x_{k+1} \cdots x_i$ nachgewiesen.  
+                  \qed
+            \end{enumerate}
+\end{enumerate}
+
+\begin{Korollar}[Korrektheit] \hspace*{\fill} \\
+  Wenden wir den Algorithmus von Earley auf den String $s = x_1 \cdots x_n$ an und gilt
+  $\pair(\widehat{S} \rightarrow S \bullet, 0) \in Q_n$,
+  so folgt $s \in L(G)$.
+\end{Korollar}
+
+\noindent
+\textbf{Beweis}: Setzen wir $A := \widehat{S}$, $\alpha := S$, $\beta := \varepsilon$, $k
+:= 0$ und $i := n$, so folgt das Ergebnis
+unmittelbar, wenn wir das letzte Lemma auf die Voraussetzung anwenden.  
+\qed
+\vspace*{0.2cm}
+
+Das Korollar zeigt:  Produziert der Algorithmus von Earley das Earley-Objekt
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(\widehat{S} \rightarrow S \bullet, 0) \in Q_n$,
+\\[0.2cm] 
+ so liegt der String, auf den wir den
+Algorithmus angewendet haben, tats\"achlich in der von der Grammatik erzeugten Sprache.  Wir wollen
+aber auch die Umkehrung dieser Aussage nachweisen:  Falls ein String $s$ von der Grammatik erzeugt
+wird, so wird der Algorithmus von Earley dies auch erkennen.  Dazu zeigen wir zun\"achst das folgende
+Lemma.
+
+
+\begin{Lemma}  
+  Angenommen, wir haben die folgenden Voraussetzungen:
+  \begin{enumerate}
+  \item $\pair(A \rightarrow \alpha \bullet \beta \gamma, k) \in Q_i$,
+  \item $\beta \Rightarrow^* x_{i+1} \cdots x_l$.
+  \end{enumerate}
+  Dann gilt auch
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\pair(A \rightarrow \alpha \beta \bullet \gamma, k) \in Q_l$.
+\end{Lemma}
+
+\noindent
+\textbf{Beweis}: Wir f\"uhren den Beweis durch Induktion \"uber die Anzahl der Ableitungs-Schritte in
+der Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$.  
+\begin{enumerate}
+\item Falls die Ableitung die L\"ange $0$ hat, gilt offenbar $\beta = x_{i+1} \cdots x_l$.  
+      Damit hat die Voraussetzung
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet \beta \gamma, k) \in Q_i$
+      \\[0.2cm]
+      die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet x_{i+1} \cdots x_l \gamma, k) \in Q_i$.
+      \\[0.2cm]
+      Wenden wir hier $(l-i)$ mal die Lese-Operation an, so erhalten wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha x_{i+1} \cdots x_l \bullet \gamma, k) \in Q_l$
+      \\[0.2cm]
+      und wegen  $\beta = x_{i+1} \cdots x_l$ ist das \"aquivalent zu
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \beta \bullet \gamma, k) \in Q_l$.
+      \\[0.2cm]
+      Das ist aber gerade die Behauptung.
+\item Wir f\"uhren nun den Induktions-Schritt
+      durch, wobei die Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$ eine L\"ange gr\"o{\ss}er als 0
+      hat und nehmen an, dass  die erste Regel, die bei
+      dieser Ableitung angewendet worden ist, die Form
+      $D \rightarrow \delta$
+      hat.   Zur Vereinfachung nehmen wir au{\ss}erdem an, dass die Ableitungs-Schritte so durchgef\"uhrt
+      werden, dass immer die linkeste Variable ersetzt wird.  
+      Die Ableitung hat dann insgesamt die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\beta = x_{i+1} \cdots x_j D \mu \Rightarrow x_{i+1} \cdots x_j \delta \mu\Rightarrow^* x_{i+1} \cdots x_l$.
+      \\[0.2cm]
+      und wir haben
+      \begin{equation}
+        \label{earley:1a}
+        \delta \Rightarrow^* x_{j+1} \cdots x_h
+      \end{equation}
+      und
+      \begin{equation}
+        \label{earley:1b}
+        \mu    \Rightarrow^* x_{h+1} \cdots x_l    
+      \end{equation}
+      f\"ur ein geeignetes $h \in \{j, \cdots, l+1\}$.
+      Also  k\"onnen wir zun\"achst auf das Earley-Objekt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \bullet \beta \gamma, k) \in Q_i$
+      \\[0.2cm]
+      $(j-i)$ mal die Lese-Operation anwenden.  Damit erhalten wir
+      \begin{equation}
+        \label{earley:2}
+        \pair(A \rightarrow \alpha x_{i+1} \cdots x_j \bullet D \mu \gamma, k) \in Q_{j}.  
+      \end{equation}
+      Auf dieses Earley-Objekt wenden wir die Vorhersage-Operation an und erhalten
+      \begin{equation}
+        \label{earley:3}
+        \pair(D \rightarrow \bullet\,\delta, j) \in Q_j.
+      \end{equation}
+      Aus (\ref{earley:3}) und (\ref{earley:1a}) folgt mit der Induktions-Voraussetzung
+      \begin{equation}
+        \label{earley:4}
+        \pair(D \rightarrow \delta\, \bullet, j) \in Q_h.
+      \end{equation}
+      Aus (\ref{earley:2}) und (\ref{earley:4}) folgt mit der Vervollst\"andigungs-Operation
+      \begin{equation}
+        \label{earley:5}
+        \pair(A \rightarrow \alpha x_{i+1} \cdots x_j D \bullet \mu \gamma, k) \in Q_{h}.  
+      \end{equation}
+      Aus (\ref{earley:5}) und (\ref{earley:1b})  folgt mit der Induktions-Voraussetzung
+      \begin{equation}
+        \label{earley:7}
+        \pair(A \rightarrow \alpha x_{i+1} \cdots x_j D \mu \bullet \gamma, k) \in Q_{l}.  
+      \end{equation}
+      Wegen $\beta = x_{i+1} \cdots x_j D \mu$ haben wir damit
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\pair(A \rightarrow \alpha \beta \bullet \gamma, k) \in Q_{l}$  
+      \\[0.2cm]
+      gezeigt und das ist gerade die Behauptung. \qed
+\end{enumerate}
+
+\begin{Korollar}[Vollst\"andigkeit] \hspace*{\fill} \\
+Falls $s = x_1 \cdots x_n \in L(G)$ ist, dann gilt $\pair(\widehat{S} \rightarrow S \bullet, 0) \in Q_n$.
+\end{Korollar}
+
+\noindent
+\textbf{Beweis}:
+Der Algorithmus von Earley initialisiert die Menge $Q_0$ mit dem Earley-Objekt 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(\widehat{S} \rightarrow \bullet S, 0)$.  
+\\[0.2cm]
+Die Voraussetzung $x_1 \cdots x_n \in L(G)$ hei{\ss}t gerade
+$S \Rightarrow^* x_1 \cdots x_n$.  Also folgt die Behauptung aus dem eben bewiesenen Lemma,
+wenn wir dort $\alpha := \varepsilon$, $\beta := S$, $\gamma := \varepsilon$, $i := 0$,
+$k:= 0$ und $l:= n$ setzen.
+\qed
+
+\section{Analyse der Komplexit\"at}
+Wir zeigen, dass sich die Anzahl der Schritte, die der Algorithmus von Earley bei einem String der
+L\"ange $n$ durch $\mathcal{O}(n^3)$ nach oben absch\"atzen l\"asst.  Falls die Grammatik eindeutig ist,
+wenn es also zu jedem String nur einen Parse-Baum gibt, kann dies zu $\mathcal{O}(n^2)$ verbessert
+werden.  
+Zus\"atzlich hat Jay Earley in seiner Doktorarbeit \cite{earley:68} gezeigt, dass der
+Algorithmus in vielen praktisch relevanten F\"allen eine lineare Komplexit\"at hat.
+
+Der Schl\"ussel bei der Berechnung der Komplexit\"at des Algorithmus von Earley ist die
+Betrachtung der Anzahl der Elemente der Menge $Q_i$.  Es gilt offenbar:
+\\[0.2cm]
+\hspace*{1.3cm}
+Wenn $\pair(A \rightarrow \alpha \bullet \beta, k) \in Q_{i}$, dann $k \in \{0,\cdots,i\}$.  
+\\[0.2cm]
+Die Komponente $A \rightarrow \alpha \bullet \beta$ h\"angt nur von der Grammatik und nicht
+von dem zu parsenden String ab, w\"ahrend der Index $i$ von der L\"ange des zu parsenden
+Strings abh\"angig ist, es gilt 
+\\[0.2cm]
+\hspace*{1.3cm}
+$i \in \{0,\cdots,n\}$.
+\\[0.2cm]
+Interessiert nur das Wachstum der Mengen $Q_i$ in Abh\"angigkeit von der L\"ange des zu
+parsenden Strings, so kann daher die Anzahl der Elemente der Menge $Q_i$ durch
+$\mathcal{O}(n)$ abgesch\"atzt werden.  Wir analysieren nun die Anzahl der Rechenschritte,
+die bei den einzelnen Operationen durchgef\"uhrt werden.
+\begin{enumerate}
+\item Bei der Implementierung der Vorhersage-Operation in der Methode $\textsl{predict}()$
+      (Abbildung \ref{fig:earleyParser.stlx:predict}) haben wir drei Schleifen.
+      \begin{enumerate}
+      \item F\"ur die \"au{\ss}ere \texttt{do}-\texttt{while}-Schleife finden wir, dass diese
+            maximal so oft durchlaufen wird, wie neue Earley-Objekte in die Menge
+            $Q_i$ eingef\"ugt werden.  
+            Alle mit der Vorhersage-Operation neu eingef\"ugten Objekte haben aber die Form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\langle A \rightarrow \bullet \gamma, i \rangle$,
+            \\[0.2cm]
+            der Index hat hier also immer den Wert $i$.
+            Die Anzahl solcher Objekte ist nur von der Grammatik und nicht von dem
+            Eingabe-String abh\"angig.  Damit kann die Anzahl dieser Schleifen-Durchl\"aufe 
+            durch $\mathcal{O}(1)$ abgesch\"atzt werden.
+      \item Die \"au{\ss}ere \texttt{for}-Schleife l\"auft \"uber alle Earley-Objekte der Menge
+            $Q_i$ und wird daher maximal $\mathcal{O}(n)$-mal durchlaufen.
+      \item Die innere \texttt{for}-Schleife l\"auft \"uber alle Grammatik-Regeln und ist von
+            der L\"ange des zu parsenden Strings unabh\"angig.  Diese Schleife liefert also 
+            nur einen Beitrag, der durch $\mathcal{O}(1)$ abgesch\"atzt werden kann.
+      \end{enumerate}
+      Insgesamt hat ein Aufruf der Methode $\texttt{predict}()$ daher die Komplexit\"at 
+      $\mathcal{O}(1) \cdot {O}(n) \cdot \mathcal{O}(1) = \mathcal{O}(n)$.
+\item Bei der Implementierung der Lese-Operation, die in Abbildung \ref{fig:earleyParser.stlx:scan}
+      gezeigt ist, haben wir eine \texttt{for}-Schleife,
+      die \"uber alle Elemente der Menge $Q_i$ iteriert.  Da diese Menge $\mathcal{O}(n)$
+      Elemente enth\"alt, hat die Lese-Operation ebenfalls die Komplexit\"at $\mathcal{O}(n)$.
+\item Die von uns in Abbildung \ref{fig:earleyParser.stlx:complete} auf Seite
+      \pageref{fig:earleyParser.stlx:complete} gezeigte Implementierung der
+      Vervollst\"andigungs-Operation in der Methode $\mathtt{complete}()$ 
+      ist ineffizient, weil wir in der \"au{\ss}eren
+      \texttt{for}-Schleife immer \"uber alle Elemente der Menge $Q_i$ iterieren.
+      Effizienter w\"are es, wenn wir nur \"uber die beim letzten Schleifen-Durchlauf neu
+      hinzu gekommenen Elemente iterieren w\"urden.  Dann w\"urde
+      im schlimmsten Falle f\"ur jedes Elemente der Menge $Q_i$ einmal die innere
+      \texttt{for}-Schleife, die \"uber alle Elemente der Menge $Q_j$ iteriert, ausgef\"uhrt.
+      Da die Anzahl der Elemente von $Q_i$ und $Q_j$ jeweils durch $\mathcal{O}(n)$
+      abgesch\"atzt werden k\"onnen, kann die Komplexit\"at der Vervollst\"andigungs-Operation
+      insgesamt mit $\mathcal{O}(n^2)$ abgesch\"atzt werden.
+\end{enumerate}
+Da die einzelnen Operationen f\"ur alle Mengen $Q_i$ f\"ur $i = 0, \cdots, n$ durchgef\"uhrt
+werden m\"ussen, hat der Algorithmus insgesamt die Komplexit\"at $\mathcal{O}(n^3)$.  Damit
+diese Komplexit\"at auch tats\"achlich erreicht wird, m\"ussten wir die Implementierung der Methoden so um\"andern,
+dass kein Element der Menge $Q_i$ mehrfach betrachtet wird.  Da eine solche
+Implementierung schwerer zu verstehen w\"are, haben wir uns aus didaktischen Gr\"unden
+mit einer ineffizienteren Implementierung begn\"ugt.
+
+Der Nachweis, dass der Algorithmus bei einer eindeutigen Grammatik die Komplexit\"at 
+$\mathcal{O}\bigl(n^2\bigr)$ hat, geht
+\"uber den Rahmen der Vorlesung hinaus und kann in dem Artikel von Earley \cite{earley:70}
+nachgelesen werden.   In seiner Doktorarbeit hat Jay Earley \cite{earley:68} zus\"atzlich
+gezeigt, dass der Algorithmus in vielen praktisch relevanten F\"allen nur eine lineare
+Komplexit\"at hat.  Es gibt daher eine Reihe von Parser-Generatoren, die den Algorithmus von
+Earley umsetzen, z.~B.~das System \textsl{Accent}
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{http://accent.compilertools.net}{\texttt{http://accent.compilertools.net}},
+\\[0.2cm]
+mit dessen Hilfe sich \texttt{C}-Parser f\"ur beliebige Grammatiken erzeugen lassen.
+Ein Problem bei der Verwendung solcher Systeme besteht in der Praxis darin, dass die
+Frage, ob eine Grammatik eindeutig ist, unentscheidbar ist.  Bei der Definition einer
+neuen Grammatik kann es leicht passieren, dass die Grammatik aufgrund eines Design-Fehlers nicht 
+eindeutig ist.  Bei der Verwendung eines Earley-Parser-Generators k\"onnen solche Fehler
+erst zur Laufzeit des erzeugten Parsers bemerkt werden.  Bei Systemen wie \textsl{Antlr}
+oder \textsl{Bison}, die mit einer eingeschr\"ankteren Klasse von Grammatiken arbeiten,
+tritt dieses Problem nicht auf, denn die Grammatiken, f\"ur die sich mit einem solchen
+System ein Parser erzeugen l\"asst, sind nach Konstruktion eindeutig.  Ist also eine
+Grammatik aufgrund eines Design-Fehlers nicht eindeutig, so liegt Sie erst recht nicht in
+der eingeschr\"ankten Klasse von LR(1)-Grammatiken, die sich beispielsweise mit
+\textsl{Bison} bearbeiten lassen und der Fehler wird bereits bei der Erstellung des
+Parsers bemerkt.
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 

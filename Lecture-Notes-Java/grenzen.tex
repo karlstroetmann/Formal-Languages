@@ -1,0 +1,438 @@
+\chapter{Grenzen der Berechenbarkeit}
+In jeder Disziplin der Wissenschaft wird die Frage gestellt, welche Grenzen die
+verwendeten Methoden haben.   Wir wollen daher in diesem Kapitel aufzeigen, welche
+informatischen Fragestellungen prinzipiell unl\"osbar sind.  Beispielhaft untersuchen wir
+zun\"achst das Halte-Problem.  Anschlie{\ss}end zeigen wir, dass aus der Unl\"osbarkeit
+des Halte-Problems die Unl\"osbarkeit vieler weiterer Problem folgt.
+
+\section{Das Halte-Problem}
+Das Halte-Problem ist die Frage, ob eine gegebene Funktion f\"ur eine bestimmte Eingabe
+terminiert.  Wir werden zeigen, dass dieses Problem nicht durch ein Programm gel\"ost werden
+kann.  Dazu f\"uhren wir folgende Definition ein.
+
+\begin{Definition}[Test-Funktion] {\em Ein String $t$ ist eine \emph{Test-Funktion} mit Namen $n$ wenn $t$ ein
+String der Form \\[0.3cm]
+\hspace*{1.3cm} {\tt int $n$(char* x) \{ $\cdots$ \}} \\[0.3cm]
+ist, der sich als Definition einer $C$-Funktion parsen l\"asst.  Die Menge der
+Test-Funktionen bezeichnen wir mit $T\!F$.  Ist $t \in T\!F$ und hat den Namen $n$, so
+schreiben wir $\mathtt{name}(t) = n$.} \hspace*{\fill} $\Box$
+\end{Definition}
+
+\noindent
+\textbf{Beispiele}:  
+\begin{enumerate}
+\item $s_1$ = ``{\tt int simple(char* x) \{ return 0; \}}''
+
+      $s_1$ ist eine (sehr einfache) Test-Funktion mit dem Namen \texttt{simple}.
+\item $s_2$ = ``{\tt int loop(char* x) \{ while (1) ++x; \}}''
+
+      $s_2$ ist eine Test-Funktion mit dem Namen \texttt{loop}. 
+\item $s_3$ = ``{\tt int loop(char* x);}''
+
+      $s_3$ ist keine Test-Funktion, denn es ist lediglich eine Deklaration einer
+      \texttt{C}-Funktion und keine Definition.
+\item $s_4$ = ``{\tt int hugo(char* x) begin i := 1; end;}''
+
+      $s_4$ ist keine Test-Funktion, denn es l\"asst sich mit einem
+      \texttt{C}-Compiler nicht fehlerfrei parsen.
+\item $s_5$ = ``{\tt int hugo(int x) \{ return i*i; \}}''
+
+      $s_5$ ist auch keine Test-Funktion, denn der Typ des Arguments ist \texttt{int}
+      und nicht \texttt{char*}.
+\end{enumerate}
+Um das Halte-Problem \"ubersichtlicher formulieren zu k\"onnen, f\"uhren wir noch drei
+zus\"atzliche Notationen ein.
+\begin{Definition}[$\leadsto$, $\downarrow$, $\uparrow$]
+{\em
+Ist $n$ der Name einer \texttt{C}-Funktion und sind $a_1$, $\cdots$, $a_k$ Argumente, die
+vom Typ her der Deklaration von $n$ entsprechen, so schreiben wir \\[0.3cm]
+\hspace*{1.3cm} $n(a_1, \cdots, a_k) \leadsto r$ \\[0.3cm]
+wenn der Aufruf $n(a_1, \cdots, a_k)$ das Ergebnis $r$ liefert.  Sind wir an dem Ergebnis
+selbst nicht interessiert, sondern wollen nur angeben, dass ein Ergebnis existiert, so
+schreiben wir \\[0.3cm]
+\hspace*{1.3cm} $n(a_1, \cdots, a_k) \,\downarrow$ \\[0.3cm]
+und sagen, dass der Aufruf $n(a_1, \cdots, a_k)$ \emph{terminiert}.
+Terminiert der Aufruf $n(a_1, \cdots, a_k)$ nicht, so schreiben wir \\[0.3cm]
+\hspace*{1.3cm} $n(a_1, \cdots, a_k) \,\uparrow$ \\[0.3cm]
+und dagen, dass der Aufruf $n(a_1, \cdots, a_k)$ \emph{divergiert}.
+\hspace*{\fill} $\Box$
+}
+\end{Definition}
+
+\noindent
+\textbf{Beispiele}: Legen wir die Funktions-Definitionen zugrunde, die wir im Anschluss an
+die Definition des Begriffs der Test-Funktion gegeben haben, so gilt:
+\begin{enumerate}
+\item {\tt simple(\symbol{34}emil\symbol{34}) $\leadsto 0$}
+\item {\tt simple(\symbol{34}emil\symbol{34}) $\downarrow$}
+\item {\tt loop(\symbol{34}hugo\symbol{34}) $\uparrow$}
+\end{enumerate}
+
+\noindent
+Das \emph{Halte-Problem} f\"ur \texttt{C} ist die Frage, ob es eine \texttt{C}-Funktion \\[0.1cm]
+\hspace*{1.3cm} 
+$\texttt{int stops}(\texttt{char*}\;t,\;\texttt{char*}\;a)\; \{\;\cdots\;\}$ \\[0.1cm]
+gibt, die als Eingabe eine Testfunktion $t$ und einen String $a$ erh\"alt und die folgende
+Eigenschaft hat:
+\begin{enumerate}
+\item $t \not\in T\!F \quad\Leftrightarrow\quad \mathtt{stops}(t, a) \leadsto 2$.
+
+      Der Aufruf \texttt{stops($t$, $a$)} liefert genau dann den Wert 2 zur\"uck, 
+      wenn $t$ keine Test-Funktion ist.
+
+\item $t \in T\!F \,\wedge\, \mathtt{name}(t) = n \,\wedge\, n(a)\downarrow \quad\Leftrightarrow\quad
+       \mathtt{stops}(t, a) \leadsto 1$.
+
+      Der Aufruf \texttt{stops($t$, $a$)} liefert genau dann den Wert 1 zur\"uck,
+      wenn $t$ eine Test-Funktion mit Namen $n$ ist und der Aufruf $n(a)$ terminiert.
+
+\item $t \in T\!F \,\wedge\, \mathtt{name}(t) = n \,\wedge\, n(a)\uparrow \quad\Leftrightarrow\quad
+       \mathtt{stops}(t, a) \leadsto 0$.
+
+      Der Aufruf \texttt{stops($t$, $a$)} liefert genau dann den Wert 0 zur\"uck,
+      wenn $t$ eine Test-Funktion mit Namen $n$ ist und der Aufruf $n(a)$ \underline{nicht} terminiert.
+\end{enumerate}
+Falls eine \texttt{C}-Funktion \texttt{stops} mit den obigen Eigenschaften existiert, dann
+sagen wir, dass das Halte-Problem f\"ur \texttt{C} entscheidbar ist.
+
+\begin{Satz}[Turing, 1936]
+{\em
+  Das Halte-Problem ist unentscheidbar.
+} 
+\end{Satz}
+
+\noindent
+\textbf{Beweis}:  Zun\"achst eine Vorbemerkung.  Um die Unentscheidbarkeit des
+Halte-Problems nachzuweisen m\"ussen wir zeigen, dass etwas, n\"amlich eine Funktion mit
+gewissen Eigenschaften nicht existiert.  Wie kann so ein Beweis \"uberhaupt funktionieren?
+Wie k\"onnen wir \"uberhaupt zeigen, dass irgendetwas nicht existiert?
+Die einzige M\"oglichkeit zu zeigen, dass etwas nicht existiert ist indirekt:
+Wir nehmen also an, dass eine Funktion \texttt{stops} existiert, die das Halte-Problem l\"ost.
+Aus dieser Annahme werden wir dann einen Widerspruch ableiten.  Dieser Widerspruch zeigt
+uns dann, dass eine Funktion \texttt{stops} mit den gew\"unschten Eigenschaften nicht
+existieren kann.
+Um zu einem Widerspruch zu kommen, definieren wir den String \textsl{Turing} wie in Abbildung
+\ref{fig:turing-string} gezeigt.
+
+\begin{figure}[!h]
+  \centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\},
+                ]
+    \textsl{Turing} := "int turing(char* x) \{
+                   int result;
+                   result = stops(x, x);
+                   if (result == 1) \{
+                       while (1) \{
+                           ++result;
+                       \}
+                   \}
+                   return result;
+               \}"
+\end{Verbatim}
+  \vspace*{-0.3cm}
+  \caption{Die Definition des Strings \textsl{Turing}.}
+  \label{fig:turing-string}
+\end{figure}
+
+Mit dieser Definition ist klar, dass \textsl{Turing} eine Test-Funktion mit dem Namen
+``\texttt{turing}'' ist: \\[0.3cm]
+\hspace*{1.3cm} $\textsl{Turing} \in T\!F \;\wedge\; \mathtt{name}(\textsl{Turing}) = \mathtt{turing}$. \\[0.3cm]
+Damit sind wir in der Lage, den String \textsl{Turing} als Eingabe der Funktion \texttt{stops}
+zu verwenden.  Wir betrachten nun den folgenden Aufruf: \\[0.3cm]
+\hspace*{1.3cm} \texttt{stops(\textsl{Turing}, \textsl{Turing})}. \\[0.3cm]
+Offenbar ist \textsl{Turing} eine Test-Funktion.  Daher k\"onnen nur zwei F\"alle auftreten:
+\\[0.1cm]
+\hspace*{1.3cm} 
+$\mathtt{stops}(\textsl{Turing}, \textsl{Turing}) \leadsto 0 \quad \vee\quad
+ \mathtt{stops}(\textsl{Turing}, \textsl{Turing}) \leadsto 1$. \\[0.1cm]
+Diese beiden F\"alle analysieren wir nun im Detail:
+\begin{enumerate}
+\item $\mathtt{stops}(\textsl{Turing}, \textsl{Turing}) \leadsto 0$. 
+
+      Nach der Spezifikation von \texttt{stops} bedeutet dies \\[0.1cm]
+      \hspace*{1.3cm} $\mathtt{turing}(\textsl{Turing}) \uparrow$ \\[0.1cm]
+      Schauen wir nun, was wirklich beim Aufruf \texttt{turing(\textsl{Turing})} passiert:
+      In Zeile 3 erh\"alt die Variable \texttt{result} den Wert 0 zugewiesen.  In Zeile 4
+      wird dann getestet, ob \texttt{result} den Wert 1 hat.  Dieser Test schl\"agt fehl.
+      Daher wird der Block der \texttt{if}-Anweisung nicht ausgef\"uhrt und die Funktion liefert als
+      n\"achstes in Zeile 9 den Wert 0 zur\"uck.  Insbesondere terminiert der Aufruf also, im
+      Widerspruch zu dem, was die Funktion \texttt{stops} behauptet hat.
+
+      Damit ist der erste Fall ausgeschlossen.
+\item  $\mathtt{stops}(\textsl{Turing}, \textsl{Turing}) \leadsto 1$. 
+
+      Aus der Spezifikation der Funktion \texttt{stops} folgt, dass der Aufruf
+      $\mathtt{turing}(\textsl{Turing})$ terminiert: \\[0.1cm]
+      \hspace*{1.3cm} $\mathtt{turing}(\textsl{Turing}) \downarrow$ \\[0.1cm]
+      Schauen wir nun, was wirklich beim Aufruf \texttt{turing(\textsl{Turing})} passiert:
+      In Zeile 3 erh\"alt die Variable \texttt{result} den Wert 1 zugewiesen.  In Zeile 4
+      wird dann getestet, ob \texttt{result} den Wert 1 hat.  Diesmal gelingt der Test.
+      Daher wird der Block der \texttt{if}-Anweisung ausgef\"uhrt.  Dieser Block
+      besteht aber nur aus einer Endlos-Schleife, aus der wir nie wieder zur\"uck kommen.
+      Das steht im Widerspruch zu dem, was die Funktion \texttt{stops} behauptet hat.
+
+      Damit ist der zweite Fall ausgeschlossen.
+\end{enumerate}
+Insgesamt haben wir also in jedem Fall einen Widerspruch erhalten.  
+Also ist die Annahme, dass die \texttt{C}-Funktion \texttt{stops}
+das Halte-Problem l\"ost, falsch.  Insgesamt haben wir gezeigt, dass es keine \texttt{C}-Funktion
+geben kann, die das Halte-Problem l\"ost. \hspace*{\fill} $\Box$
+
+\noindent
+Der Nachweis, dass das Halte-Problem unl\"osbar ist, wurde 1936 von Alan Turing (1912 -- 1954)
+\cite{turing:36} erbracht.
+\vspace*{0.3cm}
+
+An dieser Stelle k\"onnen wir uns fragen, ob es vielleicht eine andere Programmier-Sprache
+gibt, in der wir das Halte-Problem dann vielleicht doch l\"osen k\"onnten.  
+Wenn es in dieses Programmier-Sprache Unterprogramme gibt, und wenn wir dort
+Programm-Texte als Argumente von Funktionen \"ubergeben k\"onnen, dann ist leicht zu sehen,
+dass der obige Beweis der 
+Unl\"osbarkeit des Halte-Problems sich durch geeignete syntaktische Modifikationen auch auf
+die andere Programmier-Sprache \"ubertragen l\"asst.
+\vspace*{0.3cm}
+
+\noindent
+\textbf{Aufgabe 1}:  
+Wir nennen eine Menge $X$ \emph{abz\"ahlbar}, wenn  es eine Funktion \\[0.1cm]
+\hspace*{1.3cm} $f: \mathbb{N} \rightarrow X$ \\[0.1cm]
+gibt, so dass es f\"ur alle $x\in X$ ein $n \in \mathbb{N}$ gibt, so dass $x$ das Bild von
+$n$ unter $f$ ist: \\[0.1cm]
+\hspace*{1.3cm} $\forall x \in X: \exists n \in \mathbb{N}: x = f(n)$.
+\\[0.1cm]
+Zeigen Sie, dass die Potenz-Menge $2^\mathbb{N}$ der nat\"urlichen Zahlen $\mathbb{N}$ 
+nicht abz\"ahlbar ist.  
+\vspace*{0.1cm}
+
+\noindent
+\textbf{Hinweis}: Gehen Sie \"ahnlich vor wie beim Beweis der Unl\"osbarkeit des
+Halte-Problems.  Nehmen Sie an, es g\"abe eine Funktion $f$, die die Teilmengen von
+$\mathbb{N}$ aufz\"ahlt: \\[0.1cm]
+\hspace*{1.3cm}  $\forall x \in 2^\mathbb{N}: \exists n \in \mathbb{N}: x = f(n)$.
+\\[0.1cm]
+Definieren Sie eine Menge \texttt{Cantor} wie folgt:
+\\[0.1cm]
+\hspace*{1.3cm} $\mathtt{Cantor} := \bigl\{ n \in \mathbb{N} \mid n \notin f(n) \bigr\}$.
+\\[0.1cm]
+Versuchen Sie nun, einen Widerspruch herzuleiten.
+
+
+\section{Das \"Aquivalenz-Problem}
+Es gibt noch eine ganze Reihe anderer Funktionen, die nicht berechenbar sind.  In der
+Regel werden wir den Nachweis, dass eine bestimmt Funktion nicht berechenbar ist, dadurch f\"uhren, dass
+wir zun\"achst annehmen, dass die gesuchte Funktion doch implementierbar ist.  Unter dieser Annahme
+konstruieren wir dann eine Funktion, die das Halte-Problem l\"ost, was im Widerspruch zu dem am Anfang dieses Abschnitts
+bewiesen Sachverhalts steht.
+Dieser Widerspruch zwingt uns zu der Folgerung, dass die gesuchte Funktion nicht implementierbar ist.
+Wir werden dieses Verfahren an einem Beispiel demonstrieren. Vorweg ben\"otigen wir aber
+noch eine Definition.
+
+\begin{Definition}[$\simeq$] 
+{\em 
+Es seien $n_1$ und $n_2$ Namen zweier \texttt{C}-Funktionen und
+  $a_1$, $\cdots$, $a_k$ seien Argumente, mit denen wir diese Funktionen f\"uttern k\"onnen. Wir definieren \\[0.1cm]
+\hspace*{1.3cm} $n_1(a_1,\cdots,a_k) \simeq n_2(a_1,\cdots,a_k)$ \\[0.1cm]
+g.d.w. einer der beiden folgen F\"alle auftritt:
+\begin{enumerate}
+\item $n_1(a_1,\cdots,a_k)\uparrow \quad\wedge\quad n_2(a_1,\cdots,a_k)\uparrow$
+\item $\exists r: \Bigl(n_1(a_1,\cdots,a_k) \leadsto r \quad\wedge\quad n_2(a_1,\cdots,a_k) \leadsto r\Bigr)$
+
+      In diesem Fall sagen wir, dass die beiden Funktions-Aufrufe 
+      $n_1(a_1,\cdots,a_k) \simeq n_2(a_1,\cdots,a_k)$ \emph{partiell \"aquivalent} sind.
+      \hspace*{\fill} $\Box$
+\end{enumerate}}
+\end{Definition}
+
+\noindent
+Wir kommen jetzt zum \emph{\"Aquivalenz-Problem}.  Die Funktion $f$ mit
+\\[0.2cm]
+\hspace*{1.3cm}
+$f = \texttt{int equal(char* p1, char* p2, char* a) \{ ... \}}$
+\\[0.2cm]
+m\"oge folgender Spezifikation gen\"ugen:
+\begin{enumerate}
+\item $p_1 \not\in T\!F \;\vee\; p_2 \not\in T\!F \quad\Leftrightarrow\quad \mathtt{equal}(p_1, p_2, a) \leadsto 2$.
+\item Falls 
+  \begin{enumerate}
+  \item $p_1 \in T\!F \;\wedge\; \mathtt{name}(p_1) = n_1$,
+  \item $p_2 \in T\!F \;\wedge\; \mathtt{name}(p_2) = n_2$ \quad und
+  \item $n_1(a) \simeq n_2(a)$
+  \end{enumerate}
+    gilt, dann muss gelten: \\[0.1cm]
+   \hspace*{1.3cm}  $\mathtt{equal}(p_1, p_2, a) \leadsto 1$.
+\item Ansonsten gilt \\[0.1cm]
+      \hspace*{1.3cm} $\mathtt{equal}(p_1, p_2, a) \leadsto 0$.
+\end{enumerate}
+Wir sagen, dass eine Funktion, die der eben angegebenen Spezifikation gen\"ugt, das
+\emph{\"Aquivalenz-Problem} l\"ost.
+
+\begin{Satz}[Rice]
+Das \"Aquivalenz-Problem ist unl\"osbar.  
+\end{Satz}
+
+\noindent
+\textbf{Beweis}:
+Wir f\"uhren den Beweis indirekt und nehmen
+an, dass es doch eine Implementierung der Funktion \texttt{equal} gibt, die das
+\"Aquivalenz-Problem l\"ost.  Wir betrachten die in Abbildung 
+\ref{fig:stops} angegeben Implementierung der Funktion \texttt{stops}.
+
+
+\begin{figure}[!h]
+  \centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.3cm
+                ]
+     int stops(char* p, char* a) {
+         char* Loop = "int loop(char* x) { 
+                           while (1) {++x;}
+                           return 0; 
+                       }";
+         int e = equal(Loop, p, a);
+         if (e == 2) {
+             return 2;
+         } else {
+             return 1 - e;
+         }
+     }
+\end{Verbatim}
+  \vspace*{-0.3cm}
+  \caption{Eine Implementierung der Funktion \texttt{stops}.}
+  \label{fig:stops}
+\end{figure}
+
+Zu beachten ist, dass in Zeile 2 die Funktion \texttt{equal} mit einem String aufgerufen
+wird, der eine Test-Funktion ist, und zwar mit dem Namen \texttt{loop}.  Diese hat die
+folgende Form:
+\begin{verbatim}
+      int loop(char* x) { while (1) { ++x; } }
+\end{verbatim}
+Es ist offensichtlich, dass die Funktion \texttt{loop} f\"ur kein Ergebnis terminiert.
+Ist also das Argument $p$ eine Test-Funktion mit Namen $n$, so liefert die Funktion \texttt{equal} immer dann den Wert 1,
+wenn $n(a)$ nicht terminiert, andernfalls muss sie den Wert 0 zur\"uck geben.
+Damit liefert die Funktion \texttt{stops} aber f\"ur eine Test-Funktion $p$ mit Namen $n$ und ein Argument
+$a$ genau dann 1, wenn der Aufruf $n(a)$ terminiert und w\"urde folglich das Halte-Problem
+l\"osen.  Das kann nicht sein, also kann es keine Funktion  \texttt{equal}
+geben, die das \"Aquivalenz-Problem l\"ost. 
+\qed
+\vspace*{0.3cm}
+
+\noindent
+Die Unl\"osbarkeit des \"Aquivalenz-Problems und vieler weiterer praktisch interessanter
+Problem folgen aus einem 1953 von Henry G.~Rice \cite{rice:53} bewiesenen Satz.
+
+\section{Weitere unl\"osbare Probleme}
+Es gibt eine Reihe von Problemen in der Theorie der formalen Sprachen, die unl\"osbar sind.
+Wir listen examplarisch die wichtigsten unl\"osbaren Probleme aus dem Bereich der formalen
+Sprachen aufgelistet und verweisen f\"ur eine ausf\"uhrlichere Liste auf das Buch von
+Hopfcroft, Motwani und Ullman \cite{hopcroft:06}.
+\begin{enumerate}
+\item F\"ur eine gegebene kontextfreie Grammatik $G$ ist die Frage, ob es zu jedem
+      String $s \in L(G)$ genau einen Parse-Baum f\"ur $s$ gibt, unentscheidbar.  F\"ur k\"onnen
+      also nicht entscheiden, ob eine Grammatik mehrdeutig ist.
+\item F\"ur zwei gegeben kontextfreie Grammatiken $G_1$ und $G_2$ ist die Frage, ob
+      diese Grammatiken dieselbe Sprache beschreiben, ob also
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(G_1) = L(G_2)$
+      \\[0.2cm]
+      gilt, ist unentscheidbar.
+\item Ebenso ist f\"ur zwei kontextfreie Grammatiken $G_1$ und $G_2$ die Frage,
+      ob 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $L(G_1) \subseteq L(G_2)$
+      \\[0.2cm]
+      gilt, unentscheidbar.
+\end{enumerate}
+Der Beweis der Unentscheidbarkeit der oben genannten Probleme wird aus das
+\emph{Post'sche Korrespondenz-Problem} zur\"uck gef\"uhrt, dass wir jetzt wenigstens
+formulieren wollen.
+
+\begin{Definition}[Post'sche Korrespondenz-Problem]
+Gegen sei ein Alphabet $\Sigma$ sowie zwei Listen $l_1$ und $l_2$ von Strings aus
+$\Sigma^*$, die beide dieselbe L\"ange $n$ haben:
+\\[0.2cm]
+\hspace*{1.3cm}
+$l_1 = [X_1, \cdots, X_n]$ \quad mit $X_i \in \Sigma^*$ f\"ur $i=1,\cdots,n$ \quad und
+\\[0.2cm]
+\hspace*{1.3cm}
+$l_2 = [Y_1, \cdots, Y_n]\;$ \quad mit $Y_i \in \Sigma^*$ f\"ur $i=1,\cdots,n$.w
+\\[0.2cm]
+Dann nennen wir das Paar $\pair(l_1, l_2)$ eine \emph{Instanz des Post'schen Korrespondenz-Problems}.
+\vspace*{0.2cm}
+
+\noindent  
+Eine Liste $[k_1, k_2, \cdots, k_m]$ von positiven nat\"urlichen Zahlen ist eine L\"osung des Post'schen Korrespondenz-Problems
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair([X_1, \cdots, X_n], [Y_1, \cdots, Y_n])$
+\\[0.2cm]
+genau dann, wenn
+\\[0.2cm]
+\hspace*{1.3cm}
+$X_{k_1} X_{k_2} \cdots X_{k_m} = Y_{k_1} Y_{k_2} \cdots Y_{k_m}$ 
+\\[0.2cm]
+gilt.  \qed
+\end{Definition}
+
+\example
+Wir setzen $\Sigma = \{ \mathtt{a}, \mathtt{b}\}$ und definieren
+\\[0.2cm]
+\hspace*{1.3cm}
+$P = \pair([\quoted{b}, \quoted{babbb}, \quoted{ba} ], [\quoted{bbb}, \quoted{ba}, \quoted{a}])$.
+\\[0.2cm]
+Dann ist $P$ eine Instanz des Post'schen Korrespondenz-Problems.   $P$ hat
+die  L\"osung
+\\[0.2cm]
+\hspace*{1.3cm}
+$L = [2,1,1,3]$,
+\\[0.2cm]
+denn wir haben
+\\[0.2cm]
+\hspace*{1.3cm}
+$\quoted{babbb} + \quoted{b} + \quoted{b} + \quoted{ba} = 
+ \quoted{ba} + \quoted{bbb} + \quoted{bbb} + \quoted{a}$.
+
+
+\begin{Satz}
+  Das Post'sche Korrespondenz-Problem ist unentscheidbar.
+\end{Satz}
+
+\noindent
+\textbf{Beweis-Idee}:  Der Beweis des Post'schen Korrespondenz-Problems kann auf die
+Unentscheidbarkeit des Halte-Problems zur\"uck gef\"uhrt werden.  Dazu m\"ussen allerdings erst
+\emph{Turing-Maschinen} eingef\"uhrt werden sowie eine Notation, um diese  programmieren.  
+Bei den Turing-Maschinen handelt es sich um ein sehr einfaches
+Maschinen-Konzept.  Es l\"asst sich jdoch zeigen, dass Programme f\"ur Turing-Maschinen
+prinzipiell genau so leistungsf\"ahig sind, wie \texttt{C-Programme}:
+Alles das, was wir mit einem \texttt{C}-Programm berechnen k\"onnen, l\"asst sich auch mit
+einer Turing-Maschine berechnen.
+
+Weiter wird dann gezeigt, dass sich die L\"osbarkeit des Halte-Problems f\"ur Turing-Maschinen
+in ein Post'sches Korrespondenz-Problem \"ubersetzen l\"asst.  K\"onnten wir nun das Post'sche
+Korrespondenz-Problem l\"osen, so k\"onnten wir auch das Halte-Problem f\"ur Turing-Maschinen
+l\"osen und damit dann auch das Halte-Problem f\"ur \texttt{C}-Funktionen.
+
+Die Detailierung der obigen Beweis-Skizze kann in dem Buch von Hopfcroft
+\cite{hopcroft:06} nachgelesen werden.  Aufgrund seiner Komplexit\"at geht der detaillierte 
+ Beweis aber weit \"uber den Rahmen der Vorlesung heraus.
+\qed
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formale-sprachen"
+%%% End: 
