@@ -5,7 +5,9 @@ The wikipedia page
 \hspace*{1.3cm}
 \href{https://en.wikipedia.org/wiki/Comparison_of_parser_generators}{Comparison of parser generators}
 \\[0.2cm]
-shows the large number of parser generators that are available.
+shows the large number of \blue{parser generators} that are available.  
+A parser generator \index{parser generator} is a tool that takes a grammar as its input and generates a parser
+that can parse according to this grammar.
 In my opinion, the parser generator that is both most mature and most powerful is
 \textsc{Antlr} \index{\textsc{Antlr}} \cite{parr:2012,parr:2014}.  The name is short for 
 \emph{\underline{an}other \underline{t}ool for \underline{l}anguage \underline{r}ecognition}\footnote{
@@ -19,12 +21,13 @@ In my opinion, the parser generator that is both most mature and most powerful i
 \href{http://www.antlr.org}{\texttt{http://www.antlr.org}}.
 \\[0.2cm]
 In this lecture we will use \textsc{Antlr} version 4.8.  The tool \textsc{Antlr} is written in \textsl{Java}
-but can be used to generate parsers for the programming languages \textsl{Java}, \texttt{C++}, \texttt{C\#},
-\textsl{Python}, \textsl{JavaScript}, \textsl{Go}, and \textsl{Swift}.
+and therefore its main target language is \textsl{Java}.  However, \textsc{Antlr} can alsobe used to generate
+parsers for the programming languages \texttt{C++}, \texttt{C\#}, \textsl{Python}, \textsl{JavaScript},
+\textsl{Go}, and \textsl{Swift}. 
 We will introduce \textsc{Antlr} via some examples that demonstrate the most important features of this tool.
 For lack of time we will only discuss the most important features of \textsc{Antlr}.  For a discussion of all
 the features offered by \textsc{Antlr} I recommend the book ``The Definitive \textsc{Antlr} Reference'' by
-Terrence Parr \cite{parr:2012}.
+Terrence Parr \cite{parr:2012}.  However, this book only covers the generation of \textsl{Java} parsers.
 
 \section{A Parser for Arithmetic Expressions}
 We start with a parser for arithmetic expressions.  The structure of arithmetic expressions can be described by
@@ -65,7 +68,7 @@ We discuss the implementation line by line.
     WS      : [ \t\n\r] -> skip;
 \end{minted}
 \vspace*{-0.3cm}
-\caption{\textsc{Antlr}-Spezifikation eines Parsers f\"ur arithmetische Ausdr\"ucke.}
+\caption{\textsc{Antlr} grammar for arithmetical expressions.}
 \label{fig:Expr.g4}
 \end{figure}
 
@@ -75,15 +78,15 @@ We discuss the implementation line by line.
       In this case the grammar is called \texttt{Expr}.  The name of the file that contains this grammar is
       created by appending the file extension  ``\texttt{.g4}''.  Therefore this grammar 
       has to be stored in a file with the name ``\texttt{Expr.g4}''.
-\item Line 3 gives the production for the non-terminal \textsl{start}.  In the last chapter we had used the
-      notation
+\item Line 3 gives the production for the non-terminal \textsl{start}.  In the last chapter we would have used the
+      notation \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{start} \rightarrow \textsl{expr}$
       \\[0.2cm]
-      instead.  With \textsc{Antlr} the left and right part of a production are separated by a colon.
+      to specify this rule.  With \textsc{Antlr} the left and right part of a production are separated by a colon.
       \textsc{Antlr} terminates every production with the character ``\texttt{;}
 \item Line 6--9 give the productions for the non-terminal \textsl{expr}.  Note that we have to enclose the 
-      terminals ``\texttt{+}'' and ``\texttt{-}'' in single quotes.  The different rules for the non-terminal
+      terminals ``\texttt{+}'' and ``\texttt{-}'' in single quotes.  The different alternatives for the non-terminal
       \texttt{expr} are separated by the character ``\texttt{|}''.
 \item Similarly, the lines 11--14 and 16--18 show the productions for the non-terminals \textsl{product} and
       \textsl{factor}.   
@@ -110,9 +113,9 @@ We discuss the implementation line by line.
       specifies a single character that is either a blank, a tabulator, a line break, or a carriage return.
       The lexical specification of the terminal \texttt{WS} is followed by the operator ``\texttt{->}'' 
       which in turn is followed by a \blue{semantic action}.
-      The semantic action ``\texttt{skip}'', which is executed once a white space character has be recognized, 
-      simply discards the white space character.  Therefore we cannot use the terminal \texttt{WS} in our
-      grammar rules.  Therefore, the net effect of line 21 is to discard all white space characters.
+      The semantic action ``\texttt{skip}'', which is executed once a white space character has been recognized, 
+      simply discards the white space character.  Therefore, the net effect of line 21 is to discard all white
+      space characters. 
 
       In most programming languages\footnote{
         Unfortunately, \textsl{Python} is an exception to this rule.  Therefore, parsing
@@ -121,7 +124,7 @@ We discuss the implementation line by line.
       Therefore, most \textsc{Antlr} parsers will have a scanner rule that is similar to
       the rule shown in line 21. 
 \end{enumerate}
-To conclude, the lines 3--18 specify the grammar, while the line 20--21 specify the 
+To conclude, the lines 3--18 specify the grammar, while the lines 20--21 specify the 
 lexical structure.  If the grammar that is shown in Figure \ref{fig:Expr.g4} is stored in the file
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/ANTLR4-Python/PureExprParser/Expr.g4}{\texttt{Expr.g4}} 
 we can generate a parser by using the following command:
@@ -135,7 +138,7 @@ Of course, this only works if the file \texttt{antlr-4.8-complete.jar} is stored
 \item \texttt{ExprParser.py}
 
       This file contains the parser.
-\item \texttt{ExprLexer.java}
+\item \texttt{ExprLexer.py}
 
       This is the scanner.
 \item \textsc{Antlr} generates some more files.  However, these are not relevant for us.
@@ -145,14 +148,14 @@ In order to run the parser we need a driver program.  Figure \ref{fig:PureParser
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{python}
     from ExprLexer  import ExprLexer
     from ExprParser import ExprParser
     
@@ -164,7 +167,7 @@ In order to run the parser we need a driver program.  Figure \ref{fig:PureParser
         stream      = antlr4.CommonTokenStream(lexer)
         parser      = ExprParser(stream)
         parser.start()
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Driver program for the parser generated by \textsc{Antlr}.}
 \label{fig:PureParser.ipynb}
@@ -184,9 +187,9 @@ If we want to test our parser we use the command:
 \hspace*{1.3cm}
 \texttt{parse\_string(\symbol{34}1 + 2 * 3 - 4\symbol{34})}
 \\[0.2cm]
-This will run without errors, showing that the input adheres to the specification of the grammar.
+This will run without errors, showing that the input string adheres to the specification of the grammar.
 If we want to see the parse tree instead, we have to use the \texttt{TestRig} provided by \textsc{Antlr}.
-In order to use the \texttt{TestRig}, we first have to create the some \textsl{Java} files using the command
+In order to use the \texttt{TestRig}, we first have to create a \textsl{Java}-based parser using the command
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{java -jar /usr/local/lib/antlr-4.8-complete.jar -Dlanguage=Java Expr.g4}
@@ -221,212 +224,244 @@ generated parsers.  We proceed in two steps:
 \item Firstly, we present a grammar for small symbolic calculator.
 \item Secondly, we show how this grammar can be extended with actions so that the expressions can be evaluated.
 \end{enumerate}
-
-gespeichert werden k\"onnen.  Wir gehen dabei in zwei Schritten vor und pr\"asentieren
-zun\"achst eine reine Grammatik in \textsc{Antlr}-Notation.  Anschlie{\ss}end erweitern wir diese
-mit Aktionen, in denen die Ausdr\"ucke ausgewertet werden k\"onnen.
-Abbildung \ref{fig:Program.g4} zeigt diese Grammatik.  Gegen\"uber der vorher gezeigten
-Grammatik f\"ur arithmetische Ausdr\"ucke gibt es die folgenden \"Anderungen:
+Figure \ref{fig:Program.g4} presents the grammar.  In comparison with grammar for arithmetical expressions that
+was shown in Figure \ref{fig:Expr.g4} there are the following changes:
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{antlr}
     grammar Program;
     
-    program : stmnt+ ;
+    start: statement+ ; 
     
-    stmnt   : ID ':=' expr ';'
-            | expr ';'
-            ;    
+    statement
+        : IDENTIFIER ':=' expr ';' 
+        | expr ';'                 
+        ;
     
-    expr    : expr ('+'|'-') product
-            | product
-            ;
+    expr: expr '+' product 
+        | expr '-' product 
+        | product
+        ;
     
-    product : product ('*'|'/') factor
-            | factor
-            ;
+    product 
+        : product '*' factor 
+        | product '/' factor 
+        | factor
+        ;
     
-    factor  : '(' expr ')'
-            | ID
-            | INT
-            ;
+    factor
+        : '(' expr ')'        
+        | FLOAT               
+        | IDENTIFIER          
+        | 'sqrt' '(' expr ')'
+        ;
     
-    ID : [a-zA-Z][a-zA-Z0-9]*;
-    INT: '0'|[1-9][0-9]*;
-    WS : [ \v\t\n\r] -> skip; 
-\end{Verbatim}
+    IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
+    FLOAT     : '0'([.][0-9]+)?
+              | [1-9][0-9]*([.][0-9]+)?
+              ;
+    WS        : [ \t\n\r] -> skip; 
+\end{minted}
 \vspace*{-0.3cm}
-\caption{Eine Grammatik f\"ur die Auswertung von Ausdr\"ucken.}
+\caption{A grammar for a symbolic calculator.}
 \label{fig:Program.g4}
 \end{figure}
 
 
 \begin{enumerate}
-\item Das Start-Symbol ist jetzt \texttt{program}.  Es steht f\"ur eine Liste
-      von Zuweisungen der folgenden Form:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{var} \;\mathtt{:=}\; \textsl{expr}\mathtt{;}$
-      \\[0.2cm]
-      Hier ist \texttt{var} der Name einer Variablen und \textsl{expr} ist ein
-      arithmetischer Ausdruck.
-\item \texttt{stmnt} bezeichnet eine Zuweisung oder einen einzelnen Ausdruck.
-\item Wir haben die Regeln f\"ur die syntaktischen Variablen \textsl{expr} und \textsl{product}
-      vereinfacht, indem wir jeweils die beiden Operatoren ``\texttt{+}'' und ``\texttt{-}'' bzw.
-      \squoted{*} und \squoted{/} zusammengefasst haben.
-      Da \textsc{Antlr} \textsc{Ebnf}-Grammatiken unterst\"utzt, k\"onnen wir f\"ur \textsl{expr}
-      beispielsweise die Regel
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{expr : expr ('+'|'-') product | product ;}
-      \\[0.2cm]
-      verwenden.  Die Grammatik-Regel f\"ur \textsl{product} haben wir in \"ahnlicher Weise
-      ge\"andert.
-\item Das Terminal \texttt{ID} bezeichnet den Namen einer Variablen.  Ein solcher Name
-      besteht aus einer beliebigen Folge von Buchstaben und Ziffern, die mit einem Buchstaben 
-      beginnen muss.
+\item Das Start-Symbol \texttt{start} now recognizes a list of \blue{statements}.
+      Note that \textsc{Antlr} provides the postfix operator ``\texttt{+}'' to
+      specify non-empty sequences.  The postfix operators ``\texttt{*}'' and ``\texttt{?}'' are also 
+      supported.  They have the same semantics as in regular expressions.
+\item A \texttt{statement} is either an assignment or an expression.
+\item The rules for expressions and products are the same as previously.
+\item The rule for the non-terminal \texttt{factor} has changed.
+      \begin{enumerate}[(a)]
+      \item We can still put expressions in parenthesis.
+      \item Instead of integers the grammar now supports floating point numbers.
+            These are recognized by the terminal \texttt{FLOAT}.
+      \item Expressions can now contain variables.  These are recognized by the terminal
+            \texttt{IDENTIFIER}.
+      \item Furthermore, expressions are allowed to contain calls of the function \texttt{sqrt},
+            which is supposed to compute the square root of a given number.
+      \end{enumerate}
+\item The terminal \texttt{IDENTIFIER} recognizes variable names.  A variable name starts with 
+      a letter from the Latin alphabet, i.e. a character from the range \texttt{[a-z]}.  This letter can be either
+      upper or lower case.  The remaining characters of a variable name can be either letters from the Latin
+      alphabet, digits, or the underscore.
+\item The terminal \texttt{FLOAT} recognizes floating point numbers, i.e. numbers that have an optional
+      fractional part like $1.23$.  Note that the dot ``\texttt{.}'' has to be enclosed in square
+      brackets because otherwise it would match any character that is different from a newline.  
 \end{enumerate}
-Mit diesem Parser k\"onnen wir jetzt zum Beispiel die folgende Eingabe parsen:
+A parser for this grammar is able to parse strings like the following:
 \begin{verbatim}
-    x = 2 * 3; y = 4 * 5; z = x * x + y * y; 
-    z / 3;
+    x := 2.3 * 3.4; y := sqrt(2 * x); z := x * x + y * y; sqrt(z);
 \end{verbatim}
-Wir wollen nun einen ganz einfachen Interpreter entwickeln, der eine Folge von solchen
-Zuweisungen auswertet und die bei der Auswertung berechneten Zwischen-Ergebnisse
-in Variablen abspeichert, auf die in folgenden Ausdr\"ucken Bezug genommen werden kann.
-Weiterhin soll jeder Ausdruck, der keiner Variablen zugewiesen wird, ausgewertet und
-ausgegeben werden.  Abbildung \ref{fig:Program.g4-2} zeigt die Realisierung eines solchen
-Interpreters mit \textsc{Antlr}.
+Our next task is to develop an interpreter for the language specified by the grammar shown 
+in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an interpreter can be realized using
+\textsc{Antlr}. 
+
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.3cm,
-                ]
-    grammar Program;
-     
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                numbers       = left,
+                numbersep     = -0.2cm,
+                bgcolor       = sepia,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.3cm,
+              ]{antlr}
+    grammar Calculator;
+    
     @header {
-        import java.util.TreeMap;
+    import math
     }
     
-    @members {
-        TreeMap<String, Integer> varTable = new TreeMap<String, Integer>();
-    }
+    start: statement+ ; 
     
-    program : stmnt+ ;
-    
-    stmnt : ID ':=' expr ';' { varTable.put($ID.text, $expr.result); }
-          |         expr ';' { System.out.println($expr.result);     }
-          ;    
-    
-    expr returns [int result]
-        : e = expr { $result = $e.result; }
-          (   '+' p = product { $result += $p.result; }
-            | '-' p = product { $result -= $p.result; }
-          )
-        | p = product { $result = $p.result; }
+    statement
+        : IDENTIFIER ':=' expr ';' {self.Values[$IDENTIFIER.text] = $expr.result}
+        | expr ';'                 {print($expr.result)                         }
         ;
     
-    product returns [int result]
-        : p = product { $result = $p.result; }
-          (
-              '*' f = factor { $result *= $f.result; }
-            | '/' f = factor { $result /= $f.result; }
-          )
-        | f = factor { $result = $f.result; }
+    expr returns[result]
+        : e=expr '+' p=product {$result = $e.result + $p.result}
+        | e=expr '-' p=product {$result = $e.result - $p.result}
+        | p=product            {$result = $p.result            }
         ;
     
-    factor returns [int result]
-        : '(' expr ')' { $result = $expr.result;           }
-        | ID           { $result = varTable.get($ID.text); }
-        | INT          { $result = new Integer($INT.text); }
+    product returns[result]
+        : p=product '*' f=factor {$result = $p.result * $f.result}
+        | p=product '/' f=factor {$result = $p.result / $f.result}
+        | f=factor               {$result = $f.result            }
         ;
     
-    ID : [a-zA-Z][a-zA-Z0-9]*;
-    INT: '0'|[1-9][0-9]*;
-    WS : [ \v\t\n\r] -> skip; 
-\end{Verbatim} 
+    factor returns[result]
+        : '(' expr ')'        {$result = $expr.result                 }
+        | FLOAT               {$result = float($FLOAT.text)           }
+        | IDENTIFIER          {$result = self.Values[$IDENTIFIER.text]}
+        | 'sqrt' '(' expr ')' {$result = math.sqrt($expr.result)      }
+        ;
+    
+    IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
+    FLOAT     : '0'([.][0-9]+)?
+              | [1-9][0-9]*([.][0-9]+)?;
+    WS        : [ \t\n\r] -> skip; 
+\end{minted}
 %\$
 \vspace*{-0.3cm}
 \caption{Ein Interpreter zur Auswertung von Ausdr\"ucken.}
-\label{fig:Program.g4-2}
+\label{fig:Calculator.g4}
 \end{figure}
 
 \begin{enumerate}
-\item Da wir die Werte der einzelnen Variablen in einer Tabelle abspeichern m\"ussen,
-      importieren wir in den Zeilen 3 -- 5 die Klasse \texttt{java.util.TreeMap}, denn
-      diese Klasse implementiert Tabellen effizient als bin\"are B\"aume.
-
-      Allgemein setzt \textsc{Antlr} all den Code, der durch das Schl\"usselwort
-      ``\texttt{@header}'' spezifiert wird, an den Anfang der erstellten Parser-Datei.
-\item In den Zeilen 7 -- 9 definieren wir zus\"atzliche Member-Variablen f\"ur die erzeugte
-      Klasse \texttt{ProgramParser}.  In unserem Fall definieren wir hier die Tabelle, die
-      sp\"ater die Werte der Variablen enth\"alt, als Abbildung, die Strings ganze Zahlen zuordnet.
-
-      Allgemein setzt \textsc{Antlr} all den Code, der durch das Schl\"usselwort
-      ``\texttt{@members}'' spezifiert wird, an den Anfang der erstellten Parser-Klasse.
-      Dieses Feature kann sowohl zur Definition von zus\"atzlichen Klassen-Variablen als auch
-      von Methoden verwendet werden.
-      
-      Wir reichern nun die Grammatik-Regeln mit Aktionen an, die durchgef\"uhrt werden, wenn
-      der Parser die entsprechende Grammatik-Regel anwendet.  Die Aktionen werden von der
-      eigentlichen Grammatik-Regel, f\"ur die sie angewendet werden sollen, dadurch
-      abgesetzt, dass sie in den geschweiften Klammern ``\texttt{\{}'' und ``\texttt{\}}''
-      eingefasst werden.
-\item Wird vom Parser in Zeile 13 eine Zuweisung der Form $\textsl{var} \;\mathtt{:=}\; \textsl{expr}$
-      erkannt,  
-      so soll der Wert des Ausdrucks \textsl{expr} berechnet und das Ergebnis in der
-      Tabelle \texttt{varTable} unter dem Namen \textsl{var} eingetragen werden.
-      In der Grammatik-Regel
+\item As we have to use the function \texttt{sqrt} that is located in the module \texttt{math}
+      we need to import this module into our parser.
+      This is achieved by the header declaration shown in line 3--5.  The header declaration
+      is started with the keyword \texttt{\@header} that is followed by an opening brace.
+      It ends at the matching closing brace.
+      \textsc{Antlr} puts all the code that is between the braces at the beginning of the generated parser. 
+\item If the parser recognizes an assignment of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \textsl{stmnt} $\rightarrow$ \texttt{ID} ':=' \textsl{expr} ';'
+      $\texttt{IDENTIFIER} \;\mathtt{:=}\; \textsl{expr} \mathtt{;}$
       \\[0.2cm]
-      haben wir einerseits das Token \texttt{ID}, auf dessen Namen wir mit \texttt{\symbol{36}ID.text}
-      zugreifen k\"onnen, andererseits haben wir die syntaktische Variable \textsl{expr}.
-      Wir werden sp\"ater dieser syntaktischen Variable die \textsl{Java}-Variable
-      \texttt{result} als Ergebnis-Variable zuordnen, die den zugeh\"origen Wert enth\"alt.  
-      Dann k\"onnen wir mit
-      \texttt{\symbol{36}expr.result} auf diesen Wert zugreifen.
+      it has to evaluate the expression \textsl{expr} and store the result of this evaluation in
+      the dictionary \texttt{Values}.  In order to do this, the grammar rule is followed by some
+      \blue{action code} that is enclosed in curly braces.  This code will be executed once the parser has 
+      recognized the assignment.
 
-      In Zeile 14 haben wir einen einzelnen arithmetischen Ausdruck, den wir auswerten und ausgeben.
-\item In Zeile 17 definieren wir mit der Zeile
+      The dictionary \texttt{Values} that is used to store the values assigned to variable names 
+      is a member of the parser object that is generated
+      by \textsc{Antlr}.  We can refer to this object via the variable \texttt{self}.
+      The value that is computed by for the expression \textsl{expr} is available as
+      the member \texttt{\symbol{36}expr.result}.  
+      The fact that this member has the name \texttt{result} is due to the returns-specification
+      in line 14.
+\item Line 11 deals with the case where the parser has seen an expression followed by a semicolon.
+      In this case, the result of the evaluation of the expression is printed.
+\item The \texttt{returns}-declaration in line 14 specifies that when the parser reads an expression,
+      i.e.~a string that has the syntactical form specified by the grammar rule for \texttt{expr}
+      it will return the result of this evaluation in the member variable \texttt{result}.
+\item Line 15 deals with the case that the parser has found a sum of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{expr returns [int result]}
+      \textsl{expr} '\texttt{+}' \textsl{product}
       \\[0.2cm]
-      dass die Methode, die eine \textsl{expr} parst, als Ergebnis ein \texttt{int} zur\"uck
-      gibt und dass dieses in der Variable mit dem Namen \texttt{result} abgespeichert wird.
-\item In der Grammatik-Regel
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{expr : expr ('+'|'-') product | product ;}
-      \\[0.2cm]
-      haben wir in Zeile 18 -- 20 den verschiedenen Auftreten der syntaktischen Variablen
-      \texttt{expr} und \texttt{product} die Namen $e$ und $p$ zugeordnet, auf die wir dann in den
-      Aktionen zugreifen k\"onnen.  In den Aktionen muss diesen Variablen allerdings ein Dollar-Zeichen
-      vorgestellt werden.
+      In order to evaluate this expression, the parser has to compute the sum of the \textsl{expr} and the
+      \textsl{product}.  The notation ``\texttt{e=expr}'' assigns the result of evaluating \textsl{expr} to the
+      variable \texttt{e} and 
+      ``\texttt{e=expr}'' assigns the result of evaluating \textsl{product} to the variable \texttt{p}.
+      The action code adds these variables and assigns the sum to the variables \texttt{result}. 
+      Note that all these variable names have to prefixed by a dollar symbol.
+\item Line 28 shows how a string representing a floating point number is converted into a floating point
+      number.  The expression \texttt{\symbol{36}FLOAT.text} references the string that is matched
+      by the regular expression \texttt{FLOAT} defined in line 34--35.
+\item Similarly, in line 29 the expression \texttt{\symbol{36}IDENTIFIER.text} references the string that is matched
+      by the regular expression \texttt{IDENTIFIER} defined in line 33.  This string is then used as a key
+      in the dictionary \texttt{Values} that stores the values of the variables.
+\end{enumerate}
 
-      Die Aktionen selber bestehen nun darin, dass wir der Variablen \texttt{result}
-      das Ergebnis der jeweiligen Berechnung zuweisen.
-\item In den Zeilen 36 und 37 greifen wir auf die Strings, die den Token
-      \texttt{ID} und \texttt{INT} entsprechen, mit Hilfe der f\"ur Token vordefinierten
-      Variable \texttt{text} zur\"uck.  Beachten Sie, dass wir in Zeile 36 den Wert, der zu einer
-      Variablen in der Tabelle \texttt{varTable} gespeichert ist, auslesen und als Ergebnis zur\"uck
-      geben. 
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = 1,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = -0.2cm,
+                 xleftmargin   = 0.8cm,
+                 xrightmargin  = 0.8cm,
+               ]{python3}
+    from CalculatorLexer  import CalculatorLexer
+    from CalculatorParser import CalculatorParser
+    import antlr4
+    
+    def main():
+        parser        = CalculatorParser(None)
+        parser.Values = {}
+        line          = input('> ')
+        while line != '':
+            input_stream  = antlr4.InputStream(line)
+            lexer         = CalculatorLexer(input_stream)
+            token_stream  = antlr4.CommonTokenStream(lexer)
+            parser.setInputStream(token_stream)
+            parser.start()
+            line = input('> ')
+        return parser.Values
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A program to utilize the generated parser.}
+\label{fig:Calculator.ipynb}
+\end{figure}
+
+Next, we need a driver program to call the parser that \textsc{Antlr} generates from the grammar
+shown in Figure \ref{fig:Calculator.g4}.  Figure \ref{fig:Calculator.ipynb} shows how we can utilize the parser
+and scanner that is generated by \textsc{Antlr}.  
+\begin{enumerate}[(a)]
+\item Line 6 creates a parser.  Since the constructor \texttt{CalculatorParser} is called with the 
+      argument \texttt{None}, this parser is not yet connected to a scanner.
+\item Line 7 creates and sets the member variable \texttt{Values} for this parser.
+      This member variable is a dictionary.  This dictionary associates variables with their values.
+\item Line 8 reads a line of input.  As long as there is still input, the while loop
+      in line 9 will process this input.
+\item Line 10 transforms the string that has been read into a stream that is suitable for \textsc{Antlr}.
+\item Line 11 creates a scanner for this input stream.
+\item Line 12 transforms this input stream into a token stream via the previously generated scanner.
+\item Line 13 connects the token stream to the parser.
+\item Line 14 starts the parser.  The parser will now consume and process the given line of
+      input.  
+\item Line 15 reads the next line of input.  If a non-empty line is read, the while loop proceeds.
+\item When there is no more input, line 16 returns the dictionary associating variables with values. 
 \end{enumerate}
 
 \section{Erzeugung abstrakter Syntax-B\"aume}
@@ -707,8 +742,6 @@ that specifies the syntax of the programming language
       keyword.  Therefore, it is not possible to have a syntactical variable that is called
       ``\texttt{rule}''. 
 \end{enumerate}
-
-
 
 %%% Local Variables: 
 %%% mode: latex
