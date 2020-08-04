@@ -322,125 +322,20 @@ In this section we will develop a program that is able to convert an
 \textsc{Html} file into a pure text file.  This program is actually quite useful: Some years ago I
 had a student that was blind.  If he read a web page, he would use his Braille display.  For him,
 the \textsc{Html} markup was of no use so if the markup was removed, he could read web pages faster.
-
-The \textsl{JFlex} program shown in Figure \ref{fig:html2txt.jflex} works as follows:
-\begin{enumerate}
-\item First, the head of an  \textsc{Html} file is removed.  The head of an \textsc{Html} file is
-      enclosed in the  tags ``\texttt{<head>}'' and ``\texttt{</head>}''.
-\item Furthermore, the \textsl{JavaScript} that is part of the \textsc{Html} file is also removed.
-\item Finally, all  \textsc{Html} tags are removed.
-\end{enumerate}
-All this is done via the use of so called \blue{scanner states}.  In the example, there are two
-scanner states.  They are declared via the keyword
-``\texttt{\symbol{37}xstate}''. 
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    package Converter;
-    
-    %% 
-    
-    %class Html2Txt
-    %standalone
-    %line
-    %unicode
-    
-    %xstate header script
-    %%
-    
-    "<head>"            { yybegin(header);         }
-    "<script"[^>]+">"   { yybegin(script);         }
-    "<"[^>]+">"         { /* skip html tags */     }
-    \R+                 { System.out.print("\n");  }
-    &nbsp;              { System.out.print(" ");   }
-    &auml;              { System.out.print("\"a");   }
-    &ouml;              { System.out.print("\"o");   }
-    &uuml;              { System.out.print("\"u");   }
-    &Auml;              { System.out.print("\"A");   }
-    &Ouml;              { System.out.print("\"O");   }
-    &Uuml;              { System.out.print("\"U");   }
-    &szlig;             { System.out.print("{\ss}");   }
-    
-    <header>"</head>"   { yybegin(YYINITIAL);      }
-    <header>.|\R        { /* skip anything else */ }
-    
-    <script>"</script>" { yybegin(YYINITIAL);      }
-    <script>.|\R        { /* skip anything else */ }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Transformation einer \textsc{Html}-Datei in eine reine Text-Datei}
-\label{fig:html2txt.jflex}
-\end{figure}
-
-We proceed to discuss the details of the \textsl{JFlex} program shown in Figure \ref{fig:html2txt.jflex}.
-\begin{enumerate}
-\item Line  10 declares the scanner states \texttt{header} and \texttt{script}.  The keyword ``\texttt{\%xstate}''
-      tells us that these states are  \blue{exclusive} scanner states.  We will discuss the difference
-      between exclusive and inclusive states later.
-      The general syntax of state declaration is as follows:
-      \begin{enumerate}
-      \item A state declaration is either started with the keyword ``\texttt{\symbol{37}xstate}''
-            or the keyword ``\texttt{\symbol{37}state}''.  The keyword
-            ``\texttt{\symbol{37}xstate}'' declares \blue{exclusive} states, while
-            ``\texttt{\symbol{37}state}'' declares  \blue{inclusive} states.  The 
-            difference between these two kinds of states is discussed later.
-      \item After the keyword specifying the states as either inclusive or exclusive we have a list
-            of the names of the states.  These names are separated by blanks.
-      \end{enumerate}
-\item In line 13 we recognize the string  ``\texttt{<head>}''.  In this case, we execute the action 
-      ``\texttt{yybegin(header)}''.  This action switches the state of the scanner from the default
-      state ``\texttt{YYINITIAL}'' to  the state ``\texttt{header}''.   
-      As we had declared the state \texttt{header} to be an  exclusive state, the scanner is only
-      able to execute those rules that are marked with the prefix ``\texttt{<header>}''.
-      If the state had been declared as an inclusive state, then all rules that are not prefixed
-      with a state would also be applicable.  
-      
-      We find rules for the state ``\texttt{header}'' in the lines  26 and 27.
-\item Line 14 switches to the state ``\texttt{script}'' if the scanner encounters an opening
-      \texttt{script} tag.
-\item Line  15 reads all remaining tags.  Since the action is empty, these tags are removed.
-\item Line 16 replaces the string  ``\texttt{\&nbsp;}'' by a blank.
-\item The following lines replaces the  \textsc{Html} representation of strange German characters with
-      the corresponding characters.
-\item Line 26 is declared to be a rule for the state ``\texttt{header}''.  Hence, this rule is only
-      active if the scanner is in the state ``\texttt{header}''.  This rule searches for the closing tag
-      ``\texttt{</head>}''.  If this tag is found, the scanner changes back into the default state
-      \texttt{YYINITIAL}.  In the default state, the scanner uses only those rules that are not
-      prefixed with a state. 
-\item Line 27 contains another rule that is only used in the state  ``\texttt{header}''.
-      This rule reads an arbitrary character, which is not processed further and hence is simply
-      discarded. 
-\item The lines  29 and 30 contain similar rules that are used in the state
-      ``\texttt{script}''.
-\end{enumerate}
-\pagebreak
-
-\exerciseEng
-Some programming languages allow nested comments.  Create a \textsl{JFlex} program that is able to
-remove nested comments of the form
+In order to develop the program to remove \textsc{Html} tags, we have to use \blue{scanner states}
+\index{scanner states}.  The idea behind scanner states is that the scanner can use different regular
+expressions for different parts of the input.  For example, the header of an \textsc{Html} file, i.e.~the part
+that is between the \texttt{<head>} and \texttt{</head>} tags, can just be
+skipped.  On the other hand, the text inside the \texttt{<body>} and \texttt{</body>} tags needs to be echoed
+after any remaining tags have been removed.  The easiest way to achieve this is by using scanner states and
+switching between them.  The following notebook shows how this can be done:
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{/*} $\cdots$ \texttt{*/}
-\\[0.2cm]
-from a given program.  Furthermore, assume that the program might contains strings that are
-contained in double quotes.  Now if either the character sequence ``\texttt{/*}'' or the character
-sequence ``\texttt{*/}'' occurs inside a string, then these character sequences should not be
-interpreted as comment delimiters. 
-\eox
-\vspace*{0.3cm}
-
-The next exercise is meant to improve the fun factor of my lecture.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Html2Text.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Html2Text.ipynb}
+\\
 
 \exerciseEng
-The purpose of this exercise is to transform \href{http://www.latex-project.org}{\LaTeX} into 
+The purpose of the following exercise is to transform \href{http://www.latex-project.org}{\LaTeX} into 
 \href{https://www.tutorialspoint.com/mathml/index.htm}{\textsc{MathML}}.  \LaTeX\ is a document markup language
 that is especially well suited to present text that contains mathematical formul\ae.  In fact, these
 lecture notes have all been typeset using \LaTeX.  \textsc{MathML} is the part of \textsc{Html} that
