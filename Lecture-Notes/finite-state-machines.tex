@@ -863,10 +863,10 @@ The \textsl{Jupyter notebook}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/NFA-2-DFA.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/NFA-2-DFA.ipynb}
 \\[0.2cm]
 contains a program that takes a non-deterministic \textsc{Fsm} $F$ and computes the deterministic \textsc{Fsm} $\mathtt{det}(F)$.
-
+\pagebreak
 
 \section{From Regular Expressions to Deterministic Finite State Machines}
-In this section we show how we can construct a non-deterministic \textsc{Fsm} $A(r)$ that accepts the same language as
+In this section we construct a non-deterministic \textsc{Fsm} $A(r)$ that accepts the same language as
 a given regular expression $r$, i.e. we will have
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -910,7 +910,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \label{fig:aEpsilon.eps}
       \end{figure}
       Figure \ref{fig:aEpsilon.eps} shows the \textsc{Fsm} $\varepsilon)$.
-      We have that $L\bigl(A(\emptyset)\bigr) = \{\texttt{''}\}$, i.e. the automaton only accepts the empty string. 
+      We have that $L\bigl(A(\emptyset)\bigr) = \{\texttt{''}\}$, i.e.~the automaton only accepts the empty string. 
 \item For a letter $c \in \Sigma$ the \textsc{Fsm} $A(c)$ is defined as 
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -924,7 +924,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \label{fig:aChar.eps}
       \end{figure}
       Figure \ref{fig:aChar.eps} shows $A(c)$.
-      We have that $L\bigl(A(c)\bigr) = \{c\}$, i.e. the automaton only accepts the character $c$. 
+      We have that $L\bigl(A(c)\bigr) = \{c\}$, i.e.~the automaton only accepts the character $c$. 
 \item In order to define the \textsc{Fsm} $A(r_1 \cdot r_2)$ for the concatenation $r_1 \cdot r_2$ 
       we assume that the states in the \textsc{Fsm}s  $A(r_1)$ and $A(r_2)$ are different. 
       This can always be achieved by renaming the states of $A(r_2)$.
@@ -1050,10 +1050,6 @@ expression $r$.  Then we can define $A(r)$ as follows:
       correct!
 \end{enumerate}
 
-The \textsl{Jupyter notebook}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Regexp-2-NFA.ipynb}{regexp-2-NFA.ipynb} 
-implements the theory discussed in this section.
-
 \exerciseEng
 Construct a non-deterministic \textsc{Fsm} that accepts the language specified by the regular expression
 \\[0.2cm]
@@ -1071,532 +1067,324 @@ Construct a non-deterministic \textsc{Fsm} for the regular expression
 $(\texttt{a} + \texttt{b}) \cdot \texttt{a}^* \cdot \texttt{b}$.  
 \eox
 
+\subsection{Implementation}
+The \textsl{Jupyter notebook}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Regexp-2-NFA.ipynb}{Regexp-2-NFA.ipynb} 
+implements the theory discussed in this section.
 
 
-\section{\"Ubersetzung eines \textsc{EA} in einen regul\"aren Ausdruck}
-Wir runden die Theorie ab, indem wir zeigen, dass sich zu jedem deterministischen endlichen
-Automaten $A$ ein regul\"arer Ausdruck $r(A)$ angeben l\"asst, der dieselbe Sprache spezifiziert,
-die von dem Automaten $A$ akzeptiert wird, f\"ur den also
+
+\section{Translating a Deterministic \textsc{Fsm} into a Regular Expression}
+In this last section we start with a deterministic \textsc{Fsm} $F$ and construct a regular expression $r$
+such that we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$L\bigl(r(A)\bigr) = L(A)$
+$L(r) = L(F)$. 
 \\[0.2cm]
-gilt.  Der  Automat $A$ habe die Form
+We assume that the \textsc{Fsm} $F$ is given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $A = \langle \{ q_0, q_1, \cdots, q_n \}, \Sigma, \delta, q_0, F \rangle$.
 \\[0.2cm]
-F\"ur jedes Paar von Zust\"anden $\pair(p_1,p_2) \in Q \times Q$ definieren wir einen regul\"aren Ausdruck
-$r(p_1, p_2)$.   Die Idee bei dieser Definition ist, dass der regul\"are Ausdruck
-$r(p_1, p_2)$ alle die Strings $w$ spezifiziert, die den Automaten $A$ von dem Zustand
-$p_1$ in den Zustand $p_2$ \"uberf\"uhren, formal gilt:
+For every pair of states $\pair(p_1,p_2) \in Q \times Q$ we define a regular expression
+$r(p_1, p_2)$ such that $r(p_1, p_2)$ describes those strings $w$ that take the \textsc{Fsm} $F$ from the state
+$p_1$ to the state $p_2$, i.e.~we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $L\bigl(r(p_1, p_2)\bigr) = 
-  \bigl\{ w \in \Sigma^* \mid \pair(p_1,w) \leadsto^* \pair(p_2, \varepsilon) \bigr\}$
+  \bigl\{ w \in \Sigma^* \mid \pair(p_1,w) \leadsto^* \pair(p_2, \varepsilon) \bigr\}$.
 \\[0.2cm]  
-Die Definition der regul\"aren Ausdr\"ucke erfolgt \"uber einen Trick: Wir definieren f\"ur
-$k=0,\cdots,n+1$ regul\"are Ausdr\"ucke $r^{(k)}(p_1, p_2)$.   Diese regul\"are Ausdr\"ucke
-beschreiben gerade die Strings, die den Automaten $A$ von dem Zustand
-$p_1$ in den Zustand $p_2$ \"uberf\"uhren, \underline{ohne} dass dabei zwischendurch ein
-Zustand aus der Menge 
+The definition of $r(p_1, p_2)$ is done by first defining auxiliary regular expressions 
+$r^{(k)}(p_1, p_2)$ for all $k =0,\cdots,n+1$.   The regular expression $r^{(k)}(p_1, p_2)$ specifies those
+strings that take the \textsc{Fsm} $F$ form the state
+$p_1$ to the state $p_2$ without visiting a state from the set
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q_k := \bigl\{ q_i \mid i \in \{k,\cdots,n \}  \bigl\} = \{ q_k, \cdots, q_n \}$ 
+$Q_k := \bigl\{ q_i \mid i \in \{k,\cdots,n \}  \bigl\} = \{ q_k, \cdots, q_n \}$.
 \\[0.2cm]
-besucht wird.  Die Menge $Q_k$ enth\"alt also nur die Zust\"ande, deren Index gr\"o{\ss}er oder
-gleich $k$ ist.  Formal definieren wir dazu die dreistellige Relation 
+To this end we define the ternary relation
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mapsto_k \;\subseteq\; (Q \times \Sigma^* \times Q)$.
 \\[0.2cm]
-F\"ur zwei Zust\"ande $p, q \in Q$ und einen String $w$ soll 
+Given two states $p, q \in Q$ and a string $w$ we have that
 \\[0.2cm]
 \hspace*{1.3cm}
 $p \stackrel{w}{\mapsto}_k q$
 \\[0.2cm]
-genau dann gelten, wenn der Automat $A$ von dem Zustand $p$ beim Lesen des Wortes $w$ in
-den Zustand $q$ \"ubergeht, ohne dabei \underline{zwischendurch} in einen Zustand aus der
-Menge $Q_k$ zu wechseln.  Mit ``zwischendurch'' ist hier gemeint, dass die Zust\"ande $p$
-und $q$ sehr wohl in der Menge $Q_k$ liegen k\"onnen, nur die Zwischenzust\"ande d\"urfen nicht in $Q_k$
-liegen.  Die formale Definition der Relation  
-$p \stackrel{w}{\mapsto}_k q$ erfolgt durch Induktion nach der L\"ange des Wortes $w$:
+holds iff the \textsc{Fsm} $F$ switches from the state $p$ to the state $q$ when it reads the string $w$
+but on reading $w$ does not switch to a state from the set
+$Q_k$ \blue{inbetween}.  Here, ``inbetween'' specifies that the states $p$ and $q$ may well be elements of the set
+$Q_k$, only the states between $p$ and $q$ must not be in $Q_k$.
+The formal definition of $p \stackrel{w}{\mapsto}_k q$ is done by induction on  $w$:
 \begin{enumerate}
-\item[I.A.:] $|w| \leq 1$.  Im Induktions-Anfang haben wir zwei F\"alle:
+\item[B.C.:] $|w| \leq 1$.  Then there are two cases:
   \begin{enumerate}
   \item $p \stackrel{\varepsilon}{\mapsto}_k p$,
 
-        denn mit dem leeren Wort kann von $p$ aus nur der Zustand $p$ erreicht
-        werden.
+        because when the empty string is read we can only reach the state $p$ if we start in the state $p$.
   \item $\delta(p, c) = q \;\Rightarrow\; p \stackrel{c}{\mapsto}_k q$,
 
-        denn wenn der Automat beim Lesen des Buchstabens $c$ von dem Zustand $p$ direkt
-        in den Zustand $q$ \"ubergeht, dann werden zwischendurch keine Zust\"ande aus $Q_k$
-        besucht, denn es werden \"uberhaupt keine Zust\"ande zwischendurch besucht.
+        because when the \textsc{Fsm} reads the character $c$ and switches from state $p$ directly
+        to the state $q$, there are no states `ìnbetween''.
   \end{enumerate}
-\item[I.S.:] $w = cv$ mit $|v| \geq 1$.
+\item[I.S.:] $w = cv$ where $|v| \geq 1$.
 
+             Here we have:
              \hspace*{1.3cm}
             $p \stackrel{c}{\mapsto} q \wedge q \not\in Q_k \wedge q \stackrel{v}{\mapsto}_k r
               \Rightarrow p \stackrel{cv}{\mapsto}_k r$.
-
-             Wenn der Automat $A$ von dem Zustand $p$ durch Lesen des Buchstabens $c$
-             in einen  Zustand $q \notin Q_k$ \"ubergeht und wenn der Automat dann von
-             diesem Zustand $q$ beim Lesen von $v$ in den Zustand $r$ \"ubergehen kann, ohne
-             dabei Zust\"ande aus $Q_k$ zu benutzen, dann geht der Automat beim Lesen von
-             $cv$ aus dem Zustand $p$ in den Zustand $r$ \"uber,
-             ohne zwischendurch in Zust\"ande aus $Q_k$ zu wechseln.
 \end{enumerate}
-Damit k\"onnen wir nun f\"ur alle $k=0,\cdots,n+1$ die regul\"aren Ausdr\"ucke
-$r^{(k)}(p_1, p_2)$ definieren.  Wir werden diese regul\"aren Ausdr\"ucke so definieren, dass
-hinterher
+Now we are ready to define the regular expressions $r^{(k)}(p_1, p_2)$ for all $k=0,\cdots,n+1$.
+This definition will be done such that we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$L\bigl(r^{(k)}(p_1, p_2)\bigr) = \bigl\{ w \in \Sigma^* \mid p_1 \stackrel{w}{\mapsto}_k p_2 \bigr\}$
+$L\bigl(r^{(k)}(p_1, p_2)\bigr) = \bigl\{ w \in \Sigma^* \mid p_1 \stackrel{w}{\mapsto}_k p_2 \bigr\}$.
 \\[0.2cm]
-gilt.
-Die Definition der regul\"aren Ausdr\"ucke $r^{(k)}(p_1, p_2)$ erfolgt durch eine Induktion nach $k$.
+The definition of the regular expressions $r^{(k)}(p_1, p_2)$ is done by induction on $k$.
 \begin{enumerate}
-\item[I.A.:] $k = 0$.  
+\item[B.C.:] $k = 0$.  
 
-  Dann gilt $Q_0 = Q$, die Menge $Q_0$ enth\"alt also alle Zust\"ande
-  und damit d\"urfen wir, wenn wir vom Zustand $p_1$ in den Zustand $p_2$ \"ubergehen,
-  zwischendurch \"uberhaupt keine Zust\"ande besuchen.
-
-  Wir betrachten zun\"achst den Fall $p_1 \not= p_2$.  Dann kann $p_1 \stackrel{w}{\mapsto}_0 p_2$ nur dann gelten, wenn $w$ aus einem
-  einzigen Buchstaben besteht.   Es sei
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $\{ c_1, \cdots, c_l \} := \{ c \in \Sigma \mid \delta(p_1,c) = p_2 \}$
-  \\[0.2cm]
-  die Menge aller Buchstaben, die den Zustand $p_1$ in den Zustand $p_2$ \"uberf\"uhren.
-  Falls diese Menge nicht leer ist, setzen wir 
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $r^{(0)}(p_1, p_2) := c_1 + \cdots + c_l$. 
-  \\[0.2cm]
-  Ist die obige Menge leer, so gibt es keinen direkten \"Ubergang von
-  $p_1$ nach $p_2$ und wir setzen 
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $r^{(0)}(p_1, p_2) := \emptyset$.
-
-  Wir betrachten jetzt den Fall $p_1 = p_2$.  Definieren wir wieder
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $\{ c_1, \cdots, c_l \} := \{ c \in \Sigma \mid \delta(p_1,c) = p_1 \}$
-  \\[0.2cm]
-  als die Menge aller Buchstaben, die den Zustand $p_1$ in sich selbst \"uberf\"uhren,
-  so k\"onnen wir in dem Fall, dass diese Menge nicht leer ist, 
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $r^{(0)}(p_1, p_1) := c_1 + \cdots + c_l + \varepsilon$,
-  \\[0.2cm]
-  setzen.  Ist die obige Menge leer, so gibt es nur den \"Ubergang mit dem leeren Wort
-  von $p_1$ nach $p_1$ und wir setzen 
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $r^{(0)}(p_1, p_1) := \varepsilon$.
+  Then we have $Q_0 = Q$ and therefore the set contains $Q_0$ all states.
+  Therefore, when the \textsc{Fsm} switches from the state $p_1$ to the state $p_2$ it must not visit any
+  states inbetween.  There are two cases.
+  \begin{enumerate}
+  \item $p_1 \not= p_2$:  Then we can have  $p_1 \stackrel{w}{\mapsto}_0 p_2$ only if $w$ contains but a
+        single letter.  Define
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $\{ c_1, \cdots, c_l \} := \{ c \in \Sigma \mid \delta(p_1,c) = p_2 \}$
+        \\[0.2cm]
+        as the set of all letter that take the \textsc{Fsm} from the state $p_1$ to the state $p_2$.
+        If this set is not empty we define 
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $r^{(0)}(p_1, p_2) := c_1 + \cdots + c_l$. 
+        \\[0.2cm]
+        If this set is empty, then there is no direct transition from  $p_1$ to $p_2$ and we define
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $r^{(0)}(p_1, p_2) := \emptyset$.
+  \item $p_1 = p_2$:  Again we define
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $\{ c_1, \cdots, c_l \} := \{ c \in \Sigma \mid \delta(p_1,c) = p_1 \}$.
+        \\[0.2cm]
+        If this set is not empty we have
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $r^{(0)}(p_1, p_1) := c_1 + \cdots + c_l + \varepsilon$.
+        \\[0.2cm]
+        Otherwise we have
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        $r^{(0)}(p_1, p_1) := \varepsilon$.
+   \end{enumerate}
 \item[I.S.:] $k \mapsto k+1$.  
 
-  Bei dem \"Ubergang von $r^{(k)}(p_1, p_2)$ zu  $r^{(k+1)}(p_1, p_2)$ d\"urfen wir zus\"atzlich
-  den Zustand $q_k$ benutzen, denn $q_k$ ist das einzige Element der Menge $Q_k$, das
-  nicht in der Menge $Q_{k+1}$ enthalten ist.  Wird ein String $w$ gelesen, der
-  den Zustand $p_1$ in den Zustand $p_2$ \"uberf\"uhrt, ohne dabei zwischendurch in einen
-  Zustand aus der Menge $Q_{k+1}$ zu wechseln, so gibt es zwei M\"oglichkeiten:
+  When compared to the regular expression $r^{(k)}(p_1, p_2)$,
+  the regular expression  $r^{(k+1)}(p_1, p_2)$ is allowed to use the state
+  $q_k$, because $q_k$ is the only elements of the set $Q_k$ that is not a member of the set $Q_{k+1}$.  
+  If the \textsc{Fsm} reads a string $w$ that switches the state $p_1$ to the state $p_2$ without switching into a state
+  from the set $Q_{k+1}$, then there are two cases.
   \begin{enumerate}
-  \item Es gilt bereits $p_1 \stackrel{w}{\mapsto}_k p_2$.
-  \item Der String $w$ kann so in mehrere Teile $w_1 s_1\cdots s_l w_2$ aufgeteilt werden,
-        dass gilt
+  \item We already have $p_1 \stackrel{w}{\mapsto}_k p_2$.
+  \item The string $w$ can be written as  $w = w_1 s_1\cdots s_l w_2$ where we have:
         \begin{itemize}
         \item $p_1 \stackrel{w_1}{\mapsto}_k q_k$,
-
-               von dem Zustand $p_1$ gelangt der Automat also beim Lesen von $w_1$
-               zun\"achst in den Zustand $q_k$, wobei zwischendurch der Zustand
-               $q_k$ nicht benutzt wird.
-        \item $q_k \stackrel{s_i}{\mapsto}_k q_k$ \quad f\"ur alle $i = \{ 1, \cdots, l\}$,
-
-              von dem Zustand $q_k$ wechselt der Automat beim Lesen der Teilstrings
-              $s_i$ wieder in den Zustand $q_k$.
-        \item $q_k \stackrel{w_2}{\mapsto}_k p_2$,
-
-              schlie{\ss}lich wechselt der Automat von dem Zustand $q_k$ in den Zustand
-              $p_2$, wobei der Rest $w_2$ gelesen wird.
+        \item $q_k \stackrel{s_i}{\mapsto}_k q_k$ \quad for all $i = \{ 1, \cdots, l\}$,
+        \item $q_k \stackrel{w_2}{\mapsto}_k p_2$.
         \end{itemize}
-        Daher definieren wir
+        Therefore we define
         \\[0.2cm]
         \hspace*{1.3cm}
         $r^{(k+1)}(p_1,p_2) := 
          r^{(k)}(p_1,p_2) + 
          r^{(k)}(p_1,q_k) \cdot \bigl(r^{(k)}(q_k,q_k)\bigr)^* \cdot r^{(k)}(q_k,p_2)$.
-        \\[0.2cm]
-        Dieser Ausdruck kann wie folgt gelesen werden:  Um von $p_1$ nach $p_2$ zu kommen,
-        ohne dabei zwischendurch Zust\"ande aus $Q_{k+1}$ zu benutzen, kann der Automat entweder direkt
-        von $p_1$ nach $p_2$ gelangen, ohne zwischendurch Zust\"ande aus  $Q_k$ zu benutzen, was dem Ausdruck 
-        $r^{(k)}(p_1,p_2)$ entspricht, oder aber der Automat wechselt von $p_1$ ein erstes Mal
-        in den Zustand $q_k$, was den Ausdruck $r^{(k)}(p_1,q_k)$ erkl\"art, wechselt dann beliebig oft
-        von $q_k$ nach $q_k$,  was den Ausdruck  $\bigl(r^{(k)}(q_k,q_k)\bigr)^*$ erkl\"art und wechselt
-        schlie{\ss}lich von $q_k$ in den Zustand $p_2$, wof\"ur der Ausdruck $r^{(k)}(q_k,p_2)$ steht. 
   \end{enumerate}  
 \end{enumerate}
-Nun haben wir alles Material zusammen, um die Ausdr\"ucke $r(p_1,p_2)$ definieren zu k\"onnen.
-Wir setzen 
+Now we are ready to define the regular expressions $r(p_1,p_2)$ for all states $p_1$ and $p_2$:
 \\[0.2cm]
 \hspace*{1.3cm}
 $r(p_1,p_2) := r^{(n+1)}(p_1,p_2)$. 
 \\[0.2cm]
-Dieser regul\"are Ausdruck beschreibt die W\"orter, die den Automaten von dem Zustand $p_1$ in
-den Zustand $p_2$ \"uberf\"uhren, ohne dass der Automat dabei in einen Zustand der Menge
-$Q_{n+1}$ wechselt.   Nun gilt aber
+This regular expression specifies all strings that take the \textsc{Fsm} from the state
+$p_1$ to the state $p_2$ without using any state from the set 
+$Q_{n+1}$ inbetween.   Since we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q_{n+1} = \{ q_i | i \in \{0,\cdots,n \} \wedge i \geq n+1 \} = \{\}$,
+$Q_{n+1} = \{ q_i | i \in \{0,\cdots,n \} \wedge i \geq n+1 \} = \{\}$
 \\[0.2cm]
-die Menge ist also leer!  Folglich werden durch den regul\"aren Ausdruck $r^{(n+1)}(p_1,p_2)$
-\"uberhaupt keine Zust\"ande ausgeschlossen:  Der Ausdruck beschreibt also genau die Strings,
-die den Zustand $p_1$ in den Zustand $p_2$ \"uberf\"uhren, es gilt also
-\\[0.2cm]
-\hspace*{1.3cm}
-$r^{(n+1)}(p_1,p_2) = r(p_1,p_2)$.
-\\[0.2cm]
-Um nun einen regul\"aren Ausdruck konstruieren zu k\"onnen, der die Sprache des Automaten $A$
-beschreibt, schreiben wir die Menge $F$ der akzeptierenden Zust\"ande von $A$ als
+we know that $Q_{n+1}$ is empty.
+Therefore the regular expression $r^{(n+1)}(p_1,p_2)$
+does not exclude any states when switching from
+state $p_1$ to the state $p_2$.
+
+In order to construct a regular expression that specifies the language accepted by a deterministic \textsc{Fsm}
+$F$ we write the set $A$ of accepting states of $F$ as
 \\[0.2cm]
 \hspace*{1.3cm}
-$F = \{ t_1, \cdots, t_m \}$
+$A = \{ t_1, \cdots, t_m \}$.
 \\[0.2cm]
-und definieren den regul\"aren Ausdruck $r(A)$ als
+Then the regular expression $r(A)$ is defined as
 \\[0.2cm]
 \hspace*{1.3cm}
 $r(A) := r(q_0, t_1) + \cdots + r(q_0, t_m)$.
 \\[0.2cm]
-Dieser Ausdruck beschreibt genau die Strings, die den Automaten $A$ aus dem Start-Zustand
-in einen der akzeptierenden Zust\"ande \"uberf\"uhren.
+This regular expression specifies those strings that take the \textsc{Fsm} $F$ from its start state $q_0$ into
+any of its accepting states.
 \qed
-\vspace*{0.3cm}
 
 
-\noindent
-Damit sehen wir jetzt, dass die Konzepte ``\emph{deterministischer endlicher Automat}'' und
-``\emph{regul\"arer Ausdruck}'' \"aquivalent sind.
+\exerciseEng
+Take the \textsc{Fsm} shown in Figure \ref{fig:abstara.dot} and construct an equivalent regular expression.
+
+
+\solutionEng
+The \textsc{Fsm} has two states: $0$ and $1$.  We start by computing the regular expressions
+$r^{(k)}(i,j)$ for all $i,j\in\{0,1\}$ for  $k =0$, $1$ und $2$:
 \begin{enumerate}
-\item Jeder deterministische endliche Automat kann in einen \"aquivalenten regul\"aren
-      Ausdruck \"ubersetzt werden.
-\item Jeder regul\"are Ausdruck kann in einen \"aquivalenten nicht-deterministischen endlichen Automaten
-      transformiert werden.
-\item Ein nicht-deterministischer endlicher Automat l\"asst sich durch die
-      Teilmengen-Konstruktion in einen endlichen Automaten \"uberf\"uhren.
-\end{enumerate}
-
-\exercise
-Konstruieren Sie f\"ur den in Abbildung \ref{fig:abstara.dot} gezeigten endlichen Automaten einen
-\"aquivalenten regul\"aren Ausdruck.  
-
-
-\solution
-Der Automat hat die Zust\"ande $0$ und $1$.  Wir berechnen zun\"achst die regul\"aren Ausdr\"ucke
-$r^{(k)}(i,j)$ f\"ur alle $i,j\in\{0,1\}$ der Reihe nach f\"ur die Werte $k =0$, $1$ und $2$:
-\begin{enumerate}
-\item F\"ur $k = 0$ finden wir:
+\item For $k = 0$ we have:
       \begin{enumerate}
       \item $r^{(0)}(0, 0) = \texttt{a} + \varepsilon$,
       \item $r^{(0)}(0, 1) = \texttt{b}$,
       \item $r^{(0)}(1, 0) = \emptyset$,
       \item $r^{(0)}(1, 1) = \texttt{a} + \varepsilon$.
       \end{enumerate}
-\item F\"ur $k=1$ haben wir:
+\item For $k=1$ we have:
       \begin{enumerate}
-      \item F\"ur $r^{(1)}(0, 0)$ finden wir:
+      \item For $r^{(1)}(0, 0)$ we have:
             \begin{eqnarray*}
                   r^{(1)}(0, 0) 
             & = & r^{(0)}(0, 0) + 
                   r^{(0)}(0, 0) \cdot \bigl(r^{(0)}(0, 0)\bigr)^* \cdot r^{(0)}(0, 0) \\
-            & = & r^{(0)}(0, 0) \cdot \bigl(r^{(0)}(0, 0)\bigr)^*
+            & \doteq & r^{(0)}(0, 0) \cdot \bigl(r^{(0)}(0, 0)\bigr)^*
             \end{eqnarray*}
-             wobei wir im letzten Schritt die f\"ur regul\"are Ausdr\"ucke allgemeing\"ultige Umformung
+             In the last step we used the fact that 
              \\[0.2cm]
              \hspace*{1.3cm}
              $
              \begin{array}[t]{lcl}
-               r + r \cdot r^* \cdot r & = & r \cdot (\varepsilon + r^* \cdot r) \\
-                                       & = & r \cdot r^*
+               r + r \cdot r^* \cdot r & \doteq & r \cdot (\varepsilon + r^* \cdot r) \\
+                                       & \doteq & r \cdot r^*
              \end{array}
              $
              \\[0.2cm]
-             verwendet haben.
-             Setzen wir f\"ur $r^{(0)}(0, 0)$ den oben gefundenen Ausdruck $\texttt{a} + \varepsilon$ ein, 
-             so erhalten wir 
+             to simplify the result.
+             If we substitute for $r^{(0)}(0, 0)$ the expression $\texttt{a} + \varepsilon$  
+             we get 
              \\[0.2cm]
              \hspace*{1.3cm}
-             $r^{(1)}(0, 0) = (\texttt{a} + \varepsilon)\cdot (\texttt{a} + \varepsilon)^*$.
+             $r^{(1)}(0, 0) \doteq (\texttt{a} + \varepsilon)\cdot (\texttt{a} + \varepsilon)^*$.
              \\[0.2cm]
-             Wegen $(\texttt{a} + \varepsilon)\cdot (\texttt{a} + \varepsilon)^* = \texttt{a}^*$ haben
-             wir insgesamt
+             As we have $(\texttt{a} + \varepsilon)\cdot (\texttt{a} + \varepsilon)^* \doteq \texttt{a}^*$ we have
              \\[0.2cm]
              \hspace*{1.3cm}
-             $r^{(1)}(0, 0) = \texttt{a}^*$.
-      \item F\"ur $r^{(1)}(0, 1)$ finden wir:
+             $r^{(1)}(0, 0) \doteq \texttt{a}^*$.
+      \item For $r^{(1)}(0, 1)$ we have:
             \begin{eqnarray*}
                   r^{(1)}(0, 1) 
-            & = & r^{(0)}(0, 1) + 
+            & \doteq & r^{(0)}(0, 1) + 
                   r^{(0)}(0, 0) \cdot \bigl(r^{(0)}(0, 0)\bigr)^* \cdot r^{(0)}(0, 1) \\
-            & = & \texttt{b} + 
+            & \doteq & \texttt{b} + 
                   (\texttt{a} + \varepsilon) \cdot (\texttt{a} + \varepsilon)^* \cdot \texttt{b} \\
-            & = & \texttt{b} + \texttt{a}^* \cdot \texttt{b} \\
-            & = & (\varepsilon + \texttt{a}^*) \cdot \texttt{b} \\
-            & = & \texttt{a}^* \cdot \texttt{b} 
+            & \doteq & \texttt{b} + \texttt{a}^* \cdot \texttt{b} \\
+            & \doteq & (\varepsilon + \texttt{a}^*) \cdot \texttt{b} \\
+            & \doteq & \texttt{a}^* \cdot \texttt{b} 
         \end{eqnarray*}
-      \item F\"ur $r^{(1)}(1, 0)$ finden wir:
+      \item For $r^{(1)}(1, 0)$ we have:
             \begin{eqnarray*}
                   r^{(1)}(1, 0) 
-            & = & r^{(0)}(1, 0) + 
+            & \doteq & r^{(0)}(1, 0) + 
                   r^{(0)}(1, 0) \cdot \bigl(r^{(0)}(0, 0)\bigr)^* \cdot r^{(0)}(0, 0) \\
-            & = & \emptyset + \emptyset \cdot (\texttt{a} + \varepsilon)^* \cdot (\texttt{a} + \varepsilon) \\
-            & = & \emptyset
+            & \doteq & \emptyset + \emptyset \cdot (\texttt{a} + \varepsilon)^* \cdot (\texttt{a} + \varepsilon) \\
+            & \doteq & \emptyset
             \end{eqnarray*}
-      \item F\"ur $r^{(1)}(1, 1)$ finden wir
+      \item For $r^{(1)}(1, 1)$ we have
             \begin{eqnarray*}
                   r^{(1)}(1, 1)
-            & = & r^{(0)}(1, 1) + 
+            & \doteq & r^{(0)}(1, 1) + 
                   r^{(0)}(1, 0) \cdot \bigl(r^{(0)}(0, 0)\bigr)^* \cdot r^{(0)}(0, 1) \\
-            & = & (\texttt{a} + \varepsilon) + 
+            & \doteq & (\texttt{a} + \varepsilon) + 
                   \emptyset \cdot (\texttt{a} + \varepsilon)^* \cdot \texttt{b} \\
-            & = & (\texttt{a} + \varepsilon) + \emptyset  \\
-            & = & \texttt{a} + \varepsilon  
+            & \doteq & (\texttt{a} + \varepsilon) + \emptyset  \\
+            & \doteq & \texttt{a} + \varepsilon  
             \end{eqnarray*}
       \end{enumerate}
-\item F\"ur $k=2$ m\"ussen wir lediglich den regul\"aren Ausdruck $r^{(2)}(0, 1)$ berechnen.  Es gilt
+\item For $k=2$ we only have to compute the regular expression $r^{(2)}(0, 1)$:
             \begin{eqnarray*}
                   r^{(2)}(0, 1)
-            & = & r^{(1)}(0, 1) + 
+            & \doteq & r^{(1)}(0, 1) + 
                   r^{(1)}(0, 1) \cdot \bigl(r^{(1)}(1, 1)\bigr)^* \cdot r^{(1)}(1, 1) \\
-            & = & \texttt{a}^* \cdot \texttt{b} + 
+            & \doteq & \texttt{a}^* \cdot \texttt{b} + 
                   \texttt{a}^* \cdot \texttt{b} \cdot (\texttt{a} + \varepsilon)^* \cdot (\texttt{a} + \varepsilon) \\
-            & = & \texttt{a}^* \cdot \texttt{b} + \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^* \\
-            & = & \texttt{a}^* \cdot \texttt{b} \cdot (\varepsilon + \texttt{a}^*) \\
-            & = & \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^*.
+            & \doteq & \texttt{a}^* \cdot \texttt{b} + \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^* \\
+            & \doteq & \texttt{a}^* \cdot \texttt{b} \cdot (\varepsilon + \texttt{a}^*) \\
+            & \doteq & \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^*.
         \end{eqnarray*}
 \end{enumerate}
-Da der Zustand 0 der Start-Zustand und der Zustand 1 der einzige akzeptierende Zustand
-ist, k\"onnen wir nun den regul\"aren Ausdruck $r(A)$ angeben: 
+As the state 0 is the start state and the state $1$ is the only accepting state we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$r(A) = r^{(2)}(0, 1) = \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^*$.
+$r(F) = r^{(2)}(0, 1) \doteq \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^*$.
 \\[0.2cm]
-Dieses Ergebnis, das wir m\"uhevoll abgeleitet haben, h\"atten wir auch durch einen einfachen
-Blick auf den Automaten erhalten k\"onnen, aber die oben gezeigte Rechnung formalisiert das,
-was der ge\"ubte Betrachter unmittelbar erkennt und der beschriebene Algorithmus hat den
-Vorteil, dass er sich implementieren l\"asst.
 \qed
 
-\exercise
-Konstruieren Sie f\"ur den in Abbildung \ref{fig:exercise-13.eps} auf Seite
-\pageref{fig:exercise-13.eps} gezeigten endlichen Automaten einen
-regul\"aren Ausdruck, der dieselbe Sprache beschreibt, die von dem abgebildeten Automaten erkannt
-wird.   
+\exerciseEng
+Take the \textsc{Fsm} shown in Figure \ref{fig:exercise-13.eps} on page
+\pageref{fig:exercise-13.eps} and construct a regular expression specifying the same language as this
+\textsc{Fsm}.
 
 \begin{figure}[!ht]
   \centering
 \epsfig{file=Abbildungen/exercise-13.eps, scale=0.5}
-\caption{Ein deterministischer endlicher Automat.}
+\caption{A deterministic finite state machine.}
 \label{fig:exercise-13.eps}
 \end{figure}
 
+\subsection{Implementation}
+The \textsl{Jupyter notebook} 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/DFA-2-RegExp.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/DFA-2-RegExp.ipynb}
+\\[0.2cm]
+contains a program that takes a deterministic \textsc{Fsm} $F$ and computes a regular expression $r$ such that
+$r$ specifies the language accepted by $F$.
 
-\subsection{Implementing the Conversion of \textsc{FSM}s into Regular Expressions}
-Figure \ref{fig:dfa-2-regexp.stlx} on page \pageref{fig:dfa-2-regexp.stlx} shows how to
-implement the conversion of a finite state machine  into a regular expression.  We discuss
-the details of this implementation next.
 
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    dfa2RegExp := procedure(dfa) {
-        [states, sigma, delta, q0, accepting] := dfa;
-        return regexpSum({ rpq(q0, p, sigma, delta, states) : p in accepting });
-    };
-    regexpSum := procedure(s) {
-        match (s) {
-            case {}:
-                 return 0;
-            case { r }:
-                 return r;
-            case { r | rs }:
-                 return Or(r, regexpSum(rs));
-        }
-    };
-    rpq := procedure(p1, p2, sigma, delta, allowed) {
-        match (allowed) {
-            case {}: 
-                 allChars := { c : c in sigma | delta(p1, c) == p2 };
-                 sum := regexpSum(allChars);
-                 if (p1 == p2) {
-                     if (allChars == {}) {
-                         return "";
-                     } else {
-                         return Or("", sum);
-                     }
-                 } else {
-                     return sum;
-                 }
-            case { qk | restAllowed }:
-                 rkp1p2 := rpq(p1, p2, sigma, delta, restAllowed);
-                 rkp1qk := rpq(p1, qk, sigma, delta, restAllowed);
-                 rkqkqk := rpq(qk, qk, sigma, delta, restAllowed);
-                 rkqkp2 := rpq(qk, p2, sigma, delta, restAllowed);
-                 return Or(rkp1p2, Cat(Cat(rkp1qk, Star(rkqkqk)), rkqkp2));
-        }    
-    };
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Converting a \textsc{Dfa} into a regular expression.}
-\label{fig:dfa-2-regexp.stlx}
-\end{figure}
 
+\section{Conclusion}
+In this chapter we have shown that the concept of a \blue{deterministic finite state machine}
+and a \blue{regular expression} are equivalent.
 \begin{enumerate}
-\item The function \texttt{dfa2RegExp} takes a deterministic finite state machine
-      \texttt{dfa} as input.  For every accepting state $p$ of the given
-      \texttt{dfa}, it calculates the regular expression $r(q_0,p)$, which describes those
-      strings that transform the finite state machine from the start state $q_0$ into the
-      state $p$.  If $\{p_1, \cdots, p_k\}$ is the set of all accepting states of
-      \texttt{dfa}, then the regular expression
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $r(q_0, p_1) + \cdots + r(q_0, p_k)$
-      \\[0.2cm]
-      describes the language accepted by \texttt{dfa}.  This regular expression is
-      computed in line 3 via the two functions \texttt{regexpSum} and \texttt{rpq}.
-\item The function \texttt{regexpSum} takes as input a set $s$ of regular expressions.
-      If $s$ has the form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\{ r_1, \cdots, r_k \}$,
-      \\[0.2cm] 
-      then the regular expression
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $r_1 + \cdots + r_k$ 
-      \\[0.2cm]
-      is returned.  There are two special cases:
-      \begin{enumerate}
-      \item If $s$ is empty, then the regular expression $\emptyset$ is returned.
-      \item If $s$ contains just one element, that is if $s$ has the form $s = \{r\}$, then $r$
-            is returned.
-      \end{enumerate}
-
-
-\item The function \texttt{rpq} is called with 5 arguments:
-      \begin{enumerate}
-      \item The first two arguments $p_1$ and $p_2$ are states of a finite
-            state machine.  The idea is that the call
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            \texttt{rpq(p1, p2, sigma, delta, allowed)}
-            \\[0.2cm]
-            computes the regular expression $r(\texttt{p1}, \texttt{p2})$, which is the
-            expression that describes the set of those strings $s$ that take the
-            finite state machine from the state \texttt{p1} to the state \texttt{p2}.
-      \item \texttt{sigma} is the alphabet of the finite state machine.
-      \item \texttt{delta} is the transition function of the finite state machine.
-            In this program, we have chosen to represent \texttt{delta} as a \textsc{SetlX}
-            \texttt{procedure} rather than as a binary relation.
-      \item \texttt{allowed} is the set of all states that are allowed as intermediate states in the
-             transition of the \textsc{Fsm} from the state $p_1$ into the state $p_2$.  This set
-             corresponds to the set $\{q_0, q_1, \cdots, q_n\} - Q_{k}$ in the definition of the regular
-             expression $r^{(k)}(p_1, p_2)$, i.e.~the set \texttt{allowed} is the complement of the
-             set $Q_k$ with respect to the set of all states.
-      \end{enumerate}
-      The function \texttt{rpq} is defined by recursion on its last argument.  
-      \begin{enumerate}
-      \item The base case of the recursion is the case where the set \texttt{allowed} is
-            empty.  Then the regular expression returned by the function \texttt{rpq} must
-            only specify those strings that take the \textsc{Fsm} from the state $p_1$ to the state
-            $p_2$ without visiting any other state in between.  
-            In line 18, the function computes the set of all characters $c$ that take the \textsc{Fsm} from
-            the state $p_1$ into the state $p_2$ directly, i.e.~that satisfy
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\delta(p_1, c) = p_2$.
-            \\[0.2cm]
-            If this set is given as $\{c_1, \cdots, c_k\}$, then the variable \texttt{sum}
-            gets the value
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $c_1 + \cdots + c_k$.
-            \\[0.2cm]
-            Of course, if the set $\{c_1, \cdots, c_k\}$ is empty, the sum 
-            $c_1 + \cdots + c_k$ has to be interpreted as the regular expression
-            $\emptyset$.
-            Now there are two cases:
-            \begin{enumerate}
-            \item $p_1 = p_2$.  In this case, the empty string $\varepsilon$ transforms
-                  the state $p_1$ into $p_2$ and therefore in this case the result returned  is
-                  \\[0.2cm]
-                  \hspace*{1.3cm}
-                  $c_1 + \cdots + c_k + \varepsilon$.
-            \item $p_1 \not= p_2$.  Then the result is given as
-                  \\[0.2cm]
-                  \hspace*{1.3cm}
-                  $c_1 + \cdots + c_k$.
-            \end{enumerate}
-            The function \texttt{regexpSum} is used to compute the sum $c_1 + \cdots +c_k$.  It
-            takes care to return $\emptyset$ if the set $\{c_1, \cdots, c_k\}$ is empty.
-      \item In the recursive case, we arbitrarily pick a state $q_k$ from the set
-            \texttt{allowed} of states that may be used to move from state $p_1$ to $p_2$.
-            The state is removed from the set \texttt{allowed} to produce the set \texttt{restAllowed}.
-            Then, the regular expression returned has the form
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $r(p_1,p_2) + r(p_1,q_k) \cdot \bigl(r(q_k,q_k)\bigr)^* \cdot r(q_k,p_2)$.
-            \\[0.2cm]
-            Here, $r(p_1,p_2)$ is computed recursively as the regular expression that
-            takes the \textsc{Fsm} from the state $p_1$ to the state $p_2$ using only the states
-            from the set \texttt{restAllowed}.  The regular expressions 
-            $r(p_1,q_k)$, $r(q_k,q_k)$, and $r(q_k,p_2)$ are defined in a similar way.
-            The reasoning for returning this result is as follows:  In order to get from
-            state $p_1$ to state $p_2$, there are two possibilities:
-            \begin{itemize}
-            \item If we do not need to visit the state $q_k$ when transforming  the \textsc{Fsm}
-                  from state $p_1$ into state $p_2$, then the regular expression
-                  \\[0.2cm]
-                  \hspace*{1.3cm}
-                  $r(p_1,p_2)$
-                  \\[0.2cm]
-                  already describes the transition.
-            \item If we do need to visit the state $q_k$, then we move from $p_1$ to $p_2$
-                  in three steps:
-                  \begin{itemize}
-                  \item We move from $p_1$ to $q_k$.
-                  \item Next, we can move from $q_k$ to $q_k$ as many times as we wish.
-                  \item Finally, we move from $q_k$ to $p_2$.
-                  \end{itemize}
-                  These three steps are summarized by the regular expression
-                  \\[0.2cm]
-                  \hspace*{1.3cm}
-                  $r(p_1,q_k) \cdot \bigl(r(q_k,q_k)\bigr)^* \cdot r(q_k,p_2)$.
-            \end{itemize}
-      \end{enumerate}
+\item Every deterministic finite state machine can be translated into an equivalent regular expression.
+\item Every regular expression can be translated into an equivalent non-deterministic \textsc{Fsm}.
+\item Every non-deterministic \textsc{Fsm} can be transformed into an equivalent
+      deterministic \textsc{Fsm}.
 \end{enumerate}
 
 
 \paragraph{Historical Remark}
 \href{http://en.wikipedia.org/wiki/Stephen_Cole_Kleene}{Stephen C.~Kleene} (1909 -- 1994) has shown in 1956 that the concepts of 
-\emph{finite state  machines} and \emph{regular expression} have the same strength
+\blue{finite state  machines} and \blue{regular expression} have the same strength
 \cite{kleene:1956}:  We have proven in this chapter that for every regular expression $r$ there is a
 non-deterministic finite state machine $n$ such that $n$ recognizes the same set of strings that is
 specified by $r$.  Next, we have seen that every non-deterministic finite state machine $n$ can be
 transformed into a deterministic finite state machine $f$ which accepts the same language as $f$.
 Finally, we have seen that given a finite state machine $f$ there is an algorithm to construct a
 regular expression $r$ such that $r$ describes the language recognized by $f$.
-Hence the notions of \emph{finite state machines} and \emph{regular expressions} are equivalent.
+Hence the notions of \blue{finite state machines} and \blue{regular expressions} are equivalent.
+
+\section{Check your Understanding}
+\begin{enumerate}
+\item How are non-deterministic finite state machines defined?
+\item Given a non-deterministic \textsc{Fsm} $F$, can you convert it into a deterministic \textsc{Fsm}
+      $\mathtt{det}(F)$ that accepts the same language as the \textsc{Fsm} $F$?
+\item Given a regular expression $r$, can you describe the steps necessary to construct a non-deterministic
+      \textsc{Fsm} $F$ that accepts the language specified by $r$?
+\item Given a deterministic \textsc{Fsm} $F$ can you describe how to construct a regular expression $r$
+      that specifies the language accepted by $F$?
+\end{enumerate}
 
 %%% Local Variables: 
 %%% mode: latex
