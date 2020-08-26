@@ -1,13 +1,20 @@
 \chapter{Finite State Machines\label{chapter:finit-state-machines.tex}} 
 In the previous chapter we have seen how to generate a scanner using \textsc{Ply}.  In this chapter
 we learn how regular expressions can be implemented using \blue{finite state machines},
-abbreviated as \textsc{Fsm}.  There are two kinds of \textsc{Fsm}s: The deterministic ones and
+abbreviated as \textsc{Fsm}s.  There are two kinds of \textsc{Fsm}s: The deterministic ones and
 non-deterministic ones.  Although non-deterministic \textsc{Fsm}s seem to be more powerful than
 deterministic \textsc{Fsm}s, we will see that every non-deterministic \textsc{Fsm} can be transformed
 into an equivalent deterministic \textsc{Fsm}.  After proving this result, we show how a regular
-expression can be translated into an equivalent non-deterministic \textsc{Fsm}.  Finally, we show that every
-\textsc{Fsm} can be described by an equivalent regular expression.  Therefore, the central result of
-this chapter is the equivalence of finite state machines and regular expressions.
+expression can be translated into an equivalent non-deterministic \textsc{Fsm}.  Finally, we show that the
+language recognized by any \textsc{Fsm} can be described by an equivalent regular expression.  Therefore, the
+central result of this chapter is the equivalence of finite state machines and regular expressions.
+Hence, the results proved in this chapter are as follows:
+\begin{enumerate}
+\item The language described by a regular expression can be defined by a non-deterministic \textsc{Fsm}.
+\item Every non-deterministic \textsc{Fsm} can be transformed into an equivalent deterministic \textsc{Fsm}.
+\item For every deterministic \textsc{Fsm} there is an regular expression specifying the language recognized by
+      the \textsc{Fsm}.
+\end{enumerate}
 
 
 \section{Deterministic Finite State Machines}
@@ -16,11 +23,11 @@ to check whether this string is an element of some language that we are interest
 \textsc{Fsm}s is a string, while the output is either the value \texttt{True} or the value \texttt{False}.
 The name giving feature of an \textsc{Fsm} is the fact that an \textsc{Fsm} only has a
 \underline{finite} number of possible states.  Reading a character causes the \textsc{Fsm} to change its state.
-An \textsc{Fsm} accepts its input if it has reached a so called \emph{accepting state} after reading
+An \textsc{Fsm} accepts its input if it has reached a so called \blue{accepting state} after reading
 all characters of the input string.  Let me explain these idea more precisely:
 \begin{enumerate}
 \item Initialy, the \textsc{Fsm} is in a state that is know as the \blue{start state}. \index{start state}
-\item In every step of its computation, the \textsc{Fsm} processes one character of the input string
+\item In every step of its computation, the \textsc{Fsm} reads one character of the input string
       $s$.  Every time a character is processed, the state of the \textsc{Fsm} might change.
 \item Some states of the \textsc{Fsm} are designated as \blue{accepting states}.  \index{accepting state}
       If the \textsc{Fsm} has consumed all characters of the given input string $s$ and the \textsc{Fsm}
@@ -64,6 +71,8 @@ This \textsc{Fsm} has but two states.  These states are called $0$ and $1$.
 
       In general, a \textsc{Fsm} \blue{dies} \index{death of an \textsc{Fsm}}
       if it reads a character $c$ in a state $s$ such that there is no transition from $s$ when $c$ is read.
+      In this case, the \textsc{Fsm} returns the value \texttt{False} to signal that it does not accept the given
+      input string.
 \end{enumerate}
 
 \noindent
@@ -89,6 +98,9 @@ where the components $Q$, $\Sigma$, $\delta$, $q_0$, and $F$ have the following 
       that is reached if $F$ reads the character $c$ while in state $q$.
       If $\delta(q,c) = \Omega$, then $F$ \blue{dies} when it is in state $q$ and the next character
       is $c$. 
+
+      In the figures depicting \textsc{Fsm}s transitions of the form $\delta(q, c) = \Omega$ 
+      are not shown.
 \item $q_0 \in Q$ is the \blue{start state}. \index{start state}
 \item $A \subseteq Q$ is the set of \blue{accepting states}. \index{accepting states, set of}
       \qed
@@ -118,9 +130,9 @@ In order to formally define the language $L(F)$ that is accepted by an \textsc{F
 we generalize the transition function $\delta$ to a new function
 \\[0.2cm]
 \hspace*{1.3cm}
-$\delta^*: Q \times \Sigma^* \rightarrow Q \cup \{ \Omega \}$,
+$\delta^*: Q \times \Sigma^* \rightarrow Q \cup \{ \Omega \}$
 \\[0.2cm]
-that accepts a string as its second argument.  The definition of
+that, instead of a single character, accepts a string as its second argument.  The definition of
 $\delta^*(q, w)$ is given by induction on the string $w$.
 \begin{enumerate}
 \item[I.A.] $w = \varepsilon$:  We define
@@ -129,7 +141,7 @@ $\delta^*(q, w)$ is given by induction on the string $w$.
             $\delta^*(q, \varepsilon) := q$,
             \\[0.2cm]
             because if a deterministic \textsc{Fsm} does not read any character, it cannot change its state. 
-\item[I.S.] $w = cv$ where $c \in \Sigma$ and $v  \in \Sigma^*$ and $|v| = n$:  We define
+\item[I.S.] $w = cv$ where $c \in \Sigma$ and $v  \in \Sigma^*$:  We define
             \\[0.2cm]
             \hspace*{1.3cm}
             $\delta^*(q, cv) := \left\{
@@ -143,7 +155,7 @@ $\delta^*(q, w)$ is given by induction on the string $w$.
             If $F$ reads the string  $cv$, it first reads the character $c$.  Now if this causes  $F$
             to change into the state $\delta(q,c)$, then $F$ has to read the string $v$ in the state
             $\delta(q,c)$.  However, 
-            if  $\delta(q,c)$ is undefined, then  $\delta^*(q,cv)$ is undefined, too.
+            if  $\delta(q,c)$ is undefined, then  $\delta^*(q,cv)$ is undefined too.
 \end{enumerate}
 
 \begin{Definition}[Accepted Language, $L(F)$]
@@ -177,7 +189,7 @@ undefined value $\Omega$, i.e.~we have
 $\delta(q, c) \not= \Omega$ \quad for all $q \in Q$ and $c \in \Sigma$.
 
 \begin{Proposition}
-  For every \textsc{Fsm} $F$ there exists a complete \textsc{Fsm}  $\widehat{F}$, that accepts
+  For every \textsc{Fsm} $F$ there exists a complete \textsc{Fsm}  $\widehat{F}$ that accepts
   the same language as the \textsc{Fsm}  $F$, i.e.~we have:
   \\[0.2cm]
   \hspace*{1.3cm}
@@ -201,10 +213,10 @@ then $F$ changes into the dead state.  Once $F$ has reached a dead state, it wil
 state.
 
 The formal definition of the \textsc{Fsm} $\widehat{F}$ is done as follows:
-We introduce a new state $\dag$ which serves as the dead state.  The only requirement is that $\dag \not\in Q$.  We call $\dag$ the
+We introduce a new state $\skull$ which serves as the dead state.  The only requirement is that $\skull \not\in Q$.  We call $\skull$ the
 \blue{dead state}.
 \begin{enumerate}
-\item $\widehat{Q} := Q \cup \{ \dag \}$,
+\item $\widehat{Q} := Q \cup \{ \skull \}$,
 
       the dead state is added to the set  $Q$.
 \item $\widehat{\delta} : \widehat{Q} \times \Sigma \rightarrow \widehat{Q}$,
@@ -215,13 +227,13 @@ We introduce a new state $\dag$ which serves as the dead state.  The only requir
 
             If the state transition function is defined for the state  $q$ and the character
             $c$, then $\widehat{\delta}(q,c)$ is the same as $\delta(q,c)$.
-      \item $\delta(q,c) = \Omega \rightarrow \widehat{\delta}(q,c) = \dag$  for all $q \in Q$ and $c \in \Sigma$.
+      \item $\delta(q,c) = \Omega \rightarrow \widehat{\delta}(q,c) = \skull$  for all $q \in Q$ and $c \in \Sigma$.
 
             If the state transition function $\delta$ is undefined for the state $q$ and the character
-            $c$, then $\widehat{\delta}(q,c)$ returns the dead state $\dag$.
-      \item $\widehat{\delta}(\dag, c) = \dag$ \quad for all $c \in \Sigma$,
+            $c$, then $\widehat{\delta}(q,c)$ returns the dead state $\skull$.
+      \item $\widehat{\delta}(\skull, c) = \skull$ \quad for all $c \in \Sigma$,
 
-            because there is no escape from death\footnote{What is dead may never die.}.
+            because there is no escape from death\footnote{Or, as the followers of the \href{https://gameofthrones.fandom.com/wiki/Drowned_God}{Drowned Good} say: What is dead may never die.}.
       \end{enumerate}
 \end{enumerate}
 Hence the \textsc{Fsm}  $\widehat{F}$ is given as follows:
@@ -231,7 +243,7 @@ $\widehat{F} = \langle \widehat{Q}, \Sigma, \widehat{\delta}, q_0, A \rangle$.
 \\[0.2cm]
 If  $F$ reads a string $s$ without reaching an undefined state, then the behavior of $F$ and $\widehat{F}$ is the same.
 However, if $F$ reaches an undefined state, then $\widehat{F}$ instead switches into the dead state 
-$\dag$ and remains in this state regardless of the rest of the input string.  As the dead state $\dag$
+$\skull$ and remains in this state regardless of the rest of the input string.  As the dead state $\skull$
 is not an accepting state, the languages accepted by  $F$ and $\widehat{F}$ are identical. \qed 
 
 \exerciseEng
@@ -249,13 +261,32 @@ last three characters.  As there are eight different possible combinations for t
 characters, the \textsc{Fsm} needs to have eight states.  Let us number these states 
  $0$, $1$, $2$, $\cdots$, $7$.  We describe the purpose of these states in the following:
 \begin{description}
-\item[State 0:] In this state, the last three characters are ``\texttt{aaa}''.  
+\item[State 0:] In this state, the character ``\texttt{b}'' has not yet been seen. 
+  Depending on how many characters have been read, there are four cases:
+  \begin{enumerate}[(a)]
+  \item At least three characters have been read.  In this case, the last three characters are ``\texttt{aaa}''.  
+  \item Two characters have been read.  In this case, the string that has been read so far is the string ``\texttt{aa}''.  
+  \item Only one character has been read so far. In this case, the string that has been is ``\texttt{a}''.  
+  \item Nothing has yet been read and therefore the string that has been read is $\varepsilon$.
+  \end{enumerate}
+
+                If only two characters have been read so far, these two characters are ``\texttt{aa}''
+
 
                 For the remaining states we list the last three characters  that have been read
                 without further comment.
 \item[State 1:] ``\texttt{aab}''.
+
+                This case also covers the cases where the strings ``\texttt{ab}'' and ``\texttt{b}''
+                have been read.
 \item[State 2:] ``\texttt{aba}''.
+
+                This case also cover the case where the string ``\texttt{ba}'' 
+                has been read.
 \item[State 3:] ``\texttt{abb}''.
+
+                This case also cover the case where the string ``\texttt{bb}'' 
+                has been read.
 \item[State 4:] ``\texttt{bab}''.
 \item[State 5:] ``\texttt{bba}''.
 \item[State 6:] ``\texttt{bbb}''.
@@ -294,9 +325,7 @@ The remaining transitions are found in a similar way.
 Figure \ref{fig:abstarbabab.dot} on page \pageref{fig:abstarbabab.dot} shows the resulting \textsc{Fsm}.
 We still have to explain how we have chosen the start state.  When the computation starts, the
 finite state machine has not read any character.  In particular, this implies that neither of the
-last three characters is the character ``\texttt{b}''.  For the purpose of the language described
-this is the only thing that matters and therefor we can as well assume that in the start state the
-last three characters all have the value ``\texttt{a}''.  Hence we can use the state 0 as the start
+last three characters is the character ``\texttt{b}''.   Hence we can use the state 0 as the start
 state of our \textsc{Fsm}.
 
  \begin{figure}[!ht]
@@ -489,19 +518,20 @@ $F = \langle Q, \Sigma, \delta, 0, A\rangle$ \quad where
 \end{enumerate}
 \vspace*{0.3cm}
 
-A \blue{configuration} of a non-deterministic \textsc{Fsm} \index{configuration (of an \textsc{Nfa})}
-is a pair
+In order to formally define how a non-deterministic \textsc{Fsm} processes its input we introduce the notion of a
+ \blue{configuration} of a non-deterministic \textsc{Fsm} \index{configuration (of an \textsc{Nfa})}.  A configuration
+is defined as a pair
 \\[0.2cm]
 \hspace*{1.3cm}
 $\pair(q, s)$
 \\[0.2cm]
-where  $q$ is a state and $s$ is a  string.  Here, $q$ is the state of
-the \textsc{Fsm} and $s$ is the part of the input that has not been
+where  $q$ is a state and $s$ is a  string.  Here, $q$ is the current state of
+the \textsc{Fsm} and $s$ is the part of the input that has not yet been
 consumed.  We define a binary relation
 $\leadsto$ \index{$\leadsto$} on configurations as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\pair(q_1, cs) \leadsto \pair(q_2, s)$ \quad iff \quad $q_1 \stackrel{c}{\mapsto} q_2$.
+$\pair(q_1, cs) \leadsto \pair(q_2, s)$ \quad iff \quad $q_1 \stackrel{c}{\mapsto} q_2$, i.e. if $q_2 \in\delta(q_1, c)$.
 \\[0.2cm]
 Therefore, we have $\pair(q_1,cs) \leadsto \pair(q_2, s)$ if and only
 if the \textsc{Fsm} transitions from the state
@@ -509,7 +539,8 @@ $q_1$ into the state $q_2$ when the character $c$ is consumed.
 Furthermore, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\langle q_1, s \rangle \leadsto \langle q_2, s \rangle$ \quad iff \quad $q_1 \stackrel{\varepsilon}{\mapsto} q_2$.
+$\langle q_1, s \rangle \leadsto \langle q_2, s \rangle$ \quad iff \quad $q_1 \stackrel{\varepsilon}{\mapsto}
+q_2$, i.e. if $q_2 \in \delta(q_1, \varepsilon)$.
 \\[0.2cm]
 This accounts for the $\varepsilon$ transitions.  The
 \blue{reflexive-transitive closure} of the relation $\leadsto$ is written as $\leadsto^*$.
@@ -521,7 +552,7 @@ $L(F) := \bigl\{ s \in \Sigma^* \mid
                  \exists p \in A : \pair(q_0,s) \leadsto^* \pair(p,\varepsilon) \bigr\}$.
 \\[0.2cm]
 \index{$L(F)$}
-Here,  $q_0$ is the  start state and $F$ is the set of accepting
+Here,  $q_0$ is the  start state and $A$ is the set of accepting
 states.  Hence, a string  $s$ is an element of the language  $L(F)$,  
 iff there is an accepting state $p$ such that the configuration $\langle p, \varepsilon \rangle$ is reachable from the configuration $\langle q_0, s \rangle$.
 
@@ -552,29 +583,29 @@ strings from the language  $\{a,b\}^*$ that contain the substring ``\texttt{aba}
 In this section we show how a non-deterministic \textsc{Fsm} 
 \\[0.2cm]
 \hspace*{1.3cm}
-$A = \langle Q, \Sigma, \delta, q_0, F \rangle$ 
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$ 
 \\[0.2cm]
-can be transformed into a deterministic \textsc{Fsm} $\textsl{det}(A)$ such that both \textsc{Fsm}s accept the
+can be transformed into a deterministic \textsc{Fsm} $\textsl{det}(F)$ such that both \textsc{Fsm}s accept the
 same language, i.e. we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(A) = L\bigl(\textsl{det}(A)\bigr)$
+$L(F) = L\bigl(\textsl{det}(F)\bigr)$
 \\[0.2cm]
-The idea behind this transformation is that the \textsc{Fsm} $\textsl{det}(A)$ has to compute the set of all states that the
-\textsc{Fsm} $A$ could be in.   Hence the states of the deterministic \textsc{Fsm} $\textsl{det}(A)$ are 
-\textbf{sets} of states of the non-deterministic \textsc{Fsm} $A$.  A set of these states contains all those 
-states that the non-deterministic \textsc{Fsm} $A$ could have reached.
-Furthermore, a set $M$ of states of the \textsc{Fsm} $A$ is an accepting state of the \textsc{Fsm}
-$\textsl{det}(A)$ if the set $M$ contains an accepting state of the \textsc{Fsm} $A$.
+The idea behind this transformation is that the \textsc{Fsm} $\textsl{det}(F)$ has to compute the set of all states that the
+\textsc{Fsm} $F$ could be in.   Hence the states of the deterministic \textsc{Fsm} $\textsl{det}(F)$ are 
+\textbf{sets} of states of the non-deterministic \textsc{Fsm} $F$.  A set of these states contains all those 
+states that the non-deterministic \textsc{Fsm} $F$ could have reached.
+Furthermore, a set $M$ of states of the \textsc{Fsm} $F$ is an accepting state of the \textsc{Fsm}
+$\textsl{det}(F)$ if the set $M$ contains an accepting state of the \textsc{Fsm} $F$.
 
-In order to present the construction of $\textsl{det}(A)$ we first have to define two auxiliary functions.
+In order to present the construction of $\textsl{det}(F)$ we first have to define two auxiliary functions.
 We start with the \blue{$\varepsilon$-closure} \index{$\varepsilon$-closure} of a given state.  For every state
-$q$ of the non-deterministic \textsc{Fsm} $A$ the function
+$q$ of the non-deterministic \textsc{Fsm} $F$ the function
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{ec}: Q \rightarrow 2^Q$
 \\[0.2cm]
-computes the set $\textsl{ec}(q)$ of all those states that the \textsc{Fsm} $A$ can reach by $\varepsilon$
+computes the set $\textsl{ec}(q)$ of all those states that the \textsc{Fsm} $F$ can reach by $\varepsilon$
 transitions from the state $q$.   Formally, the set $\textsl{ec}(Q)$ is computed inductively:
 \begin{enumerate}
 \item[B.C.:] $q \in \textsl{ec}(q)$.
@@ -612,17 +643,17 @@ We compute the $\varepsilon$-closure for all states:
 
 \noindent
 In order to transform a non-deterministic \textsc{Fsm} into a deterministic \textsc{Fsm}
-$\textsl{det}(A)$ we have to extend the function $\delta:Q \times \Sigma \rightarrow 2^Q$ into the function
+$\textsl{det}(F)$ we have to extend the function $\delta:Q \times \Sigma \rightarrow 2^Q$ into the function
 \\[0.2cm]
 \hspace*{1.3cm}
 $\delta^*: Q \times \Sigma \rightarrow 2^Q$.
 \\[0.2cm]
 The idea is that given a state $q$ and a character $c$,  $\delta^*(q,c)$ is the set of all states that the
-\textsc{Fsm} $A$ could reach when it reads the character $c$ in state $q$ and then performs an arbitrary number
+\textsc{Fsm} $F$ could reach when it reads the character $c$ in state $q$ and then performs an arbitrary number
 of $\varepsilon$-transitions.  Formally, the definition of $\delta^*$ is as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\delta^*(q_1, c) := \bigcup \bigl\{ \textsl{ec}(q_2) \bigm| q_2 \in \delta(q_1, c) \bigr \}$.
+$\ds \delta^*(q_1, c) := \bigcup \bigl\{ \textsl{ec}(q_2) \bigm| q_2 \in \delta(q_1, c) \bigr \}$.
 \\[0.2cm]
 This formula is to be read as follows:
 \begin{enumerate}[(a)]
@@ -649,16 +680,16 @@ In continuation of the previous example (shown in Figure \ref{fig:ab-or-ba-star.
       switches into the state $q_5$.  From $q_5$ the states $q_7$, $q_0$, $q_1$ und $q_2$
       are reachable by $\varepsilon$-transitions. \eox
 \end{enumerate}
-The function  $\delta^*$ maps a state into a set of states.  Since the \textsc{Fsm} $\textsl{det}(A)$ uses
-sets of states of the \textsc{Fsm} $A$ as its states we need a function that maps sets of states of the
-\textsc{Fsm} $A$ into sets of states.  Hence we generalize 
+The function  $\delta^*$ maps a state into a set of states.  Since the \textsc{Fsm} $\textsl{det}(F)$ uses
+sets of states of the \textsc{Fsm} $F$ as its states we need a function that maps sets of states of the
+\textsc{Fsm} $F$ into sets of states.  Hence we generalize 
 the function $\delta^*$ to the function
 \\[0.2cm]
 \hspace*{1.3cm}
 $\Delta: 2^Q \times \Sigma \rightarrow 2^Q$
 \\[0.2cm]
 such that for a set $M$ of states and a character $c$ the expression $\Delta(M, c)$
-computes the set of all those states that the \textsc{Fsm} $A$ could be in if it is in a state from $M$, then
+computes the set of all those states that the \textsc{Fsm} $F$ could be in if it is in a state from $M$, then
 reads the character $c$, and finally makes some $\varepsilon$-transitions.
 The formal definition is as follows: 
 \\[0.2cm]
@@ -680,46 +711,48 @@ Continuing our previous example (shown in Figure \ref{fig:ab-or-ba-star.dot}) we
 \item $\Delta(\{ q_4 \}, \texttt{b}) = \{ q_6, q_7, q_0, q_1, q_2 \}$.
       \eox
 \end{enumerate}
-Now we are ready to formally define how the deterministic \textsc{Fsm} $\textsl{det}(A)$
-is computed from the non-deterministic \textsc{Fsm}
-$A := \bigl\langle Q, \Sigma, \delta, q_0, F \bigr\rangle$.
+Now we are ready to formally define how the deterministic \textsc{Fsm} $\textsl{det}(F)$
+is constructed from the non-deterministic \textsc{Fsm}
+$F := \bigl\langle Q, \Sigma, \delta, q_0, A \bigr\rangle$.
 We define: 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{det}(A) = \bigl\langle 2^Q, \Sigma, \Delta, \textsl{ec}(q_0), \widehat{F} \bigr\rangle$
-\index{$\textsl{det}(A)$} where the components of this tuple are given as follows:
+$\textsl{det}(F) = \bigl\langle 2^Q, \Sigma, \Delta, \textsl{ec}(q_0), \widehat{A} \bigr\rangle$
+\index{$\textsl{det}(F)$} 
+\\[0.2cm]
+where the components of this tuple are defined as follows:
 \begin{enumerate}
-\item The set of states of $\textsl{det}(A)$ is the set of all subsets of $Q$ and therefore it is equal to the power set
+\item The set of states of $\textsl{det}(F)$ is the set of all subsets of $Q$ and therefore it is equal to the power set
       $2^Q$.
 
       Later we will see that we do not need all of these subsets.
       The reason is that the states are those subsets that could be reached from the start state $q_0$ 
       when some string has been read.  In most cases there are some combinations of states that can not be reached
       and the corresponding sets are not really needed as states.
-\item The input alphabet $\Sigma$ does not change when going from $A$ to $\textsl{det}(A)$.
-      After all, the deterministic \textsc{Fsm}  $\textsl{det}(A)$ 
-      has to recognize the same language as the non-deterministic \textsc{Fsm} $A$.
-\item The function $\Delta$ that has been defined previously specified how the set of states change when a
+\item The input alphabet $\Sigma$ does not change when going from $F$ to $\textsl{det}(F)$.
+      After all, the deterministic \textsc{Fsm}  $\textsl{det}(F)$ 
+      has to recognize the same language as the non-deterministic \textsc{Fsm} $F$.
+\item The previously defined function $\Delta$ specifies how the set of states changes when a
       character is read.
-\item The start state $\texttt{ec}(q_0)$ of the non-deterministic \textsc{Fsm} $\textsl{det}(A)$ is the set of all states
-      that can be reached from the start state $q_0$ of the non-deterministic \textsc{Fsm} $A$
+\item The start state $\texttt{ec}(q_0)$ of the non-deterministic \textsc{Fsm} $\textsl{det}(F)$ is the set of all states
+      that can be reached from the start state $q_0$ of the non-deterministic \textsc{Fsm} $F$
       via $\varepsilon$-transitions.
-\item The set of accepting states $\widehat{F}$ is the set of those subsets of $Q$ that contain an accepting
+\item The set of accepting states $\widehat{A}$ is the set of those subsets of $Q$ that contain an accepting
       state of the \textsc{Fsm} $Q$:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\widehat{F} := \bigl\{ M \in 2^Q \mid M \cap F \not= \{\} \bigl\}$.
+      $\widehat{A} := \bigl\{ M \in 2^Q \mid M \cap A \not= \{\} \bigl\}$.
 \end{enumerate}
 
 \exerciseEng
-Transform the non-deterministic \textsc{Fsm} $A$ that is shown in Figure \ref{fig:abstarbabab-nd.dot} on page
+Transform the non-deterministic \textsc{Fsm} $F$ that is shown in Figure \ref{fig:abstarbabab-nd.dot} on page
 \pageref{fig:abstarbabab-nd.dot}  into the deterministic \textsc{Fsm} 
-$\textsl{det}(A)$.  \eox
+$\textsl{det}(F)$.  \eox
 
 \solutionEng
 We start by computing the set of states.
 \begin{enumerate}
-\item As we have $\textsl{ec}(0) = \{0\}$, the start state of $\textsl{det}(A)$  is the set containing $0$.
+\item As we have $\textsl{ec}(0) = \{0\}$, the start state of $\textsl{det}(F)$  is the set containing $0$.
       \\[0.2cm]
       \hspace*{1.3cm}
       $S_0 := \textsl{ec}(0) = \{ 0 \}$.
@@ -756,14 +789,14 @@ We start by computing the set of states.
 \item $\Delta(S_7, \texttt{a}) = \Delta(\{ 0, 1, 2, 3 \}, \texttt{a}) = \{ 0, 2, 3 \} = S_6$.
 \item $\Delta(S_7, \texttt{b}) = \Delta(\{ 0, 1, 2, 3 \}, \texttt{b}) = \{ 0, 1, 2, 3 \} = S_7$.
 \end{enumerate}
-These are all possible sets of states that the deterministic \textsc{Fsm} $\textsl{det}(A)$ can reach.
+These are all possible sets of states that the deterministic \textsc{Fsm} $\textsl{det}(F)$ can reach.
 For a better overview let us summarize the definitions of the individual states of the deterministic automaton:
 \\[0.2cm]
 \hspace*{1.3cm} $S_0 = \{ 0 \}$, $S_1 = \{ 0, 1 \}$, $S_2 = \{ 0, 2 \}$, $S_3 = \{ 0, 3 \}$, $S_4 = \{ 0, 1, 2 \}$, 
 \\[0.2cm]
 \hspace*{1.3cm} $S_5 = \{ 0, 1, 3 \}$, $S_6 = \{ 0, 2, 3 \}$, $S_7 = \{ 0, 1, 2, 3 \}$
 \\[0.2cm]
-Therefore the set $\widehat{Q}$ of the deterministic \textsc{Fsm} $\textsl{det}(A)$ is given as follows:
+Therefore the set $\widehat{Q}$ of the deterministic \textsc{Fsm} $\textsl{det}(F)$ is given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\widehat{Q} := \{ S_0, S_1, S_2, S_3, S_4, S_5, S_6, S_7 \}$.
@@ -786,25 +819,25 @@ Finally we recognize that only the sets  $S_3$, $S_5$, $S_6$ and $S_7$ contain t
  $3$.  Therefore we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\widehat{F} := \{ S_3, S_5, S_6, S_7 \}$.
+$\widehat{A} := \{ S_3, S_5, S_6, S_7 \}$.
 \\[0.2cm]
-Therefore we have no found the deterministic \textsc{Fsm} $\textsl{det}(A)$. We have
+Therefore we have no found the deterministic \textsc{Fsm} $\textsl{det}(F)$. We have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{det}(A) := \langle \widehat{Q}, \Sigma, \Delta, S_0, \widehat{F}\rangle$.
+$\textsl{det}(F) := \langle \widehat{Q}, \Sigma, \Delta, S_0, \widehat{A}\rangle$.
 \\[0.2cm]
 This \textsc{Fsm} is shown in Figure \ref{fig:a2.eps} on page \pageref{fig:a2.eps}.
 
-We realize that this deterministic \textsc{Fsm} $\textsl{det}(A)$ has 8 different states. 
-The non-deterministic \textsc{Fsm} $A$ has 4 different states
+We realize that this deterministic \textsc{Fsm} $\textsl{det}(F)$ has 8 different states. 
+The non-deterministic \textsc{Fsm} $F$ has 4 different states
  $Q = \{ 0, 1, 2, 3 \}$.  Hence the power set $2^Q$ has 16 elements.
-Why then has the \textsc{Fsm} $\textsl{det}(A)$ only 8 and not $2^4 = 16$ states?
+Why then has the \textsc{Fsm} $\textsl{det}(F)$ only 8 and not $2^4 = 16$ states?
 The reason is that we can only reach those sets of states form the start $0$
 that contain the state $0$ because no matter whether we read an \texttt{a} or a \texttt{b}
-the \textsc{Fsm} $A$ can always choose to switch to the state $0$.  Therefore, every set of states that is
+the \textsc{Fsm} $F$ can always choose to switch to the state $0$.  Therefore, every set of states that is
 reachable from the state $0$ has to contain the state $0$.  Therefore, 
-Thus, as sets that do not contain $0$ are not needed as states of the deterministic \textsc{Fsm}
-$\textsl{det}(A)$.
+sets that do not contain $0$ are not needed as states of the deterministic \textsc{Fsm}
+$\textsl{det}(F)$.
 
 
 
@@ -812,199 +845,25 @@ $\textsl{det}(A)$.
   \centering
      \vspace*{0.5cm}
       \epsfig{file=Abbildungen/a2.eps, scale=1.0}
-  \caption{The deterministic \textsc{Fsm} $\textsl{det}(A)$.}
+  \caption{The deterministic \textsc{Fsm} $\textsl{det}(F)$.}
   \label{fig:a2.eps}
 \end{figure}
 
 
 \exerciseEng
-Transform the non-deterministic \textsc{Fsm} that is shown in Figure \ref{fig:ab-or-ba-star.dot} on page
+Transform the non-deterministic \textsc{Fsm} $F$ that is shown in Figure \ref{fig:ab-or-ba-star.dot} on page
 \pageref{fig:ab-or-ba-star.dot} 
-into an equivalence deterministic \textsc{Fsm} $\textsl{det}(A)$. \eox
+into an equivalent deterministic \textsc{Fsm} $\textsl{det}(F)$. \eox
 
-
-\subsection{Implementing the Conversion of NFA to DFA}
+\subsection{Implementation}
 It is straightforward to implement the theory developed so far. 
-Figure \ref{fig:NFA-2-DFA.ipynb} on page \pageref{fig:NFA-2-DFA.ipynb} shows a \textsl{Python} program 
-that converts a given non-deterministic \textsc{Fsm} into a deterministic \textsc{Fsm}.
-We discuss this program line by line.
+The \textsl{Jupyter notebook} 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/NFA-2-DFA.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/NFA-2-DFA.ipynb}
+\\[0.2cm]
+contains a program that takes a non-deterministic \textsc{Fsm} $F$ and computes the deterministic \textsc{Fsm} $\mathtt{det}(F)$.
 
-\begin{figure}[!ht]
-\centering
-\begin{minted}[ frame         = lines, 
-                framesep      = 0.3cm, 
-                firstnumber   = 1,
-                numbers       = left,
-                numbersep     = -0.2cm,
-                bgcolor       = sepia,
-                xleftmargin   = 0.8cm,
-                xrightmargin  = 0.8cm,
-              ]{python}
-    def fixpoint(S0, f):
-        Result = S0.copy()
-        while True:
-            NewElements = { x for M in Result 
-                              for x in f(M) 
-                          }
-            if NewElements.issubset(Result):
-                return Result
-            Result |= NewElements
-
-    def epsClosure(s, delta):
-        Result = fixpoint({s}, lambda q: delta.get((q, ''), set()))
-        return frozenset(Result)
-
-    def deltaStar(s, c, delta):
-        return { p for q in delta.get((s, c), set())
-                   for p in epsClosure(q, delta)
-               }
-    def capitalDelta(M, c, delta):
-        Result = { s for q in M 
-                     for s in deltaStar(q, c, delta) 
-                 }
-        return frozenset(Result)
-    
-    def nfa2dfa(nfa):
-        states, sigma, delta, q0, final = nfa
-        newStart   = epsClosure(q0, delta)
-        nextStates = lambda m: { capitalDelta(m, c, delta) for c in sigma }
-        newStates  = fixpoint({newStart}, nextStates)
-        newDelta   = { (m, c): capitalDelta(m, c, delta) for m in newStates
-                                                         for c in sigma
-                     }
-        newFinal   = { m for m in newStates 
-                         if  m & final != set() 
-                     }
-        return newStates, sigma, newDelta, newStart, newFinal
-\end{minted}
-\vspace*{-0.3cm}
-\caption{A program to convert a non-deterministic \textsc{Fsm} into a deterministic \textsc{Fsm}.}
-\label{fig:NFA-2-DFA.ipynb}
-\end{figure}
-
-\begin{enumerate}
-\item In line 1 we define a function called \texttt{fixpoint}.  This function takes two parameters:
-      \begin{enumerate}
-      \item \texttt{S0} is a set of states.
-      \item \texttt{f}  is a function that takes a state as input and returns a set
-            of states as its result.
-      \end{enumerate}
-      The expression $\texttt{fixpoint}(\mathtt{S0},f)$ calculates the smallest set of states $S$ such that
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\mathtt{S0} \subseteq S$ \quad and \quad $f(S) \subseteq S$ 
-      \\[0.2cm]
-      holds, where $f(S)$ is defined as
-      \\[0.2cm]
-      \hspace*{1.3cm}
-       $f(S) := \bigcup\{ f(x) \mid x \in S \}$.
-       \\[0.2cm]
-      Hence, $\texttt{fixpoint}(\mathtt{S0},f)$ is a set $S$ such that the image of $S$ under $f$
-      together with \texttt{S0} is again $S$.  The value of $S$ is computed by a so called 
-      \href{http://en.wikipedia.org/wiki/Fixed-point_iteration}{\emph{fixpoint iteration}}.
-      The idea is to define a sequence $(S_n)_{n \in \mathbb{N}}$ of set $S_n$ such that this
-      sequence converges to the set $S$ that is sought.  The elements $S_n$ of this sequence are
-      defined by induction on $n \in \mathbb{N}$.
-
-      \begin{enumerate}
-      \item Base Case: $n=0$.
-        
-                   $S_0$ is taken to be the first argument of the function \texttt{fixpoint},
-                   i.e.~we have $S_0 := \texttt{S0}$.
-      \item Induction Case: $n \mapsto n+1$.
-
-            Define
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $S_{n+1} := S_n \cup \bigcup \{ f(x) \mid x \in S_n \}$.
-            \\[0.2cm]
-            Remember that $f(x)$ is really a set of states and therefore $\{ f(x) \mid x \in S_n \}$
-            is a set of set of states.  Taking the union of these sets reduces this set of sets of
-            states to a mere
-            set of states.  These states are combined with the states already in $S_n$.  Therefore,
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $S_{n} \subseteq S_{n+1}$ \quad for all $n \in \mathbb{N}$.
-            \\[0.2cm]
-            Since the set of all states is finite, the sequence $(S_n)_{n\in\mathbb{N}}$ cannot grow indefinitely.
-            Therefore, there will be a natural number $m \in \mathbb{N}$ such that 
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $S_{m+1} = S_m$.
-            \\[0.2cm]
-            At this point, the sequence $(S_n)_{n \in \mathbb{N}}$ has converged. Then, 
-            we can define $S := S_m$ and with this definition we have both 
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $f(S) \subseteq S$ \quad and \quad $\texttt{S0} \subseteq S$.
-      \end{enumerate}
-\item The function \texttt{epsClosure} computes the $\varepsilon$-closure of a given state
-      \texttt{s}.  The transition function \texttt{delta} has to be provided as a second
-      argument.  In this function we assume that \texttt{delta} is represented as a dictionary.
-      For example, the transition function $\delta$ of the non-deterministic finite state
-      shown in Figure \ref{fig:ab-or-ba-star.dot} can be represented  as the
-      following dictionary:
-\begin{verbatim}
-    delta45 := { (0, '' ): {1, 2},
-                 (1, 'b'): {3},
-                 (2, 'a'): {4},
-                 (3, 'a'): {5},
-                 (4, 'b'): {6},
-                 (5, '' ): {7},
-                 (6, '' ): {7},
-                 (7, '' ): {0}
-               };
-\end{verbatim}
-      The idea of the computation is to use a fixpoint iteration that starts with the set
-      $\{ \mathtt{s} \}$ and adds successively all those states that can be reached by $\varepsilon$
-      transitions.  The second argument for \texttt{fixpoint} is a function that maps
-      a given state $q$ into the set $\delta(q, \varepsilon)$.  Hence, we have
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\mathtt{epsilonClosure}(\mathtt{s}, \mathtt{delta}) = \textsl{ec}(\mathtt{s})$.
-\item The function \texttt{deltaStar} takes a state $s$ of the non-deterministic finite
-      automaton \texttt{nfa} and computes all states that can be reached from the state
-      $s$ when the character $c$ is read.  This function satisfies the specification
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\delta^*(s,c) := 
-       \bigcup \bigl\{ \textsl{ec}(q) \bigm| q \in \delta(s, c) \bigr \}$.
-\item The function \texttt{capitalDelta} takes as arguments a set \texttt{M} of states
-      of the deterministic automaton and a character \texttt{c} and computes
-      $\Delta(M,c)$, which is defined as
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\ds\Delta(M,c) := \bigcup \bigl\{ \delta^*(q,c) \bigm| q \in M \bigr\}$.
-\item The function \texttt{nfa2dfa} takes as input a non-deterministic finite automaton
-      \texttt{nfa}.  It takes a non-deterministic \textsc{Fsm} 
-      $A := \bigl\langle Q, \Sigma, \delta, q_0, F \bigr\rangle$ and computes 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\texttt{det}(A) = \bigl\langle 2^Q, \Sigma, \Delta, \texttt{ec}(q_0), \widehat{F} \bigr\rangle$
-      \\[0.2cm]
-      where the components of this tuple are given as follows:
-      \begin{enumerate}[(a)]
-      \item The set of states of $\texttt{det}(A)$ is the set of all subsets of $Q$ and therefore it is equal
-            to the power set $2^Q$. 
-
-            Instead of computing the power set, the implementation iteratively computes all possible sets of
-            states that the non-deterministic \textsc{Fsm} $A$ could be in.
-      \item The input alphabet $\Sigma$ does not change when going from $A$ to $\texttt{det}(A)$.
-            After all, the deterministic \textsc{Fsm} $\texttt{det}(A)$ has to recognize the same language as
-            the non-deterministic \textsc{Fsm} $A$.
-     \item The function $\Delta$ that has been defined previously specified how the set of states change when a
-           character is read. 
-     \item The start state $\texttt{ec}(q_0)$ of the non-deterministic \textsc{Fsm} $\texttt{det}(A)$ is the
-           set of all states 
-           that can be reached from the start state $q_0$ of the non-deterministic \textsc{Fsm} $A$
-           via $\varepsilon$-transitions.
-     \item The set of accepting states $\widehat{F}$ is the set of those subsets of $Q$ that contain an accepting
-           state of the \textsc{Fsm}  $Q$:
-           \\[-0.1cm]
-           \hspace*{1.3cm}
-           $\widehat{F} := \bigl\{ M \in 2^Q \mid M \cap F \not= \{\} \bigl\}$.
-     \end{enumerate}
-\end{enumerate}
 
 \section{From Regular Expressions to Deterministic Finite State Machines}
 In this section we show how we can construct a non-deterministic \textsc{Fsm} $A(r)$ that accepts the same language as
