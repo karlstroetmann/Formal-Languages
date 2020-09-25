@@ -8,7 +8,7 @@ $L = L(r)$
 holds.  In Chapter \ref{chapter:finit-state-machines.tex} we have shown that the regular languages
 are those languages that are recognized by a finite state machine.  In this chapter, we show
 that regular languages have certain \blue{closure properties}:
-\begin{enumerate}
+\begin{enumerate}[(a)]
 \item The \blue{union} $L_1 \cup L_2$ of two regular languages $L_1$ and $L_2$ is a regular language.
 \item The \blue{intersection} $L_1 \cap L_2$ of two regular languages $L_1$ und $L_2$ is a regular language.
 \item The \blue{complement} \index{complement of a language} $\Sigma^* \backslash L$ of a regular language $L$ is a regular language.
@@ -26,18 +26,24 @@ Using the pumping lemma we will be able to show that, for example, the language
 \\[0.2cm]
 \hspace*{1.3cm} $\{ \mathtt{a}^n \mathtt{b}^n \mid n \in \mathbb{N} \}$
 \\[0.2cm]
-is not regular.
+is not regular.  To summarize, this chapter 
+\begin{itemize}
+\item discusses closure properties of regular languages
+\item presents an algorithm for checking the equivalence of regular expressions, and
+\item shows that certain languages are not regular.
+\end{itemize}
+
 
 \section{Closure Properties of Regular Languages}
-In this section we show that regular languages are clused under the Boolean operations
-\blue{union}, \blue{intersection} and \blue{complement}.  We start with the union.
+In this section we show that regular languages are closed under the Boolean operations
+of \blue{union}, \blue{intersection} and \blue{complement}.  We start with the union.
 
 \begin{Proposition}
   If $L_1$ and $L_2$ are regular languages, then the union $L_1 \cup L_2$ is a regular language, too.
 \end{Proposition}
 
 \proofEng
-As $L_1$ and $L_2$ are regular languages there exist regular expressions $r_1$ and $r_2$ such that
+As $L_1$ and $L_2$ are regular languages, there exist regular expressions $r_1$ and $r_2$ such that
 \\[0.2cm]
 \hspace*{1.3cm}
 $L_1 = L(r_1)$ \quad and \quad $L_2 = L(r_2)$
@@ -54,9 +60,8 @@ Therefore,  $L_1 \cup L_2$ is a regular language. \qed
 \end{Proposition}
 
 \proofEng
-
-Proof: While the proof of the last proposition follows directly from the definition of regular expressions,
-we now have to go a little further. In the penultimate chapter, we saw that for every regular expression
+While the proof of the last proposition follows directly from the definition of regular expressions,
+we have to do a little more work now. In the previous chapter we saw that for every regular expression
 $r$ there is an equivalent deterministic finite state machine $F$, which accepts the language specified by $r$,
 and we can also assume that this \textsc{Fsm} is complete. Let $r_1$ and $r_2$ be the regular expressions that
 define the languages $L_1$ and $L_2$, i.e.~we have
@@ -64,7 +69,7 @@ define the languages $L_1$ and $L_2$, i.e.~we have
 \hspace*{1.3cm}
 $L_1 = L(r_1)$ \quad und \quad $L_2 = L(r_2)$.
 \\[0.2cm]
-First, we construct tow complete deterministic \textsc{Fsm}s
+First, we construct two complete deterministic \textsc{Fsm}s
 $A_1$ and $A_2$ that accept these languages, i.e.~we have
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -101,12 +106,12 @@ $F_2$ and the transition function $\delta$ computes the state that follows on
 $\pair(p_1,p_2)$ when a character $c$ is read, by simultaneously computing the next states of $p_1$ and $p_2$
 in the \textsc{Fsm}s $F_1$ and $F_2$ when these \textsc{Fsm}s read the character $c$. 
 A string $s$ is accepted by $F$ if and only if
-both $F_1$ and  $F_2$ accept $W$.  Therefore, the set $A$ of accepting states of the \textsc{Fsm} $F$ is defined as:
+both $F_1$ and  $F_2$ accept $s$.  Therefore, the set $A$ of accepting states of the \textsc{Fsm} $F$ is defined as:
 \\[0.2cm]
 \hspace*{1.3cm}
-$F := \bigl\{ \pair(p_1,p_2) \in Q_1 \times Q_2 \mid p_1 \in A_1 \wedge p_2 \in A_2 \bigr\} = A_1 \times A_2$.
+$A := \bigl\{ \pair(p_1,p_2) \in Q_1 \times Q_2 \mid p_1 \in A_1 \wedge p_2 \in A_2 \bigr\} = A_1 \times A_2$.
 \\[0.2cm]
-Then for all $s \in \Sigma^*$ the following holds:
+Then for all $s \in \Sigma^*$ we have:
 $$
 \begin{array}[t]{cl}
                 & s \in L(F)                                                           \\[0.1cm]
@@ -147,6 +152,7 @@ holds.  Then we would transform the \textsc{Fsm}s $F_1$ and $F_2$ into equivalen
 the extended Cartesian product of $\mathtt{det}(F_1)$ and $\mathtt{det}(F_2)$ as shown above. 
 Finally, we would convert the \textsc{Fsm} $\mathtt{det}(F_1) \times\mathtt{det}(F_2)$ into an equivalent
 regular expression.  However, the resulting regular expression would be absurdly large.
+Therefore, it is not practical to implement the function $\wedge$.
 \eox
 
 
@@ -158,7 +164,7 @@ regular expression.  However, the resulting regular expression would be absurdly
 \proofEng
 We assume that $r$ is a regular expression describing the language $L$, i.e.~$L=L(r)$. 
 We construct a non-deterministic \textsc{Fsm} $F$ such that $L(F) = L(r) = L$.  
-We transform this non-deterministic \textsc{Fsm} into the deterministic \textsc{Fsm} $\mathtt{det}(F)$ as shown
+We transform this non-deterministic \textsc{Fsm} into the deterministic \textsc{Fsm} $\mathtt{det}(F)$ as discussed
 in the previous chapter.
 Assume that we have
 \\[0.2cm]
@@ -237,7 +243,7 @@ The language $L(F)$ is empty if and only if this graph has no path that starts i
 $q_0$ and leads to an accepting state.
 
 Therefore, in order to answer the question whether $L(F) = \{\}$ holds, we have to compute the set $R$
-of all those states that are reachable from the start state $q_0$.  The computation of $R$ can be done
+of all those states that are \blue{reachable} from the start state $q_0$.  The computation of $R$ can be done
 iteratively as follows:
 \begin{enumerate}
 \item $q_0 \in R$.
@@ -269,7 +275,7 @@ $L(r)$ is empty:
 
 
 \section{Equivalence of Regular Expressions}
-In Chapter \ref{chapter:regular-expressions} we had defined two regular expressions $r_1$ and $r_2$ to be equivalent 
+In Chapter \ref{chapter:regular-expressions} we had defined two regular expressions $r_1$ and $r_2$ to be \blue{equivalent} 
 (written $r_1 \doteq r_2$), if the languages specified by $r_1$ and $r_2$ are identical:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -284,8 +290,8 @@ checks whether $r_1 \doteq r_2$ holds.
 \end{Theorem}
 
 \proofEng
-We present an algorithm that decides, whether $L(r_1) = L(r_2)$.  First, we observe that 
-$L(r_1)$ and $L(r_2)$ are the same sets iff the set differences $L(r_2) \backslash L(r_1)$ and $L(r_1) \backslash L(r_2)$
+We present an algorithm that decides, whether $L(r_1) = L(r_2)$.  First, we observe that the sets
+$L(r_1)$ and $L(r_2)$ are identical iff the set differences $L(r_2) \backslash L(r_1)$ and $L(r_1) \backslash L(r_2)$
 are both empty:
 \begin{eqnarray*}
                   L(r_1) = L(r_2) 
@@ -300,160 +306,27 @@ $L(F_1) = L(r_1)$ \quad and \quad $L(F_2) = L(r_2)$
 holds.  We have seen in Chapter \ref{chapter:finit-state-machines.tex} how $F_1$ and $F_2$ can be
 constructed from $r_1$ and $r_2$. According to the corollary \ref{kor:mengendif} the languages
 $L(r_1) \backslash L(r_2)$ and $L(r_2) \backslash L(r_1)$ are regular and we have seen how to
-construct \textsc{Fsm}s $F_{12}$ and $F_{21}$ such that
+construct \textsc{Fsm}s $F_{1,2}$ and $F_{2,1}$ such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(r_1) \backslash L(r_2) = L(F_{12})$ \quad and \quad $L(r_2) \backslash L(r_1) = L(F_{21})$ 
+$L(r_1) \backslash L(r_2) = L(F_{1,2})$ \quad and \quad $L(r_2) \backslash L(r_1) = L(F_{2,1})$ 
 \\[0.2cm]
 holds.  Hence we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$r_1 \doteq r_2 \;\Leftrightarrow\; L(F_{12}) = \{\} \wedge  L(F_{21}) = \{\}$
+$r_1 \doteq r_2 \;\Leftrightarrow\; L(F_{1,2}) = \{\} \wedge  L(F_{2,1}) = \{\}$
 \\[0.2cm]
 and according to Section \ref{section:leer} this question is decidable by checking whether any of
-the accepting states of $F_{12}$ or $F_{21}$ are reachable from the start state.
+the accepting states of $F_{1,2}$ or $F_{2,1}$ are reachable from the start state.
 \qed
 
-\section{Implementing an Equivalence Checker}
-Figure \ref{fig:equivalence.stlx} on page \pageref{fig:equivalence.stlx} shows how to
-implement the algorithm sketched in the previous section.  The details are discussed
-below.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    regExpEquiv := procedure(r1, r2, sigma) {
-        fsm1      := regexp2DFA(r1, sigma);
-        fsm2      := regexp2DFA(r2, sigma);    
-        r1MinusR2 := fsmComplement(fsm1, fsm2);
-        r2MinusR1 := fsmComplement(fsm2, fsm1);
-        return isEmpty(r1MinusR2) && isEmpty(r2MinusR1);
-    };
-    regexp2DFA := procedure(r, sigma) {
-        converter := regexp2NFA(sigma);
-        [states, sigma, delta, q0, qf] := converter.toNFA(r);    
-        return nfa2dfa([states, sigma, delta, q0, { qf }]);    
-    };
-    fsmComplement := procedure(f1, f2) {
-        [states1, sigma, delta1, q1, a1] := f1;
-        [states2,     _, delta2, q2, a2] := f2;
-        states := states1 >< states2;
-        delta  := {};
-        for ([q1, q2] in states, c in sigma) {
-            delta[[q1, q2], c] := [delta1[q1, c], delta2[q2, c]];
-        }
-        return [states, sigma, delta, [q1, q2], a1 >< (states2 - a2)];
-    };
-    isEmpty := procedure(fsm) {
-        [states, sigma, delta, q0, accepting] := fsm;
-        reachable := fixpoint({q0}, q |=> { delta[q, c] : c in sigma });
-        return reachable * accepting == {};
-    };
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{An algorithm to compare regular expressions.}
-\label{fig:equivalence.stlx}
-\end{figure}
-
-
-\begin{enumerate}
-\item The function \texttt{regExpEquiv} is called with three arguments: 
-      \begin{enumerate}
-      \item \texttt{r1} and \texttt{r2} are regular expressions that have to be
-            compared.  These regular expressions are represented as terms in the same way
-            as in Figure \ref{fig:regexp-2-nfa.stlx:toNFA} in the definition of the
-            function \texttt{regexp2NFA}.
-      \item \texttt{sigma} is the alphabet.
-      \end{enumerate}
-      The implementation of \texttt{regExpEquiv} is straightforward:
-      \begin{enumerate}
-      \item \texttt{r1} and \texttt{r2} are converted into deterministic finite state
-            machines \texttt{fsm1} and \texttt{fsm2}, respectively.
-      \item Next, we construct the finite state machines \texttt{r1MinusR2} and
-            \texttt{r2MinusR1}.
-            
-            \texttt{r1MinusR2} accepts all strings that are accepted by \texttt{fsm1} but
-            are rejected by \texttt{fsm2},  while
-            \texttt{r2MinusR1} accepts all strings that are accepted by \texttt{fsm2} but
-            are rejected by \texttt{fsm1}.  Therefore
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $L(\mathtt{r1MinusR2}) = L(r_1) \backslash L(r_2)$ \quad and \quad
-            $L(\mathtt{r1MinusR2}) = L(r_1) \backslash L(r_2)$.
-      \item The regular expressions \texttt{r1} and \texttt{r2} are equivalent iff
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $L(r_1) \subseteq L(r_2)$ \quad and \quad $L(r_2) \subseteq L(r_1)$
-            \\[0.2cm]
-            holds.  This is the case if and only if
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $L(r_1) \backslash L(r_2) = \{\}$ \quad and \quad
-            $L(r_2) \backslash L(r_1) = \{\}$
-            \\[0.2cm]
-            and these conditions are checked using the function \texttt{isEmpty}.
-      \end{enumerate}
-\item The function \texttt{regexp2DFA} takes a regular expression $r$ together
-      with an alphabet \texttt{sigma} and constructs a deterministic finite state machine
-      that accepts the language described by $r$.  This is done by first converting
-      $r$ into a non-deterministic finite state machine \texttt{nfa} via the function
-      \texttt{regexp2NFA}.  The non-deterministic finite state machine \texttt{nfa} is then
-      converted into a deterministic finite state machine with the help of the function
-      \texttt{nfa2dfa}.  However, there is one minor problem to solve:  The function
-      \texttt{toNFA} returns a finite state machine that has exactly one accepting state.
-      For this reason this function does return a 5-tuple of the form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\langle Q, \Sigma, \delta, q_0, q_f \rangle$
-      \\[0.2cm]
-      where $q_f$ is the single accepting state.  However, the function \texttt{nfa2dfa} expects its argument
-      to be a 5-tuple of the form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\langle Q, \Sigma, \delta, q_0, A \rangle$
-      \\[0.2cm]
-      where $A$ is the set of accepting states.  Therefore, we had to extract the components of 
-      NFA returned by \texttt{toNFA} and turn the single accepting state $q_f$ into the set 
-      $\{ q_f \}$ in order to call the function \texttt{nfa2dfa}.
-
-      The function \texttt{toNFA} has already been shown in
-      Figure \ref{fig:regexp-2-nfa.stlx:toNFA} on page
-      \pageref{fig:regexp-2-nfa.stlx:toNFA}, while the function \texttt{nfa2dfa}
-      is shown in Figure \ref{fig:NFA-2-DFA.ipynb} on page \pageref{fig:NFA-2-DFA.ipynb}.
-\item The function \texttt{fsmComplement} has two arguments $f_1$ and $f_2$.  These
-      arguments are deterministic finite state machines.  The function returns a new
-      finite state machine $F$ that accepts the language
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $L(f_1) \backslash L(f_2)$.
-      \\[0.2cm]
-      The finite state machine $F$ simulates the two finite state machines $f_1$ and $f_2$
-      in parallel.  Therefore, the states of $F$ are pairs of the form $\pair(p_1, p_2)$
-      where $p_1$ is a state of $f_1$ while $p_2$ is a state of $f_2$.  The transition
-      function $\delta$ of $F$ is a composition of the transition function $\delta_1$ of
-      $f_1$  and $\delta_2$ of $f_2$ that is defined as follows:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\delta\bigr(\pair(q_1, q_2), c\bigr) := \bigl\langle \delta_1(q_1,c),\, \delta_2(q_2,c)\bigr\rangle$.
-      \\[0.2cm]
-      A state $\pair(p_1, p_2)$ is an accepting state of $F$ iff $p_1$ is an accepting state of $f_1$ but
-      $p_2$ is not an accepting state of $f_2$.
-\item The input of the function \texttt{isEmpty} is a deterministic finite state machine
-      \texttt{fsm}.  The function checks whether the language accepted by \texttt{fsm} is
-      the empty set.  To this end, it computes the set of all states that are reachable
-      from the start state.  If any of these states is accepting, then the language
-      of \texttt{fsm} is not empty.  The computation of the reachable states is done via a fixpoint
-      iteration.  The function \texttt{fixpoint} that is used here has already been discussed in
-      Figure \ref{fig:NFA-2-DFA.ipynb} on page \pageref{fig:NFA-2-DFA.ipynb}.
-\end{enumerate}
+\remarkEng
+The Jupyter notebook \texttt{Equivalence}, which is available at
+\\[0.2cm]
+\hspace*{0.8cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Equivalence.ipynb}{\texttt{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Equivalence.ipynb}}
+\\[0.2cm]
+implements the theory discussed in this section.
 
 \section{Limits of Regular Languages}
 In this section we present a theorem that can be used to show that certain languages are
