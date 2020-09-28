@@ -10,7 +10,8 @@ valid \texttt{C} program.  In order to translate this string into machine langua
 \texttt{C}-compiler first groups the different characters into tokens.  In the case of a \texttt{C}
 program, the compiler generates the following tokens:
 \begin{enumerate}
-\item \blue{Keywords}, a.k.a.~reserved words like ``\texttt{if}'', ``\texttt{while}'', or ``\texttt{case}''.
+\item \blue{Keywords}, a.k.a.~reserved words like ``\texttt{if}'', ``\texttt{while}'', ``\texttt{for}'', or
+      ``\texttt{switch}''.
 \item \blue{Operator symbols} like ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'', or
       ``\texttt{<=}''. 
 \item \blue{Parentheses} like ``\texttt{(}'', ``\texttt{[}'', and ``\texttt{\{}'' and the
@@ -30,8 +31,11 @@ program, the compiler generates the following tokens:
 \item \blue{Comments}, which come in two flavors:  \blue{Single line comments} start with the string
       ``\texttt{//}'' and extend to the end of the line, while \blue{multi line comments} start with
       the string ``\texttt{/*}'' and are ended by ``\texttt{*/}''.
-\item So called \blue{white space characters}.  For example the blank, tabulators, line breaks, and
-      carriage returns are white space symbols.
+\item So called \blue{white space characters}.  For example the \blue{blank character} \texttt{' '},
+      the \blue{tabulator} \texttt{'\symbol{92}t'}, the \blue{line break} \texttt{'\symbol{92}n'}, and the
+      \blue{carriage return} \texttt{'\symbol{92}r'} are white space symbols.
+
+      Both white space characters and comments are silently removed by the scanner.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -58,22 +62,26 @@ program, the compiler generates the following tokens:
 \label{fig:hello-world.c}
 \end{figure}
 
-To make things more precise, Figure \ref{fig:hello-world.c} contains a \texttt{C} program that
-prints the string ``\texttt{Hello World!}'' followed by a newline character.  The scanner would
-transform this program into the following list of tokens:
+\noindent
+To make things more concrete, Figure \ref{fig:hello-world.c} on page \pageref{fig:hello-world.c} contains a
+\texttt{C} program that prints the string ``\texttt{Hello World!}'' followed by a newline character.  The
+scanner would transform this program into the following list of tokens:
 \begin{verbatim}
-   [ "/* Hello World program */", "#", "include", "<", "stdio.h", ">",
-     "int", "main", "(", ")", "{", "printf", "(", "Hello World!\n", ")", ";"
-     "return", "1", ";", "}"
+   [ "#", "include", "<", "stdio.h", ">", "int", "main", "(", ")", "{",
+     "printf", "(", "Hello World!\n", ")", ";" "return", "1", ";", "}"
    ]
 \end{verbatim}
 Note that the scanner discards the white space characters.  They only serve to separate tokens.
 
+Although it is possible to write a scanner manually, it is easier to generate a scanner from a specification
+with the help of a scanner generator.  We discuss one such tool in the next section.
 
 \section{The Structure of a \textsc{Ply} Scanner Specification}
-In this section we introduce \href{https://www.dabeaz.com/ply/}{Python Lex-Yacc} also known as \textsc{Ply}.
-As the home page of \textsc{Ply} states, ``\textsc{Ply} is an implementation of the lex and yacc parsing tools
-for \textsl{Python}''.  The tool has been developed by \href{https://www.dabeaz.com/}{David Beazley}.  In this
+In this section we introduce \href{https://www.dabeaz.com/ply/}{Python Lex-Yacc} which is also known as
+\textsc{Ply}.  \index{\textsc{Ply}}
+As the \href{https://www.dabeaz.com/ply/}{home page} of \textsc{Ply} states,
+``\textsc{Ply} is an implementation of the lex and yacc parsing tools for \textsl{Python}''.
+The tool has been developed by \href{https://www.dabeaz.com/}{David Beazley}.  In this
 section, we only discuss \textsc{Ply} as a scanner generator.  In Chapter \ref{chapter:ply} we will discuss how
 \textsc{Ply}  can be used to generate a parser.
 
@@ -109,7 +117,7 @@ This example has been taken from the official \textsc{ply}
             \hspace*{2.05cm}
             \texttt{r'\textsl{regexp}'} \\
             \hspace*{2.8cm} $\vdots$ \\[0.2cm]
-            Here, the vertical dots $\vdots$ denote any \textsl{Python} code, while
+            Here, the vertical dots \ ``$\;\vdots\;$'' \ denote any \textsl{Python} code, while
             \textsl{name} has to be one of the token names declared in the declaration section and
             \textsl{regexp} is a regular expression.
             
@@ -125,7 +133,8 @@ This example has been taken from the official \textsc{ply}
 \item The third part deals with the handling of newlines, ignored characters, and scanner errors.
   \begin{enumerate}
   \item A \textsc{Ply} input file may contain the definition of the function \texttt{t\_newline}.
-        This function is supposed to deal with newlines contained in the input.  Its main purpose is to set the 
+        This function is supposed to deal with newlines contained in the input.  The main purpose of this
+        function is to set the  
         counter \texttt{t.lexer.lineno}.  Every token \texttt{t} has the attribute \texttt{t.lexer}, which is a
         reference to the scanner object.  In turn, the scanner object has the attribute \texttt{lineno}, which
         is supposed to be an integer containing the number of the line currently scanned.  This integer starts
@@ -236,13 +245,13 @@ If we run the program shown in Figure \ref{fig:Ply-Example.ipynb} we get the fol
 As we can see the tokens returned by our scanner are objects of class \texttt{LexToken}.  These objects have
 four attributes:
 \begin{enumerate}
-\item The first attribute is called \texttt{type}.  Its value is a string that is the name of
+\item The first attribute is called \blue{\texttt{type}}.  Its value is a string that is the name of
       one of the declared tokens.
-\item The second attribute is called \texttt{value}.  Normally, this is the string that has been 
+\item The second attribute is called \blue{\texttt{value}}.  Normally, this is the string that has been 
       recognized but we are allowed to change this attribute.  For example, the function \texttt{t\_NUMBER}
       converts the recognized string into an integer value.
-\item The third attribute is called \texttt{lineno}.  This specifies the line number where the token has been found.
-\item The last attribute is called \texttt{lexpos}.  This is a counter that is incremented with every
+\item The third attribute is called \blue{\texttt{lineno}}.  This specifies the line number where the token has been found.
+\item The last attribute is called \blue{\texttt{lexpos}}.  This is a counter that is incremented with every
       character that is read.
 \end{enumerate}
 
@@ -255,7 +264,7 @@ Using as little syntax as possible is beneficial for our upcoming theoretical in
 regular expression in the next chapter where we show that regular expressions can be implemented
 using finite state machines.  However, for practical applications it is useful to considerably
 enrich the syntax of regular expressions that we have seen so far.
-For this reason, the \textsl{Python} module \textsl{re} provides a number of abbreviations that enable us to denote
+For this reason, the \textsl{Python} module \blue{\textsl{re}} provides a number of abbreviations that enable us to denote
 complex regular expressions in a more compact form.  I have written a short 
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Regexp-Tutorial.ipynb}{tutorial}
 that introduces the most important features of the regular expressions defined in the module \texttt{re}.
