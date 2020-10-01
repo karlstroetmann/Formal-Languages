@@ -327,12 +327,13 @@ You can find the notebook here:
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Exam-Evaluation.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Exam-Evaluation.ipynb}
 
 \section{Scanner States}
-In this section we will develop a program that is able to convert an 
+Sometimes, regular expressions are not quite enough and it is beneficial for the scanner to have different
+states.  The following example illustrates this.  We will develop a program that is able to convert an 
 \textsc{Html} file into a pure text file.  This program is actually quite useful: Some years ago I
 had a student that was blind.  If he read a web page, he would use his Braille display.  For him,
 the \textsc{Html} markup was of no use so if the markup was removed, he could read web pages faster.
-In order to develop the program to remove \textsc{Html} tags, we have to use \blue{scanner states}
-\index{scanner states}.  The idea behind scanner states is that the scanner can use different regular
+In order to develop the program to remove \textsc{Html} tags, we have to use \blue{scanner states}.
+\index{scanner states}  The idea behind scanner states is that the scanner can use different regular
 expressions for different parts of the input.  For example, the header of an \textsc{Html} file, i.e.~the part
 that is between the \texttt{<head>} and \texttt{</head>} tags, can just be
 skipped.  On the other hand, the text inside the \texttt{<body>} and \texttt{</body>} tags needs to be echoed
@@ -358,7 +359,11 @@ going to develop should transform the \LaTeX\ input file into an \textsc{Html} f
 convenience, all these files are available in the github directory 
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML}{\texttt{JFlex/LaTeX2HTML}}.
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Exercises/LaTeX2HTML}{\texttt{Exercises/LaTeX2HTML}}.
+\\[0.2cm]
+This directory contains also the \textsl{Jupyter} notebook 
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Exercises/LaTeX2HTML/LaTeX2HTML.ipynb}{\texttt{LaTeX2HTML.ipynb}}.
+This notebook contains lots of predefined functions that are useful in order to solve the given task.
 
 \begin{figure}[!ht]
   \centering
@@ -399,7 +404,8 @@ convenience, all these files are available in the github directory
 \end{figure}
 
 In order to do this exercise, you have to understand a little bit about \LaTeX\ and about 
-\textsc{MathML}.  In the following, we discuss those features of these two language that are needed.
+\textsc{MathML}.  In the following, we discuss those features of these two language that are needed in order to
+solve the given problem.
 \begin{enumerate}
 \item A \LaTeX\ input file has the following structure:
       \begin{enumerate}
@@ -410,11 +416,11 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
             \\[0.2cm]
             This line will be transformed into the following \textsc{Html}:
             \begin{verbatim}
-    <html>
-    <head>
-    <script type="text/javascript"
-    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-    </script>
+ <html>
+ <head>
+ <script type="text/javascript"
+ src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+ </script>
             \end{verbatim}
             Here, the \texttt{<script>} tag is necessary in order for the \textsc{MathML} 
             to be displayed correctly.
@@ -427,7 +433,7 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{<body>}.
-      \item After that, the \LaTeX\ file contains text that contains mathematical formula.
+      \item After that, the \LaTeX\ file consists of text that contains mathematical formula.
       \item The \LaTeX\ input file finishes with a line of the form
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -561,21 +567,6 @@ In order to do this exercise, you have to understand a little bit about \LaTeX\ 
     </munderover>
     \end{verbatim}
 \end{enumerate}
-In order to cut the time necessary to complete this exercise, I have provided a \textsc{Java} class
-\texttt{HtmlWriter} that contains a number of useful static methods.  This file is available at
-\\[0.2cm]
-\hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML/HtmlWriter.java}{\texttt{JFlex/LaTeX2HTML/HtmlWriter.java}}.
-\\[0.2cm] 
-Furthermore, the \texttt{github} directory \texttt{JFlex/LaTeX2HTML} already contains a \texttt{Makefile}.
-Additionally, the directory contains the file
-\\[0.2cm]
-\hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/JFlex/LaTeX2HTML/input.html}{\texttt{JFlex/LaTeX2HTML/input.html}}
-\\[0.2cm]
-which shows the result of converting the input file ``\texttt{input.tex}'' into \textsc{Html}.
-Next, there is a file \texttt{State.java} containing an enumeration that I have found useful for my
-solution of the problem.
 
 \remarkEng
 The most important problem that you have to solve is the following:  Once you encounter a closing brace
@@ -588,11 +579,9 @@ parsing, say, a square root or a fraction.  Instead, every time you encounter a 
 \texttt{\symbol{92}sqrt\{} \quad or \quad \texttt{\symbol{92}frac\{},
 \\[0.2cm]
 you should store the current state on a stack and set the new state according to whether you have just seen the
-keyword ``\texttt{\symbol{92}frac}'' or ``\texttt{\symbol{92}sqrt}'' or whatever else caused the
+keyword ``\texttt{\symbol{92}frac}'' or ``\texttt{\symbol{92}sqrt}'' or whatever caused the
 curly brace to be opened.  When you encounter a closing brace ``\texttt{\}}'', you should 
-restore the state to its previous value by looking up this value from the stack.  The github directory
-\texttt{JFlex/LaTeX2HTML} already contains both the interface \texttt{Stack.java} as well as the
-class \texttt{ArrayStack.java} implementing this interface.
+restore the state to its previous value by looking up this value from the stack.  
 \eox
 
 
