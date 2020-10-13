@@ -1340,28 +1340,37 @@ Die Variablen \textsl{exprRest} und \textsl{productRest} können wie folgt interp
 
 \noindent
 Now we are ready to implement a parser for recognizing arithmetic expressions.
-Figure \ref{fig:rd-parser.stlx} on page
-\pageref{fig:rd-parser.stlx} shows an implementation of a recursive decent parser in
-\textsc{SetlX}. 
-\begin{enumerate}
-\item The main function is \texttt{myParse}\footnote{
-            We had to name the function \texttt{myParse} instead of \texttt{parse} as 
-            \textsc{SetlX} already implements a function with the name \texttt{parse}.
-            This function parses strings as \textsc{SetlX} expressions.  The function
-            \texttt{parse} returns a term representing the abstract syntax tree
-            corresponding to the parsed expression.
-      }.  This function takes a string $s$
+We will use the grammar that is shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
+Before we can implement the parser, we need a scanner.  We will use a hand-coded scanner that is shown in
+Figure \ref{fig:Top-Down-Parser:scanner.ipynb} on page \pageref{fig:Top-Down-Parser:scanner.ipynb}.
+The function \texttt{tokenize} implemented in this scanner receives a string \texttt{s} as argument and returns
+a list of tokens.  The string \texttt{s} is supposed to represent an arithmetical expression. 
+In order to understand the implementation, you need to know the following:
+\begin{enumerate}[(a)]
+\item We need to set the flag \texttt{re.VERBOSE} in our call of the function \texttt{findall}
+      below because otherwise we are not able to format the regular expression \texttt{lexSpec} the way 
+      we have done it.
+\item The regular expression \texttt{lexSpec} contains 5 parenthesized groups.  Therefore,
+      \texttt{findall} returns a list of 5-tuples where the 5 components correspond to the 5
+      groups of the regular expression.  As the 5 groups are non-overlapping, exactly one of the 5 components
+      will be a non-empty string.
+\end{enumerate}
+Figure \ref{fig:Top-Down-Parser.ipynb} on page
+\pageref{fig:Top-Down-Parser.ipynb} shows an implementation of a recursive decent parser in
+\textsc{Python}. 
+\begin{enumerate}[(a)]
+\item The main function is the function \texttt{parse}. This function takes a string $s$
       representing an arithmetic expression.  This string is tokenized using the 
-      function \texttt{tokenizeString}.  The function \texttt{tokenizeString} turns a
+      function \texttt{tokenize}.  The function \texttt{tokenize} turns a
       string into a list of tokens.  For example, the expression
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|tokenizeString("(1 + 2) * 3");|
+      \verb|tokenize('(1 + 2) * 3')|
       \\[0.2cm]
       returns the result
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|["(", 1, "+", 2, ")", "*", 3]|.
+      \verb|['(', 1, '+', 2, ')', '*', 3]|.
       \\[0.2cm]
       This list of tokens is then parsed by the function \texttt{parseExpr}.
       That function returns a pair: 
@@ -1376,24 +1385,24 @@ Figure \ref{fig:rd-parser.stlx} on page
       \hspace*{1.3cm}
       $\textsl{expr} \;\rightarrow\;\textsl{product}\;\;\textsl{exprRest}$. 
       \\[0.2cm]
-      It takes a token list \texttt{tl} as input.  It will return a pair of the form
+      It takes a token list \texttt{TL} as input.  It will return a pair of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{[$v$, rl]},
+      \texttt{($v$, Rest)},
       \\[0.2cm]
       where $v$ is the value of the arithmetic expression that has been parsed, while
-      \texttt{rl} is the list of the remaining tokens.  For example, the expression
+      \texttt{Rest} is the list of the remaining tokens.  For example, the expression
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|parseExpr(["(", 1, "+", 2, ")", "*", 3, ")", "*", 2])|
+      \verb|parseExpr(['(', 1, '+', 2, ')', '*', 3, ')', '*', 2])|
       \\[0.2cm]
       returns the result
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|[9, [")", "*", 2]]|.
+      \verb|[9, [')', '*', 2]]|.
       \\[0.2cm]
-      Here, the part \verb|["(", 1, "+", 2, ")", "*", 3]| has been parsed and evaluated as
-      the number $9$ and \verb|[")", "*", 2]| is the list of tokens that have not yet been
+      Here, the part \verb|['(', 1, '+', 2, ')', '*', 3]| has been parsed and evaluated as
+      the number $9$ and \verb|[')', '*', 2]| is the list of tokens that have not yet been
       processed.
 
       In order to parse an arithmetic expression, the function first parses a
@@ -1408,16 +1417,16 @@ Figure \ref{fig:rd-parser.stlx} on page
       To understand the mechanics of \texttt{parseExpr}, consider the evaluation of
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|[1, "*", 2, "+", 3]|.
+      \verb|[1, '*', 2, '+', 3]|.
       \\[0.2cm]
       Here, the function \texttt{parseProduct} will return the result
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|[2, ["+", 3]]|,
+      \verb|(2, ['+', 3])|,
       \\[0.2cm]
-      where $2$ is the result of parsing and evaluating the token list \verb|[1, "*", 2]|, while
-      \verb|["+", 3]| is the part of the input token list that is not used by
-      \texttt{parseProduct}.  Next, the list \verb|["+", 3]| needs to be parsed as 
+      where $2$ is the result of parsing and evaluating the token list \verb|[1, '*', 2]|, while
+      \verb|['+', 3]| is the part of the input token list that is not used by
+      \texttt{parseProduct}.  Next, the list \verb|['+', 3]| needs to be parsed as 
       the rest of an expression and then $3$ needs to be added to $2$.      
 \item The function \texttt{parseExprRest} takes a number and a list of tokens.
       It implements the following grammar rules:
@@ -1441,7 +1450,7 @@ Figure \ref{fig:rd-parser.stlx} on page
       $\textsl{exprRest} \;\rightarrow\; \varepsilon$
       \\[0.2cm]
       is used.  Therefore, in that case we have not consumed any tokens and hence
-      the input arguments are already the result.
+      the input argument is already the result.
 \item The function \texttt{parseProduct} implements the rule
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1462,20 +1471,8 @@ Figure \ref{fig:rd-parser.stlx} on page
       \end{eqnarray*}
       Therefore, we first check whether the next token is \squoted{(} because in that case,
       we have to use the first grammar rule, otherwise we use the second.
-\item The last function \texttt{tokenizeString} transforms a string into a list of tokens.
-      To this end it uses the \texttt{scan} mechanism that is already built into
-      \textsc{SetlX}.  For example, in line 43 it is checked whether the next part of the
-      input string is matched by the regular expression \verb"0|[1-9][0-9]*".  If this is
-      the case, the matching part is choped off the string and converted into a number
-      which is then added to the list of tokens seen so far.
-
-      In line 44 we recognize the operator symbols and the parenthesis.  Note that we had
-      to put the operator \squoted{-} first here since otherwise it would have been
-      mistaken as a range operator.
-
-      Line 45 is needed to skip white space.
 \end{enumerate}
-The parser shown in Figure \ref{fig:rd-parser.stlx} does not contain any error handling. 
+The parser shown in Figure \ref{fig:Top-Down-Parser.ipynb} does not contain any error handling. 
 Appropriate error handling will be discussed once we have covered the theory of top-down parsing.
 
 
