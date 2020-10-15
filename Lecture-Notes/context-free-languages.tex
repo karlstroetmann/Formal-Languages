@@ -1356,7 +1356,7 @@ In order to understand the implementation, you need to know the following:
       will be a non-empty string.
 \end{enumerate}
 Figure \ref{fig:Top-Down-Parser.ipynb} on page
-\pageref{fig:Top-Down-Parser.ipynb} shows an implementation of a recursive decent parser in
+\pageref{fig:Top-Down-Parser.ipynb} shows an implementation of a recursive descent parser in
 \textsc{Python}. 
 \begin{enumerate}[(a)]
 \item The main function is the function \texttt{parse}. This function takes a string $s$
@@ -1475,6 +1475,141 @@ Figure \ref{fig:Top-Down-Parser.ipynb} on page
 The parser shown in Figure \ref{fig:Top-Down-Parser.ipynb} does not contain any error handling. 
 Appropriate error handling will be discussed once we have covered the theory of top-down parsing.
 
+\subsection{Implementing a Recursive Descent Parser that Uses an \textsc{EBNF} Grammar}
+The previous solution to parse an arithmetical expression was not completely
+satisfying:  The reason is that we did not really fix the problem of left recursion but rather cured the
+symptoms.  The underlying reason for left recursion is that context free grammars are not that convenient to
+describe the structure of programming languages since a description of this structure needs both
+recursion and iteration, but context-free grammars provide no direct way to describe iteration.
+Rather, they simulate iteration via recursion.  Let us therefore extend the power of context-free
+languages 
+slightly by admitting regular expression on the right hand side of grammar rules.  
+These new type of grammars are known as
+\href{http://en.wikipedia.org/wiki/Extended_Backus_Naur_Form}{\emph{extended Backus Naur form}}
+grammars, which 
+is abbreviated as \textsc{Ebnf} grammars.  An \textsc{Ebnf} grammar admits the operators
+\squoted{*}, \squoted{?}, and \squoted{+} on the right hand side of a grammar
+rule.  The meaning of these operators is the same as when these operators are used in 
+the regular expressions of the programming language \textsl{Python}.
+Furthermore, the right hand side of a grammar rule can be structured using parentheses.
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+
+  \begin{eqnarray*}
+  \mathrm{expr}    & \rightarrow & \mathrm{product}\;\;\bigl((\texttt{'+'}\;|\;\texttt{'-'})\;\; \mathrm{product}\bigr)^* \\[0.2cm]
+  \mathrm{product} & \rightarrow & \mathrm{factor} \;\;\bigl((\texttt{'*'}\;|\;\texttt{'/'})\;\; \mathrm{factor}\bigr)^*  \\[0.2cm]   
+  \mathrm{factor}  & \rightarrow & \texttt{'('} \;\;\mathrm{expr} \;\;\texttt{')'}                             \\
+                   & \mid        & \texttt{NUMBER} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+
+  \end{minipage} \hspace*{1.cm}}}
+  \end{center}
+  \caption{\textsc{Ebnf} grammar for arithmetical expressions.}
+  \label{fig:arith-expr-ebnf}
+\end{figure}
+
+It can be shown that the languages described by \textsc{Ebnf} grammars are still context-free
+languages.  Therefore, these operators do not change the expressive power of context-free 
+grammars. 
+However, it is often much more \underline{convenient} to describe a language using an \textsc{Ebnf}
+grammar rather than using a context-free grammar.  Figure \ref{fig:arith-expr-ebnf}
+displays an \textsc{Ebnf} grammar for arithmetical expressions.  
+
+Obviously, the grammar in Figure \ref{fig:arith-expr-ebnf}  is
+more concise than the context-free grammar shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
+For example, the first rule clearly expresses that an arithmetical expression is a list of
+products that are separated by the operators \squoted{+} and \squoted{-}.
+
+\noindent
+Figure \ref{fig:differentiate.stlx} shows a recursive descent parser that implements this grammar.
+\begin{enumerate}
+\item The function \texttt{parseExpr} recognizes a \texttt{product} in line 2. 
+      The value of this \texttt{product} is stored in the variable 
+      \texttt{result} together with the list \texttt{Rest} of those tokens that have not been consumed
+      yet.  If the list \texttt{Rest} is not empty and the first token in this
+      list is either the operator \squoted{+} or the operator \squoted{-},
+      then the function \texttt{parseExpr} tries to recognize more products.
+      These are added to or subtracted from the \texttt{result} computed so far in
+      line 7 or 9.  If there are no more products to be parsed, the \texttt{while} loop 
+      terminates and the function returns the \texttt{result} together with the list of the remaining
+      tokens \texttt{Rest}.
+\item The function \texttt{parseProduct} recognizes a \texttt{factor} in line 13. 
+      The value of this \texttt{factor} is stored in the variable 
+      \texttt{result} together with the list \texttt{Rest} of those tokens that have not been consumed
+      yet.  If the list \texttt{Rest} is not empty and the first token in this
+      list is either the operator \squoted{*} or the operator \squoted{/},
+      then the function \texttt{parseProduct} tries to recognize more factors.
+      The \texttt{result} computed so far is multiplied with or divided by these factors in
+      line 18 or 20.  If there are no more products to be parsed, the \texttt{while} loop 
+      terminates and the function returns the \texttt{result} together with the list
+      \texttt{Rest} of tokens that have not been consumed.
+\item The function \texttt{parseFactor} recognizes a \texttt{factor}.
+      This is either an expression in parentheses or a number.
+      \begin{itemize}
+      \item If the first token is a an opening parenthesis, the function tries to parse
+            an expression next.  This expression has to be followed by a closing parenthesis.
+            The tokens following this closing parenthesis are not consumed but rather are returned 
+            together with the result of evaluating the expression.
+      \item If the first token is a number, this number is returned together with the list
+            of all those tokens that have not been consumed.
+      \end{itemize}
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.3cm,
+              ]{python3}
+    def parseExpr(TL):
+        result, Rest = parseProduct(TL)
+        while len(Rest) > 1 and Rest[0] in {'+', '-'}: 
+            operator = Rest[0]
+            arg, Rest = parseProduct(Rest[1:])
+            if operator == '+': 
+                result += arg
+            else:             # operator == '-': 
+                result -= arg
+        return result, Rest
+    
+    def parseProduct(TL):
+        result, Rest = parseFactor(TL)
+        while len(Rest) > 1 and Rest[0] in {'*', '/'}:
+            operator = Rest[0]
+            arg, Rest = parseFactor(Rest[1:])
+            if operator == '*':
+                result *= arg
+            else:             # operator == '/':
+                result /= arg
+        return result, Rest
+    
+    def parseFactor(TL):
+        if TL[0] == '(': 
+            expr, Rest = parseExpr(TL[1:])
+            assert Rest[0] == ')', "ERROR: ')' expected, got {Rest[0]}"
+            return expr, Rest[1:]
+        else:
+            assert isinstance(TL[0], int), "ERROR: Number expected, got {TL[0]}"
+            return TL[0], TL[1:]
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A recursive descent parser for the grammar in Figure \ref{fig:arith-expr-ebnf}.}
+\label{fig:differentiate.stlx}
+\end{figure}
+
+
+\paragraph{Historical Notes} The language \textsc{Algol} \cite{backus:1959,naur:1960} was the first
+programming language with a syntax that was based on an \textsc{Ebnf} grammar.  
 
 %%% Local Variables: 
 %%% mode: latex
