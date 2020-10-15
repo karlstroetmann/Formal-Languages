@@ -349,8 +349,8 @@ because they have a large numbers of states.  For example, the regular expressio
 $L\bigl((\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$ 
 \\[0.2cm]
 needs 8 different states since the \textsc{Fsm} needs to remember the last three characters that
-have been read and there are $2^3 = 8$ combinations of these characters. 
-It would be possible to simplify this \textsc{Fsm} if the \textsc{Fsm} is permitted to \emph{choose} its
+have been read and there are $2^3 = 8$ combinations of these characters.  
+It would be possible to simplify this \textsc{Fsm} if the \textsc{Fsm} would be permitted to \emph{choose} its
 next state from a given set of states.
 
 \begin{figure}[!ht]
@@ -818,7 +818,7 @@ Finally we recognize that only the sets  $S_3$, $S_5$, $S_6$ and $S_7$ contain t
 \hspace*{1.3cm}
 $\widehat{A} := \{ S_3, S_5, S_6, S_7 \}$.
 \\[0.2cm]
-Therefore we have no found the deterministic \textsc{Fsm} $\textsl{det}(F)$. We have
+Therefore we have now found the deterministic \textsc{Fsm} $\textsl{det}(F)$. We have
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{det}(F) := \langle \widehat{Q}, \Sigma, \Delta, S_0, \widehat{A}\rangle$.
@@ -882,7 +882,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
 \item The \textsc{Fsm} $A(\emptyset)$ is defined as
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A(\emptyset) = \langle \{ q_0, q_1 \}, \Sigma, \{\}, q_0, \{ q_1 \} \rangle$.
+      $A(\emptyset) = \bigl\langle \{ q_0, q_1 \}, \Sigma, \{\}, q_0, \{ q_1 \} \bigr\rangle$.
       \\[0.2cm]
       Note that this \textsc{Fsm} has no transitions at all.
 
@@ -897,7 +897,8 @@ expression $r$.  Then we can define $A(r)$ as follows:
 \item The \textsc{Fsm} $A(\varepsilon)$ is defined as
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A(\varepsilon) = \langle \{ q_0, q_1 \}, \Sigma, \{ \pair(q_0, \varepsilon) \mapsto q_1 \}, q_0, \{ q_1 \} \rangle$.
+      $A(\varepsilon) = \bigl\langle \{ q_0, q_1 \}, \Sigma, 
+                          \bigl\{ \pair(q_0, \varepsilon) \mapsto \{q_1\} \bigr\}, q_0, \{ q_1 \} \bigr\rangle$.
 
 
       \begin{figure}[!ht]
@@ -911,8 +912,8 @@ expression $r$.  Then we can define $A(r)$ as follows:
 \item For a letter $c \in \Sigma$ the \textsc{Fsm} $A(c)$ is defined as 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A(c) = \langle \{ q_0, q_1 \}, \Sigma, 
-                                \{ \langle q_0, c \rangle \mapsto q_1\}, q_0, \{ q_1 \} \rangle$.
+      $A(c) = \bigl\langle \{ q_0, q_1 \}, \Sigma, 
+                                \bigl\{ \langle q_0, c \rangle \mapsto \{q_1\}\bigr\}, q_0, \{ q_1 \} \bigr\rangle$.
 
       \begin{figure}[!ht]
         \centering
@@ -934,9 +935,9 @@ expression $r$.  Then we can define $A(r)$ as follows:
       Then we can build the \textsc{Fsm} $A(r_1 \cdot r_2)$ from $A(r_1)$ and $A(r_2)$ as follows:
       \\[0.2cm]
       \hspace*{0.8cm}
-       $A(r_1 \cdot r_2) := \langle Q_1 \cup Q_2, \Sigma, 
-                \{ \pair(q_2,\varepsilon) \mapsto q_3 \} 
-                   \cup \delta_1 \cup \delta_2, q_1, \{ q_4 \} \rangle$
+       $A(r_1 \cdot r_2) := \bigl\langle Q_1 \cup Q_2, \Sigma, 
+                \bigl\{ \pair(q_2,\varepsilon) \mapsto \{q_3\} \bigr\} 
+                   \cup \delta_1 \cup \delta_2, q_1, \{ q_4 \} \bigr\rangle$
       \\[0.2cm]
       Here, the notation $\{ \pair(q_2,\varepsilon) \mapsto q_3 \} \cup \delta_1 \cup \delta_2$ specifies that
       $A(r_1 \cdot r_2)$ contains all transitions from both $A(r_1)$ and $A(r_2)$ and, furthermore,
@@ -964,7 +965,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
 
       Instead of having an $\varepsilon$-transition from $q_2$ to $q_3$ we can identify the states $q_2$ and
       $q_3$.  The advantage is that the resulting \textsc{Fsm} is smaller.
-      We will do this when creating \textsc{Fsm}s by hand.
+      We will do this when creating \textsc{Fsm}s by hand.  
 
       I haven't done this identification in the definition above because both the graphical representation and 
       the implementation get more complicated when we identify these states.
@@ -978,10 +979,10 @@ expression $r$.  Then we can define $A(r)$ as follows:
       Then the \textsc{Fsm} $A(r_1 + r_2)$ is defined as follows:
       \\[0.2cm]
       \hspace*{0.8cm}
-       $\langle \{ q_0, q_5 \} \cup Q_1 \cup Q_2, \Sigma, 
-                \{ \pair(q_0,\varepsilon) \mapsto q_1, \pair(q_0,\varepsilon) \mapsto q_2,
-                   \pair(q_3,\varepsilon) \mapsto q_5, \pair(q_4,\varepsilon) \mapsto q_5 \} 
-                   \cup \delta_1 \cup \delta_2, q_0, \{ q_5 \} \rangle$
+       $\bigl\langle \{ q_0, q_5 \} \cup Q_1 \cup Q_2, \Sigma, 
+                \bigl\{ \pair(q_0,\varepsilon) \mapsto \{q_1, q_2\},
+                   \pair(q_3,\varepsilon) \mapsto \{q_5\}, \pair(q_4,\varepsilon) \mapsto \{q_5\} \bigr\} 
+                   \cup \delta_1 \cup \delta_2, q_0, \{ q_5 \} \bigr\rangle$
 
       \begin{figure}[!ht]
         \centering
@@ -1016,10 +1017,9 @@ expression $r$.  Then we can define $A(r)$ as follows:
       Then  $A(r^*)$ is defined as follows:
       \\[0.2cm]
       \hspace*{0.8cm}
-       $\langle \{ q_0, q_3 \} \cup Q, \Sigma, 
-                \{ \pair(q_0,\varepsilon) \mapsto q_1, \pair(q_2,\varepsilon) \mapsto q_1,
-                   \pair(q_0,\varepsilon) \mapsto q_3, \pair(q_2,\varepsilon) \mapsto q_3 \} 
-                   \cup \delta, q_0, \{ q_3 \} \rangle$.
+       $\bigl\langle \{ q_0, q_3 \} \cup Q, \Sigma, 
+                \bigl\{ \pair(q_0,\varepsilon) \mapsto \{q_1, q_3\}, \pair(q_2,\varepsilon) \mapsto \{q_1, q_3\}, \bigr\} 
+                \cup \delta, q_0, \{ q_3 \} \bigr\rangle$.
       \\[0.2cm]
 
 
@@ -1081,7 +1081,7 @@ $L(r) = L(F)$.
 We assume that the \textsc{Fsm} $F$ is given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$A = \langle \{ q_0, q_1, \cdots, q_n \}, \Sigma, \delta, q_0, F \rangle$.
+$A = \bigl\langle \{ q_0, q_1, \cdots, q_n \}, \Sigma, \delta, q_0, F \bigr\rangle$.
 \\[0.2cm]
 For every pair of states $\pair(p_1,p_2) \in Q \times Q$ we define a regular expression
 $r(p_1, p_2)$ such that $r(p_1, p_2)$ describes those strings $w$ that take the \textsc{Fsm} $F$ from the state
@@ -1123,7 +1123,7 @@ The formal definition of $p \stackrel{w}{\mapsto}_k q$ is done by induction on  
   \item $\delta(p, c) = q \;\Rightarrow\; p \stackrel{c}{\mapsto}_k q$,
 
         because when the \textsc{Fsm} reads the character $c$ and switches from state $p$ directly
-        to the state $q$, there are no states `ìnbetween''.
+        to the state $q$, there are no states ``inbetween''.
   \end{enumerate}
 \item[I.S.:] $w = cv$ where $|v| \geq 1$.
 
@@ -1210,7 +1210,7 @@ $p_1$ to the state $p_2$ without using any state from the set
 $Q_{n+1}$ in-between.   Since we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q_{n+1} = \{ q_i | i \in \{0,\cdots,n \} \wedge i \geq n+1 \} = \{\}$
+$Q_{n+1} = \bigl\{ q_i \mid i \in \{0,\cdots,n \} \wedge i \geq n+1 \bigr\} = \{\}$
 \\[0.2cm]
 we know that $Q_{n+1}$ is empty.
 Therefore the regular expression $r^{(n+1)}(p_1,p_2)$
@@ -1334,7 +1334,7 @@ Take the \textsc{Fsm} shown in Figure \ref{fig:exercise-13.eps} on page
 
 \begin{figure}[!ht]
   \centering
-\epsfig{file=Abbildungen/exercise-13.eps, scale=0.5}
+\epsfig{file=Abbildungen/exercise-13.eps, scale=1.0}
 \caption{A deterministic finite state machine.}
 \label{fig:exercise-13.eps}
 \end{figure}
@@ -1346,14 +1346,14 @@ The \textsl{Jupyter notebook}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/DFA-2-RegExp.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/DFA-2-RegExp.ipynb}
 \\[0.2cm]
 contains a program that takes a deterministic \textsc{Fsm} $F$ and computes a regular expression $r$ such that
-$r$ specifies the language accepted by $F$.
+$r$ specifies the language accepted by $F$, i.e.~we have $L(r) = L(F)$.
 
 
 
 \section{Conclusion}
 In this chapter we have shown that the concept of a \blue{deterministic finite state machine}
 and a \blue{regular expression} are equivalent.
-\begin{enumerate}
+\begin{enumerate}[(a)]
 \item Every deterministic finite state machine can be translated into an equivalent regular expression.
 \item Every regular expression can be translated into an equivalent non-deterministic \textsc{Fsm}.
 \item Every non-deterministic \textsc{Fsm} can be transformed into an equivalent
@@ -1364,16 +1364,12 @@ and a \blue{regular expression} are equivalent.
 \paragraph{Historical Remark}
 \href{http://en.wikipedia.org/wiki/Stephen_Cole_Kleene}{Stephen C.~Kleene} (1909 -- 1994) has shown in 1956 that the concepts of 
 \blue{finite state  machines} and \blue{regular expression} have the same strength
-\cite{kleene:1956}:  We have proven in this chapter that for every regular expression $r$ there is a
-non-deterministic finite state machine $n$ such that $n$ recognizes the same set of strings that is
-specified by $r$.  Next, we have seen that every non-deterministic finite state machine $n$ can be
-transformed into a deterministic finite state machine $f$ which accepts the same language as $f$.
-Finally, we have seen that given a finite state machine $f$ there is an algorithm to construct a
-regular expression $r$ such that $r$ describes the language recognized by $f$.
-Hence the notions of \blue{finite state machines} and \blue{regular expressions} are equivalent.
+\cite{kleene:1956}.
+
 
 \section{Check your Understanding}
-\begin{enumerate}
+\begin{enumerate}[(a)]
+\item How are deterministic finite state machines defined?
 \item How are non-deterministic finite state machines defined?
 \item Given a non-deterministic \textsc{Fsm} $F$, can you convert it into a deterministic \textsc{Fsm}
       $\mathtt{det}(F)$ that accepts the same language as the \textsc{Fsm} $F$?
