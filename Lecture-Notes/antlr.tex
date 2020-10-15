@@ -1,14 +1,13 @@
 \chapter{Introducing ANTLR}
-If the task is to implement a parser, it is best to use one of the tools that is available for this purpose.
+If your task is to implement a parser, it is best to use one of the tools that is available for this purpose.
 The wikipedia page 
-\\[0.2cm]
-\hspace*{1.3cm}
 \href{https://en.wikipedia.org/wiki/Comparison_of_parser_generators}{Comparison of parser generators}
-\\[0.2cm]
 shows the large number of \blue{parser generators} that are available.  
-A parser generator \index{parser generator} is a tool that takes a grammar as its input and generates a parser
+A blue{parser generator} \index{parser generator} is a program that takes a grammar as its input and generates a parser
 that can parse according to this grammar.
-In my opinion, the parser generator that is both most mature and most powerful is
+In my opinion, the parser generator that is both most mature\footnote{
+  The first version of \textsc{Antlr} became available in 1992 and \textsc{Antlr} 4.0 was released in 2012.
+} and most powerful is
 \textsc{Antlr} \index{\textsc{Antlr}} \cite{parr:2012,parr:2014}.  The name is short for 
 \emph{\underline{an}other \underline{t}ool for \underline{l}anguage \underline{r}ecognition}\footnote{
   The name \textsc{Antlr} can also be interpreted as an acronym for \underline{ant}i \underline{LR},
@@ -21,13 +20,13 @@ In my opinion, the parser generator that is both most mature and most powerful i
 \href{http://www.antlr.org}{\texttt{http://www.antlr.org}}.
 \\[0.2cm]
 In this lecture we will use \textsc{Antlr} version 4.8.  The tool \textsc{Antlr} is written in \textsl{Java}
-and therefore its main target language is \textsl{Java}.  However, \textsc{Antlr} can alsobe used to generate
+and therefore its main target language is \textsl{Java}.  However, \textsc{Antlr} can also be used to generate
 parsers for the programming languages \texttt{C++}, \texttt{C\#}, \textsl{Python}, \textsl{JavaScript},
 \textsl{Go}, and \textsl{Swift}. 
 We will introduce \textsc{Antlr} via some examples that demonstrate the most important features of this tool.
-For lack of time we will only discuss the most important features of \textsc{Antlr}.  For a discussion of all
-the features offered by \textsc{Antlr} I recommend the book ``The Definitive \textsc{Antlr} Reference'' by
-Terrence Parr \cite{parr:2012}.  However, this book only covers the generation of \textsl{Java} parsers.
+For a discussion of all the features offered by \textsc{Antlr} I recommend the book 
+``The Definitive \textsc{Antlr} Reference'' by Terrence Parr \cite{parr:2012}.  However, this book only covers
+the generation of \textsl{Java} parsers. 
 
 \section{A Parser for Arithmetic Expressions}
 We start with a parser for arithmetic expressions.  The structure of arithmetic expressions can be described by
@@ -75,20 +74,20 @@ We discuss the implementation line by line.
 
 \begin{enumerate}
 \item In line 1 the keyword \texttt{grammar} specifies the name of the grammar.
-      In this case the grammar is called \texttt{Expr}.  The name of the file that contains this grammar is
-      created by appending the file extension  ``\texttt{.g4}''.  Therefore this grammar 
-      has to be stored in a file with the name ``\texttt{Expr.g4}''.
-\item Line 3 gives the production for the non-terminal \textsl{start}.  In the last chapter we would have used the
+      In this case the grammar is called \texttt{Expr}.  This grammar has to be stored in a file with the name 
+      ``\texttt{Expr.g4}''.  The rule is that the file name has to be the same name as the name of the grammar
+      and the file extension has to be ``\texttt{.g4}''.  
+\item Line 3 gives the grammar rule for the non-terminal \textsl{start}.  In the last chapter we would have used the
       notation \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{start} \rightarrow \textsl{expr}$
       \\[0.2cm]
-      to specify this rule.  With \textsc{Antlr} the left and right part of a production are separated by a colon.
-      \textsc{Antlr} terminates every production with the character ``\texttt{;}
-\item Line 6--9 give the productions for the non-terminal \textsl{expr}.  Note that we have to enclose the 
+      to specify this rule.  With \textsc{Antlr} the left and right part of a grammar rule are separated by a colon.
+      \textsc{Antlr} terminates every grammar rule with the character ``\texttt{;}''.
+\item Line 6--9 give the grammar rules for the non-terminal \textsl{expr}.  Note that we have to enclose the 
       terminals ``\texttt{+}'' and ``\texttt{-}'' in single quotes.  The different alternatives for the non-terminal
       \texttt{expr} are separated by the character ``\texttt{|}''.
-\item Similarly, the lines 11--14 and 16--18 show the productions for the non-terminals \textsl{product} and
+\item Similarly, the lines 11--14 and 16--18 show the grammar rules for the non-terminals \textsl{product} and
       \textsl{factor}.   
 \item With \textsc{Antlr} the grammar and the specification of the tokens can be given in the same file.
       In order to be able to distinguish terminals and non-terminals, terminals have to begin with an upper case 
@@ -107,9 +106,9 @@ We discuss the implementation line by line.
 
       Notice that we have to enclose the first occurrence of ``\texttt{0}'' in single quotes.
       On the other hand, we must not put the digits occurring in the square brackets ``\texttt{[}'' 
-      and ``\texttt{]}'' in quotes, since these occur inside \blue{range} and characters inside a range
+      and ``\texttt{]}'' in quotes, since these occur inside a \blue{range} and characters inside a range
       must never be quoted.
-\item Line 21 defines the terminal \texttt{WS}, where the name is short for \emph{white space}. This terminal
+\item Line 21 defines the terminal \texttt{WS}, where the name \texttt{WS} is short for \emph{white space}. This terminal
       specifies a single character that is either a blank, a tabulator, a line break, or a carriage return.
       The lexical specification of the terminal \texttt{WS} is followed by the operator ``\texttt{->}'' 
       which in turn is followed by a \blue{semantic action}.
@@ -164,8 +163,8 @@ In order to run the parser we need a driver program.  Figure \ref{fig:PureParser
     def parse_string(string): 
         inputStream = antlr4.InputStream(string)
         lexer       = ExprLexer(inputStream)
-        stream      = antlr4.CommonTokenStream(lexer)
-        parser      = ExprParser(stream)
+        tokenStream = antlr4.CommonTokenStream(lexer)
+        parser      = ExprParser(tokenStream)
         parser.start()
 \end{minted}
 \vspace*{-0.3cm}
@@ -205,23 +204,23 @@ After that we can generate a parse tree using the command
 \texttt{java -cp .:/usr/local/lib/antlr-4.8-complete.jar org.antlr.v4.gui.TestRig Expr start -gui}
 \\[0.2cm]
 This command will open a tree viewer that shows the parse tree of any input we have typed in response to this command.
-For the input string ``\texttt{1 + 2 * 3 - 4}''  this tree looks as as shown in Figure \ref{fig:expr.eps}.
+For the input string ``\texttt{1 + 2 * 3 - 4}''  this tree looks as shown in Figure \ref{fig:parse-tree.pdf}.
 
 \begin{figure}[!ht]
   \centering
-      \epsfig{file=Abbildungen/expr.eps, scale=0.7}
+      \epsfig{file=Abbildungen/parse-tree.pdf, scale=0.7}
    \caption{Parse tree for the string ``\texttt{1 + 2 * 3 - 4}''.}
-  \label{fig:expr.eps}
+  \label{fig:parse-tree.pdf}
 \end{figure}
 
 
 
 \section{Evaluation of Arithmetical Expressions}
-The last example isn't very exciting as the arithmetical expressions that the parser has read are not
+The last example isn't very exciting as the arithmetical expressions that the parser reads are not
 evaluated.  In this section we show how arithmetical expressions can be evaluated using \textsc{Antlr}
 generated parsers.  We proceed in two steps:
 \begin{enumerate}
-\item Firstly, we present a grammar for small symbolic calculator.
+\item Firstly, we present a grammar for a small symbolic calculator.
 \item Secondly, we show how this grammar can be extended with actions so that the expressions can be evaluated.
 \end{enumerate}
 Figure \ref{fig:Program.g4} presents the grammar.  In comparison with grammar for arithmetical expressions that
