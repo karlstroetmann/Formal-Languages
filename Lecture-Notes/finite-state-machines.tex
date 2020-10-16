@@ -1348,6 +1348,269 @@ The \textsl{Jupyter notebook}
 contains a program that takes a deterministic \textsc{Fsm} $F$ and computes a regular expression $r$ such that
 $r$ specifies the language accepted by $F$, i.e.~we have $L(r) = L(F)$.
 
+ \section{Minimierung endlicher Automaten}
+In diesem Abschnitt zeigen wir ein Verfahren, mit dem die Anzahl der Zustände eines deterministischen
+endlichen Automaten 
+\\[0.2cm]
+\hspace*{1.3cm}
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$
+\\[0.2cm]
+minimiert werden kann.  Ohne Beschränkung der Allgemeinheit wollen wir dabei voraussetzen,
+dass der Automat $F$ vollständig ist: Wir nehmen also an, dass der Ausdruck $\delta(q, c)$
+für jeden Zustand $q \in Q$ und jeden Buchstaben $c \in \Sigma$ als Ergebnis einen Zustand
+aus $Q$ liefert. Wir suchen dann einen deterministischen
+endlichen Automaten 
+\\[0.2cm]
+\hspace*{1.3cm}
+$F^- = \langle Q^-, \Sigma, \delta^-, q_0, A^- \rangle$,
+\\[0.2cm]
+der dieselbe Sprache akzeptiert wie der Automat $F$, für den also
+\\[0.2cm]
+\hspace*{1.3cm}
+$L(F^-) = L(F)$
+\\[0.2cm]
+gilt und für den die Anzahl der Zustände der Menge $Q^-$ minimal ist.  
+Um diese
+Konstruktion durchführen zu können, müssen wir etwas ausholen.
+Zunächst erinnern wir an die Funktion 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta^*: Q \times \Sigma \rightarrow Q$
+\\[0.2cm]
+die als zweites Argument nicht nur einen Buchstaben
+sondern auch einen String akzeptiert.
+Der Funktions-Aufruf $\delta^*(q,s)$ berechnet den Zustand $p$, in den der Automat $F$ gelangt,
+wenn der Automat im Zustand $q$ den String $s$ liest.
+Da die Funktion $\delta^*$ eine Verallgemeinerung der Funktion $\delta$ ist, werden wir in der
+Notation nicht zwischen $\delta$ und $\delta^*$ unterscheiden und einfach nur $\delta$ schreiben.
+
+Offensichtlich können wir in einem endlichen Automaten 
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$  alle die Zustände $p \in Q$ entfernen,
+die vom Start-Zustand aus nicht 
+\blue{erreichbar} sind.  Dabei hei{\ss}t ein Zustand $p$ \blue{erreichbar}\index{erreichbar} genau dann, wenn es
+einen String $w \in \Sigma^*$ gibt, so dass
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta(q_0, w) = p$
+\\[0.2cm]
+gilt.  Wir wollen im Folgenden daher voraussetzen, dass alle Zustände des betrachteten
+endlichen Automaten vom Start-Zustand aus erreichbar sind.
+
+
+\begin{figure}[!ht]
+  \centering
+  \epsfig{file=Abbildungen/nicht-gleichwertig.eps, scale=0.6}
+   \caption{Ein endlicher Automat mit äquivalenten Zuständen.}
+  \label{fig:nicht-gleichwertig.dot}
+\end{figure}
+
+Im Allgemeinen können wir einen Automaten dadurch minimieren, dass wir bestimmte Zustände
+identifizieren.  Betrachten wir beispielsweise den in Abbildung
+\ref{fig:nicht-gleichwertig.dot} gezeigten Automaten, so können wir dort die Zustände $q_1$
+und $q_2$ sowie $q_3$ und $q_4$ identifizieren, ohne dass sich dadurch die Sprache des
+Automaten ändert.  
+Die zentrale Idee bei der Minimierung eines Automaten besteht darin, dass wir uns
+überlegen, welche Zustände wir auf keinen Fall identifizieren dürfen und einfach alle
+anderen Zustände als äquivalent betrachten.
+
+\begin{Definition}[Separable States]
+Assume $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ is a deterministic finite state machine.
+Two states $p_1,p_2 \in Q$ are called \blue{separable} \index{separable} if and only if there exists a string 
+$s \in \Sigma^*$ such that either
+\begin{enumerate}
+\item $\delta(p_1,s) \in    A$ and $\delta(p_2,s) \notin A$ or
+\item $\delta(p_1,s) \notin A$ and $\delta(p_2,s) \in    A$
+\end{enumerate}
+holds.  In this case, the string $s$ \blue{separates} \index{separates} $p_1$ and $p_2$. \qed
+\end{Definition}
+If two states $p_1$ and $p_2$ are separable, then it is obvious that theses states are not
+equivalent.
+We define an equivalence relation $\sim$ on the set $Q$ of all states by setting
+\\[0.2cm]
+\hspace*{1.3cm}
+$p_1 \sim p_2$ \quad iff \quad 
+$\forall s \in \Sigma^*:\bigl(\delta(p_1,s) \in A \leftrightarrow \delta(p_2,s) \in A\bigr)$.
+\\[0.2cm]
+Hence, two states $p_1$ and $p_2$ are considered to be equivalent iff they are not separable.   
+The claim is that we can identify all equivalent states.  The identification of two states $p_1$ and
+$p_2$ is done by removing the state $p_2$ from the set $Q$ and changing the transition
+function $\delta$ in a way that the new version of $\delta$ will return
+$p_1$ in all those cases where the old version of $\delta$ had returned $p_2$.
+
+
+Es bleibt die Frage zu klären, wie wir feststellen können, welche Zustände unterscheidbar sind.
+Eine Möglichkeit besteht darin, eine Menge $V$ von Paaren von Zustände anzulegen.  Wir fügen
+das Paar $\langle p, q \rangle$ in die Menge $V$ ein, wenn wir erkannt haben, dass $p$ und $q$
+unterscheidbar sind.  Wir erkennen $p$ und $q$ als unterscheidbar, wenn es einen Buchstaben 
+$c\in\Sigma$ und zwei Zustände $s$ und $t$ gibt, so dass 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta(p,c) = s$, $\delta(q,c) = t$ und $\langle s, t \rangle \in V$
+\\[0.2cm]
+gilt.  Diese Idee liefert einen Algorithmus, der aus zwei Schritten besteht:
+\begin{enumerate}
+\item Zunächst initialisieren wir $V$ mit alle den Paaren $\pair(p,q)$, für die entweder
+      $p$ ein akzeptierender Zustand und $q$ kein akzeptierender Zustand ist, oder
+      umgekehrt $q$ ein akzeptierender Zustand und $p$ kein akzeptierender Zustand ist,
+      denn ein akzeptierender Zustand kann durch den leeren String $\varepsilon$ von einem
+      nicht-akzeptierenden Zustand unterschieden werden:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $V := \bigl\{\pair(p,q) \in Q \times Q \mid (p \in F \wedge q \notin F) \vee 
+                                               (p \notin F \wedge q \in F) \bigr\}$
+\item Solange wir ein neues Paar $\pair(p,q) \in Q \times Q$ finden, für dass es einen 
+      Buchstaben $c$ gibt, so dass die Zustäne $\delta(p,c)$ und $\delta(q,c)$ 
+      bereits unterscheidbar sind, fügen wir dieses Paar zur Menge $V$ hinzu: 
+      \\[0.2cm]
+      \hspace*{1.3cm} 
+      \texttt{while ($\exists \pair(p,q) \in Q \times Q: \exists c \in \Sigma:\langle\delta(p,c),
+        \delta(q,c)\rangle \in V \wedge \pair(p,q) \notin V$) \{} \\
+      \hspace*{1.8cm}
+      \texttt{choose $\pair(p,q) \in Q \times Q$ such that} $\langle\delta(p,c),
+      \delta(q,c)\rangle \in V \wedge \pair(p,q) \notin V$ \texttt{\{}
+\\
+      \hspace*{2.3cm}
+      \texttt{$V$ := $V \cup \{\, \pair(p,q),\, \pair(q,p)\, \}$;} \\
+      \hspace*{1.8cm}
+      \texttt{\}}\\
+      \hspace*{1.3cm}
+      \texttt{\}}
+\end{enumerate}
+Haben wir alle Paare $\pair(p,q)$ von unterscheidbaren Zuständen gefunden,
+so können wir anschlie{\ss}end alle Zustände $p$ und $q$  identifizieren, die nicht
+unterscheidbar sind, für die also $\langle p, q \rangle \not\in V$ gilt.
+Es lässt sich zeigen, dass der so konstruierte Automat tatsächlich minimal ist.
+\pagebreak
+
+\vspace*{-0.5cm}
+\example
+Wir betrachten den in Abbildung \ref{fig:nicht-gleichwertig.dot} gezeigten endlichen
+Automaten und wenden den oben skizzierten Algorithmus auf diesen Automaten an.
+Wir bedienen uns dazu einer Tabelle, deren Spalten und Zeilen mit den verschiedenen
+Zuständen durchnummeriert sind.  Wenn wir im ersten Schritt erkannt haben,
+dass die Zustände $i$ und $j$ unterscheidbar sind, so fügen wir in dieser Tabelle
+ in der $i$-ten Zeile und der $j$-ten Spalte eine $1$ ein.
+Da mit den Zuständen $i$ und $j$ auch die Zustände $j$ und $i$ unterscheidbar sind,
+fügen wir au{\ss}erdem in der $j$-ten Zeile und der $i$-ten Spalte ebenfalls eine $1$ ein.
+\begin{enumerate}
+\item Im ersten Schritt erkennen wir, dass die beiden akzeptierenden Zustände
+      $q_3$ und $q_4$ von allen nicht-akzeptierenden Zuständen unterscheidbar sind.
+      Also sind die Paare 
+      $\pair(q_0,q_3)$,
+      $\pair(q_0,q_4)$,
+      $\pair(q_1,q_3)$,
+      $\pair(q_1,q_4)$,
+      $\pair(q_2,q_3)$ und
+      $\pair(q_2,q_4)$
+      unterscheidbar.  Damit hat die Tabelle nun die folgende Gestalt:
+      \begin{center}        
+      \begin{tabular}[t]{|l||l|l|l|l|l|}
+      \hline
+            & $q_0$    &    $q_1$ &    $q_2$ &      $q_3$ &      $q_4$  \\
+      \hline
+      \hline
+      $q_0$ &          &          &          & $1$ & $1$  \\
+      \hline
+      $q_1$ &          &          &          &$1$ &$1$  \\
+      \hline
+      $q_2$ &          &          &          &$1$ &$1$  \\
+      \hline
+      $q_3$ &$1$        &$1$         &       $1$ &          &           \\
+      \hline
+      $q_4$ &$1$ &$1$ &$1$ &          &           \\
+      \hline
+      \end{tabular}
+      \end{center}
+\item Als nächstes erkennen wir, dass die Zustände $q_0$ und $q_1$ unterscheidbar sind,
+      denn es gilt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta(q_0,a) = q_1$, \quad $\delta(q_1,a) = q_3$ \quad und \quad $q_1 \not\sim q_3$.
+      \\[0.2cm]
+      Genauso sehen wir, dass die Zustände $0$ und $2$ unterscheidbar sind, 
+      denn es gilt 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta(q_0,b) = q_2$, \quad $\delta(q_2,b) = q_4$ \quad und \quad $q_2 \not\sim q_4$.
+      \\[0.2cm]
+      Da wir im zweiten Schritt nun gefunden haben, dass
+      $q_0 \not\sim q_1$ und $q_0 \not\sim q_2$ gilt, tragen wir in der Tabelle an den
+      entsprechenden Stellen eine $2$ ein. Damit hat die Tabelle
+      jetzt die folgende Gestalt:
+      \begin{center}        
+      \begin{tabular}[t]{|l||l|l|l|l|l|}
+      \hline
+        & $q_0$      &      $q_1$ &      $q_2$ &      $q_3$ &      $q_4$  \\
+      \hline
+      \hline
+      $q_0$ &          &$2$ &$2$ &$1$ &$1$  \\
+      \hline
+      $q_1$ &$2$ &          &          &$1$ &$1$  \\
+      \hline
+      $q_2$ &$2$ &          &          &$1$ &$1$  \\
+      \hline
+      $q_3$ &$1$ &$1$ &$1$ &          &           \\
+      \hline
+      $q_4$ &$1$ &$1$ &$1$ &          &           \\
+      \hline
+      \end{tabular}
+      \end{center}
+\item Nun finden wir keine weiteren Paare von unterscheidbaren Zuständen mehr,
+      denn wenn wir das Paar $\pair(q_1,q_2)$ betrachten, sehen wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta(q_1,\texttt{a}) = q_3$ \quad und \quad $\delta(q_2,\texttt{a}) = q_4$, 
+      \\[0.2cm]
+      aber da die Zustände $3$ und $4$ bisher nicht unterscheidbar sind,
+      liefert dies kein neues unterscheidbares Paar.  Genausowenig liefert
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta(q_1,\texttt{b}) = q_3$ \quad und \quad $\delta(q_2,\texttt{b}) = q_4$, 
+      \\[0.2cm]
+      ein neues unterscheidbares Paar.  Jetzt bleiben noch die beiden Zustände
+      $q_3$ und $q_4$.  Hier finden wir
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\delta(q_3,c) = q_1$ \quad und \quad $\delta(q_4,c) = q_2$ \quad für alle $c \in \{\texttt{a}, \texttt{b}\}$
+      \\[0.2cm]
+      und da die Zustände $q_1$ und $q_2$ bisher nicht als unterscheidbar bekannt sind,
+      haben wir keine neuen unterscheidbaren Zustände gefunden.
+      Damit können wir die äquivalenten Zustände aus der Tabelle ablesen, es gilt:
+      \begin{enumerate}
+      \item $q_1 \sim q_2$
+      \item $q_3 \sim q_4$
+      \end{enumerate}
+      Abbildung \ref{fig:gleichwertig.dot} zeigt den entsprechenden reduzierten endlichen
+      Automaten.
+\end{enumerate}
+
+\begin{figure}[!ht]
+  \centering
+  \epsfig{file=Abbildungen/gleichwertig.eps, scale=0.6}
+   \caption{Der reduzierte endliche Automat.}
+  \label{fig:gleichwertig.dot}
+\end{figure}
+
+
+
+\exercise
+Konstruieren Sie den minimalen deterministischen endlichen Automaten, der die Sprache \linebreak
+$L\bigl(a \cdot (b \cdot a)^*\bigr)$ erkennt.  Gehen Sie dazu in folgenden Schritten vor:
+\begin{enumerate}[(a)]
+\item Berechnen Sie einen nicht-deterministischen endlichen Automaten, der diese Sprache
+      erkennt.
+\item Transformieren Sie diesen Automaten in einen deterministischen Automaten.
+\item Minimieren Sie die Zahl der Zustände dieses Automaten mit dem oben angegebenen Algorithmus.
+\end{enumerate}
+
+\subsection{Implementation}
+The \textsl{Jupyter notebook} 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/DFA-2-RegExp.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Minimize.ipynb}
+\\[0.2cm]
+contains a program that takes a deterministic \textsc{Fsm} $F$ and returns an equivalent \textsc{Fsm} that has
+the minimum number of states.
 
 
 \section{Conclusion}
@@ -1359,7 +1622,7 @@ and a \blue{regular expression} are equivalent.
 \item Every non-deterministic \textsc{Fsm} can be transformed into an equivalent
       deterministic \textsc{Fsm}.
 \end{enumerate}
-
+Furthermore, we have shown that every deterministic finite state machine can be minimized.
 
 \paragraph{Historical Remark}
 \href{http://en.wikipedia.org/wiki/Stephen_Cole_Kleene}{Stephen C.~Kleene} (1909 -- 1994) has shown in 1956 that the concepts of 
@@ -1369,14 +1632,14 @@ and a \blue{regular expression} are equivalent.
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
-\item How are deterministic finite state machines defined?
-\item How are non-deterministic finite state machines defined?
+\item How are deterministic and non-deterministic finite state machines defined?
 \item Given a non-deterministic \textsc{Fsm} $F$, can you convert it into a deterministic \textsc{Fsm}
       $\mathtt{det}(F)$ that accepts the same language as the \textsc{Fsm} $F$?
 \item Given a regular expression $r$, can you describe the steps necessary to construct a non-deterministic
       \textsc{Fsm} $F$ that accepts the language specified by $r$?
 \item Given a deterministic \textsc{Fsm} $F$ can you describe how to construct a regular expression $r$
       that specifies the language accepted by $F$?
+\item How do we mimimize a finite state machine?
 \end{enumerate}
 
 %%% Local Variables: 
