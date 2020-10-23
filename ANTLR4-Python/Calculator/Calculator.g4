@@ -24,10 +24,10 @@ product returns[result]
     ;
 
 factor returns[result]
-    : '(' expr ')'        {$result = $expr.result                 }
+    : 'sqrt' '(' expr ')' {$result = math.sqrt($expr.result)      }
+    | '(' expr ')'        {$result = $expr.result                 }
     | FLOAT               {$result = float($FLOAT.text)           }
     | IDENTIFIER          {$result = self.Values[$IDENTIFIER.text]}
-    | 'sqrt' '(' expr ')' {$result = math.sqrt($expr.result)      }
     ;
 
 IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
