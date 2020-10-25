@@ -29,7 +29,8 @@ For a discussion of all the features offered by \textsc{Antlr} I recommend the b
 the generation of \textsl{Java} parsers. 
 
 \section{A Parser for Arithmetic Expressions}
-We start with a parser for arithmetic expressions.  The structure of arithmetic expressions can be described by
+We start with a parser for arithmetic expressions.  This parser will do nothing fancy, it will just check
+whether a given string has the format of an arithmetic expression and adheres to 
 the grammar that is shown in Figure \ref{fig:Expr} on page \pageref{fig:Expr}.
 If we use \textsc{Antlr} we can implement this grammar as shown in Figure \ref{fig:Expr.g4}.  
 We discuss the implementation line by line.
@@ -220,7 +221,9 @@ The last example isn't very exciting as the arithmetical expressions that the pa
 evaluated.  In this section we show how arithmetical expressions can be evaluated using \textsc{Antlr}
 generated parsers.  We proceed in two steps:
 \begin{enumerate}
-\item Firstly, we present a grammar for a small symbolic calculator.
+\item Firstly, we present a grammar for a small \blue{symbolic calculator}.
+
+      Here, the attribute \emph{symbolic} means that the calculator supports the use of variables.
 \item Secondly, we show how this grammar can be extended with actions so that the expressions can be evaluated.
 \end{enumerate}
 Figure \ref{fig:Program.g4} presents the grammar.  In comparison with grammar for arithmetical expressions that
@@ -281,17 +284,17 @@ was shown in Figure \ref{fig:Expr.g4} there are the following changes:
       Note that \textsc{Antlr} provides the postfix operator ``\texttt{+}'' to
       specify non-empty sequences.  The postfix operators ``\texttt{*}'' and ``\texttt{?}'' are also 
       supported.  They have the same semantics as in regular expressions.
-\item A \texttt{statement} is either an assignment or an expression.
+\item A \texttt{statement} is either an assignment or an expression. 
 \item The rules for expressions and products are the same as previously.
 \item The rule for the non-terminal \texttt{factor} has changed.
       \begin{enumerate}[(a)]
+      \item Expressions are now allowed to contain calls of the function \texttt{sqrt},
+            which is supposed to compute the square root of a given number.
       \item We can still put expressions in parenthesis.
       \item Instead of integers the grammar now supports floating point numbers.
             These are recognized by the terminal \texttt{FLOAT}.
-      \item Expressions can now contain variables.  These are recognized by the terminal
+      \item Expressions can also contain variables.  These are recognized by the terminal
             \texttt{IDENTIFIER}.
-      \item Furthermore, expressions are allowed to contain calls of the function \texttt{sqrt},
-            which is supposed to compute the square root of a given number.
       \end{enumerate}
 \item The terminal \texttt{IDENTIFIER} recognizes variable names.  A variable name starts with 
       a letter from the Latin alphabet, i.e. a character from the range \texttt{[a-z]}.  This letter can be either
@@ -306,8 +309,8 @@ A parser for this grammar is able to parse strings like the following:
     x := 2.3 * 3.4; y := sqrt(2 * x); z := x * x + y * y; sqrt(z);
 \end{verbatim}
 Our next task is to develop an interpreter for the language specified by the grammar shown 
-in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an interpreter can be realized using
-\textsc{Antlr}. 
+in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an interpreter can be implemented.
+
 
 
 \begin{figure}[!ht]
@@ -369,13 +372,16 @@ in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an int
       This is achieved by the header declaration shown in line 3--5.  The header declaration
       is started with the keyword \texttt{\@header} that is followed by an opening brace.
       It ends at the matching closing brace.
-      \textsc{Antlr} puts all the code that is between the braces at the beginning of the generated parser. 
+      \textsc{Antlr} puts all the code that is between the braces at the beginning of the generated parser.
+
+      Note that we have to be careful to \textbf{not} indent the code.  The reason is that \textsl{Python} is
+      very picky about indentation.
 \item If the parser recognizes an assignment of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       $\texttt{IDENTIFIER} \;\mathtt{:=}\; \textsl{expr} \mathtt{;}$
       \\[0.2cm]
-      it has to evaluate the expression \textsl{expr} and store the result of this evaluation in
+      it evaluates the expression \textsl{expr} and then stores the result of this evaluation in
       the dictionary \texttt{Values}.  In order to do this, the grammar rule is followed by some
       \blue{action code} that is enclosed in curly braces.  This code will be executed once the parser has 
       recognized the assignment.
@@ -385,7 +391,7 @@ in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an int
       by \textsc{Antlr}.  We can refer to this object via the variable \texttt{self}.
       The value that is computed by for the expression \textsl{expr} is available as
       the member \texttt{\symbol{36}expr.result}.  
-      The fact that this member has the name \texttt{result} is due to the returns-specification
+      The fact that this member has the name \texttt{result} is due to the \blue{\texttt{returns}-specification}
       in line 14.
 \item Line 11 deals with the case where the parser has seen an expression followed by a semicolon.
       In this case, the result of the evaluation of the expression is printed.
@@ -400,10 +406,10 @@ in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an int
       In order to evaluate this expression, the parser has to compute the sum of the \textsl{expr} and the
       \textsl{product}.  The notation ``\texttt{e=expr}'' assigns the result of evaluating \textsl{expr} to the
       variable \texttt{e} and 
-      ``\texttt{e=expr}'' assigns the result of evaluating \textsl{product} to the variable \texttt{p}.
-      The action code adds these variables and assigns the sum to the variables \texttt{result}. 
+      ``\texttt{p=product}'' assigns the result of evaluating \textsl{product} to the variable \texttt{p}.
+      The action code adds these variables and assigns the sum to the variable \texttt{result}. 
       Note that all these variable names have to prefixed by a dollar symbol.
-\item Line 28 shows how a string representing a floating point number is converted into a floating point
+\item Line 29 shows how a string representing a floating point number is converted into a floating point
       number.  The expression \texttt{\symbol{36}FLOAT.text} references the string that is matched
       by the regular expression \texttt{FLOAT} defined in line 34--35.
 \item Similarly, in line 29 the expression \texttt{\symbol{36}IDENTIFIER.text} references the string that is matched
@@ -452,7 +458,8 @@ and scanner that is generated by \textsc{Antlr}.
       argument \texttt{None}, this parser is not yet connected to a scanner.
 \item Line 7 creates and sets the member variable \texttt{Values} for this parser.
       This member variable is a dictionary.  This dictionary associates variables with their values.
-\item Line 8 reads a line of input.  As long as there is still input, the while loop
+      Initially, this dictionary is empty.
+\item Line 8 reads a line of input.  As long as there still is input, the while loop
       in line 9 will process this input.
 \item Line 10 transforms the string that has been read into a stream that is suitable for \textsc{Antlr}.
 \item Line 11 creates a scanner for this input stream.
@@ -466,7 +473,7 @@ and scanner that is generated by \textsc{Antlr}.
 
 \section{Generating Abstract Syntax Trees with \textsc{Antlr}}
 The evaluation of arithmetical expressions was relatively easy as it is possible to evaluate an arithmetical expression
-directly via semantic actions that are embedded in the grammar.  If the problems are more complex than the
+directly via semantic actions that are embedded in the grammar.  If the problem is more complex than the
 evaluation of an expression it is usually easier to first generate an \blue{abstract syntax tree} and then use
 the syntax tree to solve the problem at hand.  We demonstrate this approach using the problem of 
 \blue{symbolic differentiation}. \index{symbolic differentiation} 
@@ -542,12 +549,12 @@ Figure \ref{fig:Differentiator.g4} shows how the grammar from Figure \ref{fig:Ex
         | 'exp' '(' e=expr ')' {$result = ('exp', $e.result)}
         | 'ln'  '(' e=expr ')' {$result = ('ln' , $e.result)}
         | v=VAR                {$result = $v.text           }
-        | n=NUM                {$result = int($n.text)      }
+        | n=NUMBER             {$result = int($n.text)      }
         ;
     
-    VAR : [a-zA-Z][a-zA-Z0-9]*;
-    NUM : '0'|[1-9][0-9]*;
-    WS  : [ \t\n\r] -> skip; 
+    VAR    : [a-zA-Z][a-zA-Z0-9]*;
+    NUMBER : '0'|[1-9][0-9]*;
+    WS     : [ \t\n\r] -> skip; 
 \end{minted}
 \vspace*{-0.3cm}
 \caption{\textsc{Antlr} implementation of the grammar form Figure \ref{fig:Expr-exp-ln}.}
@@ -575,9 +582,9 @@ Figure \ref{fig:Differentiator.g4} shows how the grammar from Figure \ref{fig:Ex
       \\[0.2cm]
       and assign this triple to the variable \texttt{\symbol{36}result}.
 \item The remaining grammar rules work in a similar way.
-\item In line 19 we can get the actual text that is matched by the terminal \texttt{VAR} by writing 
+\item In line 23 we can get the actual text that is matched by the terminal \texttt{VAR} by writing 
       \texttt{\symbol{36}v.text}.
-\item In line 20 we have to convert the string recognized by the terminal \texttt{NUM} into an integer
+\item In line 24 we have to convert the string recognized by the terminal \texttt{NUMBER} into an integer
       by calling the function \texttt{int}.
 \end{enumerate}
 
@@ -599,6 +606,8 @@ of an arithmetic expression and computes the derivative with respect to variable
                  xrightmargin  = 0.8cm,
                ]{python3}
     def diff(e):
+        if isinstance(e, int):
+            return '0'
         if e[0] == '+':
             f , g  = e[1:]
             fs, gs = diff(f), diff(g)
@@ -625,17 +634,18 @@ of an arithmetic expression and computes the derivative with respect to variable
             return ('*', fs, e)
         if e == 'x':
             return '1'
-        return 0
+        return '0'
 \end{minted}
 \vspace*{-0.3cm}
-\caption{A function to compute the symbolic differentiation of a given expression.}
+\caption{A function to compute the derivative of a given expression.}
 \label{fig:Differentiator.ipynb:diff}
 \end{figure}
 
 
 Finally, Figure \ref{fig:Differentiator.ipynb:main} shows how the parser can be invoked.
-Invoking the parser in line 10 creates an abstract syntax tree that is stored in the variable \texttt{term} in
-line 10.  This abstract syntax tree is then used as input to the function \texttt{diff}.
+Invoking the parser in line 10 creates an abstract syntax tree that is stored in the variable
+\texttt{context.result} in line 10.  This abstract syntax tree is then used as input to the function
+\texttt{diff}. 
 
 \begin{figure}[!ht]
 \centering
