@@ -19,10 +19,11 @@ product
     ;
 
 factor
-    : '(' expr ')'        
+    :
+        'sqrt' '(' expr ')'
+    | '(' expr ')'        
     | FLOAT               
     | IDENTIFIER          
-    | 'sqrt' '(' expr ')'
     ;
 
 IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;

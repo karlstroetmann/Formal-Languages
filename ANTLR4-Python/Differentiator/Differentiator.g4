@@ -17,9 +17,9 @@ factor returns [result]
     | 'exp' '(' e=expr ')' {$result = ('exp', $e.result)}
     | 'ln'  '(' e=expr ')' {$result = ('ln' , $e.result)}
     | v=VAR                {$result = $v.text           }
-    | n=NUM                {$result = int($n.text)      }
+    | n=NUMBER             {$result = int($n.text)      }
     ;
 
-VAR : [a-zA-Z][a-zA-Z0-9]*;
-NUM : '0'|[1-9][0-9]*;
-WS  : [ \t\n\r] -> skip; 
+VAR    : [a-zA-Z][a-zA-Z0-9]*;
+NUMBER : '0'|[1-9][0-9]*;
+WS     : [ \t\n\r] -> skip; 
