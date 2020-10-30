@@ -19,8 +19,7 @@ product
     ;
 
 factor
-    :
-        'sqrt' '(' expr ')'
+    : 'sqrt' '(' expr ')'
     | '(' expr ')'        
     | FLOAT               
     | IDENTIFIER          
