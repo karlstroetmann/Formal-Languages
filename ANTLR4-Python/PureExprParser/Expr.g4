@@ -1,8 +1,5 @@
 grammar Expr;
 
-start   : expr
-        ;
-
 expr    : expr '+' product 
         | expr '-' product
         | product        
