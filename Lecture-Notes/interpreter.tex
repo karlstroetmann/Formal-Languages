@@ -49,17 +49,17 @@
 \end{figure}
 
 In diesem Kapitels erstellen wir mit Hilfe des Parser-Generators \textsc{Antlr} einen
-Interpreter f\"ur eine einfache Programmiersprache.  Erfreulicherweise akzeptiert
+Interpreter für eine einfache Programmiersprache.  Erfreulicherweise akzeptiert
 \textsc{Antlr} seit der Version \texttt{4.0} auch Grammatiken, die einfache Links-Rekursion
 enthalten.  Auch eine Links-Faktorisierung der Grammatik ist nicht mehr notwendig.
-Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Antlr}-Grammatik der Programmier-Sprache, f\"ur die wir
+Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Antlr}-Grammatik der Programmier-Sprache, für die wir
 in diesem Abschnitt einen Interpreter entwickeln.  Die Befehle dieser Sprache sind Zuweisungen, Print-Befehle,
 \texttt{if}-Abfragen, sowie \texttt{while}-Schleifen.  Abbildung \ref{fig:sum.sl} zeigt
-ein Beispiel-Programm, das dieser Grammatik entspricht.  Dieses Programm liest zun\"achst eine Zahl
+ein Beispiel-Programm, das dieser Grammatik entspricht.  Dieses Programm liest zunächst eine Zahl
 ein, die in der Variablen \texttt{n} gespeichert wird.  Anschlie{\ss}end wird die Summe
 \\[0.2cm]
 \hspace*{1.3cm}
-$\sum\limits_{i=1}^{n^2} i$
+$\ds\sum\limits_{\mbox{$\normalsize i=1$}}^{\mbox{$\normalsize n^2$}} \mbox{\Large $i$}$
 \\[0.2cm]
 in der Variablen \texttt{s} akkumuliert und am Ende des Programms ausgegeben.
 
@@ -89,472 +89,8 @@ in der Variablen \texttt{s} akkumuliert und am Ende des Programms ausgegeben.
 \end{figure}
 
 
-
-Um einen Interpreter f\"ur diese Sprache entwickeln zu k\"onnen, ben\"otigen wir
-zun\"achst Klassen, mit denen wir die einzelnen Befehle darstellen k\"onnen.
-Wir beginnen mit der abstrakten Klasse \texttt{Statement}.  Diese Klasse ist in Abbildung
-\ref{fig:Statement.java} gezeigt und dient dazu,
-Anweisungen unserer Programmier-Sprache darzustellen.
-Wir werden von der Klasse \texttt{Statement} sp\"ater die Klassen
-\texttt{Assignment}, \texttt{Print}, \texttt{IfThen} und \texttt{While} ableiten.
-Die Klasse \texttt{Statement} ist selber abstrakt und enth\"alt 
-im Wesentlichen die Deklaration der abstrakten Methode $\texttt{execute}()$.  Diese Methode
-k\"onnen wir sp\"ater benutzen, um einen Befehle ausf\"uhren.
-Zus\"atzlich speichern wir hier das Flag \texttt{isInteractive} als statische Variable.  Mit
-diesem Flag steuern wir, ob der Interpreter interaktiv in einer Kommandozeile betrieben
-wird, oder ob im Batch-Modus eine Datei abgearbeitet werden soll.  Au{\ss}erdem haben wir in der
-Klasse \texttt{Statement} noch die statische Methode $\texttt{prompt}()$.  Diese wird nur
-dann benutzt, wenn der Interpreter interaktiv von der Kommandozeile aus betrieben wird.
-In diesem Fall gibt die Methode den folgenden Prompt aus:
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{SL> }
-\\[0.2cm]
-Dieser Prompt signalisiert dem Benutzer, dass der Interpreter auf eine Eingabe wartet.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public abstract class Statement {
-        static boolean isInteractive = false;
-        
-        public abstract void execute();
-    
-        static void prompt() {
-            if (isInteractive) {
-                System.out.print("SL> ");
-                System.out.flush();
-            }
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die abstrakte Klasse \texttt{Statement}}
-\label{fig:Statement.java}
-\end{figure}
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public class Assignment extends Statement {
-        Variable mLhs;
-        Expr     mRhs;
-        
-        public Assignment(Variable lhs, Expr rhs) {
-            mLhs = lhs;
-            mRhs = rhs;
-        }
-        public void execute() {
-            Expr.sValueTable.put(mLhs.mName, mRhs.eval());
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Assignment}.}
-\label{fig:Assignment.java}
-\end{figure}
-
-
-\vspace*{\fill} \pagebreak
-
-Abbildung \ref{fig:Assignment.java} zeigt die Implementierung der Klasse \texttt{Assignment}.  Da
-diese Klasse eine Zuweisung der Form
-\\[0.2cm]
-\hspace*{1.3cm} $\textsl{var} \;\mathtt{:=}\; \textsl{expr}$
-\\[0.2cm]
-darstellt, bei der einer Variablen \textsl{var} der Wert eines arithmetischen Ausdrucks
-\textsl{expr} zugewiesen wird, hat diese Klasse zwei Member-Variablen um die Variable und den
-Ausdruck zu speichern.  
-\begin{enumerate}
-\item Die erste Member-Variable ist \texttt{mLhs}.  Diese
-      Member-Variable entspricht der Variablen auf der linken Seite des Zuweisungs-Operators
-      ``\texttt{:=}''.
-\item Die zweite Member-Variable ist \texttt{mRhs}.  Hier wird der arithmetische Ausdruck,
-      der auf der rechten Seite des Zuweisungs-Operators steht, kodiert.  Diese
-      Member-Variable hat den Typ \texttt{Expr}.  Hierbei handelt es sich um eine
-      abstrakte Klasse zur Darstellung arithmetischer Ausdr\"ucke, von der wir sp\"ater
-      konkrete Klassen ableiten.  Diese Klasse besitzt eine abstrakte Methode
-      $\texttt{eval}()$, mit der ein arithmetischer Ausdruck ausgewertet werden kann.
-\end{enumerate}
-In der Klasse \texttt{Assignment} wertet die Methode $\texttt{execute}()$ den Ausdruck,
-der in der Variablen \texttt{mRhs} gespeichert wird, mit Hilfe  der f\"ur Objekte der Klasse
-\texttt{Expr} zur Verf\"ugung stehenden 
-Methode $\texttt{eval}()$ aus und speichert den erhaltenen Wert in der Hashtabelle
-\texttt{sValueTable} unter dem Namen der Variablen ab. 
-Es handelt sich bei dieser Tabelle um eine sogenannte \emph{Symboltabelle}, in der die
-Werte der einzelnen Variablen abgelegt werden.
-Die Tabelle ist als statische Variable in der Klasse \texttt{Expr} definiert.
-Diese Klasse wird in Abbildung \ref{fig:Expr.java} auf Seite \pageref{fig:Expr.java} gezeigt.
-
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public class Read extends Statement {
-        Variable mLhs;
-        
-        public Read(Variable lhs) {
-            mLhs = lhs;
-        }
-        public void execute() {
-            System.out.print("> "); // write prompt
-            System.out.flush();
-            Scanner scanner = new Scanner(System.in);
-            Double  value   = scanner.nextDouble();
-            Expr.sValueTable.put(mLhs.mName, value);
-        }    
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Read}.}
-\label{fig:Read.java}
-\end{figure}
-
-Abbildung \ref{fig:Read.java} zeigt die Implementierung der Klasse \texttt{Read}.  Diese
- Klasse stellt  eine Zuweisung der Form
-\\[0.2cm]
-\hspace*{1.3cm} \texttt{\textsl{var} = read();}
-\\[0.2cm]
-dar.  Daher besitzt diese Klasse eine Member-Variable \texttt{mVar}, in welcher das Ergebnis
-der Lese-Operation abgespeichert wird.  
-Die Methode $\texttt{execute}()$ gibt zun\"achst den String ``\texttt{> }'' als
-Eingabe-Aufforderung aus.  Anschlie{\ss}end wird ein Objekt der in \textsl{Java}
-vordefinierten Klasse \texttt{Scanner} erzeugt.  Diese Klasse stellt die Methode
-$\texttt{nextDouble}()$ zur Verf\"ugung, mit deren Hilfe eine Flie{\ss}komma-Zahl eingelesen
-werden kann.  Diese wird dann in der Symboltabelle unter dem Namen der Variablen,
-der auf der linken Seite der Zuweisung steht, abgespeichert.
-
-
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    import java.util.*;
-    
-    public class While extends Statement {
-        BoolExpr        mCond;
-        List<Statement> mStmntList;
-        
-        public While(BoolExpr cond, List<Statement> stmntList) {
-            mCond      = cond;
-            mStmntList = stmntList;
-        }
-        public void execute() {
-            while (mCond.eval()) {
-                for (Statement stmnt: mStmntList) {
-                    stmnt.execute();
-                }
-            }
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{While}.}
-\label{fig:While.java}
-\end{figure}
-
-
-
-
-Von den \"ubrigen Klassen zur Darstellung von Befehlen diskutieren wir noch die Klasse
-\texttt{While}, die in Abbildung \ref{fig:While.java} gezeigt wird.
-Diese Klasse stellt einen Befehl der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-$\mathtt{while}\;(b)\; \{ \;\textsl{stmnts}\; \}$
-\\[0.2cm]
-dar, wobei $b$ ein Boole'scher Ausdruck ist, w\"ahrend \textsl{stmnts} eine Liste von Befehlen 
-ist.  Der Boole'sche Ausdruck wird in der Member-Variablen \texttt{mCond} gespeichert, die Liste von
-Befehlen findet sich in der Member-Variablen \texttt{mStmntList}.  Zur Auswertung eines solchen
-Befehls f\"uhren wir solange alle Befehle in der Liste \texttt{mStmntList} aus, wie die Auswertung des
-Boole'schen Ausdrucks $b$ den Wert \texttt{true} ergibt.
-
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public abstract class BoolExpr {
-        public abstract Boolean eval();
-    }
-    public class Equal extends BoolExpr {
-        Expr mLhs;
-        Expr mRhs;
-        
-        public Equal(Expr lhs, Expr rhs) {
-            mLhs = lhs;
-            mRhs = rhs;
-        }
-        public Boolean eval() {
-            return mLhs.eval() == mRhs.eval();
-        }
-    }        
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klassen \texttt{BoolExpr} und \texttt{Equal}}
-\label{fig:BoolExpr.java}
-\end{figure}
-
-\pagebreak
-Die abstrakte Klasse \texttt{BoolExpr} dient zur Darstellung Boole'scher Ausdr\"ucke.  In unserem Fall
-sind das Ausdr\"ucke der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-$l \;\texttt{==}\; r$ \quad und \quad $l < r$,
-\\[0.2cm]
-wobei Gleichungen durch die Klasse \texttt{Equal} dargestellt werden, w\"ahrend Ungleichungen durch die
-Klasse \texttt{LessThan} dargestelt werden, die beide von der Klasse \texttt{BoolExpr} abgeleitet
-sind.  Abbildung \ref{fig:BoolExpr.java} zeigt die Klassen \texttt{BoolExpr} und \texttt{Equal}.
-Die Klasse \texttt{BoolExpr} hat die beiden Member-Variablen \texttt{mLhs} und
-\texttt{mRhs} und repr\"asentiert die Gleichung
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{mLhs == mRhs}.
-\\[0.2cm]
-Um diese Gleichung auszuwerten, werden rekursiv die linke und die rechte Seite der
-Gleichung, die in \texttt{mLhs} und \texttt{mRhs} gespeichert sind, ausgewertet.
-Anschlie{\ss}end wird das Ergebnis dieser Auswertung zur\"uck gegeben.
-Die Klasse \texttt{LessThan} ist analog zur Klasse \texttt{Equal} aufgebaut und wird daher nicht
-gezeigt.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    import java.util.*;
-    
-    public abstract class Expr {
-        public static Map<String, Double> sValueTable = new HashMap<String, Double>();
-        
-        public abstract Double eval();
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die abstrakte Klasse \texttt{Expr}.}
-\label{fig:Expr.java}
-\end{figure}
-
- 
-Schlie{\ss}lich haben wir noch die Klassen, die zur Repr\"asentation von arithmetischen Ausdr\"ucken
-ben\"otigt werden.   Diese Klassen werden alle von der abstrakten Klasse \texttt{Expr} abgeleitet, die
-in Abbildung \ref{fig:Expr.java} gezeigt ist.  
-\begin{enumerate}
-\item Die Klasse \texttt{Expr} definiert die statische Variable \texttt{sValueTable}.  Diese Variable
-      beinhaltet eine Hash\-tabelle, in der f\"ur jede Variable, der ein Wert zugewiesen wurde,
-      der aktuelle Wert dieser Variablen gespeichert ist.
-\item Weiter deklariert die Klasse die abstrakte Methode $\texttt{eval}()$, mit der ein
-      Ausdruck ausgewertet 
-      werden kann.
-\end{enumerate}
-Von der Klasse
-\texttt{Expr} werden die Klassen \texttt{Sum}, \texttt{Difference}, \texttt{Product}, \texttt{Quotient},
-\texttt{MyNumber} und \texttt{Variable} abgeleitet, die wir jetzt der Reihe nach diskutieren.
-Abbildung \ref{fig:Sum2.java} zeigt die Klasse
-\texttt{Sum}.  Da diese Klasse eine Summe der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-$l + r$ 
-\\[0.2cm]
-darstellt, hat diese Klasse zwei Member-Variablen \texttt{mLhs}  und \texttt{mRhs} um die beiden
-Summanden $l$ und $r$ darzustellen.  Die Methode $\texttt{eval}$ wertet diese beiden
-Member-Variablen getrennt aus und addiert das Ergebnis.  Die Klassen \texttt{Difference},
-\texttt{Product} und \texttt{Quotient} sind analog zur Klasse \texttt{Sum} aufgebaut und werden
-daher nicht weiter diskutiert.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public class Sum extends Expr {
-        Expr mLhs;
-        Expr mRhs;
-        
-        public Sum(Expr lhs, Expr rhs) {
-            mLhs = lhs;
-            mRhs = rhs;
-        }
-        public Double eval() {
-            return mLhs.eval() + mRhs.eval();
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Sum}}
-\label{fig:Sum2.java}
-\end{figure}
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public class Variable extends Expr {
-        String mName;
-        
-        public Variable(String name) {
-            mName = name;
-        }    
-        public Double eval() {
-            return sValueTable.get(mName);
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Variable}.}
-\label{fig:Variable2.java}
-\end{figure}
-\vspace*{\fill} \pagebreak
-
-Abbildung \ref{fig:Variable2.java} zeigt die Implementierung der Klasse \texttt{Variable}.  Die
-Methode $\texttt{eval}()$ wertet eine Variable dadurch aus, dass sie unter dem Namen der Variablen
-in der Hashtabelle \texttt{sValueTable} den zugeordneten Wert nachschl\"agt.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    import org.antlr.v4.runtime.*;
-    import java.io.FileInputStream;
-    import java.io.InputStream;
-    
-    import java.util.List;
-    import java.io.*;
-    
-    public class SLInterpreter {
-        public static void main(String[] args) throws Exception {
-            for (String file: args) {
-                if (!file.equals("-")) {
-                    parseFile(file);
-                } else {
-                    parseInteractive();
-                }
-            }
-            if (args.length == 0) {
-                parseInteractive();
-            }
-        }
-        private static void parseFile(String fileName) throws Exception {
-            try {
-                FileInputStream fis = new FileInputStream(fileName);
-                parseAndExecute(fis);
-            } catch (IOException e) {
-                System.err.println("File " + fileName + " could not be read.");
-            }
-        }
-        private static void parseInteractive() throws Exception {
-            Statement.isInteractive = true;
-            Statement.prompt();
-            while (true) {
-                InputStream stream = InputReader.getStream();
-                parseAndExecute(stream);
-            }
-        }
-        private static void parseAndExecute(InputStream stream) 
-            throws Exception 
-        {
-            ANTLRInputStream  input  = new ANTLRInputStream(stream);
-            SimpleLexer       lexer  = new SimpleLexer(input);
-            CommonTokenStream ts     = new CommonTokenStream(lexer);
-            SimpleParser      parser = new SimpleParser(ts);
-            parser.program();
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{SLInterpreter}.}
-\label{fig:SLInterpreter.java}
-\end{figure}
-
-
-
-
-
-Abbildung \ref{fig:SLInterpreter.java} zeigt das Treiber-Programm, das den von
-\textsc{Antlr} erzeugten Parser einbindet.  Das Programm soll sp\"ater wahlweise in der Form
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{java} \texttt{SLInterpreter} $\textsl{file}_1$ $\cdots$ $\textsl{file}_n$
-\\[0.2cm]
-oder einfach als
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{java SLInterpreter}
-\\[0.2cm]
-aufgerufen werden.  Im ersten Fall  bezeichnet $\textsl{file}_i$ f\"ur $i=1,\cdots,n$
-jeweils eine Datei, die ein auszuf\"uhrendes Programm enth\"alt.  Im zweiten Fall, oder
-falls anstelle eines Dateinamens der String ``\texttt{-}'' als Argument \"ubergeben wird,
-sollen die Befehle stattdessen interaktiv
-eingegeben werden.  Die Methode $\textsl{parseFile}()$ behandelt dabei den Fall,
-dass die Befehle aus einer Datei gelesen werden, w\"ahrend die Methode
-$\texttt{parseInteractive}()$ f\"ur den Fall der interaktiven Verarbeitung zust\"andig ist.
-Die in der Methode $\texttt{parseInteractive}()$ verwendete Klasse \texttt{InputReader} wird
-dazu ben\"otigt, um von der Standardeingabe zu lesen und einen
-\texttt{ANTLRInputStream} zu erzeugen.  Wir werden diese Klasse gleich genauer
-diskutieren.  Sowohl die Methode $\texttt{parseFile}()$ als auch die Methode
-$\texttt{parseInteractive}()$ dienen beide nur dazu, ein Objekt der Klasse
-\texttt{ANTLRInputStream} zu erzeugen.  Im ersten Fall wird dieses Objekt aus der zu
-lesenden Datei erzeugt, im zweiten Fall benutzen wir dazu den noch zu diskutierenden \texttt{InputReader}.
-In beiden F\"allen wird schlie{\ss}lich die Methode $\texttt{parseAndExecute}()$ aufgerufen,
-deren Aufgabe es ist, die einzelnen Befehle zu erkennen und auszuf\"uhren.
-
+Ähnlich wie bei unserem Programm zum symbolischen Differenzieren werden wir die einzelnen Befehle als
+geschachtelte Listen darstellen.
 
 \begin{figure}[!ht]
 \centering
@@ -568,51 +104,43 @@ deren Aufgabe es ist, die einzelnen Befehle zu erkennen und auszuf\"uhren.
                 ]
     grammar Simple;
     
-    @header {
-        import java.util.List;
-        import java.util.ArrayList;
-    }
+    program returns [stmnt_list]
+        @init {SL = []}    
+        : (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = SL}
+        ;
     
-    program 
-        : (s = statement { $s.stmnt.execute(); Statement.prompt(); })+
+    statement returns [stmnt]
+        @init {SL = []}
+        : v = VAR ':=' e = expr ';'       {$stmnt = (':=', $v.text, $e.result)}
+        | v = VAR ':=' 'read' '(' ')' ';' {$stmnt = ('read', $v.text)}
+        | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
+        | 'if' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
+          {$stmnt = ('if', $b.result, SL)}
+        | 'while' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
+          {$stmnt = ('while', $b.result, SL)}
         ;
-    statement returns [Statement stmnt]
-        @init { 
-            List<Statement> stmnts = new ArrayList<Statement>(); 
-        }
-        : v = VAR ':=' e = expr ';'     
-          { $stmnt = new Assignment(new Variable($v.text), $e.result); }
-        | v = VAR ':=' 'read' '(' ')' ';'     
-          { $stmnt = new Read(new Variable($v.text)); }
-        | 'print' '(' r = expr ')' ';' 
-          { $stmnt = new Print($r.result); }
-        | 'if' '(' b = boolExpr ')' '{' 
-              (l = statement { stmnts.add($l.stmnt); })*
-          '}' 
-          { $stmnt = new IfThen($b.result, stmnts); }
-        | 'while' '(' b = boolExpr ')' '{' 
-              (l = statement { stmnts.add($l.stmnt); })*
-          '}' 
-          { $stmnt = new While($b.result, stmnts); }
+    
+    boolExpr returns [result]
+        : l = expr '==' r = expr {$result = ('==', $l.result, $r.result)} 
+        | l = expr '<'  r = expr {$result = ('<',  $l.result, $r.result)}
         ;
-    boolExpr returns [BoolExpr result]
-        : l = expr '==' r = expr { $result = new Equal(   $l.result, $r.result); } 
-        | l = expr '<'  r = expr { $result = new LessThan($l.result, $r.result); }
+    
+    expr returns [result]
+        : e = expr '+' p = product {$result = ('+', $e.result, $p.result)}
+        | e = expr '-' p = product {$result = ('-', $e.result, $p.result)}
+        | p = product              {$result = $p.result}
         ;
-    expr returns [Expr result]
-        : e = expr '+' p = product { $result = new Sum(       $e.result, $p.result); }
-        | e = expr '-' p = product { $result = new Difference($e.result, $p.result); }
-        | p = product              { $result = $p.result;                            }
+    
+    product returns [result]
+        : p = product '*' f = factor {$result = ('*', $p.result, $f.result)}
+        | p = product '/' f = factor {$result = ('/', $p.result, $f.result)}
+        | f = factor                 {$result = $f.result}
         ;
-    product returns [Expr result]
-        : p = product '*' f = factor { $result = new Product( $p.result, $f.result); }
-        | p = product '/' f = factor { $result = new Quotient($p.result, $f.result); }
-        | f = factor                 { $result = $f.result;                          }
-        ;    
-    factor returns [Expr result]
-        : '(' expr ')' { $result = $expr.result;          }
-        | v = VAR      { $result = new Variable($v.text); }
-        | n = NUMBER   { $result = new MyNumber($n.text); }
+    
+    factor returns [result]
+        : '(' expr ')' {$result = $expr.result}
+        | v = VAR      {$result = $v.text}
+        | n = NUMBER   {$result = int($n.text)}
         ;
 \end{Verbatim}
 \vspace*{-0.3cm} %\$
@@ -620,26 +148,118 @@ deren Aufgabe es ist, die einzelnen Befehle zu erkennen und auszuf\"uhren.
 \label{fig:Simple.g}
 \end{figure}
 
-\vspace*{\fill} \pagebreak
-
-\vspace*{\fill} \pagebreak
-
 \noindent
 Abbildung \ref{fig:Simple.g} zeigt die Implementierung des Parsers mit dem
-Werkzeug \textsc{Antlr}.  Der Parser liest in Zeile 8 eine nicht-leere Folge von Befehlen,
-die sofort nach dem Einlesen ausgef\"uhrt werden.  Die \"ubrigen Grammatik-Regeln erzeugen
-jeweils einen abstrakten Syntax-Baum der erkannten Eingabe.  So liefert beispielsweise die
-Regel f\"ur die syntaktische Variable \texttt{statement} als Ergebnis ein Objekt der
-abstrakten Klasse \texttt{Statement} zur\"uck.  Wir diskutieren nur den Fall, dass es sich
-bei dem Statement um eine \texttt{while}-Schleife handelt, denn die anderen F\"alle sind
-analog.  Zun\"achst wird in Zeile 11 in der Variablen \texttt{stmnts} eine leere Liste  von
-\texttt{Statement}s angelegt. 
-Diese Liste enth\"alt sp\"ater alle Befehle, die im Rumpf der \texttt{while}-Schleife stehen.
-Anschlie{\ss}end wird in Zeile 21 das Schl\"usselwort ``\texttt{while}'' zusammen mit der Bedingung erkannt.
-Dann werden der Reihe nach alle Befehle, die sich im Rumpf der Schleife befinden, der
-Liste \texttt{stmnts} hinzugef\"ugt.  Nach dem Lesen der schlie{\ss}enden geschweiften Klammer
-wird als R\"uckgabewert ein Objekt der Klasse \texttt{While} erzeugt und zur\"uckgegeben.
-
+Werkzeug \textsc{Antlr}.  
+\begin{enumerate}
+\item Das Start-Symbol der Grammatik ist die Variable \texttt{program}.
+      Beim Parsen dieser Variable gibt der Parser eine Liste von Befehlen in der Variable
+      \texttt{stmnt\_list} zurück.
+      Dazu initialisieren wir mit Hilfe des Schlüsselwortes ``\texttt{\symbol{64}init}'' die Variable \texttt{SL}
+      als leere Liste.  Anschließend wird jeder Befehl, der erkannt wird, an diese Liste angehängt.
+      Schließlich wird diese Liste in der Attribut-Variable \texttt{stmnt\_list} gespeichert.
+\item Die syntaktische Variable \texttt{statement} beschreibt die verschiedenen Befehle, die 
+      in unserer einfachen Sprache unterstützt werden.
+      \begin{enumerate}[(a)]
+      \item Die einfachsten Befehle sind die Zuweisungen.  Diese haben die Form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $v \;\texttt{:=}\; e \texttt{;}$
+            \\[0.2cm]
+            Hierbei ist $v$ eine Variable und $e$ ist ein arithmetischer Ausdruck.
+            Eine solche Zuweisung wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{':='}, v, e)$
+            \\[0.2cm]
+            dargestellt.
+      \item Der Befehl zum Einlesen einer Zahl hat die Form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $v \;\texttt{:=}\; \texttt{read()} \texttt{;}$
+            \\[0.2cm]
+            Die Aufgabe dieses Befehl ist es, den vom Benutzer eingegebenen Text in eine Zahl umzuwandeln, die
+            dann in der Variablen $v$ abgespeichert wird.  Der Befehl wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'read'}, v)$
+            \\[0.2cm]
+            dargestellt.
+      \item Der Befehl zur Ausgabe eines Wertes hat die Form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{print(} e \texttt{);}$
+            \\[0.2cm]
+            Die Aufgabe dieses Befehl ist es, den Wert des Ausdrucks $e$ zu berechnen und auszugeben.
+            Dieser Befehl wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'print'}, v)$
+            \\[0.2cm]
+            dargestellt.
+      \item Ein Test hat die Syntax:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{if}\; \texttt{(}\; b\; \texttt{)}\; \texttt{\{}\; \textsl{statements}\; \texttt{\}}$
+            \\[0.2cm]
+            Hierbei ist $b$ ein Ausdruck, dessen Auswertung \texttt{True} oder \texttt{False} ergibt
+            und \texttt{statements} ist eine Liste von Befehlen, die ausgeführt werden, falls
+            $b$ den Wert \texttt{True} hat.
+            Dieser Befehl wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'if'}, b, \textsl{statements})$
+            \\[0.2cm]
+            dargestellt.
+      \item Eine Schleife hat die Syntax:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{while}\; \texttt{(}\; b\; \texttt{)}\; \texttt{\{}\; \textsl{statements}\; \texttt{\}}$
+            \\[0.2cm]
+            Hierbei ist $b$ ein Ausdruck, dessen Auswertung \texttt{True} oder \texttt{False} ergibt
+            und \texttt{statements} ist eine Liste von Befehlen, die ausgeführt werden, solange
+            $b$ den Wert \texttt{True} hat.
+            Dieser Befehl wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'while'}, b, \textsl{statements})$
+            \\[0.2cm]
+            dargestellt.
+      \end{enumerate}
+\item Die syntaktische Variable \texttt{boolExpr} beschreibt einen Ausdruck, der einen Boole'schen Wert
+      annimmt.  Es gibt zwei Möglichkeiten einen solchen Wert zu erzeugen.
+      \begin{enumerate}
+      \item Ein Ausdruck der Form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $l \;\texttt{==}\; r $
+            \\[0.2cm]
+            testet, ob die Auswertungen von $l$ und $r$ die selben Werte ergeben.
+            Dieser Befehl Ausdruck wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'=='}, l, r)$
+            \\[0.2cm]
+            dargestellt.
+      \item Ein Ausdruck der Form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $l \;\texttt{<}\; r $
+            \\[0.2cm]
+            testet, ob die Auswertung von $l$ einen Wert ergibt, der kleiner ist als der Wert, der sich bei der
+            Auswertung von $r$ ergibt.
+            Dieser Befehl Ausdruck wird durch das geschachtelte Tupel
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'<'}, l, r)$
+            \\[0.2cm]
+            dargestellt.
+      \end{enumerate}
+\item In analoger Weise beschreiben die Variablen \texttt{expr}, \texttt{product} und \texttt{factor}
+      arithmetische Ausdrücke. 
+      Da wir dies bereits hinlänglich früher diskutiert haben, gehen wir an dieser Stelle nicht weiter auf
+      die Grammatik-Regeln ein, durch die diese Variablen definiert werden. 
+\end{enumerate}
 
 \begin{figure}[!ht]
 \centering
@@ -652,34 +272,33 @@ wird als R\"uckgabewert ein Objekt der Klasse \texttt{While} erzeugt und zur\"uc
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
+    
     VAR    : [a-zA-Z][a-zA-Z_0-9]*;
     NUMBER : '0'|[1-9][0-9]*;
     
-    MULTI_COMMENT : '/*' .*? '*/' -> channel(HIDDEN);
-    LINE_COMMENT  : '//' ~('\n')* -> channel(HIDDEN);
-    WS            : [ \t\v\n\r]   -> channel(HIDDEN);
+    MULTI_COMMENT : '/*' .*? '*/' -> skip;
+    LINE_COMMENT  : '//' ~('\n')* -> skip;
+    WS            : [ \t\n\r]     -> skip;
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{\textsc{Antlr}-Spezifikation der Token.}
+\caption{\textsc{Antlr}-Spezifikation der verschiedenen Token.}
 \label{fig:Simple-2.g}
 \end{figure}
 Die Spezifikation der Token ist in Abbildung \ref{fig:Simple-2.g}
 gezeigt.  Der Scanner unterscheidet im Wesentlichen zwischen Variablen und Zahlen.
-Variablen beginnen mit einem gro{\ss}en oder kleinen Buchstaben, auf den dann zus\"atzlich Ziffern und der
-Unterstrich folgen k\"onnen.  Folgen von Ziffern werden als Zahlen interpretiert.  Enth\"alt eine solche
-Folge mehr als ein Zeichen, so darf die erste Ziffer nicht 0 sein.  Dar\"uber hinaus entfernt der
-Scanner Whitespace und Kommentare.  Beachten Sie, dass Whitespace und Kommentare an den
-\texttt{channel}  mit den Namen \texttt{HIDDEN} weitergereicht werden.  Dadurch werden sie vom
-Parser ignoriert, stehen aber noch f\"ur Fehlermeldungen zur Verf\"ugung.  Au{\ss}erdem haben wir bei der
+Variablen beginnen mit einem großen oder kleinen Buchstaben, auf den dann zusätzlich Ziffern und der
+Unterstrich folgen können.  Folgen von Ziffern werden als Zahlen interpretiert.  Enthält eine solche
+Folge mehr als ein Zeichen, so darf die erste Ziffer nicht 0 sein.  Darüber hinaus entfernt der
+Scanner Whitespace und Kommentare.   Außerdem haben wir bei der
 Spezifikation von mehrzeiligen Kommentaren die sogenannte \emph{non-greedy}-Version des Operators
 ``\texttt{*}'' benutzt.  Die non-greedy-Version des Operators ``\texttt{*}'' wird als
-``\texttt{*?}'' geschrieben und matched sowenig wie m\"oglich.  Daher steht der regul\"are Ausdruck
+``\texttt{*?}'' geschrieben und matched sowenig wie möglich.  Daher steht der reguläre Ausdruck
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{'/*' .*? '*/'}
 \\[0.2cm]
-f\"ur einen String, der mit der Zeichenkette ``\texttt{/*}'', mit der Zeichenkette ``\texttt{*/}''
-endet und au{\ss}erdem so kurz wie m\"oglich ist.  Dadurch werden in einer Zeile der Form
+für einen String, der mit der Zeichenkette ``\texttt{/*}'', mit der Zeichenkette ``\texttt{*/}''
+endet und außerdem so kurz wie möglich ist.  Dadurch werden in einer Zeile der Form
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{/* Hugo */ i := i + 1; /* Anton */}
@@ -698,79 +317,136 @@ zwei getrennte Kommentare erkannt.
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
-    public final class InputReader {
-        private static BufferedReader br  = null;
-        private static String         EOL = "\n";
-    
-        public static InputStream getStream() throws EOFException {
-            if (br == null) {
-                br = new BufferedReader(new InputStreamReader(System.in));
-            }
-            String input     = "";
-            String line      = null;
-            int    endlAdded = 0;
-            try {
-                while (true) {
-                    // line is read and returned without termination character(s)
-                    line = br.readLine();
-                    // add line termination (Unix style '\n' by default)
-                    input     += line + EOL;   
-                    endlAdded += EOL.length();
-                    if (line == null) {
-                        throw new EOFException("EndOfFile");
-                    } else if (line.length() == 0 && input.length() > endlAdded) {
-                        byte[] byteArray = 
-                        input.substring(0, input.length() - EOL.length()).getBytes();
-                        return new ByteArrayInputStream(byteArray);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
+    def main(file):
+        with open(file, 'r') as handle:
+            program_text = handle.read()
+        input_stream  = antlr4.InputStream(program_text)
+        lexer         = SimpleLexer(input_stream)
+        token_stream  = antlr4.CommonTokenStream(lexer)
+        parser        = SimpleParser(token_stream)
+        result        = parser.program()
+        execute_list(result.stmnt_list)
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{InputReader}.}
-\label{fig:InputReader.java}
+\caption{Die Funktion \texttt{InputReader}.}
+\label{fig:Interpreter.ipynb:main}
 \end{figure}
 
-Abbildung \ref{fig:InputReader.java} zeigt die Klasse \texttt{InputReader}, die dann benutzt wird,
-wenn der Interpreter interaktiv betrieben wird.  Hier m\"ussen wir uns zun\"achst \"uberlegen, woran der
-Interpreter erkennen soll, dass der Benutzer ein Kommando eingegeben hat.  Ein Ansatz w\"are, dass der
-Parser nach jedem Zeilenumbruch \"uberpr\"uft, ob der Benutzer ein vollst\"andiges Kommando eingegeben
-hat.  Dieser Ansatz scheitert aber daran, dass manche Kommandos sich \"uber mehrere Zeilen
-erstrecken.  Daher wartet der Interpreter darauf, dass nacheinander zwei Zeilenumbr\"uche eingegeben
-werden.  Dann wird die bis dahin gelesene Eingabe in Zeile 23 in einem Feld von Bytes
-zusammengefasst und als Objekt der Klasse \texttt{ByteArrayInputStream} zur\"uck gegeben.
 
 
- \exercise
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def execute_list(Statement_List, Values={}):
+        for stmnt in Statement_List:
+            execute(stmnt, Values)
+    
+    def execute(stmnt, Values):
+        op = stmnt[0]
+        if op == ':=':
+            _, var, value = stmnt
+            Values[var] = evaluate(value, Values)
+        elif op == 'read':
+            _, var = stmnt
+            Values[var] = int(input())
+        elif op == 'print':
+            _, expr = stmnt
+            print(evaluate(expr, Values))
+        elif op == 'if':
+            _, test, SL = stmnt
+            if evaluate(test, Values):
+                execute_list(SL, Values)
+        elif op == 'while':
+            _, test, SL = stmnt
+            while evaluate(test, Values):
+                execute_list(SL, Values)
+        else:
+            assert False, f'{stmnt} unexpected'
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Funktion \texttt{execute}.}
+\label{fig:Interpreter.ipynb:execute}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def evaluate(expr, Values):
+        if isinstance(expr, int):
+            return expr
+        if isinstance(expr, str):
+            return Values[expr] 
+        op = expr[0]
+        if op == '==':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) == evaluate(rhs, Values)
+        if op == '<':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) < evaluate(rhs, Values)
+        if op == '+':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) + evaluate(rhs, Values)
+        if op == '-':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) - evaluate(rhs, Values)
+        if op == '*':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) * evaluate(rhs, Values)
+        if op == '/':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) / evaluate(rhs, Values)
+        assert False, f'{stmnt} unexpected'
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Funktion \texttt{evaluate}.}
+\label{fig:Interpreter.ipynb:evaluate}
+\end{figure}
+
+
+
+
+
+\exercise
 \begin{enumerate}
 \renewcommand{\labelenumi}{(\alph{enumi})}
-\item Erweitern Sie den Interpreter so, dass auch der Operator ``\texttt{<=}'' unterst\"utzt wird.
+\item Erweitern Sie den Interpreter so, dass auch der Operator ``\texttt{<=}'' unterstützt wird.
 \item Erweitern Sie den Interpreter um \texttt{for}-Schleifen.
 \item Erweitern Sie den Interpreter um die logischen Operatoren
-      ``\texttt{\&\&}'' f\"ur das logische \emph{Und}, ``\texttt{||}'' f\"ur das logische \emph{Oder}
-      und ``\texttt{!}'' f\"ur die Negation an.  Dabei soll der Operator ``\texttt{!}'' am
-      st\"arksten und der Operator ``\texttt{||}'' am schw\"achsten binden.
-\item Erweitern Sie die Syntax der arithmetischen Ausdr\"ucke so, dass auch vordefinierte 
+      ``\texttt{\&\&}'' für das logische \emph{Und}, ``\texttt{||}'' für das logische \emph{Oder}
+      und ``\texttt{!}'' für die Negation an.  Dabei soll der Operator ``\texttt{!}'' am
+      stärksten und der Operator ``\texttt{||}'' am schwächsten binden.
+\item Erweitern Sie die Syntax der arithmetischen Ausdrücke so, dass auch vordefinierte 
       mathematische Funktionen wie $\texttt{exp}()$ oder $\texttt{ln}()$ benutzt werden
-      k\"onnen.
+      können.
 
       \textbf{Hinweis}:  Wenn Sie das Paket \texttt{java.lang.reflect} benutzen,
-      kommen Sie mit einer zus\"atzlichen Klasse aus und k\"onnen damit alle in
+      kommen Sie mit einer zusätzlichen Klasse aus und können damit alle in
       \texttt{java.lang.Math} definierten Methoden implementieren.
-\item Erweitern Sie den Interpreter so, dass auch benutzerdefinierte Funktionen m\"oglich
+\item Erweitern Sie den Interpreter so, dass auch benutzerdefinierte Funktionen möglich
       werden. 
       
-      \textbf{Hinweis}: Jetzt m\"ussen Sie zwischen lokalen und globalen Variablen
+      \textbf{Hinweis}: Jetzt müssen Sie zwischen lokalen und globalen Variablen
       unterscheiden.
       Daher reicht es nicht mehr, die Belegungen der Variablen in einer
       global definierten Hashtabelle zu verwalten. \eox
-\item Erweitern Sie den Interpreter so, dass die Verwendung rationaler Zahlen unterst\"utzt wird.
-      Das Ziel dieser Erweiterung ist eine Sprache, mit der Sie Rechnungen ohne Rundungsfehler durchf\"uhren k\"onnen.
+\item Erweitern Sie den Interpreter so, dass die Verwendung rationaler Zahlen unterstützt wird.
+      Das Ziel dieser Erweiterung ist eine Sprache, mit der Sie Rechnungen ohne Rundungsfehler durchführen können.
 \end{enumerate}
 \renewcommand{\labelenumii}{\arabic{enumii}.}
 

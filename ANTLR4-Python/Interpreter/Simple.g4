@@ -7,12 +7,9 @@ program returns [stmnt_list]
 
 statement returns [stmnt]
     @init {SL = []}
-    : v = VAR ':=' e = expr ';'     
-      {$stmnt = (':=', $v.text, $e.result)}
-    | v = VAR ':=' 'read' '(' ')' ';'     
-      {$stmnt = ('read', $v.text)}
-    | 'print' '(' r = expr ')' ';' 
-      {$stmnt = ('print', $r.result)}
+    : v = VAR ':=' e = expr ';'       {$stmnt = (':=', $v.text, $e.result)}
+    | v = VAR ':=' 'read' '(' ')' ';' {$stmnt = ('read', $v.text)}
+    | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
     | 'if' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
       {$stmnt = ('if', $b.result, SL)}
     | 'while' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
