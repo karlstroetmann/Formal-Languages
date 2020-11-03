@@ -1,19 +1,17 @@
 grammar Simple;
 
-program returns [stmnt_list]
-    @init {SL = []}    
-    : (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = SL}
+program returns [stmnt_list] 
+    : {SL = []} (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = ('program',) + tuple(SL)}
     ;
 
 statement returns [stmnt]
-    @init {SL = []}
     : v = VAR ':=' e = expr ';'       {$stmnt = (':=', $v.text, $e.result)}
     | v = VAR ':=' 'read' '(' ')' ';' {$stmnt = ('read', $v.text)}
     | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
-    | 'if' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
-      {$stmnt = ('if', $b.result, SL)}
-    | 'while' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
-      {$stmnt = ('while', $b.result, SL)}
+    | 'if' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt) })* '}' 
+      {$stmnt = ('if', $b.result, ('body',) + tuple(SL))}
+    | 'while' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt) })* '}' 
+      {$stmnt = ('while', $b.result, ('body',) + tuple(SL))}
     ;
 
 boolExpr returns [result]
