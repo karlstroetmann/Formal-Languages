@@ -1,5 +1,5 @@
 \chapter{Earley-Parser$^*$}
-In diesem Kapitel stellen wir ein effizientes Verfahren vor, mit dem es m\"oglich ist, f\"ur eine
+In diesem Kapitel stellen wir ein effizientes Verfahren vor, mit dem es möglich ist, für eine
 \underline{beliebi}g\underline{e} vorgegebene kontextfreie Grammatik
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -8,48 +8,49 @@ $G = \langle V, \Sigma, R, S \rangle$ \quad und einen vorgegebenen String $s \in
 zu entscheiden, ob $s$ ein Element der Sprache $L(G)$ ist, ob also $s \in L(G)$ gilt.
 Der Algorithmus, denn wir gleich diskutieren werden, wurde 1970 von Jay Earley publiziert
 \cite{earley:70}.  Neben dem Algorithmus von Earley gibt es noch den
-Cocke-Younger-Kasami-Algorithmus, in der Literatur auch als \textsc{Cyk}-Algorithmus bekannt,
-der unabh\"angig von John Cocke \cite{cocke:1970}, Daniel
-H.~Younger \cite{younger:1967} und Tadao Kasami \cite{kasami:1965} entdeckt wurde.
-Der \textsc{Cyk}-Algorithmus hat allerdings eine Laufzeit von $\mathcal{O}(n^3)$ und ist au{\ss}erdem nur anwendbar, wenn
-die Grammatik in Chomsky-Normalform vorliegt.  Da es sehr aufwendig ist, eine Grammatik in
+\blue{Cocke-Younger-Kasami-Algorithmus}, \index{Cocke-Younger-Kasami-Algorithmus} in der Literatur auch als
+\blue{\textsc{Cyk}-Algorithmus} bekannt, \index{\textsc{Cyk}-Algorithmus} der unabhängig von John Cocke
+\cite{cocke:1970}, Daniel H.~Younger \cite{younger:1967} und Tadao Kasami \cite{kasami:1965} entdeckt wurde.
+Der \textsc{Cyk}-Algorithmus ist nur anwendbar, wenn
+die Grammatik in \blue{Chomsky-Normalform} vorliegt.  Da es sehr aufwendig ist, eine Grammatik in
 Chomsky-Normalform zu transformieren, wird der \textsc{Cyk}-Algorithmus in der
 Praxis nicht eingesetzt.  
-Demgegen\"uber kann der von Earley angegebene Algorithmus auf beliebige kontextfreie Grammatiken
-angewendet werden.  Im allgemeinen Fall hat dieser Algorithmus ebenfalls die Komplexit\"at
-$\mathcal{O}(n^3)$, aber falls die vorgegebene Grammatik eindeutig ist, dann ist die Komplexit\"at
-lediglich $\mathcal{O}(n^2)$,
-Geschickte Implementierungen von Earley's Algorithmus
-erreichen f\"ur viele praktisch relevante Grammatiken sogar eine lineare Laufzeit.  Dies ist
-beispielsweise sowohl f\"ur $LL(k)$-Grammatiken als auch f\"ur $LR(1)$-Grammatiken, die wir in einem sp\"ateren Kapitel analysieren werden, der Fall.
+Demgegenüber kann der von Earley angegebene Algorithmus auf beliebige kontextfreie Grammatiken
+angewendet werden.  Im allgemeinen Fall hat dieser Algorithmus die Komplexität
+$\mathcal{O}(n^3)$, aber falls die vorgegebene Grammatik eindeutig ist, dann ist die Komplexität
+lediglich $\mathcal{O}(n^2)$.  Geschickte Implementierungen von Earley's Algorithmus
+erreichen für viele praktisch relevante Grammatiken sogar eine lineare Laufzeit.  
+Im Gegensatz hat der \textsc{Cyk}-Algorithmus immer die Komplexität $\mathcal{O}(n^3)$.
+Dies ist
+beispielsweise sowohl für $LL(k)$-Grammatiken als auch für $LR(1)$-Grammatiken, die wir in einem späteren Kapitel analysieren werden, der Fall.
 Dieses Kapitel gliedert sich in die folgenden Abschnitte.
 \begin{enumerate}
-\item Zun\"achst skizzieren wir die Theorie, die Earley's Algorithmus zu Grunde liegt.
-\item Danach geben wir eine einfache Implementierung des Algorithmus in \textsc{SetlX} an.
-\item Anschlie{\ss}end beweisen wir die Korrektheit und Vollst\"andigkeit des Algorithmus.
-\item Zum Abschluss des Kapitels untersuchen wir die Komplexit\"at.
+\item Zunächst skizzieren wir die Theorie, die Earley's Algorithmus zu Grunde liegt.
+\item Danach geben wir eine einfache Implementierung des Algorithmus in \textsl{Python} an.
+\item Anschließend beweisen wir die Korrektheit und Vollständigkeit des Algorithmus.
+\item Zum Abschluss des Kapitels untersuchen wir die Komplexität.
 \end{enumerate}
 
 \section{Der Algorithmus von Earley}
-Der zentrale Begriff des von Earley angegebenen Algorithmus ist der Begriff des Earley-Objekts,
+Der zentrale Begriff des von Earley angegebenen Algorithmus ist der Begriff des \blue{Earley-Objekts},
 das wie folgt definiert ist.
 
 \begin{Definition}[Earley-Objekt]
   Gegeben sei eine kontextfreie Grammatik $G = \langle V, \Sigma, R, S \rangle$ und ein String
-  $s = x_1x_2 \cdots x_n \in \Sigma^*$ der L\"ange $n$.  Wir bezeichnen ein Paar der Form
+  $s = x_1x_2 \cdots x_n \in \Sigma^*$ der Länge $n$.  Wir bezeichnen ein Paar der Form
   \\[0.2cm]
   \hspace*{1.3cm}
   $\langle A \rightarrow \alpha \bullet \beta, k \rangle$
   \\[0.2cm]
-  dann als ein \emph{Earley-Objekt}, falls folgendes gilt:
-  \begin{enumerate}
+  dann als ein \blue{Earley-Objekt},\index{Earley-Objekt} falls folgendes gilt:
+  \begin{enumerate}[(a)]
   \item $(A \rightarrow \alpha \beta) \in R$ \quad und
   \item $k \in \{0,1,\cdots,n\}$. \qed
   \end{enumerate}
 \end{Definition}
 
 \noindent
-\textbf{Erkl\"arung}: 
+\textbf{Erklärung}: 
 Ein Earley-Objekt beschreibt einen Zustand, in dem ein Parser sich befinden kann.  
 Ein Earley-Parser, der einen String $x_1 \cdots x_n$ parsen soll,
 verwaltet $n+1$ Mengen von Earley-Objekten.  Diese Mengen bezeichnen wir mit
@@ -74,22 +75,22 @@ ist dann wie folgt:
 \item Folglich versucht der Parser am Anfang des Teilstrings $x_{j+1} \cdots x_n$ ein
       $\beta$ erkennen.
 \end{enumerate}
-Der Algorithmus von Earley verwaltet f\"ur $j=0,1,\cdots,n$  Mengen $Q_j$ von
+Der Algorithmus von Earley verwaltet für $j=0,1,\cdots,n$  Mengen $Q_j$ von
 Earley-Objekten, die den Zustand beschreiben, in dem der Parser ist, wenn der Teilstring
 $x_1 \cdots x_j$ verarbeitet ist.  Zu Beginn des Algorithmus wird der Grammatik ein neues Start-Symbol $\widehat{S}$ 
-sowie die Regel $\widehat{S} \rightarrow S$ hinzugef\"ugt.  Die Menge $Q_0$ wird definiert als
+sowie die Regel $\widehat{S} \rightarrow S$ hinzugefügt.  Die Menge $Q_0$ wird definiert als
 \\[0.2cm]
 \hspace*{1.3cm}
 $Q_0 := \bigl\{ \pair(\widehat{S} \rightarrow \bullet S, 0) \bigr\}$,
 \\[0.2cm]
 denn der Parser soll ja das Start-Symbol $S$ am Anfang des Strings $x_1 \cdots x_n$ erkennen.
-Die restlichen Mengen $Q_j$ sind f\"ur $j=1,\cdots,n$ zun\"achst leer.  Die Mengen $Q_j$ werden nun durch die
-folgende drei Operationen so lange wie m\"oglich erweitert: 
+Die restlichen Mengen $Q_j$ sind für $j=1,\cdots,n$ zunächst leer.  Die Mengen $Q_j$ werden nun durch die
+folgende drei Operationen so lange wie möglich erweitert: 
 \begin{enumerate}
 \item \emph{Lese-Operation}
 
       Falls der Zustand $Q_j$ ein Earley-Objekt der Form 
-      $\pair(A \rightarrow \beta \bullet a \gamma, k)$ enth\"alt, wobei $a$ ein
+      $\pair(A \rightarrow \beta \bullet a \gamma, k)$ enthält, wobei $a$ ein
       Terminal ist, so versucht der Parser, die rechte Seite der Regel
       $A \rightarrow \beta a \gamma$ zu erkennen und hat bis zur Position $j$ bereits den Teil $\beta$ erkannt.
       Folgt auf dieses $\beta$ nun, wie in der Regel $A \rightarrow \beta a \gamma$
@@ -100,7 +101,7 @@ folgende drei Operationen so lange wie m\"oglich erweitert:
       \hspace*{1.3cm}
       $\pair(A \rightarrow \beta a \bullet \gamma, k)$
       \\[0.2cm]
-      dem Zustand $Q_{j+1}$ hinzugef\"ugt:
+      dem Zustand $Q_{j+1}$ hinzugefügt:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(A \rightarrow \beta \bullet a \gamma, k) \in Q_j \wedge x_{j+1} = a
@@ -109,9 +110,9 @@ folgende drei Operationen so lange wie m\"oglich erweitert:
 \item \emph{Vorhersage-Operation}
 
       Falls der Zustand $Q_j$ ein Earley-Objekt der Form $\pair(A \rightarrow \beta \bullet C \delta, k)$
-      enth\"alt, wobei $C$ eine syntaktische Variable ist, so versucht der Parser im Zustand
+      enthält, wobei $C$ eine syntaktische Variable ist, so versucht der Parser im Zustand
       $Q_j$ den Teilstring $C\delta$ zu erkennen.  Dazu muss der Parser an diesem Punkt ein $C$ erkennen.  
-      Wir f\"ugen daher f\"ur jede Regel $C \rightarrow \gamma$ der Grammatik das Earley-Objekt 
+      Wir fügen daher für jede Regel $C \rightarrow \gamma$ der Grammatik das Earley-Objekt 
       $\pair(C \rightarrow \bullet \gamma, j)$ zu der Menge $Q_j$ hinzu:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -119,13 +120,13 @@ folgende drei Operationen so lange wie m\"oglich erweitert:
        \wedge (C \rightarrow \gamma) \in R 
        \;\Rightarrow\;
        Q_j := Q_j \cup\bigl\{ \pair(C \rightarrow \bullet\gamma, j)\bigr\}$.
-\item \emph{Vervollst\"andigungs-Operation}
+\item \emph{Vervollständigungs-Operation}
 
       Falls der Zustand $Q_i$ ein Earley-Objekt der Form $\pair(C \rightarrow \gamma \bullet, j)$
-      enth\"alt und weiter der Zustand $Q_j$ ein Earley-Objekt der Form 
-      $\pair(A \rightarrow \beta \bullet C \delta,k)$ enth\"alt, dann hat der Parser im Zustand $Q_j$
+      enthält und weiter der Zustand $Q_j$ ein Earley-Objekt der Form 
+      $\pair(A \rightarrow \beta \bullet C \delta,k)$ enthält, dann hat der Parser im Zustand $Q_j$
       versucht, ein $C$ zu parsen und das $C$ ist im Zustand $Q_i$ erkannt worden.  
-      Daher f\"ugen wir dem Zustand
+      Daher fügen wir dem Zustand
       $Q_i$ nun das Earley-Objekt $\pair(A \rightarrow \beta C \bullet \delta,k)$ hinzu:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -134,42 +135,42 @@ folgende drei Operationen so lange wie m\"oglich erweitert:
        Q_i := Q_i \cup \bigl\{ \pair(A \rightarrow \beta C \bullet \delta,k) \bigr\}
       $.
 \end{enumerate}
-Der Algorithmus von Earley um einen String der Form $s = x_1 \cdots x_n$ zu parsen funktioniert so:
+Der Algorithmus von Earley, der einen String der Form $s = x_1 \cdots x_n$ zu parsen will,  funktioniert nun so:
 \begin{enumerate}
-\item Wir initialisieren die Zust\"ande $Q_i$ wie folgt:
+\item Wir initialisieren die Zustände $Q_i$ wie folgt:
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_0 := \bigl\{ \pair(\widehat{S} \rightarrow \bullet S, 0) \bigr\}$,
       \\[0.2cm]
       \hspace*{1.3cm}
-      $Q_i := \bigl\{ \bigr\}$ \quad f\"ur $i=1,\cdots,n$.
-\item Anschlie{\ss}end lassen wir in einer Schleife $i$ von $0$ bis $n$ laufen und f\"uhren die folgenden 
+      $Q_i := \bigl\{ \bigr\}$ \quad für $i=1,\cdots,n$.
+\item Anschließend lassen wir in einer Schleife $i$ von $0$ bis $n$ laufen und führen die folgenden 
       Schritte durch:
-      \begin{enumerate}
-      \item Wir vergr\"o{\ss}ern $Q_i$ mit der Vervollst\"andigungs-Operation so lange, bis mit dieser Operation
-            keine neuen Earley-Objekte mehr gefunden werden k\"onnen.
-      \item Anschlie{\ss}end vergr\"o{\ss}ern wir $Q_i$ mit Hilfe der Vorhersage-Operation.  Diese Operation
-            wird ebenfalls so lange durchgef\"uhrt, wie neue Earley-Objekte gefunden werden.
+      \begin{enumerate}[(a)]
+      \item Wir vergrößern $Q_i$ mit der Vervollständigungs-Operation so lange, bis mit dieser Operation
+            keine neuen Earley-Objekte mehr gefunden werden können.
+      \item Anschließend vergrößern wir $Q_i$ mit Hilfe der Vorhersage-Operation.  Diese Operation
+            wird ebenfalls so lange durchgeführt, wie neue Earley-Objekte gefunden werden.
       \item Falls $i < n$ ist, wenden wir die Lese-Operation auf $Q_i$ an und initialisierend damit
             $Q_{i+1}$. 
       \end{enumerate}
-      Falls die betrachtete Grammatik $G$ auch $\varepsilon$-Regeln enth\"alt, also Regeln der Form
+      Falls die betrachtete Grammatik $G$ auch $\varepsilon$-Regeln enthält, also Regeln der Form
       \\[0.2cm]
       \hspace*{1.3cm}
       $C \rightarrow \varepsilon$,
       \\[0.2cm]
       dann kann es passieren, dass durch die Anwendung einer Vorhersage-Operation eine neue Anwendung
-      der Vervollst\"andigungs-Operation m\"oglich wird.  In diesem Fall m\"ussen Vorhersage-Operation und
-      Vervollst\"andigungs-Operation so lange iteriert werden, bis durch Anwendung dieser beiden
-      Operationen keine neuen Earley-Objekte mehr erzeugt werden k\"onnen.
+      der Vervollständigungs-Operation möglich wird.  In diesem Fall müssen Vorhersage-Operation und
+      Vervollständigungs-Operation so lange iteriert werden, bis durch Anwendung dieser beiden
+      Operationen keine neuen Earley-Objekte mehr erzeugt werden können.
 \item Falls nach Beendigung des Algorithmus die Menge $Q_n$ das Earley-Objekt 
-      $\pair(\widehat{S} \rightarrow S \bullet,0)$ enth\"alt, dann war das Parsen erfolgreich und 
+      $\pair(\widehat{S} \rightarrow S \bullet,0)$ enthält, dann war das Parsen erfolgreich und 
       der String $x_1 \cdots x_n$ liegt in der von der Grammatik erzeugten Sprache.
 \end{enumerate}
   
 \example
-Abbildung \ref{fig:expr-small} zeigt eine vereinfachte Grammatik f\"ur arithmetische
-Ausdr\"ucke, die nur aus den Zahlen ``1'', ``2'' und ``3'' und den beiden Operator-Symbolen
+Abbildung \ref{fig:expr-small} zeigt eine vereinfachte Grammatik für arithmetische
+Ausdrücke, die nur aus den Zahlen ``1'', ``2'' und ``3'' und den beiden Operator-Symbolen
 ``\texttt{+}'' und ``\texttt{*}'' aufgebaut sind.  Die Menge $T$ der Terminale dieser
 Grammatik ist also durch
 \\[0.2cm]
@@ -178,10 +179,10 @@ Grammatik ist also durch
 \\[0.2cm]
 gegeben.
 Wie zeigen, wie sich der String
-``\texttt{1+2*3}'' mit dieser Grammatik und dem Algorithmus von Earley parsen l\"asst.
+``\texttt{1+2*3}'' mit dieser Grammatik und dem Algorithmus von Earley parsen lässt.
 In der folgenden Darstellung werden wir die syntaktische Variable \texttt{expr} mit
-dem Buchstaben $E$ abk\"urzen, f\"ur \texttt{prod} schreiben wir $P$ und f\"ur \texttt{fact} verwenden wir die
-Abk\"urzung $F$.
+dem Buchstaben $E$ abkürzen, für \texttt{prod} schreiben wir $P$ und für \texttt{fact} verwenden wir die
+Abkürzung $F$.
 
 
 \begin{figure}[!ht]
@@ -208,7 +209,7 @@ Abk\"urzung $F$.
          ;
 \end{Verbatim}
 \vspace*{-0.3cm}
-  \caption{Eine vereinfachte Grammatik f\"ur arithmetische Ausdr\"ucke.}
+  \caption{Eine vereinfachte Grammatik für arithmetische Ausdrücke.}
   \label{fig:expr-small} 
 \end{figure}
 
@@ -219,21 +220,21 @@ Abk\"urzung $F$.
       \hspace*{1.3cm}
       $Q_0 = \{ \pair(\widehat{S} \rightarrow \bullet\, E, 0) \}$. 
       \\[0.2cm]
-      Die Mengen $Q_1$, $Q_2$, $Q_3$, $Q_4$ und $Q_5$ sind zun\"achst alle leer.
-      Wenden wir die Vervollst\"andigungs-Operation auf $Q_0$ an, so finden wir keine neuen
+      Die Mengen $Q_1$, $Q_2$, $Q_3$, $Q_4$ und $Q_5$ sind zunächst alle leer.
+      Wenden wir die Vervollständigungs-Operation auf $Q_0$ an, so finden wir keine neuen
       Earley-Objekte.
 
-      Anschlie{\ss}end wenden wir die Vorhersage-Operation auf das Earley-Objekt 
+      Anschließend wenden wir die Vorhersage-Operation auf das Earley-Objekt 
       $\pair(\widehat{S} \rightarrow \bullet\, E, 0)$ an.  Dadurch werden der Menge $Q_0$ 
-      zun\"achst die beiden Earley-Objekte 
+      zunächst die beiden Earley-Objekte 
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(E \rightarrow \bullet\; E \squoted{+} P, 0)$ 
       \quad und \quad
       $\pair(E \rightarrow \bullet\; P, 0)$ 
       \\[0.2cm]
-      hinzugef\"ugt.  Auf das Earley-Objekt $\pair(E \rightarrow \bullet\, P, 0)$ 
-      k\"onnen wir die Vorhersage-Operation ein weiteres Mal anwenden und erhalten dann die beiden
+      hinzugefügt.  Auf das Earley-Objekt $\pair(E \rightarrow \bullet\, P, 0)$ 
+      können wir die Vorhersage-Operation ein weiteres Mal anwenden und erhalten dann die beiden
       neuen Earley-Objekte
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -242,14 +243,14 @@ Abk\"urzung $F$.
       $\pair(P \rightarrow \bullet\; F, 0)$. 
       \\[0.2cm]
       Wenden wir auf das Earley-Objekt $\pair(P \rightarrow \bullet\; F, 0)$
-      die Vorhersage-Operation an, so erhalten wir schie{\ss}lich noch die folgenden Earley-Objekte in $Q_0$:
+      die Vorhersage-Operation an, so erhalten wir schießlich noch die folgenden Earley-Objekte in $Q_0$:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(F \rightarrow \bullet \squoted{1}, 0)$, \quad 
       $\pair(F \rightarrow \bullet \squoted{2}, 0)$, \quad und \quad
       $\pair(F \rightarrow \bullet \squoted{3}, 0)$. 
       \\[0.2cm]
-      Insgesamt enth\"alt $Q_0$ nun die folgenden Earley-Objekte:
+      Insgesamt enthält $Q_0$ nun die folgenden Earley-Objekte:
       \begin{enumerate}
       \item $\pair(\widehat{S} \rightarrow \bullet\; E, 0)$,
       \item $\pair(E \rightarrow \bullet\; E \squoted{+} P, 0)$
@@ -266,20 +267,20 @@ Abk\"urzung $F$.
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_1 = \bigl\{ \pair(F \rightarrow \squoted{1} \bullet, 0) \bigr\}$.
-\item Nun setzen wir $i= 1$ und wenden zun\"achst auf $Q_1$ die Vervollst\"andigungs-Operation an.
+\item Nun setzen wir $i= 1$ und wenden zunächst auf $Q_1$ die Vervollständigungs-Operation an.
       Aufgrund des Earley-Objekts $\pair(F \rightarrow \squoted{1} \bullet, 0) $ in $Q_1$
       suchen wie in $Q_0$ ein Earley-Objekt, bei dem die Markierung ``$\bullet$'' vor der Variablen
       $F$ steht.  Wir finden das Earley-Objekt
-      $\pair(P \rightarrow \bullet\; F, 0)$.  Daher f\"ugen wir nun
+      $\pair(P \rightarrow \bullet\; F, 0)$.  Daher fügen wir nun
       $Q_1$ das Earley-Objekt
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(P \rightarrow F \;\bullet, 0)$ 
       \\[0.2cm]
-      hinzu.  Hierauf k\"onnen wir wieder die
-      Vervollst\"andigungs-Operation anwenden und finden (nach mehrmaliger Anwendung der
-      Vervollst\"andigungs-Operation) f\"ur $Q_1$ insgesamt die folgenden Earley-Objekte durch
-      Vervollst\"andigung:
+      hinzu.  Hierauf können wir wieder die
+      Vervollständigungs-Operation anwenden und finden (nach mehrmaliger Anwendung der
+      Vervollständigungs-Operation) für $Q_1$ insgesamt die folgenden Earley-Objekte durch
+      Vervollständigung:
       \begin{enumerate}
       \item $\pair(P \rightarrow F \;\bullet, 0)$, 
       \item $\pair(P \rightarrow  P\;\bullet \squoted{*} F, 0)$, 
@@ -288,7 +289,7 @@ Abk\"urzung $F$.
       \item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$.
       \end{enumerate}
       
-      Als n\"achstes wenden wir auf diese Earley-Objekte die Vorhersage-Operation an.  Da das
+      Als nächstes wenden wir auf diese Earley-Objekte die Vorhersage-Operation an.  Da das
       Markierungs-Zeichen ``$\bullet$'' aber in keinem der in $Q_i$ auftretenden Earley-Objekte vor einer 
       Variablen steht, ergeben sich hierbei keine neuen Earley-Objekte.
 
@@ -298,24 +299,24 @@ Abk\"urzung $F$.
       \hspace*{1.3cm}
       $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$
       \\[0.2cm]
-      enth\"alt, f\"ugen wir in $Q_2$  das Earley-Objekt
+      enthält, fügen wir in $Q_2$  das Earley-Objekt
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(E \rightarrow E \squoted{+}\bullet\; P, 0)$
       \\[0.2cm]
       ein.
-\item Nun setzen wir $i= 2$ und wenden zun\"achst auf $Q_2$ die Vervollst\"andigungs-Operation
+\item Nun setzen wir $i= 2$ und wenden zunächst auf $Q_2$ die Vervollständigungs-Operation
       an.  Zu diesem Zeitpunkt gilt
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_2 = \{ \pair(E \rightarrow E \squoted{+}\bullet\; P, 0) \}$.
       \\[0.2cm]
       Da in dem einzigen Earley-Objekt, das hier auftritt, das Markierungs-Zeichen ``$\bullet$''
-      nicht am Ende der Grammatik-Regel steht, finden wir durch die Vervollst\"andigungs-Operation in
+      nicht am Ende der Grammatik-Regel steht, finden wir durch die Vervollständigungs-Operation in
       diesem Schritt keine       neuen Earley-Objekte. 
 
-      Als n\"achstes wenden wir auf $Q_2$ die Vorhersage-Operation an.  Da das Markierungs-Zeichen
-      vor der Variablen $P$ steht, finden wir zun\"achst die beiden Earley-Objekte
+      Als nächstes wenden wir auf $Q_2$ die Vorhersage-Operation an.  Da das Markierungs-Zeichen
+      vor der Variablen $P$ steht, finden wir zunächst die beiden Earley-Objekte
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(P \rightarrow \bullet\; F, 2)$ \quad und \quad
@@ -335,14 +336,14 @@ Abk\"urzung $F$.
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_3 = \{ \pair(F \rightarrow \squoted{2}\bullet, 2) \}$.
-\item Wir setzen $i = 3$ und wenden auf $Q_3$ die Vervollst\"andigungs-Operation an.
-      Dadurch f\"ugen wir 
+\item Wir setzen $i = 3$ und wenden auf $Q_3$ die Vervollständigungs-Operation an.
+      Dadurch fügen wir 
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(P \rightarrow F \;\bullet, 2)$ 
       \\[0.2cm]
-      in $Q_3$ ein.  Hier k\"onnen wir eine weiteres Mal die Vervollst\"andigungs-Operation anwenden. 
-      Durch iterierte Anwendung der Vervollst\"andigungs-Operation erhalten wir zus\"atzlich die folgenden 
+      in $Q_3$ ein.  Hier können wir eine weiteres Mal die Vervollständigungs-Operation anwenden. 
+      Durch iterierte Anwendung der Vervollständigungs-Operation erhalten wir zusätzlich die folgenden 
       Earley-Objekte:
       \begin{enumerate}
       \item $\pair(P \rightarrow P \bullet \squoted{*} F, 2)$,
@@ -350,23 +351,23 @@ Abk\"urzung $F$.
       \item $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$
       \item $\pair(\widehat{S} \rightarrow E\bullet, 0)$.
       \end{enumerate}
-      Als letztes wenden wir die Lese-Operation an.  Da der n\"achste zu lesende Buchstabe das Zeichen
+      Als letztes wenden wir die Lese-Operation an.  Da der nächste zu lesende Buchstabe das Zeichen
       ``\texttt{*}'' ist, erhalten wir
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_4 = \{ \pair(P \rightarrow P \squoted{*} \bullet\, F, 2) \}$.
-\item Wir setzen $i= 4$.  Die Vervollst\"andigungs-Operation liefert keine neuen Earley-Objekte.
+\item Wir setzen $i= 4$.  Die Vervollständigungs-Operation liefert keine neuen Earley-Objekte.
       Die Vorhersage-Operation liefert folgende Earley-Objekte:
       \begin{enumerate}
       \item $\pair(F \rightarrow \bullet \squoted{1}, 4)$, 
       \item $\pair(F \rightarrow \bullet \squoted{2}, 4)$,
       \item $\pair(F \rightarrow \bullet \squoted{3}, 4)$.
       \end{enumerate}
-      Da das n\"achste Zeichen die Ziffer ``3'' ist, liefert die Lese-Operation f\"ur $Q_5$:
+      Da das nächste Zeichen die Ziffer ``3'' ist, liefert die Lese-Operation für $Q_5$:
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_5 = \pair(F \rightarrow \squoted{3}\bullet, 4) \}$.
-\item Wir setzen $i=5$.  Die Vervollst\"andigungs-Operation liefert nacheinander die folgenden
+\item Wir setzen $i=5$.  Die Vervollständigungs-Operation liefert nacheinander die folgenden
       Earley-Objekte:
       \begin{enumerate}
       \item $\pair(P \rightarrow P \squoted{*} F\;\bullet, 2)$,
@@ -376,18 +377,18 @@ Abk\"urzung $F$.
       \item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$.
       \end{enumerate}
 \end{enumerate}
-Da die Menge $Q_5$ das Earley-Objekt $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$ enth\"alt,
-k\"onnen wir schlie{\ss}en, dass der String ``\texttt{1+2*3}'' tats\"achlich in der von der Grammatik erzeugten
+Da die Menge $Q_5$ das Earley-Objekt $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$ enthält,
+können wir schließen, dass der String ``\texttt{1+2*3}'' tatsächlich in der von der Grammatik erzeugten
 Sprache liegt.
 \vspace*{0.3cm}
 
-\noindent
-\textbf{Aufgabe}:  Zeigen Sie, dass der String ``\texttt{1*2+3}'' in der Sprache der von der in
+\exercise
+Zeigen Sie, dass der String ``\texttt{1*2+3}'' in der Sprache der von der in
 Abbildung \ref{fig:expr-small} angegebenen Grammatik liegt.  Benutzen Sie dazu den von Earley
 angegebenen Algorithmus.
 
 \section{Implementing Earley's Algorithm in SetlX}
-In this section we present a simple implementation of Earley's algorithm in \textsc{SetlX}.  
+In this section we present a simple implementation of Earley's algorithm in \textsl{Python}.  
 Our implementation consists of three classes.
 \begin{enumerate}
 \item The class \texttt{earleyItem}   is our implementation of an Earley item.
@@ -576,7 +577,7 @@ We are finally ready to implement Earley's algorithm.  It is implemented in the 
 
       The parser that is implemented in the class \texttt{earleyParser} does not use a scanner but
       rather works directly with the characters that make up the string \texttt{mString}.
-\item \texttt{mStateList} is the list $[Q_0, Q_1, \cdots, Q_n]$.  Since in \textsc{SetlX} lists are
+\item \texttt{mStateList} is the list $[Q_0, Q_1, \cdots, Q_n]$.  Since in \textsl{Python} lists are
       $1$-based, we have to store the set $Q_0$ at the index $1$ in \texttt{mStateList}.  Therefore,
       in general we have
       \\[0.2cm]
@@ -890,7 +891,7 @@ $
 $
 \\[0.2cm]
 We discuss how this formula is implemented in the method \texttt{myScan}. (By the way, we had to
-name this method \texttt{scan} instead of \texttt{myScan} since \texttt{scan} is a keyword in \textsc{SetlX}.)
+name this method \texttt{scan} instead of \texttt{myScan} since \texttt{scan} is a keyword in \textsl{Python}.)
 \begin{enumerate}
 \item The argument \texttt{i} specifies the set $Q_i$ that is to be used as the basis of the
       scanning operation.
@@ -983,22 +984,22 @@ grammar from Figure \ref{fig:expr-small}.
 \end{figure}
 
 
-\section{Korrektheit und Vollst\"andigkeit}
+\section{Korrektheit und Vollständigkeit}
 In diesem Kapitel beweisen wir zwei Eigenschaften des von Earley angegebenen Algorithmus.
-Zun\"achst zeigen wir, dass immer dann, wenn wir den Algorithmus auf einen String $s = x_1 x_2 \cdots x_n$
+Zunächst zeigen wir, dass immer dann, wenn wir den Algorithmus auf einen String $s = x_1 x_2 \cdots x_n$
 anwenden und nach Beendigung des Algorithmus das Earley-Objekt 
 $\pair(\widehat{S} \rightarrow S \,\bullet, 0)$ in der Menge $Q_n$ enthalten ist, wir
-schlie{\ss}en k\"onnen, dass der String $s$ sich von dem Start-Symbol $S$ ableiten l\"asst.
+schließen können, dass der String $s$ sich von dem Start-Symbol $S$ ableiten lässt.
 Diese Eigenschaft
-bezeichnen wir als die Korrektheit des Algorithmus.  Au{\ss}erdem beweisen wir, dass auch die
+bezeichnen wir als die Korrektheit des Algorithmus.  Außerdem beweisen wir, dass auch die
 Umkehrung gilt:  Falls der String $s$ in der von der Variablen $S$ erzeugten Sprache
 liegt, dann ist das Earley-Objekt 
 $\pair(\widehat{S} \rightarrow S \,\bullet, 0)$ nach Beendigung des Algorithmus ein Element der Menge
-$Q_n$.  Diese Eigenschaft bezeichnen wir als die Vollst\"andigkeit des Algorithmus.
+$Q_n$.  Diese Eigenschaft bezeichnen wir als die Vollständigkeit des Algorithmus.
 Bei allen folgenden Betrachtungen gehen wir davon aus, dass $G = \pair(V, T, S, R)$ die 
 verwendete kontextfreie Grammatik bezeichnet.
 
-Das nachfolgende Lemma wird sp\"ater ben\"otigt, um die Korrektheit zu zeigen.  Es formalisiert die Idee, die
+Das nachfolgende Lemma wird später benötigt, um die Korrektheit zu zeigen.  Es formalisiert die Idee, die
 der Definition eines Earley-Objekts zu Grunde liegt.
 \begin{Lemma}
   Es sei $s = x_1 x_2 \cdots x_n \in T^*$ der String, auf den wir den Algorithmus von Earley anwenden.
@@ -1014,16 +1015,16 @@ der Definition eines Earley-Objekts zu Grunde liegt.
 \end{Lemma}
 
 \noindent
-\textbf{Beweis}: Wir f\"uhren den Beweis durch Induktion \"uber die Anzahl $l$ der Berechnungs-Schritte, die
-der Algorithmus durchgef\"uhrt hat, um $\pair(A \rightarrow \alpha \bullet \beta, k) \in Q_i$ nachzuweisen.
+\textbf{Beweis}: Wir führen den Beweis durch Induktion über die Anzahl $l$ der Berechnungs-Schritte, die
+der Algorithmus durchgeführt hat, um $\pair(A \rightarrow \alpha \bullet \beta, k) \in Q_i$ nachzuweisen.
 \begin{enumerate}
-\item[I.A.:] $l=0$.  Zu Beginn enth\"alt die Menge $Q_0$ nur das Earley-Objekt
+\item[I.A.:] $l=0$.  Zu Beginn enthält die Menge $Q_0$ nur das Earley-Objekt
             \\[0.2cm]
             \hspace*{1.3cm}
             $\pair( \widehat{S} \rightarrow \bullet\,S, 0)$
             \\[0.2cm]
-            und alle anderen Mengen $Q_i$ sind leer.  Damit m\"ussen wir die Behauptung nur f\"ur dieses
-            eine Earley-Objekt nachweisen.  F\"ur dieses Earley-Objekt haben die Variablen $A$, $\alpha$,
+            und alle anderen Mengen $Q_i$ sind leer.  Damit müssen wir die Behauptung nur für dieses
+            eine Earley-Objekt nachweisen.  Für dieses Earley-Objekt haben die Variablen $A$, $\alpha$,
             $\beta$ und $k$ folgende Werte: 
             \begin{enumerate}
             \item $A = \widehat{S}$,
@@ -1032,18 +1033,18 @@ der Algorithmus durchgef\"uhrt hat, um $\pair(A \rightarrow \alpha \bullet \beta
             \item $i = 0$,
             \item $k = 0$.
             \end{enumerate}
-            Wir m\"ussen dann zeigen, dass 
+            Wir müssen dann zeigen, dass 
             \\[0.2cm]
             \hspace*{1.3cm}
             $\varepsilon \Rightarrow^* x_1 \cdots x_0$ 
             \\[0.2cm]
             gilt. Diese Behauptung folgt aus $x_1 \cdots x_0 = \varepsilon$.
-\item[I.S.:] $0,\cdots,l \mapsto l+1$.  Wir m\"ussen eine Fallunterscheidung nach der Art der Operation
-            durchf\"uhren, mit der das Earley-Objekt $E = \pair(A \rightarrow \alpha \bullet \beta, k)$
+\item[I.S.:] $0,\cdots,l \mapsto l+1$.  Wir müssen eine Fallunterscheidung nach der Art der Operation
+            durchführen, mit der das Earley-Objekt $E = \pair(A \rightarrow \alpha \bullet \beta, k)$
             erzeugt worden ist.
             \begin{enumerate}
-            \item $E$ ist durch eine Vorhersage-Operation in $Q_i$ eingef\"ugt worden. 
-                  Daher enth\"alt $Q_i$ ein Earley-Objekt der Form
+            \item $E$ ist durch eine Vorhersage-Operation in $Q_i$ eingefügt worden. 
+                  Daher enthält $Q_i$ ein Earley-Objekt der Form
                   \\[0.2cm]
                   \hspace*{1.3cm}
                   $F = \pair(A' \rightarrow \alpha' \bullet A\, \delta, k')$.
@@ -1061,7 +1062,7 @@ der Algorithmus durchgef\"uhrt hat, um $\pair(A \rightarrow \alpha \bullet \beta
                   $\varepsilon \Rightarrow^* x_{i+1} \cdots x_i$ 
                   \\[0.2cm]
                   gilt. Wegen $x_{i+1} \cdots x_i = \varepsilon$ ist das trivial.
-            \item $E$ ist durch eine Lese-Operation in $Q_i$ eingef\"ugt worden.
+            \item $E$ ist durch eine Lese-Operation in $Q_i$ eingefügt worden.
                   Dann gibt es ein Earley-Objekt der Form 
                   $\pair(A \rightarrow \alpha' \bullet x_i \beta, k) \in Q_{i-1}$, es gilt 
                   $\alpha = \alpha' x_i$ und nach
@@ -1070,7 +1071,7 @@ der Algorithmus durchgef\"uhrt hat, um $\pair(A \rightarrow \alpha \bullet \beta
                   \hspace*{1.3cm}
                   $\alpha' \Rightarrow^* x_{k+1} \cdots x_{i-1}$
                   \\[0.2cm]
-                  Wir m\"ussen zeigen, dass
+                  Wir müssen zeigen, dass
                   \\[0.2cm]
                   \hspace*{1.3cm}
                   $\alpha \Rightarrow^* x_{k+1} \cdots x_{i}$ 
@@ -1079,7 +1080,7 @@ der Algorithmus durchgef\"uhrt hat, um $\pair(A \rightarrow \alpha \bullet \beta
                   \\[0.2cm]
                   \hspace*{1.3cm}
                   $\alpha = \alpha' x_i \Rightarrow^* x_{k+1} \cdots x_{i-1} x_i = x_{k+1} \cdots x_i$.
-            \item $E$ ist durch eine Vervollst\"andigungs-Operation in $Q_i$ eingef\"ugt worden.
+            \item $E$ ist durch eine Vervollständigungs-Operation in $Q_i$ eingefügt worden.
                   Dann hat $E$ die Form
                   \\[0.2cm]
                   \hspace*{1.3cm}
@@ -1144,9 +1145,9 @@ Das Korollar zeigt:  Produziert der Algorithmus von Earley das Earley-Objekt
 $\pair(\widehat{S} \rightarrow S \bullet, 0) \in Q_n$,
 \\[0.2cm] 
  so liegt der String, auf den wir den
-Algorithmus angewendet haben, tats\"achlich in der von der Grammatik erzeugten Sprache.  Wir wollen
+Algorithmus angewendet haben, tatsächlich in der von der Grammatik erzeugten Sprache.  Wir wollen
 aber auch die Umkehrung dieser Aussage nachweisen:  Falls ein String $s$ von der Grammatik erzeugt
-wird, so wird der Algorithmus von Earley dies auch erkennen.  Dazu zeigen wir zun\"achst das folgende
+wird, so wird der Algorithmus von Earley dies auch erkennen.  Dazu zeigen wir zunächst das folgende
 Lemma.
 
 
@@ -1163,10 +1164,10 @@ Lemma.
 \end{Lemma}
 
 \noindent
-\textbf{Beweis}: Wir f\"uhren den Beweis durch Induktion \"uber die Anzahl der Ableitungs-Schritte in
+\textbf{Beweis}: Wir führen den Beweis durch Induktion über die Anzahl der Ableitungs-Schritte in
 der Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$.  
 \begin{enumerate}
-\item Falls die Ableitung die L\"ange $0$ hat, gilt offenbar $\beta = x_{i+1} \cdots x_l$.  
+\item Falls die Ableitung die Länge $0$ hat, gilt offenbar $\beta = x_{i+1} \cdots x_l$.  
       Damit hat die Voraussetzung
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1182,18 +1183,18 @@ der Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$.
       \hspace*{1.3cm}
       $\pair(A \rightarrow \alpha x_{i+1} \cdots x_l \bullet \gamma, k) \in Q_l$
       \\[0.2cm]
-      und wegen  $\beta = x_{i+1} \cdots x_l$ ist das \"aquivalent zu
+      und wegen  $\beta = x_{i+1} \cdots x_l$ ist das äquivalent zu
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(A \rightarrow \alpha \beta \bullet \gamma, k) \in Q_l$.
       \\[0.2cm]
       Das ist aber gerade die Behauptung.
-\item Wir f\"uhren nun den Induktions-Schritt
-      durch, wobei die Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$ eine L\"ange gr\"o{\ss}er als 0
+\item Wir führen nun den Induktions-Schritt
+      durch, wobei die Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$ eine Länge größer als 0
       hat und nehmen an, dass  die erste Regel, die bei
       dieser Ableitung angewendet worden ist, die Form
       $D \rightarrow \delta$
-      hat.   Zur Vereinfachung nehmen wir au{\ss}erdem an, dass die Ableitungs-Schritte so durchgef\"uhrt
+      hat.   Zur Vereinfachung nehmen wir außerdem an, dass die Ableitungs-Schritte so durchgeführt
       werden, dass immer die linkeste Variable ersetzt wird.  
       Die Ableitung hat dann insgesamt die Form
       \\[0.2cm]
@@ -1210,8 +1211,8 @@ der Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$.
         \label{earley:1b}
         \mu    \Rightarrow^* x_{h+1} \cdots x_l    
       \end{equation}
-      f\"ur ein geeignetes $h \in \{j, \cdots, l+1\}$.
-      Also  k\"onnen wir zun\"achst auf das Earley-Objekt
+      für ein geeignetes $h \in \{j, \cdots, l+1\}$.
+      Also  können wir zunächst auf das Earley-Objekt
       \\[0.2cm]
       \hspace*{1.3cm}
       $\pair(A \rightarrow \alpha \bullet \beta \gamma, k) \in Q_i$
@@ -1231,7 +1232,7 @@ der Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$.
         \label{earley:4}
         \pair(D \rightarrow \delta\, \bullet, j) \in Q_h.
       \end{equation}
-      Aus (\ref{earley:2}) und (\ref{earley:4}) folgt mit der Vervollst\"andigungs-Operation
+      Aus (\ref{earley:2}) und (\ref{earley:4}) folgt mit der Vervollständigungs-Operation
       \begin{equation}
         \label{earley:5}
         \pair(A \rightarrow \alpha x_{i+1} \cdots x_j D \bullet \mu \gamma, k) \in Q_{h}.  
@@ -1249,7 +1250,7 @@ der Ableitung $\beta \Rightarrow^* x_{i+1} \cdots x_l$.
       gezeigt und das ist gerade die Behauptung. \qed
 \end{enumerate}
 
-\begin{Korollar}[Vollst\"andigkeit] \hspace*{\fill} \\
+\begin{Korollar}[Vollständigkeit] \hspace*{\fill} \\
 Falls $s = x_1 \cdots x_n \in L(G)$ ist, dann gilt $\pair(\widehat{S} \rightarrow S \bullet, 0) \in Q_n$.
 \end{Korollar}
 
@@ -1260,107 +1261,107 @@ Der Algorithmus von Earley initialisiert die Menge $Q_0$ mit dem Earley-Objekt
 \hspace*{1.3cm}
 $\pair(\widehat{S} \rightarrow \bullet S, 0)$.  
 \\[0.2cm]
-Die Voraussetzung $x_1 \cdots x_n \in L(G)$ hei{\ss}t gerade
+Die Voraussetzung $x_1 \cdots x_n \in L(G)$ heißt gerade
 $S \Rightarrow^* x_1 \cdots x_n$.  Also folgt die Behauptung aus dem eben bewiesenen Lemma,
 wenn wir dort $\alpha := \varepsilon$, $\beta := S$, $\gamma := \varepsilon$, $i := 0$,
 $k:= 0$ und $l:= n$ setzen.
 \qed
 
-\section{Analyse der Komplexit\"at}
+\section{Analyse der Komplexität}
 Wir zeigen, dass sich die Anzahl der Schritte, die der Algorithmus von Earley bei einem String der
-L\"ange $n$ durch $\mathcal{O}(n^3)$ nach oben absch\"atzen l\"asst.  Falls die Grammatik eindeutig ist,
+Länge $n$ durch $\mathcal{O}(n^3)$ nach oben abschätzen lässt.  Falls die Grammatik eindeutig ist,
 wenn es also zu jedem String nur einen Parse-Baum gibt, kann dies zu $\mathcal{O}(n^2)$ verbessert
 werden.  
-Zus\"atzlich hat Jay Earley in seiner Doktorarbeit \cite{earley:68} gezeigt, dass der
-Algorithmus in vielen praktisch relevanten F\"allen eine lineare Komplexit\"at hat.
+Zusätzlich hat Jay Earley in seiner Doktorarbeit \cite{earley:68} gezeigt, dass der
+Algorithmus in vielen praktisch relevanten Fällen eine lineare Komplexität hat.
 
-Der Schl\"ussel bei der Berechnung der Komplexit\"at des Algorithmus von Earley ist die
+Der Schlüssel bei der Berechnung der Komplexität des Algorithmus von Earley ist die
 Betrachtung der Anzahl der Elemente der Menge $Q_i$.  Es gilt offenbar:
 \\[0.2cm]
 \hspace*{1.3cm}
 Wenn $\pair(A \rightarrow \alpha \bullet \beta, k) \in Q_{i}$, dann $k \in \{0,\cdots,i\}$.  
 \\[0.2cm]
-Die Komponente $A \rightarrow \alpha \bullet \beta$ h\"angt nur von der Grammatik und nicht
-von dem zu parsenden String ab, w\"ahrend der Index $i$ von der L\"ange des zu parsenden
-Strings abh\"angig ist, es gilt 
+Die Komponente $A \rightarrow \alpha \bullet \beta$ hängt nur von der Grammatik und nicht
+von dem zu parsenden String ab, während der Index $i$ von der Länge des zu parsenden
+Strings abhängig ist, es gilt 
 \\[0.2cm]
 \hspace*{1.3cm}
 $i \in \{0,\cdots,n\}$.
 \\[0.2cm]
-Interessiert nur das Wachstum der Mengen $Q_i$ in Abh\"angigkeit von der L\"ange des zu
+Interessiert nur das Wachstum der Mengen $Q_i$ in Abhängigkeit von der Länge des zu
 parsenden Strings, so kann daher die Anzahl der Elemente der Menge $Q_i$ durch
-$\mathcal{O}(n)$ abgesch\"atzt werden.  Wir analysieren nun die Anzahl der Rechenschritte,
-die bei den einzelnen Operationen durchgef\"uhrt werden.
+$\mathcal{O}(n)$ abgeschätzt werden.  Wir analysieren nun die Anzahl der Rechenschritte,
+die bei den einzelnen Operationen durchgeführt werden.
 \begin{enumerate}
 \item Bei der Implementierung der Vorhersage-Operation in der Methode $\textsl{predict}()$
       (Abbildung \ref{fig:earleyParser.stlx:predict}) haben wir drei Schleifen.
       \begin{enumerate}
-      \item F\"ur die \"au{\ss}ere \texttt{do}-\texttt{while}-Schleife finden wir, dass diese
+      \item Für die äußere \texttt{do}-\texttt{while}-Schleife finden wir, dass diese
             maximal so oft durchlaufen wird, wie neue Earley-Objekte in die Menge
-            $Q_i$ eingef\"ugt werden.  
-            Alle mit der Vorhersage-Operation neu eingef\"ugten Objekte haben aber die Form
+            $Q_i$ eingefügt werden.  
+            Alle mit der Vorhersage-Operation neu eingefügten Objekte haben aber die Form
             \\[0.2cm]
             \hspace*{1.3cm}
             $\langle A \rightarrow \bullet \gamma, i \rangle$,
             \\[0.2cm]
             der Index hat hier also immer den Wert $i$.
             Die Anzahl solcher Objekte ist nur von der Grammatik und nicht von dem
-            Eingabe-String abh\"angig.  Damit kann die Anzahl dieser Schleifen-Durchl\"aufe 
-            durch $\mathcal{O}(1)$ abgesch\"atzt werden.
-      \item Die \"au{\ss}ere \texttt{for}-Schleife l\"auft \"uber alle Earley-Objekte der Menge
+            Eingabe-String abhängig.  Damit kann die Anzahl dieser Schleifen-Durchläufe 
+            durch $\mathcal{O}(1)$ abgeschätzt werden.
+      \item Die äußere \texttt{for}-Schleife läuft über alle Earley-Objekte der Menge
             $Q_i$ und wird daher maximal $\mathcal{O}(n)$-mal durchlaufen.
-      \item Die innere \texttt{for}-Schleife l\"auft \"uber alle Grammatik-Regeln und ist von
-            der L\"ange des zu parsenden Strings unabh\"angig.  Diese Schleife liefert also 
-            nur einen Beitrag, der durch $\mathcal{O}(1)$ abgesch\"atzt werden kann.
+      \item Die innere \texttt{for}-Schleife läuft über alle Grammatik-Regeln und ist von
+            der Länge des zu parsenden Strings unabhängig.  Diese Schleife liefert also 
+            nur einen Beitrag, der durch $\mathcal{O}(1)$ abgeschätzt werden kann.
       \end{enumerate}
-      Insgesamt hat ein Aufruf der Methode $\texttt{predict}()$ daher die Komplexit\"at 
+      Insgesamt hat ein Aufruf der Methode $\texttt{predict}()$ daher die Komplexität 
       $\mathcal{O}(1) \cdot {O}(n) \cdot \mathcal{O}(1) = \mathcal{O}(n)$.
 \item Bei der Implementierung der Lese-Operation, die in Abbildung \ref{fig:earleyParser.stlx:scan}
       gezeigt ist, haben wir eine \texttt{for}-Schleife,
-      die \"uber alle Elemente der Menge $Q_i$ iteriert.  Da diese Menge $\mathcal{O}(n)$
-      Elemente enth\"alt, hat die Lese-Operation ebenfalls die Komplexit\"at $\mathcal{O}(n)$.
+      die über alle Elemente der Menge $Q_i$ iteriert.  Da diese Menge $\mathcal{O}(n)$
+      Elemente enthält, hat die Lese-Operation ebenfalls die Komplexität $\mathcal{O}(n)$.
 \item Die von uns in Abbildung \ref{fig:earleyParser.stlx:complete} auf Seite
       \pageref{fig:earleyParser.stlx:complete} gezeigte Implementierung der
-      Vervollst\"andigungs-Operation in der Methode $\mathtt{complete}()$ 
-      ist ineffizient, weil wir in der \"au{\ss}eren
-      \texttt{for}-Schleife immer \"uber alle Elemente der Menge $Q_i$ iterieren.
-      Effizienter w\"are es, wenn wir nur \"uber die beim letzten Schleifen-Durchlauf neu
-      hinzu gekommenen Elemente iterieren w\"urden.  Dann w\"urde
-      im schlimmsten Falle f\"ur jedes Elemente der Menge $Q_i$ einmal die innere
-      \texttt{for}-Schleife, die \"uber alle Elemente der Menge $Q_j$ iteriert, ausgef\"uhrt.
+      Vervollständigungs-Operation in der Methode $\mathtt{complete}()$ 
+      ist ineffizient, weil wir in der äußeren
+      \texttt{for}-Schleife immer über alle Elemente der Menge $Q_i$ iterieren.
+      Effizienter wäre es, wenn wir nur über die beim letzten Schleifen-Durchlauf neu
+      hinzu gekommenen Elemente iterieren würden.  Dann würde
+      im schlimmsten Falle für jedes Elemente der Menge $Q_i$ einmal die innere
+      \texttt{for}-Schleife, die über alle Elemente der Menge $Q_j$ iteriert, ausgeführt.
       Da die Anzahl der Elemente von $Q_i$ und $Q_j$ jeweils durch $\mathcal{O}(n)$
-      abgesch\"atzt werden k\"onnen, kann die Komplexit\"at der Vervollst\"andigungs-Operation
-      insgesamt mit $\mathcal{O}(n^2)$ abgesch\"atzt werden.
+      abgeschätzt werden können, kann die Komplexität der Vervollständigungs-Operation
+      insgesamt mit $\mathcal{O}(n^2)$ abgeschätzt werden.
 \end{enumerate}
-Da die einzelnen Operationen f\"ur alle Mengen $Q_i$ f\"ur $i = 0, \cdots, n$ durchgef\"uhrt
-werden m\"ussen, hat der Algorithmus insgesamt die Komplexit\"at $\mathcal{O}(n^3)$.  Damit
-diese Komplexit\"at auch tats\"achlich erreicht wird, m\"ussten wir die Implementierung der Methoden so um\"andern,
+Da die einzelnen Operationen für alle Mengen $Q_i$ für $i = 0, \cdots, n$ durchgeführt
+werden müssen, hat der Algorithmus insgesamt die Komplexität $\mathcal{O}(n^3)$.  Damit
+diese Komplexität auch tatsächlich erreicht wird, müssten wir die Implementierung der Methoden so umändern,
 dass kein Element der Menge $Q_i$ mehrfach betrachtet wird.  Da eine solche
-Implementierung schwerer zu verstehen w\"are, haben wir uns aus didaktischen Gr\"unden
-mit einer ineffizienteren Implementierung begn\"ugt.
+Implementierung schwerer zu verstehen wäre, haben wir uns aus didaktischen Gründen
+mit einer ineffizienteren Implementierung begnügt.
 
-Der Nachweis, dass der Algorithmus bei einer eindeutigen Grammatik die Komplexit\"at 
+Der Nachweis, dass der Algorithmus bei einer eindeutigen Grammatik die Komplexität 
 $\mathcal{O}\bigl(n^2\bigr)$ hat, geht
-\"uber den Rahmen der Vorlesung hinaus und kann in dem Artikel von Earley \cite{earley:70}
-nachgelesen werden.   In seiner Doktorarbeit hat Jay Earley \cite{earley:68} zus\"atzlich
-gezeigt, dass der Algorithmus in vielen praktisch relevanten F\"allen nur eine lineare
-Komplexit\"at hat.  Es gibt daher eine Reihe von Parser-Generatoren, die den Algorithmus von
+über den Rahmen der Vorlesung hinaus und kann in dem Artikel von Earley \cite{earley:70}
+nachgelesen werden.   In seiner Doktorarbeit hat Jay Earley \cite{earley:68} zusätzlich
+gezeigt, dass der Algorithmus in vielen praktisch relevanten Fällen nur eine lineare
+Komplexität hat.  Es gibt daher eine Reihe von Parser-Generatoren, die den Algorithmus von
 Earley umsetzen, z.~B.~das System \textsl{Accent}
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{http://accent.compilertools.net}{\texttt{http://accent.compilertools.net}},
 \\[0.2cm]
-mit dessen Hilfe sich \texttt{C}-Parser f\"ur beliebige Grammatiken erzeugen lassen.
+mit dessen Hilfe sich \texttt{C}-Parser für beliebige Grammatiken erzeugen lassen.
 Ein Problem bei der Verwendung solcher Systeme besteht in der Praxis darin, dass die
 Frage, ob eine Grammatik eindeutig ist, unentscheidbar ist.  Bei der Definition einer
 neuen Grammatik kann es leicht passieren, dass die Grammatik aufgrund eines Design-Fehlers nicht 
-eindeutig ist.  Bei der Verwendung eines Earley-Parser-Generators k\"onnen solche Fehler
+eindeutig ist.  Bei der Verwendung eines Earley-Parser-Generators können solche Fehler
 erst zur Laufzeit des erzeugten Parsers bemerkt werden.  Bei Systemen wie \textsl{Antlr}
-oder \textsl{Bison}, die mit einer eingeschr\"ankteren Klasse von Grammatiken arbeiten,
-tritt dieses Problem nicht auf, denn die Grammatiken, f\"ur die sich mit einem solchen
-System ein Parser erzeugen l\"asst, sind nach Konstruktion eindeutig.  Ist also eine
+oder \textsl{Bison}, die mit einer eingeschränkteren Klasse von Grammatiken arbeiten,
+tritt dieses Problem nicht auf, denn die Grammatiken, für die sich mit einem solchen
+System ein Parser erzeugen lässt, sind nach Konstruktion eindeutig.  Ist also eine
 Grammatik aufgrund eines Design-Fehlers nicht eindeutig, so liegt Sie erst recht nicht in
-der eingeschr\"ankten Klasse von LR(1)-Grammatiken, die sich beispielsweise mit
+der eingeschränkten Klasse von LR(1)-Grammatiken, die sich beispielsweise mit
 \textsl{Bison} bearbeiten lassen und der Fehler wird bereits bei der Erstellung des
 Parsers bemerkt.
 
