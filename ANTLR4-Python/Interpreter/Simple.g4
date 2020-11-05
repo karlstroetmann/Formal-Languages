@@ -1,7 +1,7 @@
 grammar Simple;
 
 program returns [stmnt_list] 
-    : {SL = []} (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = ('program',) + tuple(SL)}
+    : {SL = ['program']} (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = tuple(SL)}
     ;
 
 statement returns [stmnt]
@@ -9,9 +9,9 @@ statement returns [stmnt]
     | v = VAR ':=' 'read' '(' ')' ';' {$stmnt = ('read', $v.text)}
     | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
     | 'if' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt) })* '}' 
-      {$stmnt = ('if', $b.result, ('body',) + tuple(SL))}
+      {$stmnt = ('if', $b.result) + tuple(SL)}
     | 'while' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt) })* '}' 
-      {$stmnt = ('while', $b.result, ('body',) + tuple(SL))}
+      {$stmnt = ('while', $b.result) + tuple(SL)}
     ;
 
 boolExpr returns [result]

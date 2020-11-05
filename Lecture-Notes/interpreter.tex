@@ -1,4 +1,4 @@
-\chapter{Interpreter \label{chapter:interpreter}}
+\chapter{Implementing a Simple Interpreter \label{chapter:interpreter}}
 
 
 \begin{figure}[!ht]
@@ -88,9 +88,37 @@ in der Variablen \texttt{s} akkumuliert und am Ende des Programms ausgegeben.
 \label{fig:sum.sl}
 \end{figure}
 
-
 Ähnlich wie bei unserem Programm zum symbolischen Differenzieren werden wir die einzelnen Befehle als
-geschachtelte Listen darstellen.
+geschachtelte Tupel darstellen.  Das in Abbildung \ref{fig:sum.sl} gezeigte Programm wird dabei durch das in
+Abbildung \ref{fig:sum.ast} gezeigte geschachtelte Tupel dargestellt.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    ('program',
+        ('read', 'n'),
+        (':=', 's', 0),
+        (':=', 'i', 0),
+        ('while',
+     	    ('<',  'i', ('*', 'n', 'n')),
+            (':=', 'i', ('+', 'i', 1)),
+     	    (':=', 's', ('+', 's', 'i'))
+        ),
+     ('print', 's')
+    )
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die geschachtelte Liste, die das Programm aus Abbildung \ref{fig:sum.sl} repräsentiert.}
+\label{fig:sum.ast}
+\end{figure}
+
 
 \begin{figure}[!ht]
 \centering
@@ -153,11 +181,12 @@ Abbildung \ref{fig:Simple.g} zeigt die Implementierung des Parsers mit dem
 Werkzeug \textsc{Antlr}.  
 \begin{enumerate}
 \item Das Start-Symbol der Grammatik ist die Variable \texttt{program}.
-      Beim Parsen dieser Variable gibt der Parser eine Liste von Befehlen in der Variable
+      Beim Parsen dieser Variable gibt der Parser ein Tupel von Befehlen in der Variable
       \texttt{stmnt\_list} zurück.
-      Dazu initialisieren wir mit Hilfe des Schlüsselwortes ``\texttt{\symbol{64}init}'' die Variable \texttt{SL}
-      als leere Liste.  Anschließend wird jeder Befehl, der erkannt wird, an diese Liste angehängt.
-      Schließlich wird diese Liste in der Attribut-Variable \texttt{stmnt\_list} gespeichert.
+      Dazu initialisieren wir die Variable \texttt{SL}
+      als Liste, die nur den String \texttt{'program'} enthält.  Anschließend wird jeder Befehl, der erkannt
+      wird, an diese Liste angehängt. Schließlich wird diese Liste in ein Tupel umgewandelt und in der
+      Attribut-Variable \texttt{stmnt\_list} gespeichert. 
 \item Die syntaktische Variable \texttt{statement} beschreibt die verschiedenen Befehle, die 
       in unserer einfachen Sprache unterstützt werden.
       \begin{enumerate}[(a)]
@@ -325,13 +354,75 @@ zwei getrennte Kommentare erkannt.
         token_stream  = antlr4.CommonTokenStream(lexer)
         parser        = SimpleParser(token_stream)
         result        = parser.program()
-        execute_list(result.stmnt_list)
+        Statements    = result.stmnt_list
+        execute_tuple(Statements)
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Funktion \texttt{InputReader}.}
+\caption{Die Funktion \texttt{main}.}
 \label{fig:Interpreter.ipynb:main}
 \end{figure}
 
+Abbildung \ref{fig:Interpreter.ipynb:main} zeigt die Funktion \texttt{main}, die als Eingabe den Namen einer
+Datei erhält, die ein Programm unserer einfachen Programmiersprache enthält.  Dieses Programm wird geparsed und
+dadurch in das geschachtelte Tupel \texttt{Statements} umgewandelt.  Die Funktion \texttt{execute\_tuple} führt
+die einzelnen Befehle in dem Tupel \texttt{Statements} aus.  Dazu verwendet sie die Funktion \texttt{execute},
+die einen einzelnen Befehl ausführen kann.  Abbildung \ref{fig:Interpreter.ipynb:execute} zeigt die
+Implementierung der Funktion \texttt{execute}.  Diese Implementierung besteht im Wesentlichen aus eine großen
+Fallunterscheidung nach der Art des auszuführenden Befehls.
+\begin{enumerate}
+\item Zunächst prüfen wir, ob \texttt{statement} der String \texttt{'program'} ist, der den Beginn des
+      Programms markiert.\footnote{
+        Diese Markierung wird nur für die Darstellung des Programms als abstrakter Syntaxbaum benötigt.}
+      Da es sich hier nur um eine Markierung und nicht um einen echten Befehl handelt, ist nichts weiter zu
+      tun.
+\item Falls es sich bei dem Befehl um eine Zuweisung der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{(':=, var, value)}
+      \\[0.2cm]   
+      handelt, wird der Wert des Ausdrucks \texttt{value} mit Hilfe der Funktion \texttt{evaluate}
+      berechnet.  Dieser Wert wird dann in dem Dictionary \texttt{Values} unter dem Schlüssel \texttt{var}
+      gespeichert.
+\item Falls es sich bei dem Befehl um eine Leseoperation der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('read', var)}
+      \\[0.2cm]
+      handelt, so wird mit Hilfe der \textsl{Python}-Funktion \texttt{input} ein String gelesen.
+      Dieser String wird in eine ganze Zahl umgewandelt.  Diese Zahl wird dann in dem Dictionary
+      \texttt{Values} unter dem Schlüssel \texttt{var} gespeichert.
+\item Falls es sich bei dem Befehl um eine Operation der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('print', expr)}
+      \\[0.2cm]
+      handelt, so wird zunächst der Ausdruck \texttt{expr} mit Hilfe der Funktion \texttt{evaluate}
+      ausgewertet.  Der Dabei erhaltene Wert wird dann ausgegeben.
+\item Falls der Befehl die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('if', test, $s_1$, $\cdots$, $s_n$)}
+      \\[0.2cm]
+      hat, so ist \texttt{test} ein Boole'scher Ausdruck und \texttt{($s_1$, $\cdots$, $s_n$)}
+      ist ein Tupel von Befehlen, das in der Variable \texttt{SL} gespeichert wird.
+      In diesem Fall wird zunächst der Ausdruck \texttt{test} mit Hilfe der Funktion \texttt{evaluate}
+      ausgewertet.  Wenn diese Auswertung den Wert \texttt{True} ergibt, werden anschließend die
+      Befehle in dem Tupel \texttt{SL} der Reihe nach ausgeführt.
+\item Falls der Befehl die Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('while', test, $s_1$, $\cdots$, $s_n$)}
+      \\[0.2cm]
+      hat, so ist \texttt{test} ein Boole'scher Ausdruck und \texttt{($s_1$, $\cdots$, $s_n$)}
+      ist ein Tupel von Befehlen, das in der Variable \texttt{SL} gespeichert wird.
+      In diesem Fall wird zunächst der Ausdruck \texttt{test} mit Hilfe der Funktion \texttt{evaluate}
+      ausgewertet.  Wenn diese Auswertung den Wert \texttt{True} ergibt, werden anschließend die
+      Befehle in dem Tupel \texttt{SL} der Reihe nach ausgeführt.
+      Anschließend wird wieder der Ausdruck \texttt{test} ausgewertet.  Ist das Ergebnis
+      \texttt{False}, so ist die Auswertung des Befehls beendet.  Andernfalls
+      werden Die Befehle in der Liste \texttt{SL} solange ausgeführt, bis die Auswertung von \texttt{test}
+      \texttt{False} ergibt.
+\end{enumerate}
 
 
 \begin{figure}[!ht]
@@ -345,13 +436,15 @@ zwei getrennte Kommentare erkannt.
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
-    def execute_list(Statement_List, Values={}):
+    def execute_tuple(Statement_List, Values={}):
         for stmnt in Statement_List:
             execute(stmnt, Values)
     
     def execute(stmnt, Values):
         op = stmnt[0]
-        if op == ':=':
+        if stmnt == 'program':
+            pass
+        elif op == ':=':
             _, var, value = stmnt
             Values[var] = evaluate(value, Values)
         elif op == 'read':
@@ -361,13 +454,13 @@ zwei getrennte Kommentare erkannt.
             _, expr = stmnt
             print(evaluate(expr, Values))
         elif op == 'if':
-            _, test, SL = stmnt
+            _, test, *SL = stmnt
             if evaluate(test, Values):
-                execute_list(SL, Values)
+                execute_tuple(SL, Values)
         elif op == 'while':
-            _, test, SL = stmnt
+            _, test, *SL = stmnt
             while evaluate(test, Values):
-                execute_list(SL, Values)
+                execute_tuple(SL, Values)
         else:
             assert False, f'{stmnt} unexpected'
 \end{Verbatim}
@@ -375,6 +468,41 @@ zwei getrennte Kommentare erkannt.
 \caption{Die Funktion \texttt{execute}.}
 \label{fig:Interpreter.ipynb:execute}
 \end{figure}
+
+Abbildung \ref{fig:Interpreter.ipynb:evaluate} zeigt die Implementierung der Funktion \texttt{evaluate}.
+Diese Funktion erhält als Eingabe einen arithmetischen Ausdruck und ein Dictionary, in dem die 
+Werte der Variablen abgelegt sind.  
+\begin{enumerate}
+\item Falls es sich bei dem auszuwertenden Ausdruck um eine Zahl handelt, geben wir diese Zahl als Ergebnis
+      zurück.
+\item Falls es sich bei dem auszuwertenden Ausdruck um eine Variable handelt, so schlagen wir den Wert dieser
+      Variable in dem Dictionary \texttt{Values} nach und geben wir diesen Wert als Ergebnis zurück.
+\item Falls es sich bei dem auszuwertenden Ausdruck um einen Boole'schen Ausdruck der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('==', lhs, rhs)}
+      \\[0.2cm]
+      handelt, werten wir die Ausdrücke \texttt{lhs} und \texttt{rhs} rekursiv aus und geben genau dann
+      \texttt{True} zurück, wenn sich für beide Ausdrücke der selbe Wert ergibt.
+\item Falls es sich bei dem auszuwertenden Ausdruck um einen Boole'schen Ausdruck der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('<', lhs, rhs)}
+      \\[0.2cm]
+      handelt, werten wir die Ausdrücke \texttt{lhs} und \texttt{rhs} rekursiv aus und geben genau dann
+      \texttt{True} zurück, wenn der Wert, der sich bei der Auswertung von \texttt{lhs} ergibt, kleiner als der
+      Wert ist, der sich bei der Auswertung von \texttt{rhs} ergibt.
+\item Falls es sich bei dem auszuwertenden Ausdruck um eine Summe der Form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('+', lhs, rhs)}
+      \\[0.2cm]
+      handelt, werten wir die Ausdrücke \texttt{lhs} und \texttt{rhs} rekursiv aus und geben die Summe dieser
+      Werte zurück. 
+\item Die Auswertung der arithmetischen Operatoren \texttt{'-'}, \texttt{'*'} und \texttt{'/'}
+      verläuft analog zur Auswertung des Operators \texttt{'+'}.
+\end{enumerate}
+
 
 \begin{figure}[!ht]
 \centering
@@ -434,19 +562,13 @@ zwei getrennte Kommentare erkannt.
 \item Erweitern Sie die Syntax der arithmetischen Ausdrücke so, dass auch vordefinierte 
       mathematische Funktionen wie $\texttt{exp}()$ oder $\texttt{ln}()$ benutzt werden
       können.
-
-      \textbf{Hinweis}:  Wenn Sie das Paket \texttt{java.lang.reflect} benutzen,
-      kommen Sie mit einer zusätzlichen Klasse aus und können damit alle in
-      \texttt{java.lang.Math} definierten Methoden implementieren.
 \item Erweitern Sie den Interpreter so, dass auch benutzerdefinierte Funktionen möglich
       werden. 
       
       \textbf{Hinweis}: Jetzt müssen Sie zwischen lokalen und globalen Variablen
       unterscheiden.
-      Daher reicht es nicht mehr, die Belegungen der Variablen in einer
-      global definierten Hashtabelle zu verwalten. \eox
-\item Erweitern Sie den Interpreter so, dass die Verwendung rationaler Zahlen unterstützt wird.
-      Das Ziel dieser Erweiterung ist eine Sprache, mit der Sie Rechnungen ohne Rundungsfehler durchführen können.
+      Daher reicht es nicht mehr, die Belegungen der Variablen in einem
+      global definierten Dictionary zu verwalten. \eox
 \end{enumerate}
 \renewcommand{\labelenumii}{\arabic{enumii}.}
 
