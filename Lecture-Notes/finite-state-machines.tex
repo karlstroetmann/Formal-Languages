@@ -787,7 +787,7 @@ We start by computing the set of states.
 \item $\Delta(S_7, \texttt{b}) = \Delta(\{ 0, 1, 2, 3 \}, \texttt{b}) = \{ 0, 1, 2, 3 \} = S_7$.
 \end{enumerate}
 These are all possible sets of states that the deterministic \textsc{Fsm} $\textsl{det}(F)$ can reach.
-For a better overview let us summarize the definitions of the individual states of the deterministic automaton:
+For a better overview let us summarize the definitions of the individual states of the deterministic \textsc{Fsm}:
 \\[0.2cm]
 \hspace*{1.3cm} $S_0 = \{ 0 \}$, $S_1 = \{ 0, 1 \}$, $S_2 = \{ 0, 2 \}$, $S_3 = \{ 0, 3 \}$, $S_4 = \{ 0, 1, 2 \}$, 
 \\[0.2cm]
@@ -908,7 +908,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \label{fig:aEpsilon.eps}
       \end{figure}
       Figure \ref{fig:aEpsilon.eps} shows the \textsc{Fsm} $A(\varepsilon)$.
-      We have that $L\bigl(A(\varepsilon)\bigr) = \{\texttt{''}\}$, i.e.~the automaton only accepts the empty string. 
+      We have that $L\bigl(A(\varepsilon)\bigr) = \{\texttt{''}\}$, i.e.~the \textsc{Fsm} only accepts the empty string. 
 \item For a letter $c \in \Sigma$ the \textsc{Fsm} $A(c)$ is defined as 
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -922,7 +922,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \label{fig:aChar.eps}
       \end{figure}
       Figure \ref{fig:aChar.eps} shows $A(c)$.
-      We have that $L\bigl(A(c)\bigr) = \{c\}$, i.e.~the automaton only accepts the character $c$. 
+      We have that $L\bigl(A(c)\bigr) = \{c\}$, i.e.~the \textsc{Fsm} only accepts the character $c$. 
 \item In order to define the \textsc{Fsm} $A(r_1 \cdot r_2)$ for the concatenation $r_1 \cdot r_2$ 
       we assume that the states in the \textsc{Fsm}s  $A(r_1)$ and $A(r_2)$ are different. 
       This can always be achieved by renaming the states of $A(r_2)$.
@@ -1348,41 +1348,45 @@ The \textsl{Jupyter notebook}
 contains a program that takes a deterministic \textsc{Fsm} $F$ and computes a regular expression $r$ such that
 $r$ specifies the language accepted by $F$, i.e.~we have $L(r) = L(F)$.
 
- \section{Minimize Finate State Machines}
-In this section we show a method to minimize the number of states of a deterministic finite state machine
+\section{Minimization of Finite State Machines}
+In this section we show how to minimize the number of states of a deterministic finite state machine
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$.
 \\[0.2cm]
-Without limitation of the generality we want to assume that the automaton $F$ is complete: So we assume that the expression $\delta(q, c)$ 
-returns for each state $q \in Q$ and each letter $c \in \Sigma$ as result a state of $Q$. Then we look for a deterministic finite automaton 
+Without loss of the generality we want to assume that the \textsc{Fsm} $F$ is complete: Therefore, we assume that
+for each state $q \in Q$ and each letter $c \in \Sigma$ the expression $\delta(q, c)$ 
+returns a state of $Q$.  Our goal is to find a deterministic finite state machine
 \\[0.2cm]
 \hspace*{1.3cm}
 $F^- = \langle Q^-, \Sigma, \delta^-, q_0, A^- \rangle$,
 \\[0.2cm]
-which accepts the same language as the machine $F$, so that therefore
+which accepts the same language as  $F$, so 
 \\[0.2cm]
 \hspace*{1.3cm}
 $L(F^-) = L(F)$
 \\[0.2cm]
 and for which the number of states of the set $Q^-$ is minimal.  
-In order to be able to do this construction, we have to draw a bit out. First of all we remind of the function 
+We start with the function 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\delta^*: Q \times \Sigma^* \rightarrow Q$
 \\[0.2cm]
-which has as second argument not only a single letter it also accepts a string.
-The function call $\delta^*(q,s)$ calculates the state $p$ which the automaton $F$ enters, if the machine reads the string $s$ in the state $q$.
-Since the function $\delta^*$ is a generalization of the function $\delta$, we will not differentiate the notation between $\delta$ and $\delta^*$ and simply write $\delta$.
+which extends the function $\delta$ by accepting a string instead of a single character as its first argument.
+The function call $\delta^*(q,s)$ calculates the state $p$ which the \textsc{Fsm} $F$ enters if it reads the
+string $s$ in the state $q$.  Since the function $\delta^*$ is a generalization of the function $\delta$, in
+the future we will not distinguish in the notation between $\delta$ and $\delta^*$ and write $\delta$ for both functions. 
 
 Obviously, in a finite state machine 
-$F = \langle Q, \Sigma, \delta, q_0, A \rangle$ we can remove all the states $p \in Q$ which are not \blue{reachable} from the start state. That means a state $p$ is \blue{reachable}\index{reachable}, iff
-a string $w \in \Sigma^*$ is given, so that
+$F = \langle Q, \Sigma, \delta, q_0, A \rangle$ we can remove all the states $p \in Q$ which are not
+\blue{reachable} from the start state.  A state $p$ is \blue{reachable}\index{reachable} iff 
+a string $w \in \Sigma^*$ is given, such that
 \\[0.2cm]
 \hspace*{1.3cm}
 $\delta(q_0, w) = p$
 \\[0.2cm]
-applies.  In the following we want to assume, that all states of the discussed finite automaton can be reached from the start state.
+holds.  In the following we assume that all states of the \textsc{Fsm} $F$ can be reached
+from the start state. 
 
 
 \begin{figure}[!ht]
@@ -1392,9 +1396,11 @@ applies.  In the following we want to assume, that all states of the discussed f
   \label{fig:nicht-gleichwertig.dot}
 \end{figure}
 
-In general, we can minimize an automaton by identifying certain states.   
-If we look for example at the automaton shown in figure \ref{fig:nicht-gleichwertig.dot}, we can identify the states $q_1$ and $q_2$ as well as $q_3$ and $q_4$ without changing the language of the automaton.
-The central idea in minimizing an automaton is that we consider which states we are not allowed to identify at all and simply consider all other states as equivalent.
+In general, we can minimize an \textsc{Fsm} by identifying certain states.   
+If we look for example at the \textsc{Fsm} shown in figure \ref{fig:nicht-gleichwertig.dot}, we can identify
+the states $q_1$ and $q_2$ as well as $q_3$ and $q_4$ without changing the language of the \textsc{Fsm}. 
+The central idea in minimizing a \textsc{Fsm} is that we compute those states which \textbf{must not} be
+identified and consider all other states as equivalent.
 
 \begin{Definition}[Separable States]
 Assume $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ is a deterministic finite state machine.
@@ -1422,19 +1428,25 @@ $p_1$ in all those cases where the old version of $\delta$ had returned $p_2$.
 
 
 The question remains how we can determine which states are distinguishable.
-One possibility is to create a set $V$ with pairs of states.  We add the pair $\langle p, q \rangle$ to the set $V$ if we recognize that $p$ and $q$ are differentiable.  We recognize $p$ and $q$ as distinguishable if there is a letter $c\in\Sigma$ and two states $s$ and $t$, so that
+One possibility is to create a set $V$ with pairs of states.  We add the pair $\langle p, q \rangle$ to the set
+$V$ if we have discovered that $p$ and $q$ are distinguishable.  We recognize $p$ and $q$ as distinguishable if
+there is a letter $c\in\Sigma$ and two states $s$ and $t$ that are already known to be distinguishable such that 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\delta(p,c) = s$, $\delta(q,c) = t$ und $\langle s, t \rangle \in V$
+$\delta(p,c) = s$, $\delta(q,c) = t$ and $\langle s, t \rangle \in V$
 \\[0.2cm]
-applies. This idea provides an algorithm that uses two steps:
+holds. This idea leads to an algorithm that uses two steps:
 \begin{enumerate}
-\item First we initialize $V$ with all the pairs $\pair(p,q)$, for which either $p$ is an accepting state and $q$ is not an accepting state, or reversed $q$ is an accepting state and $p$ is not an accepting state, because an accepting state can be distinguishabled from a non-accepting state by the empty string $\varepsilon$:
+\item First we initialize $V$ with all the pairs $\pair(p,q)$, for which either $p$ is an accepting state and
+      $q$ is not an accepting state, or $q$ is an accepting state and $p$ is not an accepting state,
+      because an accepting state can be distinguished from a non-accepting state by the empty string
+      $\varepsilon$: 
       \\[0.2cm]
       \hspace*{1.3cm}
       $V := \bigl\{\pair(p,q) \in Q \times Q \mid (p \in A \wedge q \notin A) \vee 
                                                (p \notin A \wedge q \in A) \bigr\}$
-\item As long as we find a new pair $\pair(p,q) \in Q \times Q$ for which there is a letter $c$, so that the states $\delta(p,c)$ and $\delta(q,c)$ are already distinguishable, we add this pair to the set $V$: 
+\item As long as we find a new pair $\pair(p,q) \in Q \times Q$ for which there is a letter $c$ such that the
+      states $\delta(p,c)$ and $\delta(q,c)$ are already distinguishable, we add this pair to the set $V$:  
       \\[0.2cm]
       \hspace*{1.3cm} 
       \texttt{while ($\exists \pair(p,q) \in Q \times Q: \exists c \in \Sigma:\langle\delta(p,c),
@@ -1450,14 +1462,18 @@ applies. This idea provides an algorithm that uses two steps:
       \hspace*{1.3cm}
       \texttt{\}}
 \end{enumerate}
-If we have found all pairs $\pair(p,q)$ of distinguishable states, then we can identify all states $p$ and $q$, which are not distinguishable and therefore $\langle p, q \rangle \not\in V$. It can be proved, that the automaton constructed in this way is in fact minimal.
-\pagebreak
+If we have found all pairs $\pair(p,q)$ of distinguishable states, then we can identify all states $p$ and $q$
+which are not distinguishable and therefore $\langle p, q \rangle \not\in V$.   The \textsc{Fsm} constructed in
+this way is, in fact, minimal.  
 
-\vspace*{-0.5cm}
 \exerciseEng
-We consider the finite automaton shown in figure \ref{fig:nicht-gleichwertig.dot} and apply the algorithm described above to this automaton.
-We use a table, whose columns and rows are numbered with the different states.  If we have recognized in the first step that the states $i$ and $j$ are distinguishable, we insert a $1$ in this table in the $i$-th row and the $j$-th column.
-Furthermore, since the states $i$ and $j$ can also be distinguished from the states $j$ and $i$, we also insert a $1$ in the $j$-th row and the $i$-th column.
+We consider the  \textsc{Fsm} shown in figure \ref{fig:nicht-gleichwertig.dot} and apply the algorithm
+described above to this \textsc{Fsm}. 
+We use a table for this.  The columns and rows of this table are numbered with the different states.  If we
+have recognized in the first step that the states $i$ and $j$ are distinguishable, we insert a $1$ in this
+table in the $i$-th row and the $j$-th column. 
+Furthermore, since the states $i$ and $j$ can also be distinguished from the states $j$ and $i$, we also insert
+a $1$ in the $j$-th row and the $i$-th column. 
 \begin{enumerate}
 \item In the first step we recognize that the two accepting states $q_3$ and $q_4$ are distinguishable from all non-accepting states.
       So the pairs 
@@ -1520,12 +1536,13 @@ Furthermore, since the states $i$ and $j$ can also be distinguished from the sta
       \hspace*{1.3cm}
       $\delta(q_1,\texttt{a}) = q_3$ \quad and \quad $\delta(q_2,\texttt{a}) = q_4$, 
       \\[0.2cm]
-      but because the states $q_3$ and $q_4$ are not distinguishable so far, this does not yield a new distinguishable pair.  Neither does
+      but because the states $q_3$ and $q_4$ are not distinguishable so far, this does not yield a new
+      distinguishable pair.  Neither does 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\delta(q_1,\texttt{b}) = q_3$ \quad and \quad $\delta(q_2,\texttt{b}) = q_4$, 
+      $\delta(q_1,\texttt{b}) = q_3$ \quad and \quad $\delta(q_2,\texttt{b}) = q_4$
       \\[0.2cm]
-      a new distinguishable pair.  Now the two states $q_3$ and $q_4$ remain.  Here we find
+      yield a new distinguishable pair.  At this point, the two states $q_3$ and $q_4$ remain.  We find
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta(q_3,c) = q_1$ \quad and \quad $\delta(q_4,c) = q_2$ \quad for all $c \in \{\texttt{a}, \texttt{b}\}$
@@ -1536,26 +1553,26 @@ Furthermore, since the states $i$ and $j$ can also be distinguished from the sta
       \item $q_1 \sim q_2$
       \item $q_3 \sim q_4$
       \end{enumerate}
-      Figure \ref{fig:gleichwertig.dot} shows the corresponding reduced finite automaton.
+      Figure \ref{fig:gleichwertig.dot} shows the corresponding reduced finite \textsc{Fsm}.
 \end{enumerate}
 
 
 \begin{figure}[!ht]
   \centering
   \epsfig{file=Abbildungen/gleichwertig.eps, scale=0.6}
-   \caption{Der reduzierte endliche Automat.}
+   \caption{The reduced \textsc{Fsm}.}
   \label{fig:gleichwertig.dot}
 \end{figure}
 
 
 
 \exerciseEng
-Construct the minimal deterministic finite automaton that recognizes the language \linebreak
-$L\bigl(a \cdot (b \cdot a)^*\bigr)$.  Take the following steps to do this:
+Construct the minimal deterministic  \textsc{Fsm} that recognizes the language 
+$L\bigl(a \cdot (b \cdot a)^*\bigr)$.  Perform the following steps:
 \begin{enumerate}[(a)]
-\item Calculate a non-deterministic finite state machine which recognizes this language.
-\item Transform this automaton into a deterministic automaton.
-\item Minimize the number of states of this automaton with the algorithm given above.
+\item Construct a non-deterministic \textsc{Fsm} which recognizes this language.
+\item Transform this non-deterministic \textsc{Fsm} into a deterministic \textsc{Fsm}.
+\item Minimize the number of states of this \textsc{Fsm} with the algorithm given above.
 \end{enumerate}
 
 \subsection{Implementation}
