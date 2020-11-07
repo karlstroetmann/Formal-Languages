@@ -6,5 +6,3 @@ product: factor;
        
 factor: '(' expr ')';
 factor: NUMBER;
-
-
