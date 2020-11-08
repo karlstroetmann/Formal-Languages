@@ -1,9 +1,9 @@
 \chapter{Bottom-Up-Parser\label{chapter:bottom-up}}
 Bei der Konstruktion eines Parsers gibt es generell zwei Möglichkeiten:  Wir können
 \blue{Top-Down} oder \blue{Bottom-Up} vorgehen.  Den Top-Down-Ansatz haben wir bereits
-ausführlich diskutiert.  In diesem Kapitel erläutern wir nun den Bottom-Up-Ansatz.
+diskutiert.  In diesem Kapitel erläutern wir nun den Bottom-Up-Ansatz.
 Dazu stellen wir im nächsten Abschnitt das allgemeine Konzept vor, das einem
-\textsl{Bottom-Up-Parser} zu Grunde liegt.  
+\blue{Bottom-Up-Parser} zu Grunde liegt.  
 Im darauf folgenden Abschnitt zeigen wir, wie Bottom-Up-Parser implementiert werden können
 und stellen als eine Implementierungsmöglichkeit die \blue{Shift-Reduce-Parser} vor.
 Ein Shift-Reduce-Parser arbeitet mit Hilfe einer Tabelle, in der
@@ -14,7 +14,7 @@ entwickeln wir dann in dem folgenden Abschnitt: Zunächst diskutieren wir die
 Das Konzept der SLR-Parser ist leider für die Praxis nicht mächtig genug.  Daher verfeinern wir
 dieses Konzept und erhalten so die Klasse der
 \blue{kanonischen LR-Parser}.  Da die Tabellen für LR-Parser in der Praxis
-häufig groß werden, vereinfacht man diese Tabellen etwas und erhält dann das Konzept der
+häufig groß werden, vereinfachen wir diese Tabellen etwas und erhält dann das Konzept der
 \blue{LALR-Parser}, das von der Mächtigkeit zwischen dem Konzept der \blue{SLR-Parser} und dem
 Konzept der \blue{LR-Parser} liegt.  In dem folgenden Kapitel werden wir dann den Parser-Generator
 \textsc{Ply} diskutieren, der ein LALR-Parser ist.
@@ -25,9 +25,7 @@ Start-Symbol der Grammatik wurde versucht, eine gegebene Eingabe durch Anwendung
 Grammatik-Regeln zu parsen.  Die Parser, die wir nun entwickeln werden, sind
 \blue{Bottom-Up-Parser}.  Bei einem solchen Parser ist die Idee, dass wir von dem zu parsenden
 String ausgehen und dort Terminale anhand der rechten Seiten der Grammatik-Regeln zusammenfassen.  
-
-
-Wir versuchen den String ``\texttt{1 + 2 * 3}'' mit der Grammatik, die durch die
+Wir geben ein Beispiel und versuchen den String ``\texttt{1 + 2 * 3}'' mit der Grammatik, die durch die
 Regeln 
 \[ 
 \begin{array}[t]{rcl}
@@ -145,130 +143,220 @@ in den folgenden Abschnitten entwickeln werden.
 
 
 \section{Shift-Reduce-Parser}
-Wollen wir einen Bottom-Up-Parser implementieren, so müssen wir uns zunächst die Frage stellen,
-welche Datenstrukturen wir bei der Implementierung verwenden wollen.
-Wenn wir uns dabei für einen Stack entscheiden, dann sprechen wir von einem
-\blue{Shift-Reduce-Parser}.  Ist $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik, so
-wird ein Shift-Reduce-Parser\index{Shift-Reduce-Parser} $P$ durch ein 4-Tupel
+\blue{Shift-reduce parsing} is one way to implement bottom up parsing.
+Assume a grammar $G = \langle V, T, R, S \rangle$ is given.  A  \blue{shift-reduce parser}\index{shift-reduce parser}
+is defined as a 4-Tuple
 \\[0.2cm]
 \hspace*{1.3cm}
 $P = \langle Q, q_0, \textsl{action}, \textsl{goto} \rangle$
 \\[0.2cm]
-beschrieben.  Dabei gilt:
+where
 \begin{enumerate}
-\item $Q$ ist die Menge der \blue{Zustände} des Shift-Reduce-Parsers.  
+\item $Q$ is the set of \blue{states} of the shift-reduce parser.  
 
-      Zunächst werden wir die einzelnen Zustände rein abstrakt sehen und ihre Natur nicht näher
-      analysieren.  Später, wenn wir 
-      die Theorie der SLR-Parser diskutieren, werden wir erkennen, dass ein Zustand
-      die Information speichert, mit welcher Grammatik-Regel der Parser gerade zu parsen versucht
-      und welcher Teil der rechten Seite der Regel bereits erkannt worden ist.
-\item $q_0 \in Q$ ist der Start-Zustand.
-\item $\textsl{action}$ ist eine Funktion, die als Argumente einen Zustand $q \in Q$
-      und ein Terminal $t \in T$ erhält.  Das Ergebnis ist ein Element der Menge
+      At first, states are purely abstract. 
+\item $q_0 \in Q$ is the start state.
+\item $\textsl{action}$ is a function taking two arguments. The first argument is a state $q \in Q$
+      and the second argument is a terminal $t \in T$.  The result of this function is an element from the set
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{Action} :=
        \bigl\{ \pair(\texttt{shift}, q)  \mid q \in Q \bigr\}               \cup 
        \bigl\{ \pair(\texttt{reduce}, r) \mid r \in R \bigr\} \cup 
        \bigl\{ \texttt{accept} \bigr\}                        \cup
-       \bigl\{ \texttt{error}  \bigr\}                         $,
+       \bigl\{ \texttt{error}  \bigr\}                         $.
       \\[0.2cm]
-      wobei \texttt{shift}, \texttt{reduce}, \texttt{accept} und \texttt{error} hier einfach als
-      Strings interpretiert werden, mit denen die verschiedenen Arten von Ergebnissen der Funktion
-      $\textsl{action}()$ unterschieden werden können.  
-      Zusammenfassend haben wir also:
+      Here \texttt{shift}, \texttt{reduce}, \texttt{accept}, and \texttt{error} are strings that serve to
+      distinguish the different kinds of result of the function 
+      $\textsl{action}$.  Therefore the signature of the function \textsl{action} is given as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}: Q \times T \rightarrow \textsl{Action}$.
-\item \textsl{goto} ist eine Funktion, die jedem Zustand $q \in Q$ und jeder syntaktischen Variablen
-      $v \in V$ einen neuen Zustand aus $Q$ zuordnet:
+\item \textsl{goto} is a function that takes a state $q \in Q$ and a syntactical variable
+      $v \in V$ and computes a new state.  Therefore the signature of \textsl{goto} is as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{goto}: Q \times V \rightarrow Q$.
 \end{enumerate}
-Ein Shift-Reduce-Parser arbeitet nun mit den folgenden Daten-Strukturen.
-\begin{enumerate}
-\item Einem Stack \textsl{states}, auf dem Zustände aus der Menge $Q$ abgelegt werden:
+A shift-reduce parser uses two stacks:
+\begin{enumerate}[(a)]
+\item \textsl{States} is a stack of states from the set $Q$:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{states} \in \textsl{Stack}\langle Q \rangle$.
-\item Einem Stack \textsl{symbols}, auf dem Grammatik-Symbole, also Terminale und Variablen-Symbole
-      abgelegt werden: 
+      $\textsl{States} \in \textsl{Stack}\langle Q \rangle$.
+\item \textsl{Symbols} is a stack of grammar symbols, i.e.~this stack contains both terminals and syntactical
+      variables:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{symbols} \in \textsl{Stack}\langle T \cup V \rangle$.
+      $\textsl{Symbols} \in \textsl{Stack}\langle T \cup V \rangle$.
 \end{enumerate}
-Zur Vereinfachung der folgenden Überlegungen nehmen wir an, dass die Menge $T$ der Terminale das
-spezielle Symbol ``\textsc{Eof}'' enthält und dass dieses Symbol das Ende des zu parsenden
-Strings spezifiziert aber sonst in dem String nicht auftritt.  
+In order to simplify the exposition of shift-reduce parsing we assume that the set $T$ of terminals contains
+the special symbol ``\textsc{Eof}'' (short for \blue{e}nd \blue{o}f \blue{f}ile).
+This symbol is assumed to occur at the end of the input string but does not occur elsewhere.
+
+In order to understand how a shift-reduce parser works we introduce the notion of a
+\blue{parser configuration}\index{parser configuration}.  A parser configuration is a triple of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\langle\textsl{States}, \textsl{Symbols}, \textsl{Tokens} \rangle$
+\\[0.2cm]
+where \textsl{States} and \textsl{Symbols} are the aforementioned stacks of states and grammar symbols, while
+\textsl{Tokens} is the rest of the 
+tokens from the input string that have not been processed.  The stack \textsl{States} always starts with the
+start state $q_0$ and has a length that is one more than the length of the stack \textsl{Symbols}.
+If the input string that is to be parsed has the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$[t_1, \cdots,t_n]$
+\\[0.2cm]
+and we have already reduced the first part $[t_1, \cdots,t_k]$ of the input string to produce the symbols 
+\\[0.2cm]
+\hspace*{1.3cm}
+$[X_1,\cdots, X_m]$,
+\\[0.2cm]
+while $[t_{k+1},\cdots,t_n]$ is the part of the input string that still needs to be processed, then we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{Stack} = [q_0,q_1\cdots, q_m]$, \quad $\textsl{Symbols} = [X_1,\cdots, X_m]$,
+\quad and \quad $\textsl{Tokens} = [t_{k+1}, \cdots, t_n, \mathtt{EOF}]$,
+\\[0.2cm]
+and the parser configuration $\langle \textsl{Symbols}, \textsl{Tokens} \rangle$ is written as
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_0, q_1, \cdots, q_m \mid X_1, \cdots. X_m \mid t_{k+1}, \cdots, t_n,\, \mathtt{EOF}$.
+\\[0.2cm]
+Shift-reduce parsing starts out with the configuration
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_0 \mid \;  \mid t_{1}, \cdots, t_n,\, \mathtt{EOF}$.
+\\[0.2cm] 
+Then, parsing proceeds iteratively.  If the current configuration is
+\\[0.2cm]
+\hspace*{1.3cm}
+$q_0, q_1, \cdots, q_m \mid X_1, \cdots, X_m \mid t_{k+1}, \cdots, t_n, \,\mathtt{EOF}$,
+\\[0.2cm]
+then there is a case distinction according to the value of $\textsl{action}(q_m, t_{k+1})$.
+\begin{enumerate}[(a)]
+\item If $\textsl{action}(q_m, t_{k+1}) = \textsl{error}$, then we know that the given string $t_1\cdots,t_n$
+      is not generated by the given grammar and parsing is aborted with an error message.
+\item If $\textsl{action}(q_m, t_{k+1}) = \textsl{accept}$, then we must have $t_{k+1} = \mathtt{EOF}$
+      and we also must have $X_1 \cdots X_m = S$.  In this case, we have reduced the string $t_1\cdots t_m$
+      to the start symbol $S$ of the given grammar and parsing finishes with success.
+\item If $\textsl{action}(q_m, t_{k+1}) = \langle\textsl{shift}, q \rangle$, then the current configuration
+      is changed into the new configuration
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $q_0, q_1, \cdots, q_m, q \mid X_1, \cdots, X_m, t_{k+1} \mid t_{k+2}, \cdots, t_n, \,\mathtt{EOF}$,
+      \\[0.2cm]
+      i.e.~the next token $t_{k+1}$ is moved from the unread input to the top of the symbol stack
+      and the new state $q$ is pushed onto the stack \textsl{States}.
+\item If $\textsl{action}(q_m, t_{k+1}) = \langle\textsl{reduce}, r \rangle$, where $r$ is a grammar rule,
+      then the grammar rule $r$ must have the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $A \rightarrow X_{m-k} \cdots X_{m}$,
+      \\[0.2cm]
+      i.e.~the right hand side of the grammar rule matches the end of the stack \textsl{Symbols}.
+      In this case, the symbols stack is reduced with this grammar rule, i.e.~the symbols
+      $X_{m-k} \cdots X_m$ are replaced by $A$.  Furthermore, in the stack \textsl{States} the states
+      $q_{m-k} \cdots q_m$ are replaced by the state $\textsl{goto}(q_{m-k-1}, A)$.
+      Therefore, the configuration changes as follows:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $q_0, q_1, \cdots, q_{m-k-1}, \textsl{goto}(q_{m-k-1}, A) \mid X_1, \cdots, X_{m-k-1}, A \mid t_{k+1}, \cdots, t_n, \,\mathtt{EOF}$.
+\end{enumerate}
+
+
+
+
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    class srParser(actionTable, gotoTable, stateTable) {
-        mActionTable := actionTable;
-        mGotoTable   := gotoTable;
-    
-        parseSR := procedure(tl) {
-            index   := 1;      // point to next token
-            symbols := [];     // stack of symbols
-            states  := ["s0"]; // stack of states, "s0" is the start state
-            while (true) {            
-                q := states[-1];
-                t := tl[index];
-                p := mActionTable[q,t];
-                match (p) {
-                case om: 
-                     return false;
-                case Shift(s):
-                     symbols := symbols + [t];
-                     states  := states  + [s];
-                     index   += 1;
-                case Rule(head, body):
-                     n       := #body;
-                     symbols := symbols[.. -(n+1)];
-                     states  := states[.. -(n+1)]; 
-                     symbols := symbols + [head];
-                     state   := states[-1];
-                     states  := states + [ mGotoTable[state, head] ];
-                case Accept():
-                     return true;
-                } 
-            }
-        };
-    }
-\end{Verbatim}
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{python3}
+    class ShiftReduceParser():
+        def __init__(self, actionTable, gotoTable):
+            self.mActionTable = actionTable
+            self.mGotoTable   = gotoTable
+\end{minted}
 \vspace*{-0.3cm}
-\caption{Implementation of a shift-reduce parser in \textsc{SetlX}}
-\label{fig:shift-reduce-parser.stlx}
+\caption{Implementation of a shift-reduce parser in \textsl{Python}}
+\label{fig:Shif-Reduce-Parser-Pure.ipynb}
 \end{figure}
 
-Figure \ref{fig:shift-reduce-parser.stlx} on page \pageref{fig:shift-reduce-parser.stlx}
-shows the implementation of the 
-\href{http://randoom.org/Software/SetlX}{\textsc{SetlX}}
-class \texttt{srParser} that implements
-shift-reduce-parsing via its method \textsl{parseSR}.  
+The class \texttt{Shif-Reduce-Parser-Pure} that is shown in Figure \ref{fig:Shif-Reduce-Parser-Pure.ipynb}
+on page \pageref{fig:Shif-Reduce-Parser-Pure.ipynb} displays the class \\
+\texttt{ShiftReduceParser}, which
+maintains two dictionaries.
+\begin{enumerate}[(a)]
+\item \texttt{mActionTable} stores the function $\textsl{action}: Q \times T \rightarrow \textsl{Action}$.
+\item \texttt{mGotoTable} stores the function $\textsl{goto}: Q \times V \rightarrow Q$.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{python3}      
+    def parse(self, TL):
+        index   = 0      # points to next token
+        Symbols = []     # stack of symbols
+        States  = ['s0'] # stack of states, s0 is start state
+        TL     += ['EOF']
+        while True:
+            q = States[-1]
+            t = TL[index]
+            p = self.mActionTable.get((q, t), 'error')
+            if p == 'error': 
+                return False
+            elif p == 'accept':
+                return True
+            elif p[0] == 'shift':
+                s = p[1]
+                Symbols += [t]
+                States  += [s]
+                index   += 1
+            elif p[0] == 'reduce':
+                head, body = p[1]
+                n       = len(body)
+                Symbols = Symbols[:-n]
+                States  = States [:-n] 
+                Symbols = Symbols + [head]
+                state   = States[-1]
+                States += [ self.mGotoTable[state, head] ]
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Implementation of a shift-reduce parser in \textsl{Python}}
+\label{fig:Shift-Reduce-Parser-Pure.ipynb:parse}
+\end{figure}
+
+Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb:parse} on page \pageref{fig:Shift-Reduce-Parser-Pure.ipynb:parse}
+shows the implementation of the method \textsl{parse} that implements \blue{shift-reduce parsing}.  
 This method assumes that the function \textsl{action} is coded
-as a binary relation that is stored in the member variable \texttt{mActionTable}.
-The function \textsl{goto} is also represented as a binary relation.  It is stored in the
-member variable \texttt{mGotoTable}.  The method \textsl{parseSR} is called with one
-argument \textsl{tl}.  This is the list of tokens that have to be parsed.  The last
-element of this list is the special token ``\textsc{Eof}'' denoting the end of file.  The invocation 
-$\textsl{parseSR}(\textsl{tl})$ returns \texttt{true} if the token list \textsl{tl} can be
-parsed successfully and \texttt{false} otherwise.  The implementation of \textsl{parseSR} works as follows:
+as a dictionary that is stored in the member variable \texttt{mActionTable}.
+The function \textsl{goto} is also represented as a dictionary relation.  It is stored in the
+member variable \texttt{mGotoTable}.  The method \textsl{parse} is called with one
+argument \textsl{TL}.  This is the list of tokens that have to be parsed.  We append the special token
+``\textsc{Eof}'' at the end of this list.  The invocation  
+$\textsl{parse}(\textsl{TL})$ returns \texttt{True} if the token list \textsl{TL} can be
+parsed successfully and \texttt{false} otherwise.  The implementation of \textsl{parse} works as follows:
 \begin{enumerate}
 \item The variable \textsl{index} points to the next token in the token list that is to be
-      read.  Therefore, this variable is initialized to 1.
-\item The variable \textsl{symbols} stores the stack of symbols.  The top of this stack is
+      read.  Therefore, this variable is initialized to 0.
+\item The variable \textsl{Symbols} stores the stack of symbols.  The top of this stack is
       at the end of this list.  Initially, the stack of symbols is empty.
 \item The variable \textsl{states} is the stack of states.  The start state is assumed to
       be the state ``\texttt{s0}''.  Therefore this stack is initialized to contain
@@ -282,29 +370,27 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
       \end{itemize}
       What happens next depends on this value of $\textsl{action}(q, t)$.
       \begin{enumerate}
-      \item $\textsl{action}(q,t)$ is undefined.
+      \item $\textsl{action}(q,t) = \textsl{error}$.
 
-            If $\textsl{action}(q,t)$ is undefined, then we really have $\textsl{action}(q, t) = \mathtt{error}$.
-            However, for reasons of space efficiency, the action table does not store
-            error entries.  Therefore, in this case the parser has found a syntax error
-            and returns \texttt{false}.
+            In this case the parser has found a syntax error and returns \texttt{False}.
+      \item $\textsl{action}(q,t) = \texttt{accept}$.
+
+            In this case parsing is successful and therefore the function returns \texttt{True}.
       \item $\textsl{action}(q,t) = \pair(\texttt{shift}, s)$.
         
-            This action is represented in \textsc{SetlX} as the term \texttt{Shift($s$)}.
             In this case, the token $t$ is pushed onto the symbol stack in line 17,
             while the state $s$ is pushed onto the stack of states.  Furthermore,
             the variable \textsl{index} is incremented to point to the next unread token.            
       \item $\textsl{action}(q,t) = \pair(\texttt{reduce}, A \rightarrow X_1 \cdots X_n)$.
 
-            This action is represented as the \textsc{SetlX} term $\texttt{Rule}(A, [X_1, \cdots,X_n])$.
             In this case, we use the grammar rule
             \\[0.2cm]
             \hspace*{1.3cm}
             $r = (A \rightarrow X_1 \cdots X_n)$
             \\[0.2cm]
-            to reduce the symbol stack.  The \textsc{SetlX} variable \textsl{head} represents the left
+            to reduce the symbol stack.  The  variable \textsl{head} represents the left
             hand side $A$ of this rule, while the list $[X_1, \cdots,X_n]$ is represented
-            by the \textsc{SetlX} variable \textsl{body}.
+            by the variable \textsl{body}.
 
             In this case, it can be shown that the symbols $X_1$, $\cdots$, $X_n$ are on top of the
             symbol stack.  As we are going to reduce the symbol stack with the rule $r$,
@@ -315,12 +401,9 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
             After that, we set \textsl{state} to the state that is then on top of the
             stack of states.  Next, the new state  $\textsl{goto}(\textsl{state}, A)$ is put on top of
             the stack of states in line 26.
-      \item $\textsl{action}(q,t) = \texttt{accept}$.
-
-            In this case parsing is successful and therefore the function returns \texttt{true}.
       \end{enumerate}
 \end{enumerate}
-In order to make the function \textsl{parseSR} work we have to provide an implementation
+In order to make the function \textsl{parse} work we have to provide an implementation
 of the functions $\textsl{action}$ and $\textsl{goto}$.
 The tables  \ref{tab:action} and \ref{tab:goto} show these functions for the grammar given
 in Figure \ref{fig:Expr.grammar}.  For this grammar, there are 16 different states, which have
@@ -340,12 +423,13 @@ been baptized as $s_0$, $s_1$, $\cdots$, $s_{15}$.  The tables use two different
       \item $r_8 = (\textsl{factor} \rightarrow  \textsc{Number})$
       \end{enumerate}
 \end{enumerate}
-The corresponding grammar is shown in Figure \ref{fig:Expr.grammar}.  The coding of the
+The corresponding grammar is shown in Figure \ref{fig:Expr.grammar}.  The definition of the grammar rules
+and the coding of the
 functions \textsl{action} and \textsl{goto} is shown in the Figures
-\ref{fig:parse-table.stlx:action1}, \ref{fig:parse-table.stlx:action2}, and
+\ref{fig:parse-table.stlx:grammar}, \ref{fig:parse-table.stlx:action}, and
 \ref{fig:parse-table.stlx:goto} on the following pages.   Of course, at present we do not have any
 idea how the functions \textsl{action} and \textsl{goto} are computed.  This requires some theory
-that will be presented in the next subsection.
+that will be presented in the next section.
 
 
 \begin{figure}[htbp]
@@ -461,67 +545,6 @@ $s_{15}$ &              &                  &                 \\
   \label{tab:goto}
 \end{table}
 
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    actionTable := {};
-    
-    r1 := Rule("E", ["E", "+", "P"]);      r4 := Rule("P", ["P", "*", "F"]);
-    r2 := Rule("E", ["E", "-", "P"]);      r5 := Rule("P", ["P", "/", "F"]);
-    r3 := Rule("E", ["P"]);                r6 := Rule("P", ["F"]);          
-      
-    r7 := Rule("F", ["(", "E", ")"]);
-    r8 := Rule("F", ["int"]);
-    
-    actionTable["s0", "("  ] := Shift("s5");
-    actionTable["s0", "int"] := Shift("s2");
-    
-    actionTable["s1", "EOF"] := r6;    actionTable["s2", "EOF"] := r8;
-    actionTable["s1", "+"  ] := r6;    actionTable["s2", "+"  ] := r8;
-    actionTable["s1", "-"  ] := r6;    actionTable["s2", "-"  ] := r8;
-    actionTable["s1", "*"  ] := r6;    actionTable["s2", "*"  ] := r8;
-    actionTable["s1", "/"  ] := r6;    actionTable["s2", "/"  ] := r8;
-    actionTable["s1", ")"  ] := r6;    actionTable["s2", "("  ] := r8;
-                                       actionTable["s2", ")"  ] := r8;
-
-    actionTable["s3", "EOF"] := r3;
-    actionTable["s3", "+"  ] := r3;
-    actionTable["s3", "-"  ] := r3;
-    actionTable["s3", "*"  ] := Shift("s12");
-    actionTable["s3", "/"  ] := Shift("s11");
-    actionTable["s3", ")"  ] := r3;
-    
-    actionTable["s4", "EOF"] := Accept();
-    actionTable["s4", "+"  ] := Shift("s8");
-    actionTable["s4", "-"  ] := Shift("s9");
-    
-    actionTable["s5", "("  ] := Shift("s5");
-    actionTable["s5", "int"] := Shift("s2");
-    
-    actionTable["s6", "+"  ] := Shift("s8");
-    actionTable["s6", "-"  ] := Shift("s9");
-    actionTable["s6", ")"  ] := Shift("s7");
-    
-    actionTable["s7", "EOF"] := r7;
-    actionTable["s7", "+"  ] := r7;
-    actionTable["s7", "-"  ] := r7;
-    actionTable["s7", "*"  ] := r7;
-    actionTable["s7", "/"  ] := r7;
-    actionTable["s7", ")"  ] := r7;   
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Action table coded in \textsc{SetlX}, first part.}
-\label{fig:parse-table.stlx:action1}
-\end{figure}
-
 
 \begin{figure}[!ht]
 \centering
@@ -534,50 +557,22 @@ $s_{15}$ &              &                  &                 \\
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    actionTable["s8", "("  ] := Shift("s5");
-    actionTable["s8", "int"] := Shift("s2");
+    r1 = ('E', ('E', '+', 'P'))
+    r2 = ('E', ('E', '-', 'P'))
+    r3 = ('E', ('P'))
     
-    actionTable["s9", "("  ] := Shift("s5");
-    actionTable["s9", "int"] := Shift("s2");
+    r4 = ('P', ('P', '*', 'F'))
+    r5 = ('P', ('P', '/', 'F'))
+    r6 = ('P', ('F'))
     
-    actionTable["s10", "EOF"] := r2;
-    actionTable["s10", "+" ] := r2;
-    actionTable["s10", "-" ] := r2;
-    actionTable["s10", "*" ] := Shift("s12");
-    actionTable["s10", "/" ] := Shift("s11");
-    actionTable["s10", ")" ] := r2;
-    
-    actionTable["s11", "("  ] := Shift("s5");
-    actionTable["s11", "int"] := Shift("s2");
-    
-    actionTable["s12", "("  ] := Shift("s5");
-    actionTable["s12", "int"] := Shift("s2");
-    
-    actionTable["s13", "EOF"] := r4;
-    actionTable["s13", "+"  ] := r4;
-    actionTable["s13", "-"  ] := r4;
-    actionTable["s13", "*"  ] := r4;
-    actionTable["s13", "/"  ] := r4;
-    actionTable["s13", ")"  ] := r4;
-    
-    actionTable["s14", "EOF"] := r5;
-    actionTable["s14", "+"  ] := r5;
-    actionTable["s14", "-"  ] := r5;
-    actionTable["s14", "*"  ] := r5;
-    actionTable["s14", "/"  ] := r5;
-    actionTable["s14", ")"  ] := r5;
-    
-    actionTable["s15", "EOF"] := r1;
-    actionTable["s15", "+"  ] := r1;
-    actionTable["s15", "-"  ] := r1;
-    actionTable["s15", "*"  ] := Shift("s12");
-    actionTable["s15", "/"  ] := Shift("s11");
-    actionTable["s15", ")"  ] := r1;
+    r7 = ('F', ('(', 'E', ')'))
+    r8 = ('F', ('int',))               
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Action table coded in \textsc{SetlX}, second part.}
-\label{fig:parse-table.stlx:action2}
+\caption{Grammar rules coded in \textsl{Python}.}
+\label{fig:parse-table.stlx:grammar}
 \end{figure}
+
 
 \begin{figure}[!ht]
 \centering
@@ -610,9 +605,73 @@ $s_{15}$ &              &                  &                 \\
     gotoTable["s12", "F"] := "s13";
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Goto table coded in \textsc{SetlX}.}
+\caption{Goto table coded in \textsc{Python}.}
 \label{fig:parse-table.stlx:goto}
 \end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = none,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+actionTable = {}
+
+actionTable['s0', '('  ] = ('shift', 's5');  actionTable['s8', '('  ] = ('shift', 's5')   
+actionTable['s0', 'int'] = ('shift', 's2');  actionTable['s8', 'int'] = ('shift', 's2')   
+                                                                                         
+actionTable['s1', 'EOF'] = ('reduce', r6);   actionTable['s9', '('  ] = ('shift', 's5')   
+actionTable['s1', '+'  ] = ('reduce', r6);   actionTable['s9', 'int'] = ('shift', 's2')   
+actionTable['s1', '-'  ] = ('reduce', r6);                                                
+actionTable['s1', '*'  ] = ('reduce', r6);   actionTable['s10', 'EOF'] = ('reduce', r2)   
+actionTable['s1', '/'  ] = ('reduce', r6);   actionTable['s10', '+' ] = ('reduce', r2)    
+actionTable['s1', ')'  ] = ('reduce', r6);   actionTable['s10', '-' ] = ('reduce', r2)    
+                                             actionTable['s10', '*' ] = ('shift', 's12')
+actionTable['s2', 'EOF'] = ('reduce', r8);   actionTable['s10', '/' ] = ('shift', 's11')  
+actionTable['s2', '+'  ] = ('reduce', r8);   actionTable['s10', ')' ] = ('reduce', r2)    
+actionTable['s2', '-'  ] = ('reduce', r8);                                                
+actionTable['s2', '*'  ] = ('reduce', r8);   actionTable['s11', '('  ] = ('shift', 's5')  
+actionTable['s2', '/'  ] = ('reduce', r8);   actionTable['s11', 'int'] = ('shift', 's2')  
+actionTable['s2', ')'  ] = ('reduce', r8);                                                
+                                             actionTable['s12', '('  ] = ('shift', 's5')  
+actionTable['s3', 'EOF'] = ('reduce', r3);   actionTable['s12', 'int'] = ('shift', 's2')  
+actionTable['s3', '+'  ] = ('reduce', r3);                                                
+actionTable['s3', '-'  ] = ('reduce', r3);   actionTable['s13', 'EOF'] = ('reduce', r4)   
+actionTable['s3', '*'  ] = ('shift', 's12'); actionTable['s13', '+'  ] = ('reduce', r4)   
+actionTable['s3', '/'  ] = ('shift', 's11'); actionTable['s13', '-'  ] = ('reduce', r4)   
+actionTable['s3', ')'  ] = ('reduce', r3);   actionTable['s13', '*'  ] = ('reduce', r4)   
+                                             actionTable['s13', '/'  ] = ('reduce', r4)   
+actionTable['s4', 'EOF'] = 'accept';         actionTable['s13', ')'  ] = ('reduce', r4)   
+actionTable['s4', '+'  ] = ('shift', 's8');                                               
+actionTable['s4', '-'  ] = ('shift', 's9');  actionTable['s14', 'EOF'] = ('reduce', r5)   
+                                             actionTable['s14', '+'  ] = ('reduce', r5)   
+actionTable['s5', '('  ] = ('shift', 's5');  actionTable['s14', '-'  ] = ('reduce', r5)   
+actionTable['s5', 'int'] = ('shift', 's2');  actionTable['s14', '*'  ] = ('reduce', r5)   
+                                             actionTable['s14', '/'  ] = ('reduce', r5)   
+actionTable['s6', '+'  ] = ('shift', 's8');  actionTable['s14', ')'  ] = ('reduce', r5)   
+actionTable['s6', '-'  ] = ('shift', 's9');                                               
+actionTable['s6', ')'  ] = ('shift', 's7');  actionTable['s15', 'EOF'] = ('reduce', r1)   
+                                             actionTable['s15', '+'  ] = ('reduce', r1)   
+actionTable['s7', 'EOF'] = ('reduce', r7);   actionTable['s15', '-'  ] = ('reduce', r1)   
+actionTable['s7', '+'  ] = ('reduce', r7);   actionTable['s15', '*'  ] = ('shift', 's12') 
+actionTable['s7', '-'  ] = ('reduce', r7);   actionTable['s15', '/'  ] = ('shift', 's11') 
+actionTable['s7', '*'  ] = ('reduce', r7);   actionTable['s15', ')'  ] = ('reduce', r1)   
+actionTable['s7', '/'  ] = ('reduce', r7);
+actionTable['s7', ')'  ] = ('reduce', r7);
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Action table coded in \textsc{Python}.}
+\label{fig:parse-table.stlx:action}
+\end{figure}
+
+
+
 
 
  
