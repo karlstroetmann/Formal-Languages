@@ -1,110 +1,111 @@
 \section{SLR-Parser}
-In diesem Abschnitt zeigen wir, wie wir f\"ur eine gegebene kontextfreie Grammatik $G$ 
+In diesem Abschnitt zeigen wir, wie wir für eine gegebene kontextfreie Grammatik $G$ 
 die im letzten Abschnitt verwendeten Funktionen 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{action}: Q \times T \rightarrow \textsl{Action}$ \quad and \quad $\textsl{goto}: Q \times V \rightarrow Q$
 \\[0.2cm]
-berechnen k\"onnen.  Dazu kl\"aren wir als erstes, welche Informationen die in der Menge $Q$ enthaltenen Zust\"ande 
-enthalten sollen.  Wir werden diese Zust\"ande so definieren, dass sie die Information enthalten,
+berechnen können.  Dazu klären wir als erstes, welche Informationen die in der Menge $Q$ enthaltenen Zustände 
+enthalten sollen.  Wir werden diese Zustände so definieren, dass sie die Information enthalten,
 welche Regel der Shift-Reduce-Parser anzuwenden versucht, welcher Teil der rechten Seite einer Grammatik-Regel 
 bereits erkannt worden ist und was noch erwartet wird.  Zu diesem Zweck definieren wir den Begriff
-einer \emph{markierten Regel}.   In der englischen Originalliteratur \cite{knuth:65} wird hier
-ungl\"ucklicherweise der inhaltsleere Begriff ``\emph{item}'' verwendet.
+einer \blue{markierten Regel}.   In der englischen Originalliteratur \cite{knuth:65} wird hier
+unglücklicherweise der inhaltsleere Begriff ``\blue{item}'' verwendet.
 
 \begin{Definition}[markierte Regel]
-  Eine \emph{markierte Regel} einer Grammatik $G = \langle V, T, R, s \rangle$ ist ein Tripel
+  Eine \blue{markierte Regel}\index{markierte Regel} einer Grammatik $G = \langle V, T, R, s \rangle$ ist ein Tripel
   \\[0.2cm]
   \hspace*{1.3cm}
   $\langle a, \beta, \gamma \rangle$,
   \\[0.2cm]
-  f\"ur das gilt
+  für das gilt
   \\[0.2cm]
   \hspace*{1.3cm}
   $(a \rightarrow \beta \gamma) \in R$.
   \\[0.2cm]
-  Wir schreiben eine markierte Regel $\langle a, \beta, \gamma \rangle$ als
+  Wir schreiben eine markierte Regel der Form $\langle a, \beta, \gamma \rangle$ als
   \\[0.2cm]
   \hspace*{1.3cm}
   $a \rightarrow \beta \bullet \gamma$. \qed 
 \end{Definition}
 
 \noindent
-Die markierte Regel $a \rightarrow \beta \bullet \gamma$ dr\"uckt aus, dass der Parser versucht,
+Die markierte Regel $a \rightarrow \beta \bullet \gamma$ drückt aus, dass der Parser versucht,
 mit der Regel $a \rightarrow \beta \gamma$ ein $a$ zu parsen, dabei schon $\beta$ gesehen
-hat und als n\"achstes versucht, $\gamma$ zu erkennen.  Das Zeichen $\bullet$ markiert also die
+hat und als nächstes versucht, $\gamma$ zu erkennen.  Das Zeichen $\bullet$ markiert also die
 Position innerhalb der rechten Seite der Regel, bis zu der wir die rechte Seite der Regel
 schon gelesen haben.
-Die Idee ist jetzt, dass wir die Zust\"ande eines SLR-Parsers als Mengen von markierten Regeln
-darstellen k\"onnen.  Um diese Idee zu verschaulichen, betrachten wir ein konkretes Beispiel:
+Die Idee ist jetzt, dass wir die Zustände eines SLR-Parsers als Mengen von markierten Regeln
+darstellen.  Um diese Idee zu veranschaulichen, betrachten wir ein konkretes Beispiel:
 Wir gehen von der in Abbildung \ref{fig:Expr.grammar} auf Seite \pageref{fig:Expr.grammar}
-gezeigten Grammatik aus, wobei wir diese Grammatik noch um ein neues Start-Symbol $\widehat{s}$
-und die Regel
+gezeigten Grammatik für arithmetische Ausdrücke aus, wobei wir diese Grammatik noch um ein neues Start-Symbol
+$\widehat{s}$ und die Regel
 \\[0.2cm]
-\hspace*{1.3cm} $\widehat{s} \rightarrow  \textsl{expr}\;\textsc{Eof}$
+\hspace*{1.3cm} $\widehat{s} \rightarrow  \textsl{expr}\;\symbol{36}$
 \\[0.2cm]
-erweitern.  Der Start-Zustand enth\"alt offenbar die markierte Regel
+erweitern.  Der Start-Zustand enthält offenbar die markierte Regel
 \\[0.2cm]
-\hspace*{1.3cm} $\widehat{s} \rightarrow \varepsilon \bullet \textsl{expr}\, \textsc{Eof}$,
+\hspace*{1.3cm} $\widehat{s} \rightarrow \varepsilon \bullet \textsl{expr}\, \symbol{36}$,
 \\[0.2cm]
 denn am Anfang versuchen wir ja, das Start-Symbol $\widehat{s}$ herzuleiten.  Die Komponente
-$\varepsilon$ dr\"uckt aus, dass wir bisher noch nichts verarbeitet haben.  Neben dieser
-markierten Regel muss der Start-Zustand dann au{\ss}erdem die markierten Regeln
+$\varepsilon$ drückt aus, dass wir bisher noch nichts verarbeitet haben.  Neben dieser
+markierten Regel muss der Start-Zustand dann außerdem die markierten Regeln
 \begin{enumerate}
-\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{expr} \quoted{+} \textsl{product}$,
-\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{expr} \quoted{-} \textsl{product}$
+\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{expr} \aquoted{+} \textsl{product}$,
+\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{expr} \aquoted{-} \textsl{product}$
       \qquad und
 \item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$
 \end{enumerate}
-enthalten, denn es k\"onnte ja beispielsweise sein, dass wir die Regel
+enthalten, denn es könnte ja beispielsweise sein, dass wir die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{product}$
+$\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{product}$
 \\[0.2cm]  
-verwenden m\"ussen, um die gesuchte \textsl{expr} herzuleiten.  Genauso gut k\"onnte es nat\"urlich sein,
+verwenden müssen, um die gesuchte \textsl{expr} herzuleiten.  Genauso gut könnte es natürlich sein,
 dass wir stattdessen die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{expr} \rightarrow \textsl{product}$
 \\[0.2cm]
-benutzen m\"ussen.  Das erkl\"art, warum wir die markierte Regel
+benutzen müssen.  Das erklärt, warum wir die markierte Regel
 \\[0.2cm]
 \hspace*{1.3cm}
  $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$
 \\[0.2cm]
-in den Start-Zustand aufnehmen m\"ussen, denn 
-da wir am Anfang noch gar nicht wissen k\"onnen, welche Regel wir ben\"otigen, muss
+in den Start-Zustand aufnehmen müssen, denn 
+da wir am Anfang noch gar nicht wissen können, welche Regel wir benötigen, muss
 der Start-Zustand daher alle diese Regeln enthalten.  Haben wir erst die markierte Regel
 \\[0.2cm]
 \hspace*{1.3cm}
  $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$ 
 \\[0.2cm]
-zum Start-Zustand hinzugef\"ugt, so sehen wir, dass wir eventuell als n\"achstes ein $\textsl{product}$
-lesen m\"ussen.  Daher sehen wir,  dass der Start-Zustand au{\ss}erdem noch die folgenden markierten
-Regeln enth\"alt:  
+zum Start-Zustand hinzugefügt, so sehen wir, dass wir eventuell als nächstes ein $\textsl{product}$
+lesen müssen.  Daher sehen wir,  dass der Start-Zustand außerdem noch die folgenden markierten
+Regeln enthält:  
 \begin{enumerate}
-\item[4.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \quoted{*} \textsl{factor}$,
-\item[5.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \quoted{/} \textsl{factor}$,
+\item[4.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{*} \textsl{factor}$,
+\item[5.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{/} \textsl{factor}$,
 \item[6.] $\textsl{product} \rightarrow \bullet\; \textsl{factor}$,
 
           Nun zeigt die sechste Regel, dass wir eventuell als erstes einen \textsl{factor}
-          lesen werden.  Daher f\"ugen wir zu dem Start-Zustand auch die folgenden beiden markierten
+          lesen werden.  Daher fügen wir zu dem Start-Zustand auch die folgenden beiden markierten
           Regeln hinzu: 
-\item[7.] $\textsl{factor} \rightarrow \bullet \quoted{(} \textsl{expr} \quoted{)}$,
+\item[7.] $\textsl{factor} \rightarrow \bullet \aquoted{(} \textsl{expr} \aquoted{)}$,
 \item[8.] $\textsl{factor} \rightarrow \bullet\; \textsc{Number}$.
 \end{enumerate}
 Insgesamt sehen wir, dass der Start-Zustand aus einer Menge mit 8 markierten Regeln besteht.
 Das oben gezeigte System, aus einer gegebenen Regel weitere Regeln abzuleiten,
-formalisieren wir in dem Begriff des \emph{Abschlusses} einer Menge von markierten
+formalisieren wir in dem Begriff des \blue{Abschlusses} einer Menge von markierten
 Regeln.
 
 \begin{Definition}[$\textsl{closure}(\mathcal{M})$]
-  Es sei $\mathcal{M}$ eine Menge markierter Regeln.  Dann definieren wir den \emph{Abschluss} dieser Menge
-  als die kleinste Menge $\mathcal{K}$ markierter Regeln, f\"ur die folgendes gilt:
+  Es sei $\mathcal{M}$ eine Menge markierter Regeln.  Dann definieren wir den 
+  \blue{Abschluss}\index{Abschluss  einer Menge markierter Regeln} dieser Menge
+  als die kleinste Menge $\mathcal{K}$ markierter Regeln, für die folgendes gilt:
   \begin{enumerate}
   \item $\mathcal{M} \subseteq \mathcal{K}$,
 
-        der Abschluss umfasst also die urspr\"ungliche Regel-Menge.
+        der Abschluss umfasst also die ursprüngliche Regel-Menge.
   \item Ist einerseits
         \\[0.2cm]
         \hspace*{1.3cm}
@@ -132,53 +133,51 @@ Regeln.
         $
   \end{enumerate}
   Die so definierte Menge $\mathcal{K}$ ist eindeutig bestimmt und wird im Folgenden mit
-  $\textsl{closure}(\mathcal{M})$ bezeichnet. \qed
+  $\textsl{closure}(\mathcal{M})$ \index{$\textsl{closure}(\mathcal{M})$} bezeichnet. \eox
 \end{Definition}
 
 \noindent
 \textbf{Bemerkung}: Wenn Sie sich an den Earley-Algorithmus erinnern, dann sehen Sie, dass bei der
 Berechnung des Abschlusses dieselbe Berechnung wie bei der Vorhersage-Operation
-des  Earley-Algorithmus durchgef\"uhrt wird.  \eox
+des  Earley-Algorithmus durchgeführt wird.  \eox
 \vspace*{0.3cm}
 
 \noindent
-F\"ur eine gegebene Menge $\mathcal{M}$ von markierten Regeln, kann die Berechnung von
+Für eine gegebene Menge $\mathcal{M}$ von markierten Regeln, kann die Berechnung von
 $\mathcal{K} := \textsl{closure}(\mathcal{M})$ iterativ erfolgen:
 \begin{enumerate}
-\item Zun\"achst setzen wir $\mathcal{K} := \mathcal{M}$.
-\item Anschlie{\ss}end suchen wir alle Regeln der Form
+\item Zunächst setzen wir $\mathcal{K} := \mathcal{M}$.
+\item Anschließend suchen wir alle Regeln der Form
       \\[0.2cm]
       \hspace*{1.3cm}
       $a \rightarrow \beta \bullet c\, \delta$
       \\[0.2cm]
-      aus der Menge $\mathcal{K}$, f\"ur die $c$ eine syntaktische Variable ist und f\"ugen dann
-      f\"ur alle Regeln der Form $c \rightarrow \gamma$ die neue markierte Regel
+      aus der Menge $\mathcal{K}$, für die $c$ eine syntaktische Variable ist und fügen dann
+      für alle Regeln der Form $c \rightarrow \gamma$ die neue markierte Regel
       \\[0.2cm]
       \hspace*{1.3cm}
       $c \rightarrow \bullet\gamma$
       \\[0.2cm]
-      in die Menge $\mathcal{K}$ ein.
-
-      Dieser Schritt wird solange iteriert, bis keine neuen Regeln mehr gefunden werden.
+      in die Menge $\mathcal{K}$ ein. Dieser Schritt wird solange iteriert, bis keine neuen Regeln mehr gefunden werden.
 \end{enumerate}
 \pagebreak
 
 \example
 Wir gehen von der in Abbildung
-\ref{fig:Expr.grammar} auf Seite \pageref{fig:Expr.grammar} gezeigten Grammatik aus und betrachten
-die Menge
+\ref{fig:Expr.grammar} auf Seite \pageref{fig:Expr.grammar} gezeigten Grammatik für arithmetische Ausdrücke aus
+und betrachten die Menge
 \[ \mathcal{M} := 
-   \bigl\{ \textsl{product} \rightarrow \textsl{product} \quoted{*}\! \bullet \textsl{factor} \bigr\}
+   \bigl\{ \textsl{product} \rightarrow \textsl{product} \aquoted{*}\! \bullet \textsl{factor} \bigr\}
 \]
-F\"ur die Menge $\textsl{closure}(\mathcal{M})$ finden wir dann
+Für die Menge $\textsl{closure}(\mathcal{M})$ finden wir dann
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
 \begin{array}[b]{lcll}
 \textsl{closure}(\mathcal{M}) 
  & = & \bigl\{ &
-         \textsl{product} \rightarrow \textsl{product} \quoted{*}\! \bullet \textsl{factor}, \\
-   & & & \textsl{factor}  \rightarrow \bullet \quoted{(} \textsl{expr} \quoted{)}\!\!,          \\
+         \textsl{product} \rightarrow \textsl{product} \aquoted{*}\! \bullet \textsl{factor}, \\
+   & & & \textsl{factor}  \rightarrow \bullet \aquoted{(} \textsl{expr} \aquoted{)}\!\!,          \\
    & & & \textsl{factor}  \rightarrow \bullet \;\textsc{Number}                                  \\
    & & \bigr\}. & \hspace*{8cm} 
 \end{array}$  \eox
@@ -186,53 +185,51 @@ $
 
 
 \noindent
-Unser Ziel ist es, f\"ur eine gegebene kontextfreie Grammatik $G = \langle V, T, R, s \rangle$ einen
+Unser Ziel ist es, für eine gegebene kontextfreie Grammatik $G = \langle V, T, R, s \rangle$ einen
 Shift-Reduce-Parser 
 \\[0.2cm]
 \hspace*{1.3cm}
 $P = \langle Q, q_0, \textsl{action}, \textsl{goto} \rangle$
 \\[0.2cm]
-zu definieren.  Um dieses Ziel zu erreichen, m\"ussen wir uns als erstes \"uberlegen,
-wie wir die Menge $Q$ der Zust\"ande definieren wollen, denn dann funktioniert die Definition der
-restlichen Komponenten fast von alleine.  Die Idee ist, dass wir die Zust\"ande
-als Mengen von markierten Regeln definieren.
-Wir definieren zun\"achst
+zu definieren.  Um dieses Ziel zu erreichen, müssen wir uns als erstes festlegen,
+wie die Zustände der Menge $Q$ definieren wollen, denn dann funktioniert die Definition der
+restlichen Komponenten fast von alleine.  Wir hatten oben schon gesagt, dass wir die Zustände
+als Mengen von markierten Regeln definieren.  Wir definieren zunächst
 \\[0.2cm]
 \hspace*{1.3cm}
 $\Gamma := \bigl\{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \alpha \gamma) \in R \bigr\}$
 \\[0.2cm]
 als die Menge aller markierten Regeln der Grammatik.  Nun ist es allerdings nicht sinnvoll,
-beliebige Teilmengen von $\Gamma$ als Zust\"ande zuzulassen:  Eine Teilmenge $\mathcal{M}
+beliebige Teilmengen von $\Gamma$ als Zustände zuzulassen:  Eine Teilmenge $\mathcal{M}
 \subseteq \Gamma$ kommt nur dann als Zustand in Betracht, wenn die Menge $\mathcal{M}$ unter
-der Funktion $\textsl{closure}()$ \emph{abgeschlossen} ist, wenn also
+der Funktion $\textsl{closure}()$ \blue{abgeschlossen} ist, wenn also
 $\textsl{closure}(\mathcal{M}) = \mathcal{M}$ gilt.  Wir definieren daher
 \\[0.2cm]
 \hspace*{1.3cm}
 $Q := \bigl\{ \mathcal{M} \in 2^\Gamma \mid \textsl{closure}(\mathcal{M}) = \mathcal{M} \bigr\}$.
 \\[0.2cm]
-Die Interpretation der Mengen $\mathcal{M} \in Q$ ist die, dass ein Zustand $\mathcal{M}$ genau die
-markierten Grammatik-Regeln enth\"alt, die in der durch den Zustand beschriebenen Situation
-angewendet werden k\"onnen.
+Die Interpretation der Mengen $\mathcal{M} \in Q$ ist die, dass ein Zustand $\mathcal{M}$ genau die markierten
+Regeln enthält, die in der durch den Zustand beschriebenen Situation angewendet werden können. 
 
 
 Zur Vereinfachung der folgenden Konstruktionen erweitern wir die
-Grammatik $G = \langle V, T, R, s \rangle$ durch Einf\"uhrung eines neuen Start-Symbols $\widehat{s}$
-und eines neuen Tokens \textsc{Eof} zu der Grammatik 
+Grammatik $G = \langle V, T, R, s \rangle$ durch Einführung eines neuen Start-Symbols $\widehat{s}$
+und eines neuen Tokens $\symbol{36}$ zu der Grammatik 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\widehat{G} = 
- \Bigl\langle V \cup \{ \widehat{s} \}, T \cup \{\textsc{Eof}\}, R \cup \{ \widehat{s} \rightarrow s\, \textsc{Eof} \}, \widehat{s} \Bigr\rangle
+ \Bigl\langle V \cup \{ \widehat{s} \}, T \cup \{\symbol{36}\}, R \cup \{ \widehat{s} \rightarrow s\, \symbol{36} \}, \widehat{s} \Bigr\rangle
 $.
 \\[0.2cm]
-Das Token \textsc{Eof} steht dabei als Abk\"urzung f\"ur \emph{\underline{e}end \underline{o}f \underline{f}ile}.
-Die Grammatik $\widehat{G}$ bezeichnen wir als die \emph{augmentierte Grammatik}.  Die Verwendung der
-augmentierten Grammatik erm\"oglicht die nun folgende Definition des Start-Zustands.
-Wir setzen n\"amlich:
+Das Token $\symbol{36}$ steht dabei für das Ende der Eingabe.
+Die Grammatik $\widehat{G}$ bezeichnen wir als die \blue{augmentierte Grammatik}.\index{augmentierte Grammatik}
+Die Verwendung der augmentierten Grammatik ermöglicht die nun folgende Definition des Start-Zustands.
+Wir setzen nämlich:
 \\[0.2cm]
 \hspace*{1.3cm}
-$ q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s\,\textsc{Eof} \bigr\} \Bigr)$.
+$ q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s\,\symbol{36} \bigr\} \Bigr)$.
 \\[0.2cm]
-Als n\"achstes konstruieren wir die Funktion $\textsl{goto}()$.  Die Definition lautet:
+Als nächstes konstruieren wir die Funktion $\textsl{goto}()$.  Die Definition lautet:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, c) := \textsl{closure}\Bigl( \bigl\{ 
@@ -248,12 +245,12 @@ der Teilstring $\beta$ erkannt wurde.  Dieser Zustand wird durch die markierte R
 $a \rightarrow \beta \bullet c\, \delta$ 
 \\[0.2cm] 
 beschrieben.  Wird nun ein $c$ erkannt, so kann der Parser von dem Zustand, der die 
-Regel $a \rightarrow \beta \bullet c\, \delta$ enth\"alt in einen Zustand, der die Regel 
+Regel $a \rightarrow \beta \bullet c\, \delta$ enthält in einen Zustand, der die Regel 
 $a \rightarrow \beta\, c \bullet \delta$ 
-enth\"alt, \"ubergehen.  Daher erhalten wir die oben angegebene Definition der Funktion $\textsl{goto}(\mathcal{M},c)$.
-F\"ur die gleich folgende Definition der Funktion $\textsl{action}(\mathcal{M}, t)$ ist es
-n\"utzlich, die Definition der Funktion $\textsl{goto}$ auf Terminale zu erweitern.  
-F\"ur Terminale $t \in T$ setzen wir:
+enthält, übergehen.  Daher erhalten wir die oben angegebene Definition der Funktion $\textsl{goto}(\mathcal{M},c)$.
+Für die gleich folgende Definition der Funktion $\textsl{action}(\mathcal{M}, t)$ ist es
+nützlich, die Definition der Funktion $\textsl{goto}$ auf Terminale zu erweitern.  
+Für Terminale $t \in T$ setzen wir:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, t) := \textsl{closure}\Bigl( \bigl\{ 
@@ -261,38 +258,362 @@ $\textsl{goto}(\mathcal{M}, t) := \textsl{closure}\Bigl( \bigl\{
    \bigr\} \Bigr)
 $.
 \\[0.2cm]
-Als Letztes spezifizieren wir, wie die Funktion $\textsl{action}(\mathcal{M},t)$ f\"ur eine Menge von
-markierten Regeln $\mathcal{M}$ und ein Token $t$ berechnet wird.  
-Bei der Definition von $\textsl{action}(\mathcal{M},t)$ unterscheiden wir vier F\"alle.
-\pagebreak
+Bevor wir die Funktion \textsl{action} berechnen können, müssen wir zwei weitere Funktionen definieren, 
+die Funktionen \textsl{First} und \textsl{Follow}.
 
+\subsection{Die Funktionen \textsl{First} und \textsl{Follow}}
+In diesem Abschnitt definieren wir die beiden Funktionen  \textsl{First} und \textsl{Follow}:
+Wir betrachten dazu eine kontextfreie Grammatik  $G = \langle V, T, R, s \rangle$ als vorgegeben.
+\begin{enumerate}[(a)]
+\item Für eine syntaktische Variable $a$ berechnet $\textsl{First}(a)$ die Menge aller Token, mit denen ein
+      String $w$ beginnen kann, der von der Variable $a$ abgeleitet wird, für den also $a \Rightarrow_G^* w$ gilt.
+\item Für eine syntaktische Variable $a$ berechnet $\textsl{Follow}(a)$ die Menge der Token,
+      die auf ein $a$ in einem von $s$ abgeleiteten String folgen können, d.h.~$t \in \textsl{Follow}(a)$
+      falls es eine Ableitung der folgenden Form gibt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s \Rightarrow_G^* w\, a\, t\, r$.
+      Hier sind $w$ und $r$ Token-Strings, während $t$ ein einzelnes Token bezeichnet.
+\end{enumerate}
+
+\begin{Definition}[$\varepsilon$-erzeugend]
+Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $\textsl{a}$ sei eine
+syntaktische Variable, also $\textsl{a} \in V$.  Die Variable $\textsl{a}$ heißt 
+\blue{$\varepsilon$-erzeugend}\index{$\varepsilon$-erzeugend} genau dann, wenn
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{a} \Rightarrow^* \varepsilon$
+\\[0.2cm]
+gilt, also dann, wenn sich aus der Variablen $\textsl{a}$ das leere Wort ableiten lässt. 
+Wir schreiben $\textsl{nullable}(\textsl{a})$ wenn die Variable $\textsl{a}$ als $\varepsilon$-erzeugend
+nachgewiesen ist.
+\eox
+\end{Definition}
+
+\examples
+\begin{enumerate}[(a)]
+\item Bei der in Abbildung \ref{fig:Expr2} auf Seite \pageref{fig:Expr2} gezeigten Grammatik
+      sind offenbar die Variablen \textsl{exprRest} und \textsl{productRest} $\varepsilon$-erzeugend.
+\item Wir betrachten nun ein weniger offensichtliches Beispiel.  Die Grammatik $G$
+      enthalte die folgenden Regeln:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{a} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{b}\;\textsl{c}$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{b} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{c}\;\textsl{c}$
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{c} \rightarrow \textsl{a}\;\textsl{b}\; \textsl{c} \mid \varepsilon$
+      \\[0.2cm]
+      Zunächst ist offenbar die Variable $\textsl{c}$ $\varepsilon$-erzeugend.  Dann sehen wir,
+      dass aufgrund der Regel $\textsl{b} \rightarrow \textsl{c} \;\textsl{c}$ auch $\textsl{b}$ $\varepsilon$-erzeugend ist
+      und daraus folgt wegen der Regel $\textsl{a} \rightarrow \textsl{b}\;\textsl{c}$, dass auch $\textsl{a}$
+      $\varepsilon$-erzeugend ist.  Schließlich erkennen wir $S$ als $\varepsilon$-erzeugend,
+      denn die erste Regel lautet
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}$
+      \\[0.2cm]
+      und hier sind alle Variablen auf der rechten Seite der Regel bereits als
+      $\varepsilon$-erzeugende Variablen nachgewiesen worden.
+\end{enumerate}
+ 
+\begin{Definition}[$\textsl{First}()$]
+Es sei $G = \langle V, T, R, s \rangle$ eine kontextfreie Grammatik und $\textsl{a} \in V$.
+Dann definieren wir $\textsl{First}(\textsl{a})$ als die Menge aller der Token $t$, mit denen ein
+von $\textsl{a}$ abgeleitetes Wort beginnen kann:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{First}(\textsl{a}) := \{ t \in T \mid \exists \gamma \in (V \cup T)^*: \textsl{a} \Rightarrow^* t\gamma \}$.
+\\[0.2cm]
+Die Definition der Funktion $\textsl{First}()$ kann wie folgt auf Strings aus $(V \cup T)^*$ 
+erweitert werden: 
+\begin{enumerate}
+\item $\textsl{First}(\varepsilon) = \{\}$.
+\item $\textsl{First}(t \beta) = \{ t \}$ \quad if $t \in T$.
+\item $\textsl{First}(\textsl{a} \beta) = \left\{
+       \begin{array}[c]{ll}
+         \textsl{First}(\textsl{a}) \cup \textsl{First}(\beta) & \mbox{if $\textsl{a} \Rightarrow^* \varepsilon$;} \\
+         \textsl{First}(\textsl{a})                            & \mbox{otherwise.}
+       \end{array}
+       \right.
+      $ 
+\end{enumerate}
+If $\textsl{a}$ is a variable of $G$ and the rules defining $\textsl{a}$ are given as 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{a} \rightarrow \alpha_1 \mid \cdots \mid \alpha_n$,
+\\[0.2cm]
+then we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{First}(\textsl{a}) = \bigcup\limits_{i=1}^n \textsl{First}(\alpha_i)$.   \eox
+\end{Definition}
+
+\remarkEng
+Note that the definitions of the function $\textsl{First}(\textsl{a})$ for variables
+$\textsl{a} \in V$ and the function $\textsl{First}(\alpha)$ for strings $\alpha \in (V \cup T)^*$
+are mutually recursive.  The computation of $\textsl{First}(\textsl{a})$ is best done via a 
+fixpoint computation:  Start by setting $\textsl{First}(\textsl{a}) := \{\}$ for all variables $\textsl{a}\in V$ and
+then continue to iterate the equations defining $\textsl{First}(\textsl{a})$ until none of the sets
+$\textsl{First}(\textsl{a})$ changes any more.  The next example clarifies this idea.
+
+\example
+Wir können für die Variablen $\textsl{a}$ der in Abbildung \ref{fig:Expr2} gezeigten Grammatik 
+die Mengen $\textsl{First}(\textsl{a})$ iterativ berechnen.  Wir berechnen
+die Funktion $\textsl{First}(\textsl{a})$ für die einzelnen Variablen $\textsl{a}$ am besten so, dass wir mit den
+Variablen beginnen, die in der Hierarchie ganz unten stehen. 
+\begin{enumerate}
+\item Zunächst folgt aus den Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{factor} \rightarrow \aquoted{(} \textsl{expr} \aquoted{)} \mid \textsc{Number} \mid \textsc{Identifier}$,
+      \\[0.2cm]
+      dass jeder von \textsl{Factor} abgeleitete String entweder mit einer öffnenden
+      Klammer, einer Zahl oder einem Bezeichner beginnt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{factor}) = \{ \aquoted{(}, \textsc{Number}, \textsc{Identifier}\; \}$.
+\item Analog folgt aus den Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{productRest} \rightarrow \aquoted{*} \textsl{factor}\;\;\textsl{productRest} \;
+                            \mid        \aquoted{/} \textsl{factor}\;\;\textsl{productRest} \;
+                            \mid        \varepsilon$,
+      \\[0.2cm]
+      dass ein \textsl{productRest} entweder mit dem Zeichen \qote{*} oder \qote{/} beginnt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{productRest}) = \{ \aquoted{*}, \aquoted{/} \}$
+\item Die Regel für die Variable \textsl{product} lautet
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}$.
+      \\[0.2cm]
+      Da die Variable \textsl{factor} nicht $\varepsilon$ erzeugend ist, sehen wir, dass
+      die Menge $\textsl{First}(\textsl{product})$ mit der Menge
+      $\textsl{First}(\textsl{factor})$ übereinstimmt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{product}) = \{ \aquoted{(}, \textsc{Number}, \textsc{Identifier}\; \}$.
+\item Aus den Regeln
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{exprRest} \rightarrow \aquoted{+} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \aquoted{-} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \varepsilon$
+      \\[0.2cm]
+      können wir $\textsl{First}(\textsl{exprRest})$ wie folgt berechnen:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{exprRest}) = \{ \aquoted{+}, \aquoted{-} \}$.
+\item Weiter folgt aus der Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}$
+      \\[0.2cm]
+      und der Tatsache, dass $\textsl{product}$ nicht $\varepsilon$-erzeugend ist,
+      dass die Menge $\textsl{First}(\textsl{expr})$ mit der Menge
+      $\textsl{First}(\textsl{product})$ übereinstimmt:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{First}(\textsl{expr}) = \{ \aquoted{(}, \textsc{Number}, \textsc{Identifier}\; \}$.
+\end{enumerate}
+Since we have computed the sets $\textsl{First}(\textsl{a})$ in a clever order, we did not have to perform a
+proper fixpoint iteration in this example.
+\eox
+
+
+\begin{Definition}[$\textsl{Follow}()$]
+Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $\textsl{a} \in V$.
+Bei der Berechnung von $\textsl{Follow}()$ wird die Grammatik zunächst abgeändert,
+indem wir das Symbol $\symbol{36}$ als neues Symbol zu der Menge $T$ der Terminale
+hinzufügen.  Zu den Variablen wird das neue Symbol $\widehat{S}$ hinzugefügt, das auch
+gleichzeitig das neue Start-Symbol der Grammatik ist.  Zu der Menge $R$ der Regeln
+fügen wir die folgende Regel neu hinzu:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\widehat{S} \rightarrow S\; \symbol{36}$.
+\\[0.2cm]
+Weiter definieren wir
+\\[0.2cm]
+\hspace*{1.3cm}
+ $\widehat{T} := T \cup \{ \symbol{36} \}$.
+\\[0.2cm]
+Die so veränderte Grammatik bezeichnen wir als die \blue{augmentierte} Grammatik.
+Dann definieren wir $\textsl{Follow}(\textsl{a})$ als die Menge aller der Token $t$, die in einer
+Ableitung auf $\textsl{a}$ folgen können:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{Follow}(\textsl{a}) := 
+ \bigl\{ t \in \widehat{T} \,\bigm|\, \exists \beta,\gamma \in (V \cup \widehat{T})^*: 
+                           \widehat{S} \Rightarrow^* \beta \,\textsl{a}\, t\, \gamma 
+  \bigr\}
+$.
+\\[0.2cm]
+Wenn sich aus dem Start-Symbol $\widehat{S}$ also irgendwie ein String $\beta \,\textsl{a}\, t\,\gamma$ ableiten lässt,
+bei dem das Token $t$ auf die Variable $\textsl{a}$ folgt, dann ist $t$ ein Element
+der Menge $\textsl{Follow}(\textsl{a})$.
+\eox
+\end{Definition}
+
+\example
+Wir untersuchen wieder die in Abbildung \ref{fig:Expr2} gezeigte Grammatik für arithmetische Ausdrücke.
+\begin{enumerate}
+\item Aufgrund der neu hinzugefügten Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\widehat{S} \rightarrow \textsl{expr}\; \symbol{36}$
+      \\[0.2cm]
+      muss die Menge $\textsl{Follow}(\textsl{Expr})$ das Zeichen $\symbol{36}$
+      enthalten.  Aufgrund der Regel 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{factor} \rightarrow \aquoted{(} \textsl{expr} \aquoted{)}$
+      \\[0.2cm]
+      muss die Menge $\textsl{Follow}(\textsl{expr})$ außerdem das Zeichen \aquoted{)}
+      enthalten.  Also haben wir insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{expr}) = \{ \symbol{36}, \aquoted{)} \}$.
+\item Aufgrund der Regel 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}$
+      \\[0.2cm]      
+      wissen wir, dass alle Terminale, die auf ein \textsl{expr} folgen können, auch auf
+      ein \textsl{exprRest} folgen können, womit wir schon mal wissen, dass
+      $\textsl{Follow}(\textsl{exprRest})$ die Token $\symbol{36}$  und \aquoted{)}
+      enthält.   Da \textsl{exprRest} sonst nur am Ende der Regeln vorkommt, die
+      \textsl{exprRest} definieren, sind das auch schon alle Token, die auf
+      \textsl{exprRest} folgen können und wir haben
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{exprRest}) = \{ \symbol{36}, \aquoted{)} \}$.
+\item Die Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{exprRest} \rightarrow \aquoted{+} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \aquoted{-} \textsl{product}\;\;\textsl{exprRest}$
+      \\[0.2cm]
+      zeigen, dass auf ein \textsl{product} alle Elemente aus $\textsl{First}(\textsl{exprRest})$
+      folgen können, aber das ist noch nicht alles:  Da die Variable \textsl{exprRest}
+      $\varepsilon$-erzeugend ist, können zusätzlich auf \textsl{product} auch
+      alle Token folgen, die auf \textsl{exprRest} folgen.  Damit haben wir insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{product}) = 
+      \{ \aquoted{+}, \aquoted{-}, \symbol{36}, \aquoted{)} \}$.
+\item Die Regel
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}$
+      \\[0.2cm]      
+      zeigt, dass alle Terminale, die auf ein \textsl{product} folgen können, auch auf
+      ein \textsl{productRest} folgen können.
+      Da \textsl{productRest} sonst nur am Ende der Regeln vorkommt, die
+      \textsl{productRest} definieren, sind das auch schon alle Token, die auf
+      \textsl{productRest} folgen können und wir haben insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{productRest}) = \{ \aquoted{+}, \aquoted{-}, \symbol{36}, \aquoted{)} \}$.
+\item Die Regeln 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{productRest} \rightarrow \aquoted{*} \textsl{factor}\;\;\textsl{productRest} 
+                            \mid        \aquoted{/} \textsl{factor}\;\;\textsl{productRest}$ 
+      \\[0.2cm]
+      zeigen, dass auf ein \textsl{factor} alle Elemente aus $\textsl{First}(\textsl{productRest})$
+      folgen können, aber das ist noch nicht alles:  Da die Variable \textsl{productRest}
+      $\varepsilon$-erzeugend ist, können zusätzlich auf \textsl{factor} auch
+      alle Token folgen, die auf \textsl{productRest} folgen.  Damit haben wir insgesamt
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{Follow}(\textsl{factor}) = \{ \aquoted{*}, \aquoted{/}, \aquoted{+}, \aquoted{-}, \symbol{36}, \aquoted{)} \}$.
+      \qed
+\end{enumerate}
+
+\noindent
+Das letzte Beispiel zeigt, dass die Berechnung des Prädikats $\textsl{nullable}()$ 
+und die Berechnung der Mengen $\textsl{First}(\textsl{a})$ und $\textsl{Follow}(\textsl{a})$ für eine syntaktische
+Variable $\textsl{a}$ eng miteinander verbunden sind.  
+Es sei
+\\[0.2cm]
+\hspace*{1.3cm}
+ $\textsl{a} \rightarrow Y_1 Y_2 \cdots Y_k$ 
+\\[0.2cm]
+eine Grammatik-Regel.
+Dann bestehen zwischen dem Prädikat $\texttt{nullable}()$ und den beiden Funktionen
+$\textsl{First}()$ und $\textsl{Follow}()$ die folgenden Beziehungen:
+\begin{enumerate}
+\item $\forall t \in T: \neg\, \textsl{nullable}(t)$.
+\item $k = 0 \Rightarrow \textsl{nullable}(\textsl{a})$.
+\item $\bigl(\forall i \in \{1, \cdots, k\}: \textsl{nullable}(Y_i)\bigr) \Rightarrow
+       \textsl{nullable}(\textsl{a})$.
+
+      Setzen wir hier $k=0$ so sehen wir, dass 2.~ein Spezialfall von 3.~ist.
+\item $\textsl{First}(Y_1) \subseteq \textsl{First}(\textsl{a})$.
+\item $\bigl(\forall j \in \{1,\cdots,i-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow
+       \textsl{First}(Y_i) \subseteq \textsl{First}(\textsl{a})$.
+
+       Setzen wir oben $i=1$, so sehen wir, dass 4.~ein Spezialfall von 5.~ist.
+\item $\textsl{Follow}(\textsl{a}) \subseteq \textsl{Follow}(Y_k)$.
+\item $\bigl(\forall j \in \{i+1, \cdots, k\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
+       \textsl{Follow}(\textsl{a}) \subseteq \textsl{Follow}(Y_i)$.
+
+      Setzen wir hier $i=k$ so sehen wir, dass 6.~ein Spezialfall von 7.~ist.
+\item $\forall i \in \{1,\cdots,k-1\}:\textsl{First}(Y_{i+1}) \subseteq \textsl{Follow}(Y_i)$.
+\item $\bigl(\forall j \in \{i+1, \cdots, l-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
+       \textsl{First}(Y_l) \subseteq \textsl{Follow}(Y_i)$.
+
+      Setzen wir hier $l=i+1$ so sehen wir, dass 8.~ein Spezialfall von 9.~ist.
+\end{enumerate}
+Mit Hilfe dieser Beziehungen können $\textsl{nullable}()$, $\textsl{First}()$ und
+$\textsl{Follow}()$ iterativ über eine Fixpunkt-Iteration berechnet werden:  
+\begin{enumerate}
+\item Zunächst werden die Funktionen $\textsl{First}(\textsl{a})$ und
+      $\textsl{Follow}(\textsl{a})$ für jede syntaktische Variable $\textsl{a}$ mit der leeren Menge initialisiert.
+      Das Prädikat $\textsl{nullable}(\textsl{a})$ wird für jede syntaktische Variable auf $\texttt{false}$
+      gesetzt.
+\item Anschließend werden die oben angegebenen Regeln so lange angewendet, wie sich durch die
+      Anwendung Änderungen ergeben. 
+\end{enumerate}
+
+\subsection{Die Berechnung der Funktion \textsl{action}}
+Als Letztes spezifizieren wir, wie die Funktion $\textsl{action}(\mathcal{M},t)$ für eine Menge von
+markierten Regeln $\mathcal{M}$ und ein Token $t$ berechnet wird.  
+Bei der Definition von $\textsl{action}(\mathcal{M},t)$ unterscheiden wir vier Fälle.
 \begin{enumerate}
 \item Falls $\mathcal{M}$ eine markierte Regel der Form $a \rightarrow \beta \bullet t\, \delta$
-      enth\"alt, setzen wir
+      enthält, setzen wir
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle$,
       \\[0.2cm]
       denn in diesem Fall versucht der Parser ein $a$ mit Hilfe der Regel $a \rightarrow \beta\, t \delta$
       zu erkennen und hat von der rechten Seite dieser Regel bereits $\beta$ erkannt.
-      Ist nun das n\"achste Token im Eingabe-String tats\"achlich das Token $t$, so kann der Parser
+      Ist nun das nächste Token im Eingabe-String tatsächlich das Token $t$, so kann der Parser
       dieses $t$ lesen und geht dabei von dem Zustand $a \rightarrow \beta \bullet t\, \delta$ in den Zustand 
-      $a \rightarrow \beta\, t \bullet \delta$ \"uber, der von der Funktion $\textsl{goto}(\mathcal{M},t)$
+      $a \rightarrow \beta\, t \bullet \delta$ über, der von der Funktion $\textsl{goto}(\mathcal{M},t)$
       berechnet wird.  Insgesamt haben wir also
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle
          \quad \mbox{falls} \quad (a \rightarrow \beta \bullet t\, \delta) \in \mathcal{M}
       $.
-\item Falls $\mathcal{M}$ eine markierte Regel der Form $a \rightarrow \beta \bullet$ enth\"alt
-      und wenn zus\"atzlich $t \in \textsl{Follow}(a)$ gilt, dann setzen wir
+\item Falls $\mathcal{M}$ eine markierte Regel der Form $a \rightarrow \beta \bullet$ enthält
+      und wenn zusätzlich $t \in \textsl{Follow}(a)$ gilt, dann setzen wir
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$,
       \\[0.2cm]
       denn in diesem Fall versucht der Parser ein $a$ mit Hilfe der Regel $a \rightarrow \beta$
-      zu erkennen und hat bereits $\beta$ erkannt. Ist nun das n\"achste Token im Eingabe-String das Token
-      $t$ und ist dar\"uber hinaus $t$ ein Token, dass auf $a$ folgen kann, gilt also 
+      zu erkennen und hat bereits $\beta$ erkannt. Ist nun das nächste Token im Eingabe-String das Token
+      $t$ und ist darüber hinaus $t$ ein Token, dass auf $a$ folgen kann, gilt also 
       $t \in \textsl{Follow}(a)$, so kann der Parser die Regel $a \rightarrow \beta$ anwenden und den
       Symbol-Stack mit dieser Regel reduzieren.  Wir haben dann
       \\[0.2cm]
@@ -301,22 +622,22 @@ Bei der Definition von $\textsl{action}(\mathcal{M},t)$ unterscheiden wir vier F
       \quad falls 
       $(a \rightarrow \beta\bullet) \in \mathcal{M}$, $a \not= \widehat{s}$ 
       und $t \in \textsl{Follow}(a)$ gilt.
-\item Falls $\mathcal{M}$ die markierte Regel $\widehat{s} \rightarrow s \bullet \textsc{Eof}$ enth\"alt und
-      wir den zu parsenden String vollst\"andig gelesen haben, setzen wir
+\item Falls $\mathcal{M}$ die markierte Regel $\widehat{s} \rightarrow s \bullet \symbol{36}$ enthält und
+      wir den zu parsenden String vollständig gelesen haben, setzen wir
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},\textsc{Eof}) := \texttt{accept}$,
+      $\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$,
       \\[0.2cm]
-      denn in diesem Fall versucht der Parser, $\widehat{s}$ mit Hilfe der Regel $\widehat{s} \rightarrow s\,\textsc{Eof}$
-      zu erkennen und hat also bereits $s$ erkannt. Ist nun das n\"achste Token im Eingabe-String 
-      das Datei-Ende-Zeichen \textsc{Eof}, 
+      denn in diesem Fall versucht der Parser, $\widehat{s}$ mit Hilfe der Regel $\widehat{s} \rightarrow s\,\symbol{36}$
+      zu erkennen und hat also bereits $s$ erkannt. Ist nun das nächste Token im Eingabe-String 
+      das Datei-Ende-Zeichen \symbol{36}, 
       so liegt der zu parsende String in der durch die Grammatik $G$ spezifizierten Sprache
       $L(G)$.  Wir haben daher
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},\textsc{Eof}) := \texttt{accept}$,
-      \quad falls $(\widehat{s} \rightarrow s\bullet\textsc{Eof}) \in \mathcal{M}$.
-\item In den restlichen F\"allen setzen wir
+      $\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$,
+      \quad falls $(\widehat{s} \rightarrow s\bullet\symbol{36}) \in \mathcal{M}$.
+\item In den restlichen Fällen setzen wir
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(\mathcal{M},t) := \texttt{error}$.
@@ -325,20 +646,20 @@ Zwischen den ersten beiden Regeln kann es Konflikte geben.
 Wir unterscheiden zwischen zwei Arten von Konflikten.
 \begin{enumerate}
 \item Ein \textsl{Shift-Reduce-Konflikt} tritt auf, wenn sowohl der erste Fall als auch der zweite Fall
-      vorliegt.   In diesem Fall enth\"alt die Menge $\mathcal{M}$ also zum einen eine markierte Regel
+      vorliegt.   In diesem Fall enthält die Menge $\mathcal{M}$ also zum einen eine markierte Regel
       der Form
       \\[0.2cm]
       \hspace*{1.3cm}
       $a \rightarrow \beta \bullet t\, \gamma$,
       \\[0.2cm]
-      zum anderen enth\"alt $\mathcal{M}$ eine Regel der Form
+      zum anderen enthält $\mathcal{M}$ eine Regel der Form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $c \rightarrow \delta \bullet$ \quad mit $t \in \textsl{follow}(c)$.
+      $c \rightarrow \delta \bullet$ \quad mit $t \in \textsl{Follow}(c)$.
       \\[0.2cm]
-      Wenn dann das n\"achste Token den Wert $t$ hat, ist nicht klar, ob dieses Token auf den Symbol-Stack 
+      Wenn dann das nächste Token den Wert $t$ hat, ist nicht klar, ob dieses Token auf den Symbol-Stack 
       geschoben und der Parser in einen Zustand mit der markierten Regel 
-      $a \rightarrow \beta\, t \bullet \gamma$ \"ubergehen soll, oder ob stattdessen der Symbol-Stack mit 
+      $a \rightarrow \beta\, t \bullet \gamma$ übergehen soll, oder ob stattdessen der Symbol-Stack mit 
       der Regel $c \rightarrow \delta$ reduziert werden muss.
 \item Eine \textsl{Reduce-Reduce-Konflikt} liegt vor, wenn die Menge $\mathcal{M}$ zwei verschiedene
       markierte Regeln der Form
@@ -346,40 +667,40 @@ Wir unterscheiden zwischen zwei Arten von Konflikten.
       \hspace*{1.3cm}
       $c_1 \rightarrow \gamma_1 \bullet$ \quad  und \quad $c_2 \rightarrow \gamma_2 \bullet$
       \\[0.2cm]
-      enth\"alt und wenn gleichzeitig $t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)$ ist,
+      enthält und wenn gleichzeitig $t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)$ ist,
       denn dann ist nicht klar, welche
-      der beiden Regeln der Parser anwenden soll, wenn das n\"achste zu lesende Token den Wert $t$ hat.
+      der beiden Regeln der Parser anwenden soll, wenn das nächste zu lesende Token den Wert $t$ hat.
 \end{enumerate}
 Falls einer dieser beiden Konflikte auftritt, dann sagen wir, dass die Grammatik keine
-SLR-Grammatik ist.  Eine solche Grammatik kann mit Hilfe eines SLR-Parsers nicht geparst
-werden.  Wir werden sp\"ater noch Beispiele f\"ur die beiden Arten von Konflikten angeben, aber
-zun\"achst wollen wir eine Grammatik untersuchen, bei der keine Konflikte auftreten und wollen f\"ur
-diese Grammatik die Funktionen $\textsl{goto}()$ und $\textsl{action}()$ auch tats\"achlich
+SLR-Grammatik \index{SLR-Grammatik} ist.  Eine solche Grammatik kann mit Hilfe eines SLR-Parsers nicht geparst
+werden.  Wir werden später noch Beispiele für die beiden Arten von Konflikten angeben, aber
+zunächst wollen wir eine Grammatik untersuchen, bei der keine Konflikte auftreten und wollen für
+diese Grammatik die Funktionen $\textsl{goto}()$ und $\textsl{action}()$ auch tatsächlich
 berechnen.  Wir nehmen als Grundlage die  in Abbildung
 \ref{fig:Expr.grammar} gezeigte Grammatik.
 Da die syntaktische Variable \textsl{expr} auf der rechten Seite von
-Grammatik-Regeln auftritt, definieren wir \textsl{start} als neues Start-Symbol und f\"ugen
+Grammatik-Regeln auftritt, definieren wir \textsl{start} als neues Start-Symbol und fügen
 in der Grammatik die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{start} \rightarrow \textsl{expr}\; \textsc{Eof}$
+$\textsl{start} \rightarrow \textsl{expr}\; \symbol{36}$
 \\[0.2cm]
-ein.  Dieser Schritt entspricht dem fr\"uher diskutierten \emph{Augmentieren} der Grammatik.
-Als erstes berechnen wir die Menge der Zust\"ande $Q$.  Wir hatten daf\"ur oben die
+ein.  Dieser Schritt entspricht dem früher diskutierten \blue{Augmentieren} der Grammatik.
+Als erstes berechnen wir die Menge der Zustände $Q$.  Wir hatten dafür oben die
 folgende Formel angegeben:
 \\[0.2cm]
 \hspace*{1.3cm}
 $Q := \bigl\{ \mathcal{M} \in 2^\Gamma \mid \textsl{closure}(\mathcal{M}) = \mathcal{M} \bigr\}$.
 \\[0.2cm]
-Diese Menge enth\"alt allerdings auch Zust\"ande, die von dem Start-Zustand \"uber die Funktion
-$\textsl{goto}()$ gar nicht erreicht werden k\"onnen.  Wir berechnen daher nur die Zust\"ande,
-die sich auch tats\"achlich vom Start-Zustand mit Hilfe der Funktion $\textsl{goto}()$
-erreichen lassen.  Damit die Rechnung nicht zu un\"ubersichtlich
-wir f\"uhren wir die folgenden Abk\"urzungen ein:
+Diese Menge enthält allerdings auch Zustände, die von dem Start-Zustand über die Funktion
+$\textsl{goto}()$ gar nicht erreicht werden können.  Wir berechnen daher nur die Zustände,
+die sich auch tatsächlich vom Start-Zustand mit Hilfe der Funktion $\textsl{goto}()$
+erreichen lassen.  Damit die Rechnung nicht zu unübersichtlich
+wir führen wir die folgenden Abkürzungen ein:
 \\[0.2cm]
 \hspace*{1.3cm}
 $s := \textsl{start},\; e := \textsl{expr},\; p := \textsl{product},\; 
-   f := \textsl{factor},\; N := \textsc{Number}$ und $\symbol{36} := \textsc{Eof}$. 
+   f := \textsl{factor}$ und $N := \textsc{Number}$. 
 \\[0.2cm]
 Wir beginnen mit dem Start-Zustand: 
 \begin{enumerate}
@@ -387,13 +708,13 @@ Wir beginnen mit dem Start-Zustand:
 \begin{array}[t]{lcrl}
 s_0 & := & \textsl{closure}\bigl(\{ & s \rightarrow \bullet\, e\, \symbol{36}\quad \}\bigr) \\
     &  = & \{ & s \rightarrow \bullet\, e \,\symbol{36},                \\[0.1cm]
-    &    &    & e \rightarrow \bullet\, e \quoted{+} p,\; 
-                e \rightarrow \bullet\, e \quoted{-} p,\;
+    &    &    & e \rightarrow \bullet\, e \aquoted{+} p,\; 
+                e \rightarrow \bullet\, e \aquoted{-} p,\;
                 e \rightarrow \bullet\, p, \\[0.1cm]
-    &    &    & p \rightarrow \bullet\, p \quoted{*} f,\;
-                p \rightarrow \bullet\, p \quoted{/} f,\;
+    &    &    & p \rightarrow \bullet\, p \aquoted{*} f,\;
+                p \rightarrow \bullet\, p \aquoted{/} f,\;
                 p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    &    & f \rightarrow \bullet\, \squoted{(} e \quoted{)},\;
+    &    &    & f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
 \end{array}
 $
@@ -414,11 +735,11 @@ $
 \item$ 
 \begin{array}[t]{lcl}
 s_3 & := & \textsl{goto}(s_0, p ) \\
-    &  = & \textsl{closure}(\{ p \rightarrow p \bullet \quoted{*} f,\; 
-                               p \rightarrow p \bullet \quoted{/} f,\;
+    &  = & \textsl{closure}(\{ p \rightarrow p \bullet \aquoted{*} f,\; 
+                               p \rightarrow p \bullet \aquoted{/} f,\;
                                e \rightarrow p \bullet
                             \}) \\
-    &  = & \{ p \rightarrow p \bullet \quoted{*} f,\; p \rightarrow p \bullet \quoted{/} f, e \rightarrow p \bullet \}. 
+    &  = & \{ p \rightarrow p \bullet \aquoted{*} f,\; p \rightarrow p \bullet \aquoted{/} f, e \rightarrow p \bullet \}. 
 \end{array}
 $
 \item$ 
@@ -426,26 +747,26 @@ $
 s_4 & := & \textsl{goto}(s_0, e ) \\
     &  = & \textsl{closure}(\{ 
            s \rightarrow e \bullet\,\symbol{36},\;  
-           e \rightarrow e \bullet \quoted{+} p,\; 
-           e \rightarrow e \bullet \quoted{-} p\;
+           e \rightarrow e \bullet \aquoted{+} p,\; 
+           e \rightarrow e \bullet \aquoted{-} p\;
        \}) \\
     &  = & \{\;  s \rightarrow e \bullet\,\symbol{36},\;
-                 e \rightarrow e \bullet \quoted{+} p,\; 
-                 e \rightarrow e \bullet \quoted{-} p \; \}.
+                 e \rightarrow e \bullet \aquoted{+} p,\; 
+                 e \rightarrow e \bullet \aquoted{-} p \; \}.
 \end{array}
 $
 \item$ 
 \begin{array}[t]{lcl}
-s_5 & := & \textsl{goto}(s_0, \quoted{(}) \\
-    &  = & \textsl{closure}(\{ f \rightarrow \quoted{(} \bullet e \quoted{)} \}) \\
-    &  = & \{\;\; f \rightarrow \quoted{(} \bullet e \quoted{)} \\[0.1cm]
-    &    & \quad e \rightarrow \bullet\, e \quoted{+} p,\; 
-                 e \rightarrow \bullet\, e \quoted{-} p,\;
+s_5 & := & \textsl{goto}(s_0, \aquoted{(}) \\
+    &  = & \textsl{closure}(\{ f \rightarrow \aquoted{(} \bullet e \aquoted{)} \}) \\
+    &  = & \{\;\; f \rightarrow \aquoted{(} \bullet e \aquoted{)} \\[0.1cm]
+    &    & \quad e \rightarrow \bullet\, e \aquoted{+} p,\; 
+                 e \rightarrow \bullet\, e \aquoted{-} p,\;
                  e \rightarrow \bullet\, p,                  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \quoted{*} f,\;
-                 p \rightarrow \bullet\, p \quoted{/} f,\;
+    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
+                 p \rightarrow \bullet\, p \aquoted{/} f,\;
                  p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \squoted{(} e \quoted{)},\;
+    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
                  f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
 \end{array}
 $
@@ -453,47 +774,47 @@ $
 \begin{array}[t]{lcl}
 s_6 & := & \textsl{goto}(s_5, e) \\
     &  = & \textsl{closure}(\{\; 
-                               f \rightarrow \quoted{(} e \bullet \quoted{)},\;
-                               e \rightarrow e \bullet \quoted{+} p,\; 
-                               e \rightarrow e \bullet \quoted{-} p\;
+                               f \rightarrow \aquoted{(} e \bullet \aquoted{)},\;
+                               e \rightarrow e \bullet \aquoted{+} p,\; 
+                               e \rightarrow e \bullet \aquoted{-} p\;
                             \}) \\
     &  = & \{\; 
-                               f \rightarrow \quoted{(} e \bullet \quoted{)},\;
-                               e \rightarrow e \bullet \quoted{+} p,\; 
-                               e \rightarrow e \bullet \quoted{-} p.\;
+                               f \rightarrow \aquoted{(} e \bullet \aquoted{)},\;
+                               e \rightarrow e \bullet \aquoted{+} p,\; 
+                               e \rightarrow e \bullet \aquoted{-} p.\;
            \}
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_7 & := & \textsl{goto}(s_6, \quoted{)}) \\
+s_7 & := & \textsl{goto}(s_6, \aquoted{)}) \\
     &  = & \textsl{closure}(\{\; 
-                               f \rightarrow \quoted{(} e \quoted{)} \bullet \;
+                               f \rightarrow \aquoted{(} e \aquoted{)} \bullet \;
                             \}) \\
-    &  = & \{\; f \rightarrow \quoted{(} e \quoted{)} \bullet\; \}.
+    &  = & \{\; f \rightarrow \aquoted{(} e \aquoted{)} \bullet\; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_8 & := & \textsl{goto}(s_4, \quoted{+}) \\
-    &  = & \textsl{closure}(\{ e \rightarrow e \quoted{+} \bullet p \}) \\
-    &  = & \{\;\; e \rightarrow e \quoted{+} \bullet p  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \quoted{*} f,\;
-                 p \rightarrow \bullet\, p \quoted{/} f,\;
+s_8 & := & \textsl{goto}(s_4, \aquoted{+}) \\
+    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p \}) \\
+    &  = & \{\;\; e \rightarrow e \aquoted{+} \bullet p  \\[0.1cm]
+    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
+                 p \rightarrow \bullet\, p \aquoted{/} f,\;
                  p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \squoted{(} e \quoted{)},\;
+    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
                  f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_9 & := & \textsl{goto}(s_4, \quoted{-}) \\
-    &  = & \textsl{closure}(\{ e \rightarrow e \quoted{-} \bullet p \}) \\
-    &  = & \{\;\; e \rightarrow e \quoted{-} \bullet p  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \quoted{*} f,\;
-                 p \rightarrow \bullet\, p \quoted{/} f,\;
+s_9 & := & \textsl{goto}(s_4, \aquoted{-}) \\
+    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{-} \bullet p \}) \\
+    &  = & \{\;\; e \rightarrow e \aquoted{-} \bullet p  \\[0.1cm]
+    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
+                 p \rightarrow \bullet\, p \aquoted{/} f,\;
                  p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \squoted{(} e \quoted{)},\;
+    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
                  f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
 \end{array}
 $
@@ -501,161 +822,161 @@ $
 \begin{array}[t]{lcl}
 s_{10} & := & \textsl{goto}(s_9, p) \\
     &  = & \textsl{closure}(\{ 
-                  e \rightarrow e \quoted{-} p \bullet,\;
-                  p \rightarrow p \bullet \quoted{*} f,\;
-                  p \rightarrow p \bullet \quoted{/} f \; \})
+                  e \rightarrow e \aquoted{-} p \bullet,\;
+                  p \rightarrow p \bullet \aquoted{*} f,\;
+                  p \rightarrow p \bullet \aquoted{/} f \; \})
                   \\[0.1cm]
-    &  = & \{\;\; e \rightarrow e \quoted{-} p \bullet,\;
-                  p \rightarrow p \bullet \quoted{*} f,\;
-                  p \rightarrow p \bullet \quoted{/} f \; \}.
+    &  = & \{\;\; e \rightarrow e \aquoted{-} p \bullet,\;
+                  p \rightarrow p \bullet \aquoted{*} f,\;
+                  p \rightarrow p \bullet \aquoted{/} f \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_{11} & := & \textsl{goto}(s_3, \quoted{/}) \\
+s_{11} & := & \textsl{goto}(s_3, \aquoted{/}) \\
     &  = & \textsl{closure}(\{ 
-                  p \rightarrow p \quoted{/} \bullet f \; \})
+                  p \rightarrow p \aquoted{/} \bullet f \; \})
                   \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \quoted{/} \bullet f,\;
-                  f \rightarrow \bullet\, \squoted{(} e \quoted{)}\!\!,\;
+                  p \rightarrow p \aquoted{/} \bullet f,\;
+                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
                   f \rightarrow \bullet\, N \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_{12} & := & \textsl{goto}(s_3, \quoted{*}) \\
+s_{12} & := & \textsl{goto}(s_3, \aquoted{*}) \\
     &  = & \textsl{closure}(\{ 
-                  p \rightarrow p \quoted{*} \bullet f \; \})
+                  p \rightarrow p \aquoted{*} \bullet f \; \})
                   \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \quoted{*} \bullet f,\;
-                  f \rightarrow \bullet\, \squoted{(} e \quoted{)}\!\!,\;
+                  p \rightarrow p \aquoted{*} \bullet f,\;
+                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
                   f \rightarrow \bullet\, N \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{13} & := & \textsl{goto}(s_{12}, f) \\
-    &  = & \textsl{closure}(\{ p \rightarrow p \quoted{*} f \bullet \; \})
+    &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{*} f \bullet \; \})
            \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \quoted{*} f \bullet \; \}.
+                  p \rightarrow p \aquoted{*} f \bullet \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{14} & := & \textsl{goto}(s_{11}, f) \\
-    &  = & \textsl{closure}(\{ p \rightarrow p \quoted{/} f \bullet \; \})
+    &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{/} f \bullet \; \})
            \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \quoted{/} f \bullet \; \}.
+                  p \rightarrow p \aquoted{/} f \bullet \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{15} & := & \textsl{goto}(s_{8}, p) \\
     &  = & \textsl{closure}(\{ 
-                 e \rightarrow e \quoted{+} p \bullet,\;
-                 p \rightarrow p \bullet \quoted{*} f,\;
-                 p \rightarrow p \bullet \quoted{/} f \; \})
+                 e \rightarrow e \aquoted{+} p \bullet,\;
+                 p \rightarrow p \bullet \aquoted{*} f,\;
+                 p \rightarrow p \bullet \aquoted{/} f \; \})
                   \\[0.1cm]
     &  = & \{\;\;
-                  e \rightarrow e \quoted{+} p \bullet,\;
-                  p \rightarrow p \bullet \quoted{*} f,\;
-                  p \rightarrow p \bullet \quoted{/} f \; \}.
+                  e \rightarrow e \aquoted{+} p \bullet,\;
+                  p \rightarrow p \bullet \aquoted{*} f,\;
+                  p \rightarrow p \bullet \aquoted{/} f \; \}.
 \end{array}
 $
 \end{enumerate}
-Weitere Rechnungen f\"uhren nicht mehr auf neue Zust\"ande.  Berechnen wir beispielsweise
-$\textsl{goto}(s_8, \quoted{(})$, so finden wir
+Weitere Rechnungen führen nicht mehr auf neue Zustände.  Berechnen wir beispielsweise
+$\textsl{goto}(s_8, \aquoted{(})$, so finden wir
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
 \begin{array}{cl}
-    & \textsl{goto}(s_8, \quoted{(}) \\
-  = & \textsl{closure}(\{ f \rightarrow \quoted{(} \bullet e \quoted{)} \}) \\
-  = & \{\;\; f \rightarrow \quoted{(} \bullet e \quoted{)} \\[0.1cm]
-    & \quad e \rightarrow \bullet\, e \quoted{+} p,\; 
-            e \rightarrow \bullet\, e \quoted{-} p,\;
+    & \textsl{goto}(s_8, \aquoted{(}) \\
+  = & \textsl{closure}(\{ f \rightarrow \aquoted{(} \bullet e \aquoted{)} \}) \\
+  = & \{\;\; f \rightarrow \aquoted{(} \bullet e \aquoted{)} \\[0.1cm]
+    & \quad e \rightarrow \bullet\, e \aquoted{+} p,\; 
+            e \rightarrow \bullet\, e \aquoted{-} p,\;
             e \rightarrow \bullet\, p,                  \\[0.1cm]
-    & \quad p \rightarrow \bullet\, p \quoted{*} f,\;
-            p \rightarrow \bullet\, p \quoted{/} f,\;
+    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
+            p \rightarrow \bullet\, p \aquoted{/} f,\;
             p \rightarrow \bullet\, f,                \\[0.1cm]
-    & \quad f \rightarrow \bullet\, \squoted{(} e \quoted{)},\;
+    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
             f \rightarrow \bullet\, N   \hspace*{2.4cm} \} \\[0.1cm]
   = & s_5.
 \end{array}
 $
 \\[0.2cm]
-Damit ist die Menge der Zust\"ande des Shift-Reduce-Parsers durch
+Damit ist die Menge der Zustände des Shift-Reduce-Parsers durch
 \\[0.2cm]
 \hspace*{1.3cm}
 $ Q := \{ s_0, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_8, s_9, s_{10}, s_{11}, s_{12}, s_{13}, s_{14}, s_{15} \} $
 \\[0.2cm]
-gegeben.  Wir untersuchen als n\"achstes, ob es Konflikte gibt und betrachten exemplarisch die 
+gegeben.  Wir untersuchen als nächstes, ob es Konflikte gibt und betrachten exemplarisch die 
 Menge $s_{15}$.  Aufgrund der markierten Regel 
 \\[0.2cm]
 \hspace*{1.3cm}
-$ p \rightarrow p \bullet \quoted{*} f $
+$ p \rightarrow p \bullet \aquoted{*} f $
 \\[0.2cm]
-muss im Zustand $s_{15}$ geshiftet werden, wenn das n\"achste Token den Wert $\quoted{*}$ hat.
+muss im Zustand $s_{15}$ geshiftet werden, wenn das nächste Token den Wert $\aquoted{*}$ hat.
 Auf der anderen Seite beinhaltet der Zustand $s_{15}$ die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$ e \rightarrow e \quoted{+} p \bullet. $
+$ e \rightarrow e \aquoted{+} p \bullet. $
 \\[0.2cm]
-Diese Regel sagt, dass der Symbol-Stack mit der Grammatik-Regel $e \rightarrow e \quoted{+} p$ reduziert
+Diese Regel sagt, dass der Symbol-Stack mit der Grammatik-Regel $e \rightarrow e \aquoted{+} p$ reduziert
 werden muss, falls in der Eingabe ein Zeichen aus der Menge $\textsl{Follow}(e)$ auftritt.
-Falls nun $\squoted{*} \in \textsl{Follow}(e)$ liegen w\"urde, so h\"atten wir einen Shift-Reduce-Konflikt.
+Falls nun $\saquoted{*} \in \textsl{Follow}(e)$ liegen würde, so hätten wir einen Shift-Reduce-Konflikt.
 Es gilt aber 
 \\[0.2cm]
 \hspace*{1.3cm}
-$ \textsl{Follow}(e) = \{ \quoted{+}, \quoted{-}, \quoted{)} ,\quoted{\symbol{36}} \} $,
+$ \textsl{Follow}(e) = \{ \aquoted{+}, \aquoted{-}, \aquoted{)} ,\aquoted{\symbol{36}} \} $,
 \\[0.2cm]
-und daraus folgt $\squoted{*} \not\in \textsl{Follow}(e)$, so dass hier kein Shift-Reduce-Konflikt
+und daraus folgt $\saquoted{*} \not\in \textsl{Follow}(e)$, so dass hier kein Shift-Reduce-Konflikt
 vorliegt.  Eine Untersuchung der anderen Mengen zeigt, dass dort ebenfalls keine Shift-Reduce- oder
 Reduce-Reduce-Konflikte auftreten.
 
-Als n\"achstes berechnen wir die Funktion $\textsl{action}$.  Wir betrachten exemplarisch
-zwei F\"alle.
+Als nächstes berechnen wir die Funktion $\textsl{action}$.  Wir betrachten exemplarisch
+zwei Fälle.
 \begin{enumerate}
-\item Als erstes berechnen wir $\textsl{action}(s_1, \quoted{+})$.  Es gilt
+\item Als erstes berechnen wir $\textsl{action}(s_1, \aquoted{+})$.  Es gilt
       \\[0.2cm]
       \hspace*{1.3cm}
       $ 
       \begin{array}[t]{lcl}
-      \textsl{action}(s_1, \quoted{+}) & = & 
-            \textsl{action}(\{p \rightarrow f \bullet\}, \quoted{+}) \\
+      \textsl{action}(s_1, \aquoted{+}) & = & 
+            \textsl{action}(\{p \rightarrow f \bullet\}, \aquoted{+}) \\
       & = & \langle \textsl{reduce}, p \rightarrow f \rangle,
       \end{array}
       $
 \\[0.2cm]
-      denn wir haben $\squoted{+} \in \textsl{Follow}(P)$.
-\item Als n\"achstes berechnen wir  $\textsl{action}(s_4, \quoted{+})$.  Es gilt
+      denn wir haben $\saquoted{+} \in \textsl{Follow}(p)$.
+\item Als nächstes berechnen wir  $\textsl{action}(s_4, \aquoted{+})$.  Es gilt
       \\[0.2cm]
 \hspace*{1.3cm}
 $ 
       \begin{array}[t]{lcl}
-      \textsl{action}(s_4, \quoted{+}) & = & 
+      \textsl{action}(s_4, \aquoted{+}) & = & 
             \textsl{action}(\{ s \rightarrow e \bullet\,\symbol{36},\;
-                 e \rightarrow e \bullet \quoted{+} p,\; 
-                 e \rightarrow e \bullet \quoted{-} p \; \}, \quoted{+}) \\
-      & = & \langle \textsl{shift}, \textsl{closure}(\{ e \rightarrow e \quoted{+} \bullet p\}) \rangle \\
+                 e \rightarrow e \bullet \aquoted{+} p,\; 
+                 e \rightarrow e \bullet \aquoted{-} p \; \}, \aquoted{+}) \\
+      & = & \langle \textsl{shift}, \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p\}) \rangle \\
       & = & \langle \textsl{shift}, s_8 \rangle.
       \end{array}
       $
 \\[0.2cm]
 \end{enumerate}
-W\"urden wir diese Rechnungen fortf\"uhren, so w\"urden wir die Tabelle \ref{tab:action} erhalten, denn 
-wir haben die Namen der Zust\"ande so gew\"ahlt, dass diese mit den Namen der entsprechenden Zust\"ande
-in den Tabellen \ref{tab:action} und \ref{tab:goto} \"ubereinstimmen.
+Würden wir diese Rechnungen fortführen, so würden wir die Tabelle \ref{tab:action} erhalten, denn 
+wir haben die Namen der Zustände so gewählt, dass diese mit den Namen der entsprechenden Zustände
+in den Tabellen \ref{tab:action} und \ref{tab:goto} übereinstimmen.
 
 \exercise
-Berechnen Sie die Menge der SLR-Zust\"ande f\"ur die in Abbildung \ref{fig:BoolExpr.grammar} gezeigte
+Berechnen Sie die Menge der SLR-Zustände für die in Abbildung \ref{fig:BoolExpr.grammar} gezeigte
 Grammatik und geben Sie die Funktionen $\textsl{action}$ und $\textsl{goto}$ an.
-K\"urzen Sie die Namen der syntaktischen Variablen und Terminale mit $s$, $c$, $d$, $l$ und $I$
-ab, wobei $s$ f\"ur das neu eingef\"uhrte Start-Symbol steht.  \eox
+Kürzen Sie die Namen der syntaktischen Variablen und Terminale mit $s$, $c$, $d$, $l$ und $I$
+ab, wobei $s$ für das neu eingeführte Start-Symbol steht.  \eox
 \vspace*{0.2cm}
 
 \begin{figure}[htbp]
@@ -664,18 +985,18 @@ ab, wobei $s$ f\"ur das neu eingef\"uhrte Start-Symbol steht.  \eox
   \framebox{
   \begin{minipage}[t]{9.5cm}
   \begin{eqnarray*}
-  \textsl{conjunction} & \rightarrow & \;\textsl{conjunction} \quoted{\&} \textsl{disjunction}  \\
+  \textsl{conjunction} & \rightarrow & \;\textsl{conjunction} \aquoted{\&} \textsl{disjunction}  \\
                        & \mid        & \;\textsl{disjunction}                                    \\[0.2cm]
-  \textsl{disjunction} & \rightarrow & \;\textsl{disjunction} \quoted{|} \textsl{literal}       \\
+  \textsl{disjunction} & \rightarrow & \;\textsl{disjunction} \aquoted{|} \textsl{literal}       \\
                        & \mid        & \;\textsl{literal}                                        \\[0.2cm]
-  \textsl{literal}     & \rightarrow & \quoted{!} \textsc{Identifier}                          \\
+  \textsl{literal}     & \rightarrow & \aquoted{!} \textsc{Identifier}                          \\
                        & \mid        & \;\textsc{Identifier}  
   \end{eqnarray*}
   \vspace*{-0.5cm}
 
   \end{minipage}}}
   \end{center}
-  \caption{Eine Grammatik f\"ur Boole'sche Ausdr\"ucke in konjunktiver Normalform.}
+  \caption{Eine Grammatik für Boole'sche Ausdrücke in konjunktiver Normalform.}
   \label{fig:BoolExpr.grammar}
 \end{figure}
 
@@ -684,9 +1005,9 @@ ab, wobei $s$ f\"ur das neu eingef\"uhrte Start-Symbol steht.  \eox
 In diesem Abschnitt untersuchen wir Shift-Reduce- und Reduce-Reduce-Konflikte genauer und betrachten
 dazu zwei Beispiele.  Das erste Beispiel zeigt einen Shift-Reduce-Konflikt.
 Die in Abbildung \ref{fig:shift-reduce-conflict.grammar} gezeigte Grammatik ist mehrdeutig, denn sie
-legt nicht fest, ob der Operator $\squoted{+}$ st\"arker oder schw\"acher bindet als der Operator
-$\squoted{*}$:  Interpretieren wir das Nicht-Terminal $N$ als eine Abk\"uzung f\"ur \textsc{Number},
-so k\"onnen wir mit dieser Grammatik den Ausdruck $1 + 2 * 3$ sowohl als
+legt nicht fest, ob der Operator $\saquoted{+}$ stärker oder schwächer bindet als der Operator
+$\saquoted{*}$:  Interpretieren wir das Nicht-Terminal $N$ als eine Abküzung für \textsc{Number},
+so können wir mit dieser Grammatik den Ausdruck $1 + 2 * 3$ sowohl als
 \\[0.2cm]
 \hspace*{1.3cm}
 $(1 + 2) * 3$ \quad als auch als \quad $1 + (2 *3)$ \quad 
@@ -701,8 +1022,8 @@ lesen.
     \vspace*{-0.3cm}
 
   \begin{eqnarray*}
-  e & \rightarrow & e \quoted{+} e  \\
-    & \mid        & e \quoted{*} e  \\
+  e & \rightarrow & e \aquoted{+} e  \\
+    & \mid        & e \aquoted{*} e  \\
     & \mid        & N
   \end{eqnarray*}
   \vspace*{-0.5cm}
@@ -715,98 +1036,98 @@ lesen.
   \label{fig:shift-reduce-conflict.grammar}
 \end{figure}
 
-Wir berechnen zun\"achst den Start-Zustand $s_0$.
+Wir berechnen zunächst den Start-Zustand $s_0$.
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}[t]{lcl}
  s_0 & = & \textsl{closure}\bigl( \{ s \rightarrow \bullet\, e\,\symbol{36} \}\bigr) \\[0.1cm]
      & = & \bigl\{ s \rightarrow \bullet\, e\,\symbol{36},\;
-                   e \rightarrow \bullet\, e \quoted{+} e,\;
-                   e \rightarrow \bullet\, e \quoted{*} e,\;
+                   e \rightarrow \bullet\, e \aquoted{+} e,\;
+                   e \rightarrow \bullet\, e \aquoted{*} e,\;
                    e \rightarrow \bullet\, N\;
             \bigr\}.
  \end{array}
 $
 \\[0.2cm] 
-Als n\"achstes berechnen wir $s_1 := \textsl{goto}(s_0, e)$:
+Als nächstes berechnen wir $s_1 := \textsl{goto}(s_0, e)$:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}[t]{lcl}
   s_1 & = & \textsl{goto}(s_0, e)  \\
       & = & \textsl{closure}\bigl(\{  
                    s \rightarrow e \bullet\,\symbol{36}\;
-                   e \rightarrow e \bullet \squoted{+}\; e,\;
-                   e \rightarrow e \bullet \squoted{*}\; e \;
+                   e \rightarrow e \bullet \saquoted{+}\; e,\;
+                   e \rightarrow e \bullet \saquoted{*}\; e \;
             \}\bigr) \\
       & = & \{ s \rightarrow e \bullet\,\symbol{36},\;
-               e \rightarrow e \bullet \squoted{+}\; e,\;
-               e \rightarrow e \bullet \squoted{*}\; e \;
+               e \rightarrow e \bullet \saquoted{+}\; e,\;
+               e \rightarrow e \bullet \saquoted{*}\; e \;
             \}\bigr) 
 \end{array}
 $
 \\[0.2cm]
-Nun berechnen wir $s_2 := \textsl{goto}(s_1, \squoted{+})$:\\[0.2cm]
+Nun berechnen wir $s_2 := \textsl{goto}(s_1, \saquoted{+})$:\\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-  s_2 & = & \textsl{goto}(s_1, \squoted{+})  \\
-      & = & \textsl{closure}\bigl(\{ e \rightarrow e \quoted{+} \bullet e,\; \}\bigr) \\
-      & = & \{ e \rightarrow e \;\squoted{+} \bullet e,\;
-               e \rightarrow \bullet\, e \quoted{+} e,\;
-               e \rightarrow \bullet\, e \quoted{*} e,\;
+  s_2 & = & \textsl{goto}(s_1, \saquoted{+})  \\
+      & = & \textsl{closure}\bigl(\{ e \rightarrow e \aquoted{+} \bullet e,\; \}\bigr) \\
+      & = & \{ e \rightarrow e \;\saquoted{+} \bullet e,\;
+               e \rightarrow \bullet\, e \aquoted{+} e,\;
+               e \rightarrow \bullet\, e \aquoted{*} e,\;
                e \rightarrow \bullet\, N\;
             \}\bigr) 
 \end{array}
 $
 \\[0.2cm] 
-Als n\"achstes berechnen wir $s_3 := \textsl{goto}(s_2, e)$:
+Als nächstes berechnen wir $s_3 := \textsl{goto}(s_2, e)$:
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
 \begin{array}[t]{lcl}
   s_3 & = & \textsl{goto}(s_2, e)  \\
       & = & \textsl{closure}\bigl(\{  
-               e \rightarrow e \quoted{+} e \bullet,\;
-               e \rightarrow e \bullet \squoted{+}\; e,\;
-               e \rightarrow e \bullet \squoted{*}\; e \}\bigr) \\
-      & = & \{ e \rightarrow e \quoted{+} e \bullet,\;
-               e \rightarrow e \bullet \squoted{+}\; e,\;
-               e \rightarrow e \bullet \squoted{*}\; e \;
+               e \rightarrow e \aquoted{+} e \bullet,\;
+               e \rightarrow e \bullet \saquoted{+}\; e,\;
+               e \rightarrow e \bullet \saquoted{*}\; e \}\bigr) \\
+      & = & \{ e \rightarrow e \aquoted{+} e \bullet,\;
+               e \rightarrow e \bullet \saquoted{+}\; e,\;
+               e \rightarrow e \bullet \saquoted{*}\; e \;
             \}\bigr) 
 \end{array}
 $
 \\[0.2cm]
-Hier tritt bei der Berechnung von $\textsl{action}(s_3, \squoted{*})$ ein Shift-Reduce-Konflikt auf,
+Hier tritt bei der Berechnung von $\textsl{action}(s_3, \saquoted{*})$ ein Shift-Reduce-Konflikt auf,
 denn einerseits verlangt die markierte Regel 
 \\[0.2cm]
 \hspace*{1.3cm}
-$e \rightarrow e \bullet \squoted{*}\; e$, 
+$e \rightarrow e \bullet \saquoted{*}\; e$, 
 \\[0.2cm]
-dass das Token $\squoted{*}$ auf den Stack geschoben wird, andererseits haben wir
+dass das Token $\saquoted{*}$ auf den Stack geschoben wird, andererseits haben wir
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Follow}(e) = \{ \;\squoted{+}, \;\squoted{*}, \;\squoted{\symbol{36}}\; \}$, 
+$\textsl{Follow}(e) = \{ \;\saquoted{+}, \;\saquoted{*}, \;\saquoted{\symbol{36}}\; \}$, 
 \\[0.2cm]
-so dass, falls das n\"achste zu lesende Token den Wert $\squoted{*}$ hat, der Symbol-Stack mit der
+so dass, falls das nächste zu lesende Token den Wert $\saquoted{*}$ hat, der Symbol-Stack mit der
 Regel 
 \\[0.2cm]
 \hspace*{1.3cm}
-$e \rightarrow e \quoted{+} e\, \bullet$,
+$e \rightarrow e \aquoted{+} e\, \bullet$,
 \\[0.2cm]
 reduziert werden sollte.  
 
 \exercise
 Bei der in Abbildung \ref{fig:shift-reduce-conflict.grammar} gezeigten Grammatik treten noch weitere
-Shift-Reduce-Konflikte auf.  Berechnen Sie alle Zust\"ande und geben Sie dann die restlichen
+Shift-Reduce-Konflikte auf.  Berechnen Sie alle Zustände und geben Sie dann die restlichen
 Shift-Reduce-Konflikte an. \eox
 \vspace*{0.3cm}
 
 \noindent
 \textbf{Bemerkung}: Es ist nicht weiter verwunderlich, dass wir bei der oben angegebenen
 Grammatik einen Konflikt gefunden haben, denn diese Grammatik ist nicht eindeutig.
-Demgegen\"uber kann gezeigt werden, dass jede SLR-Grammatik eindeutig sein muss.  Folglich
+Demgegenüber kann gezeigt werden, dass jede SLR-Grammatik eindeutig sein muss.  Folglich
 ist eine mehrdeutige Grammatik niemals eine SLR-Grammatik.  Die Umkehrung dieser Aussage gilt
-jedoch nicht.  Dies werden wir im n\"achsten Beispiel sehen.
+jedoch nicht.  Dies werden wir im nächsten Beispiel sehen.
 \eox
 \pagebreak
 
@@ -818,8 +1139,8 @@ jedoch nicht.  Dies werden wir im n\"achsten Beispiel sehen.
     \vspace*{-0.3cm}
 
   \begin{eqnarray*}
-  s & \rightarrow & a \quoted{x} a \quoted{y}  \\ 
-    & \mid        & b \quoted{y} b \quoted{x}  \\[0.1cm]
+  s & \rightarrow & a \aquoted{x} a \aquoted{y}  \\ 
+    & \mid        & b \aquoted{y} b \aquoted{x}  \\[0.1cm]
   a & \rightarrow & \varepsilon                \\[0.1cm]
   b & \rightarrow & \varepsilon                
   \end{eqnarray*}
@@ -833,32 +1154,32 @@ jedoch nicht.  Dies werden wir im n\"achsten Beispiel sehen.
   \label{fig:reduce-reduce-conflict.grammar}
 \end{figure}
 
-Wir untersuchen als n\"achstes eine Grammatik, die keine SLR-Grammatik ist, weil
+Wir untersuchen als nächstes eine Grammatik, die keine SLR-Grammatik ist, weil
 Reduce-Reduce-Konflikte auftreten.  
 Wir betrachten dazu die in Abbildung \ref{fig:reduce-reduce-conflict.grammar}
 gezeigte Grammatik.   Diese Grammatik ist eindeutig, denn es gilt
 \\[0.2cm]
 \hspace*{1.3cm}
-$L(s) = \{\; \squoted{xy}, \;\squoted{yx} \;\}$
+$L(s) = \{\; \saquoted{xy}, \;\saquoted{yx} \;\}$
 \\[0.2cm]
-und der String \qote{xy} l\"asst sich nur mit der Regel $s \rightarrow  a \quoted{x} a \quoted{y}$
-herleiten, w\"ahrend sich der String \qote{yx} nur mit der Regel 
-$s \rightarrow b \quoted{y} b \quoted{x}$ erzeugen l\"asst.
-Um zu zeigen, dass diese Grammatik Shift-Reduce-Konflikte enth\"alt,
-berechnen wir den Start-Zustand eines SLR-Parsers f\"ur diese Grammatik.
+und der String \aquoted{xy} lässt sich nur mit der Regel $s \rightarrow  a \aquoted{x} a \aquoted{y}$
+herleiten, während sich der String \aquoted{yx} nur mit der Regel 
+$s \rightarrow b \aquoted{y} b \aquoted{x}$ erzeugen lässt.
+Um zu zeigen, dass diese Grammatik Shift-Reduce-Konflikte enthält,
+berechnen wir den Start-Zustand eines SLR-Parsers für diese Grammatik.
 \\[0.2cm]
 $\hspace*{1.3cm}
 \begin{array}[t]{lcl}
  s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
      & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\, a \quoted{x} a \quoted{y},\;
-                   s \rightarrow \bullet\, b \quoted{y} b \quoted{x},\;
+                   s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
                    a \rightarrow \bullet\, \varepsilon, \;
                    b \rightarrow \bullet\, \varepsilon \;
             \bigr\} \\
      & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\, a \quoted{x} a \quoted{y},\;
-                   s \rightarrow \bullet\, b \quoted{y} b \quoted{x},\;
+                   s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
                    a \rightarrow \varepsilon \bullet, \;
                    b \rightarrow \varepsilon \bullet \;
             \bigr\},
@@ -874,31 +1195,31 @@ $a \rightarrow \bullet\, \varepsilon \quad \mbox{und} \quad b \rightarrow \varep
 Dieser Konflikt tritt bei der Berechnung von 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_0, \quoted{x})$
+$\textsl{action}(s_0, \aquoted{x})$
 \\[0.2cm]
 auf, denn wir haben 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Follow}(a) = \bigl\{ \squoted{x}, \squoted{y} \bigr\} = \textsl{Follow}(b)$.
+$\textsl{Follow}(a) = \bigl\{ \saquoted{x}, \saquoted{y} \bigr\} = \textsl{Follow}(b)$.
 \\[0.2cm]
 und damit ist dann nicht klar, mit welcher dieser Regeln der Parser die Eingabe im Zustand $s_0$
-reduzieren soll, wenn das n\"achste gelesene Token den Wert $\squoted{x}$ hat, denn dieses Token ist
+reduzieren soll, wenn das nächste gelesene Token den Wert $\saquoted{x}$ hat, denn dieses Token ist
 sowohl ein Element der Menge $\textsl{Follow}(a)$ als auch der Menge $\textsl{Follow}(b)$.
 
 Es ist interessant zu bemerken, dass die obige Grammatik die $LL(1)$-Eigenschaft hat, denn es gilt
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{First}(a \quoted{x} a \quoted{y}) = \{ \quoted{x} \}$, \quad
-$\textsl{First}(b \quoted{y} b \quoted{x}) = \{ \quoted{y} \}$.
+$\textsl{First}(a \aquoted{x} a \aquoted{y}) = \{ \aquoted{x} \}$, \quad
+$\textsl{First}(b \aquoted{y} b \aquoted{x}) = \{ \aquoted{y} \}$.
 \\[0.2cm]
 und daraus folgt sofort
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{First}(a \quoted{x} a \quoted{y}) \cap \textsl{First}(b \quoted{y} b \quoted{x}) =  
- \{ \squoted{x} \} \cap \{ \squoted{y} \} = \{\}. 
+$\textsl{First}(a \aquoted{x} a \aquoted{y}) \cap \textsl{First}(b \aquoted{y} b \aquoted{x}) =  
+ \{ \saquoted{x} \} \cap \{ \saquoted{y} \} = \{\}. 
 $
 \\[0.2cm]
-Dieses Beispiel zeigt, dass SLR-Grammatiken im Allgemeinen nicht ausdruckst\"arker sind als
+Dieses Beispiel zeigt, dass SLR-Grammatiken im Allgemeinen nicht ausdruckstärker sind als
 LL(1)-Grammatiken.  In der Praxis zeigt sich jedoch, dass viele Grammatiken, die nicht die
 LL(1)-Eigenschaft haben, SLR-Grammatiken sind.
 
@@ -912,15 +1233,15 @@ action table of a given grammar. \eox
 
 \section{Kanonische LR-Parser}
 Der Reduce-Reduce-Konflikt, der in der in Abbildung \ref{fig:reduce-reduce-conflict.grammar}
-gezeigten Grammatik auftritt, kann wie folgt gel\"ost werden:  In dem Zustand
+gezeigten Grammatik auftritt, kann wie folgt gelöst werden:  In dem Zustand
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
  s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
      & = & \bigl\{ \widehat{s} \rightarrow \bullet\,\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\,\, a \quoted{x} a \quoted{y},\;
-                   s \rightarrow \bullet\,\, b \quoted{y} b \quoted{x},\;
+                   s \rightarrow \bullet\,\, a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \bullet\,\, b \aquoted{y} b \aquoted{x},\;
                    a \rightarrow \varepsilon \bullet, \;
                    b \rightarrow \varepsilon \bullet \;
             \bigr\}
@@ -930,26 +1251,26 @@ kommen die markierten Regeln $a \rightarrow \varepsilon \bullet$ und $b \rightar
 \varepsilon\bullet$ von der Berechnung des Abschlusses der Regeln 
 \\[0.2cm]
 \hspace*{1.3cm}
-$s \rightarrow \bullet\, a \quoted{x} a \quoted{y} \quad \mbox{und} \quad 
- s \rightarrow \bullet\, b \quoted{y} b \quoted{x}$.
+$s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y} \quad \mbox{und} \quad 
+ s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x}$.
 \\[0.2cm]
-Bei der ersten Regel ist klar, dass auf das erste $a$ ein $\squoted{x}$ folgen muss, bei der zweiten Regel
-sehen wir, dass auf das erste $b$ ein $\squoted{y}$ folgt.  Diese Information geht \"uber die Information
+Bei der ersten Regel ist klar, dass auf das erste $a$ ein $\saquoted{x}$ folgen muss, bei der zweiten Regel
+sehen wir, dass auf das erste $b$ ein $\saquoted{y}$ folgt.  Diese Information geht über die Information
 hinaus, die in den Mengen $\textsl{Follow}(a)$ bzw.~$\textsl{Follow}(b)$ enthalten ist, denn jetzt
-ber\"ucksichtigen wir den Kontext, in dem die syntaktische Variable auftaucht.  Damit k\"onnen wir die
-Funktion $\textsl{action}(s_0, \squoted{x})$ und $\textsl{action}(s_0, \squoted{y})$ wie folgt definieren:
+berücksichtigen wir den Kontext, in dem die syntaktische Variable auftaucht.  Damit können wir die
+Funktion $\textsl{action}(s_0, \saquoted{x})$ und $\textsl{action}(s_0, \saquoted{y})$ wie folgt definieren:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_0, \squoted{x}) = \langle \texttt{reduce}, a \rightarrow \varepsilon \rangle$
+$\textsl{action}(s_0, \saquoted{x}) = \langle \texttt{reduce}, a \rightarrow \varepsilon \rangle$
 \quad \mbox{und} \quad 
-$\textsl{action}(s_0, \squoted{y}) = \langle \texttt{reduce}, b \rightarrow \varepsilon \rangle$. 
+$\textsl{action}(s_0, \saquoted{y}) = \langle \texttt{reduce}, b \rightarrow \varepsilon \rangle$. 
 \\[0.2cm]
-Durch diese Definition wird der Reduce-Reduce-Konflikt gel\"ost.  Die zentrale Idee ist,
+Durch diese Definition wird der Reduce-Reduce-Konflikt gelöst.  Die zentrale Idee ist,
 bei der Berechnung des Abschlusses den Kontext, in dem eine Regel auftritt, mit einzubeziehen.
-Dazu erweitern wir zun\"achst die Definition einer markierten Regel.
+Dazu erweitern wir zunächst die Definition einer markierten Regel.
 
 \begin{Definition}[erweiterte markierte Regel]
-  Eine \emph{erweiterte markierte Regel} (abgek\"urzt: \emph{e.m.R.}) einer Grammatik 
+  Eine \blue{erweiterte markierte Regel} (abgekürzt: \blue{e.m.R.}) einer Grammatik 
   $G = \langle V, T, R, s \rangle$ ist ein Quadrupel 
   \\[0.2cm]
   \hspace*{1.3cm}
@@ -980,24 +1301,24 @@ in dem folgendes gilt:
       erkennen.
 \item Dabei wurde bereits $\beta$ erkannt.  Damit die Regel $a \rightarrow \beta \gamma$
       angewendet werden kann, muss nun  $\gamma$ erkannt werden.
-\item Wir wissen zus\"atzlich, dass auf die syntaktische Variable $a$ ein Token aus der Menge $L$
+\item Wir wissen zusätzlich, dass auf die syntaktische Variable $a$ ein Token aus der Menge $L$
       folgen muss.
 
-      Die Menge $L$ bezeichnen wir daher als die Menge der \emph{Folge-Token}.
+      Die Menge $L$ bezeichnen wir daher als die Menge der \blue{Folge-Token}.
 \end{enumerate}
 
-Mit erweiterten markierten Regeln arbeitet sich ganz \"ahnlich wie mit markierten Regeln, allerdings
-m\"ussen wir die Definitionen der Funktionen $\textsl{closure}$, $\textsl{goto}$ und $\textsl{action}$
+Mit erweiterten markierten Regeln arbeitet sich ganz ähnlich wie mit markierten Regeln, allerdings
+müssen wir die Definitionen der Funktionen $\textsl{closure}$, $\textsl{goto}$ und $\textsl{action}$
 etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}$.
 
 \begin{Definition}[$\textsl{closure}(\mathcal{M})$]
   Es sei $\mathcal{M}$ eine Menge erweiterter markierter Regeln.  Dann definieren wir den
-  \emph{Abschluss} von $\mathcal{M}$
-  als die kleinste Menge $\mathcal{K}$ markierter Regeln, f\"ur die folgendes gilt:
+  \blue{Abschluss} von $\mathcal{M}$
+  als die kleinste Menge $\mathcal{K}$ markierter Regeln, für die folgendes gilt:
   \begin{enumerate}
   \item $\mathcal{M} \subseteq \mathcal{K}$,
 
-        der Abschluss umfasst also die urspr\"ungliche Regel-Menge.
+        der Abschluss umfasst also die ursprüngliche Regel-Menge.
   \item Ist einerseits
         \\[0.2cm]
         \hspace*{1.3cm}
@@ -1014,7 +1335,7 @@ etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}$.
         \hspace*{1.3cm}
         $c \rightarrow \bullet\, \gamma: \bigcup \{ \textsl{First}(\delta\, t) \mid t \in L \}$
         \\[0.2cm]
-        ein Element der Menge $\mathcal{K}$.  Die Funktion $\textsl{First}(\alpha)$ berechnet dabei f\"ur
+        ein Element der Menge $\mathcal{K}$.  Die Funktion $\textsl{First}(\alpha)$ berechnet dabei für
         einen String $\alpha \in (T \cup V)^*$ die Menge aller Token $t$, mit denen ein String
         beginnen kann, der von $\alpha$ abgeleitet worden ist.
   \end{enumerate}
@@ -1023,23 +1344,23 @@ etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}$.
 \end{Definition}
 
 \noindent
-\textbf{Bemerkung}:  Gegen\"uber der alten Definition ist nur die Berechnung der Menge
+\textbf{Bemerkung}:  Gegenüber der alten Definition ist nur die Berechnung der Menge
 der Folge-Token hinzu gekommen.  Der Kontext, in dem das $c$ auftritt, das mit der Regel
-$c \rightarrow \gamma$ erkannt werden soll, ist zun\"achst durch den String $\delta$ gegeben,
+$c \rightarrow \gamma$ erkannt werden soll, ist zunächst durch den String $\delta$ gegeben,
 der in der Regel $a \rightarrow \beta \bullet c\, \delta:L$ auf das $c$ folgt.
-M\"oglicherweise leitet $\delta$  den leeren String $\varepsilon$ ab.  In diesen Fall  
+Möglicherweise leitet $\delta$  den leeren String $\varepsilon$ ab.  In diesen Fall  
 spielen auch die Folge-Token aus der Menge $L$ eine Rolle, denn falls
 $\delta \Rightarrow^* \varepsilon$ gilt, kann auf das $c$ auch ein Folge-Token $t$ aus der
 Menge $L$ folgen. \hspace*{\fill} $\Box$
 \vspace*{0.1cm}
 
-F\"ur eine gegebene e.m.R.-Menge $\mathcal{M}$ kann die Berechnung von 
+Für eine gegebene e.m.R.-Menge $\mathcal{M}$ kann die Berechnung von 
 $\mathcal{K} := \textsl{closure}(\mathcal{M})$ iterativ erfolgen.  Abbildung \ref{fig:closure} zeigt die
-Berechnung von $\textsl{closure}(\mathcal{M})$.  Der wesentliche Unterschied gegen\"uber der
-fr\"uheren Berechnung von $\textsl{closure}()$ ist, dass wir bei den e.m.R.s, die wir f\"ur
+Berechnung von $\textsl{closure}(\mathcal{M})$.  Der wesentliche Unterschied gegenüber der
+früheren Berechnung von $\textsl{closure}()$ ist, dass wir bei den e.m.R.s, die wir für
 eine Variable $c$ mit in $\textsl{closure}(\mathcal{M})$ aufnehmen, bei der Menge der
-Folge-Token den Kontext ber\"ucksichtigen, in dem $c$ auftritt.
-Dadurch gelingt es,  die Zust\"ande des Parsers pr\"aziser zu beschreiben, als dies bei
+Folge-Token den Kontext berücksichtigen, in dem $c$ auftritt.
+Dadurch gelingt es,  die Zustände des Parsers präziser zu beschreiben, als dies bei
 markierten Regeln der Fall ist.
 
 \begin{figure}[!ht]
@@ -1073,8 +1394,8 @@ markierten Regeln der Fall ist.
 
 \noindent
 \textbf{Bemerkung}: Der Ausdruck $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}$
-sieht komplizierter aus, als er tats\"achlich ist.  Wollen wir diesen Ausdruck berechnen, so
-ist es zweckm\"a{\ss}ig eine Fallunterscheidung danach durchzuf\"uhren, ob $\delta$ den leeren
+sieht komplizierter aus, als er tatsächlich ist.  Wollen wir diesen Ausdruck berechnen, so
+ist es zweckmäßig eine Fallunterscheidung danach durchzuführen, ob $\delta$ den leeren
 String $\varepsilon$ ableiten kann oder nicht, denn es gilt
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1087,25 +1408,25 @@ $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\} =
 \right.
 $
 \\[0.2cm]
-Die Berechnung von $\textsl{goto}(\mathcal{M},t)$ f\"ur eine Menge $\mathcal{M}$ von erweiterten Regeln und
-ein Zeichen $x$ \"andert sich gegen\"uber der Berechnung im Falle einfacher markierter Regeln
-nur durch das Anf\"ugen der Menge von \emph{Folge-Tokens}, die aber selbst unver\"andert bleibt:
+Die Berechnung von $\textsl{goto}(\mathcal{M},t)$ für eine Menge $\mathcal{M}$ von erweiterten Regeln und
+ein Zeichen $x$ ändert sich gegenüber der Berechnung im Falle einfacher markierter Regeln
+nur durch das Anfügen der Menge von \blue{Folge-Tokens}, die aber selbst unverändert bleibt:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{ 
    a \rightarrow \beta\, x \bullet \delta:L \mid (a \rightarrow \beta \bullet x\, \delta:L) \in \mathcal{M} 
    \bigr\} \Bigr)$. 
 \\[0.2cm]
-\"Ahnlich wie bei der Theorie der SLR-Parser augmentieren wir unsere Grammatik $G$, indem wir
+Ähnlich wie bei der Theorie der SLR-Parser augmentieren wir unsere Grammatik $G$, indem wir
 der Menge der Variable eine neue Start-Variable $\widehat{s}$ und der Menge der Regeln die
-neue Regel $\widehat{s} \rightarrow s$ hinzuf\"ugen.  Weiter f\"ugen wir den Token das Symbol
-\textsc{Eof} hinzu.  Dann hat der Start-Zustand die  Form
+neue Regel $\widehat{s} \rightarrow s$ hinzufügen.  Weiter fügen wir den Token das Symbol
+\symbol{36} hinzu.  Dann hat der Start-Zustand die  Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_0 := \textsl{closure}\bigr(\bigl\{ \widehat{s} \rightarrow \bullet\, s:\textsc{Eof}\bigr\}\bigr)$,
+$q_0 := \textsl{closure}\bigr(\bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36}\bigr\}\bigr)$,
 \\[0.2cm]
-denn auf das Start-Symbol muss das Datei-Ende ``\textsc{Eof}'' folgen.
-Als letztes zeigen wir, wie die Definition der Funktion $\textsl{action}()$ ge\"andert werden muss.
+denn auf das Start-Symbol muss das Datei-Ende ``\symbol{36}'' folgen.
+Als letztes zeigen wir, wie die Definition der Funktion $\textsl{action}()$ geändert werden muss.
 Wir spezifizieren die Berechnung dieser Funktion durch die folgenden bedingten Gleichungen.
 \begin{enumerate}
 \item $(a \rightarrow \beta \bullet t\, \delta:L) \in \mathcal{M} \;\Longrightarrow\;
@@ -1113,13 +1434,13 @@ Wir spezifizieren die Berechnung dieser Funktion durch die folgenden bedingten G
 \item $(a \rightarrow \beta \bullet:L) \in \mathcal{M} \;\wedge\; a \not= \widehat{s}
        \;\wedge\; t \in L \;\Longrightarrow\;
        \textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$. 
-\item $(\widehat{s} \rightarrow s \bullet:\textsc{Eof}) \in \mathcal{M} \;\Longrightarrow\;
-       \textsl{action}(\mathcal{M},\textsc{Eof}) := \texttt{accept}$. 
+\item $(\widehat{s} \rightarrow s \bullet:\symbol{36}) \in \mathcal{M} \;\Longrightarrow\;
+       \textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$. 
 \item Sonst: \quad $\textsl{action}(\mathcal{M},t) := \texttt{error}$. 
 \end{enumerate}
 Falls es bei diesen Gleichungen zu einem Konflikt kommt, weil gleichzeitig die Bedingung
-der ersten Gleichung als auch die Bedingung der zweiten Gleichung erf\"ullt ist, so sprechen
-wir wieder von einem \emph{Shift-Reduce-Konflikt}.  
+der ersten Gleichung als auch die Bedingung der zweiten Gleichung erfüllt ist, so sprechen
+wir wieder von einem \blue{Shift-Reduce-Konflikt}.  
 Ein Shift-Reduce-Konflikt liegt also bei der Berechnung von
 $\textsl{action}(\mathcal{M},t)$ dann vor, wenn es zwei e.m.R.s 
 \\[0.2cm]
@@ -1132,52 +1453,51 @@ soll, oder ob stattdessen der Symbol-Stack mit der Regel $c \rightarrow \gamma$ 
 \vspace*{0.2cm}
 
 \noindent
-\textbf{Bemerkung}:  Gegen\"uber einem SLR-Parser ist die M\"oglichkeit von
+\textbf{Bemerkung}:  Gegenüber einem SLR-Parser ist die Möglichkeit von
 Shift-Reduce-Konflikten verringert, denn  bei einem SLR-Parser liegt bereits dann ein
 Shift-Reduce-Konflikt vor, wenn $t \in \textsl{Follow}(c)$ gilt und die Menge $L_2$ ist in der Regel kleiner als die
 Menge $\textsl{Follow}(c)$.  \eox 
 \vspace*{0.3cm}
 
-Ein \emph{Reduce-Reduce-Konflikt} liegt vor, wenn es zwei e.m.R.s 
+Ein \blue{Reduce-Reduce-Konflikt} liegt vor, wenn es zwei e.m.R.s 
 \\[0.2cm]
 \hspace*{1.3cm}
 $(a \rightarrow \beta\, \bullet:L_1) \in \mathcal{M}$ \quad \mbox{und} \quad 
 $(c \rightarrow \delta\, \bullet:L_2) \in \mathcal{M}$ \quad \mbox{mit} \quad $L_1 \cap L_2 \not= \{\}$
 \\[0.2cm]
 gibt, denn dann ist nicht klar, mit welcher dieser beiden Regeln der Symbol-Stack reduziert werden soll,
-wenn das n\"achste Token ein Element der Schnittmenge $L_1 \cap L_2$ ist.
+wenn das nächste Token ein Element der Schnittmenge $L_1 \cap L_2$ ist.
 \vspace*{0.2cm}
 
 \noindent
-\textbf{Bemerkung}:  Gegen\"uber einem SLR-Parser ist die M\"oglichkeit von
+\textbf{Bemerkung}:  Gegenüber einem SLR-Parser ist die Möglichkeit von
 Reduce-Reduce-Konflikten verringert, denn  bei einem SLR-Parser liegt bereits dann ein
 Reduce-Reduce-Konflikt vor, wenn es ein $t$ in der Menge
- $\textsl{Follow}(a) \cap \textsl{Follow}(c)$ gibt und die $\textsl{Follow}$-Mengen sind oft gr\"o{\ss}er als die Mengen
+ $\textsl{Follow}(a) \cap \textsl{Follow}(c)$ gibt und die $\textsl{Follow}$-Mengen sind oft größer als die Mengen
 $L_1$ und $L_2$.  \eox
 \vspace*{0.3cm}
 
 
 \example
 Wir greifen das Beispiel der in Abbildung \ref{fig:reduce-reduce-conflict.grammar} gezeigten Grammatik
-wieder auf und berechnen zun\"achst die Menge aller Zust\"ande.  Um die Schreibweise zu
-vereinfachen, schreiben wir an Stelle von ``\textsc{Eof}'' k\"urzer ``$\symbol{36}$''.
+wieder auf und berechnen zunächst die Menge aller Zustände.  
 
 \begin{enumerate}
 \item $\begin{array}[t]{lcl}
         s_0 & := & \textsl{closure}\Bigl(\bigl\{\widehat{s} \rightarrow \bullet\, s:\symbol{36} \bigr\}\Bigr) \\
             & =  & \bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36},
-                           s \rightarrow \bullet\, a \squoted{x} a \squoted{y}:\symbol{36},
-                           s \rightarrow \bullet\, b \squoted{y} b \squoted{x}:\symbol{36},
-                           a \rightarrow \bullet\,: \squoted{x},
-                           b \rightarrow \bullet\,: \squoted{y}
+                           s \rightarrow \bullet\, a \saquoted{x} a \saquoted{y}:\symbol{36},
+                           s \rightarrow \bullet\, b \saquoted{y} b \saquoted{x}:\symbol{36},
+                           a \rightarrow \bullet\,: \saquoted{x},
+                           b \rightarrow \bullet\,: \saquoted{y}
                     \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_1 & := & \textsl{goto}(s_0,a) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow a \bullet \squoted{x} a \squoted{y}:\symbol{36} 
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow a \bullet \saquoted{x} a \saquoted{y}:\symbol{36} 
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow a \bullet \squoted{x} a \squoted{y}:\symbol{36} \bigr\}.
+            & =  & \bigl\{ s \rightarrow a \bullet \saquoted{x} a \saquoted{y}:\symbol{36} \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
@@ -1188,97 +1508,97 @@ vereinfachen, schreiben wir an Stelle von ``\textsc{Eof}'' k\"urzer ``$\symbol{3
       $
 \item $\begin{array}[t]{lcl}
         s_3 & := & \textsl{goto}(s_0,b) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \bullet \squoted{y} b \squoted{x}: \symbol{36}
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \bullet \saquoted{y} b \saquoted{x}: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \bullet \squoted{y} b \squoted{x}: \symbol{36}
+            & =  & \bigl\{ s \rightarrow b \bullet \saquoted{y} b \saquoted{x}: \symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
-        s_4 & := & \textsl{goto}(s_3,\squoted{y}) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \squoted{y} \bullet b \squoted{x}: \symbol{36}
+        s_4 & := & \textsl{goto}(s_3,\saquoted{y}) \\
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \saquoted{y} \bullet b \saquoted{x}: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \squoted{y} \bullet b \squoted{x}: \symbol{36},
-                           b \rightarrow \bullet\,: \squoted{x}
+            & =  & \bigl\{ s \rightarrow b \saquoted{y} \bullet b \saquoted{x}: \symbol{36},
+                           b \rightarrow \bullet\,: \saquoted{x}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_5 & := & \textsl{goto}(s_4, b) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \squoted{y} b \bullet \squoted{x}: \symbol{36}
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \saquoted{y} b \bullet \saquoted{x}: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \squoted{y} b \bullet \squoted{x}: \symbol{36}
+            & =  & \bigl\{ s \rightarrow b \saquoted{y} b \bullet \saquoted{x}: \symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
-        s_6 & := & \textsl{goto}(s_5, \squoted{x}) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \squoted{y} b \squoted{x} \bullet: \symbol{36}
+        s_6 & := & \textsl{goto}(s_5, \saquoted{x}) \\
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \saquoted{y} b \saquoted{x} \bullet: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \squoted{y} b \squoted{x} \bullet: \symbol{36}
+            & =  & \bigl\{ s \rightarrow b \saquoted{y} b \saquoted{x} \bullet: \symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
-        s_7 & := & \textsl{goto}(s_1, \squoted{x}) \\
+        s_7 & := & \textsl{goto}(s_1, \saquoted{x}) \\
             & =  & \textsl{closure}\bigl(\bigl\{ 
-                          s \rightarrow a \squoted{x} \bullet a \squoted{y}:\symbol{36}
+                          s \rightarrow a \saquoted{x} \bullet a \saquoted{y}:\symbol{36}
                    \bigr\}\bigr) \\
             & =  & \bigl\{
-                          s \rightarrow a \squoted{x} \bullet a \squoted{y}:\symbol{36},
-                          a \rightarrow \bullet\,: \squoted{y}
+                          s \rightarrow a \saquoted{x} \bullet a \saquoted{y}:\symbol{36},
+                          a \rightarrow \bullet\,: \saquoted{y}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_8 & := & \textsl{goto}(s_7, a) \\
             & =  & \textsl{closure}\bigl(\bigl\{ 
-                          s \rightarrow a \squoted{x} a \bullet \squoted{y}:\symbol{36}
+                          s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36}
                    \bigr\}\bigr) \\
             & =  & \bigl\{
-                          s \rightarrow a \squoted{x} a \bullet \squoted{y}:\symbol{36}
+                          s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
-        s_9 & := & \textsl{goto}(s_8, \squoted{y}) \\
+        s_9 & := & \textsl{goto}(s_8, \saquoted{y}) \\
             & =  & \textsl{closure}\bigl(\bigl\{ 
-                          s \rightarrow a \squoted{x} a \squoted{y} \bullet :\symbol{36}
+                          s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36}
                    \bigr\}\bigr) \\
             & =  & \bigl\{
-                          s \rightarrow a \squoted{x} a \squoted{y} \bullet :\symbol{36}
+                          s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36}
                    \bigr\}.
        \end{array}
        $
 \end{enumerate}
-Als n\"achstes untersuchen wir, ob es bei den Zust\"anden Konflikte gibt.
+Als nächstes untersuchen wir, ob es bei den Zuständen Konflikte gibt.
 Beim Start-Zustand $s_0$ hatten wir im letzten Abschnitt einen Reduce-Reduce-Konflikt zwischen den
 beiden Regeln $a \rightarrow \varepsilon$ und $b \rightarrow \varepsilon$ gefunden, weil 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Follow}(a) \cap \textsl{Follow}(b) = \{ \squoted{x}, \squoted{y} \} \not= \{\}$
+$\textsl{Follow}(a) \cap \textsl{Follow}(b) = \{ \saquoted{x}, \saquoted{y} \} \not= \{\}$
 \\[0.2cm]
 gilt.  Dieser Konflikt ist nun verschwunden, denn zwischen den e.m.R.s
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \bullet\,: \squoted{x}$ \quad \mbox{und} \quad 
-$b \rightarrow \bullet\,: \squoted{y}$
+$a \rightarrow \bullet\,: \saquoted{x}$ \quad \mbox{und} \quad 
+$b \rightarrow \bullet\,: \saquoted{y}$
 \\[0.2cm]
-gibt es wegen $\squoted{x} \not= \squoted{y}$ keinen Konflikt.  Es ist leicht zu sehen, dass auch bei den
-anderen Zust\"ande keine Konflikte auftreten.
+gibt es wegen $\saquoted{x} \not= \saquoted{y}$ keinen Konflikt.  Es ist leicht zu sehen, dass auch bei den
+anderen Zustände keine Konflikte auftreten.
 
 
 \exercise
-Berechnen Sie die Menge der Zust\"ande eines LR-Parsers f\"ur die folgende Grammatik:
+Berechnen Sie die Menge der Zustände eines LR-Parsers für die folgende Grammatik:
   \begin{eqnarray*}
-  e & \rightarrow & e \quoted{+} p           \\
+  e & \rightarrow & e \aquoted{+} p           \\
     & \mid        & p                        \\[0.2cm]
-  p & \rightarrow & p \quoted{*} f           \\
+  p & \rightarrow & p \aquoted{*} f           \\
     & \mid        & f                        \\[0.2cm]
-  f & \rightarrow & \squoted{(} e \quoted{)} \\
+  f & \rightarrow & \saquoted{(} e \aquoted{)} \\
     & \mid        & \textsl{Number}             
   \end{eqnarray*}
-Untersuchen Sie au{\ss}erdem, ob es bei dieser Grammatik Shift-Reduce-Konflikte oder
+Untersuchen Sie außerdem, ob es bei dieser Grammatik Shift-Reduce-Konflikte oder
 Reduce-Reduce-Konflikte gibt.
 \vspace*{0.2cm}
 
@@ -1298,22 +1618,22 @@ His theory is described in the paper
 \pagebreak
 
 \section{LALR-Parser}
-Die Zahl der Zust\"ande eines LR-Parsers ist oft erheblich gr\"o{\ss}er als die Zahl der Zust\"ande, die ein
-SLR-Parser derselben Grammatik h\"atte.  Beispielsweise kommt ein SLR-Parser f\"ur die
+Die Zahl der Zustände eines LR-Parsers ist oft erheblich größer als die Zahl der Zustände, die ein
+SLR-Parser derselben Grammatik hätte.  Beispielsweise kommt ein SLR-Parser für die
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar.g}{\texttt{C}-Grammatik} 
-mit 349 Zust\"anden aus.  Da die Sprache \texttt{C} keine SLR-Sprache ist, gibt es beim Erzeugen
-einer SLR-Parse-Tabelle f\"ur \texttt{C} allerdings eine Reihe von 
+mit 349 Zuständen aus.  Da die Sprache \texttt{C} keine SLR-Sprache ist, gibt es beim Erzeugen
+einer SLR-Parse-Tabelle für \texttt{C} allerdings eine Reihe von 
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-slr-table.txt}{Konflikten},
-so dass ein SLR-Parser f\"ur die Sprache \texttt{C} nicht funktioniert.  Demgegen\"uber kommt ein
-LR-Parser f\"ur die Sprache \texttt{C} auf 1572 Zust\"ande, wie Sie 
+so dass ein SLR-Parser für die Sprache \texttt{C} nicht funktioniert.  Demgegenüber kommt ein
+LR-Parser für die Sprache \texttt{C} auf 1572 Zustände, wie Sie 
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-lr-table.txt}{hier}
-sehen k\"onnen.  Anfangs, als der zur Verf\"ugung stehenden
+sehen können.  Anfangs, als der zur Verfügung stehenden
 Haupt-Speicher der meisten Rechner noch bescheidener dimensioniert waren, als dies heute
-der Fall ist, hatten LR-Parser daher eine f\"ur die Praxis problematische
-Gr\"o{\ss}e.  Eine genaue Analyse der Menge der Zust\"ande von LR-Parsern zeigte, dass es oft m\"oglich ist, 
-bestimmte Zust\"ande zusammen zu fassen.  Dadurch kann die Menge der Zust\"ande in den meisten F\"allen
+der Fall ist, hatten LR-Parser daher eine für die Praxis problematische
+Größe.  Eine genaue Analyse der Menge der Zustände von LR-Parsern zeigte, dass es oft möglich ist, 
+bestimmte Zustände zusammen zu fassen.  Dadurch kann die Menge der Zustände in den meisten Fällen
 deutlich verkleinert werden.  Wir illustrieren das Konzept an einem Beispiel und betrachten die in
-Abbildung \ref{fig:dragon-book.grammar} gezeigt Grammatik, die ich dem \emph{Drachenbuch}
+Abbildung \ref{fig:dragon-book.grammar} gezeigt Grammatik, die ich dem \blue{Drachenbuch}
 \cite{aho:2006} entnommen habe.  (Das ``Drachenbuch'' ist das Standardwerk im Bereich Compilerbau.)
 
 
@@ -1327,8 +1647,8 @@ Abbildung \ref{fig:dragon-book.grammar} gezeigt Grammatik, die ich dem \emph{Dra
   \begin{eqnarray*}
   \widehat{s} & \rightarrow & s      \\[0.1cm]
   s  & \rightarrow & c \; c          \\[0.1cm]
-  c  & \rightarrow & \squoted{x}\; c \\
-     & \mid        & \squoted{y}\;
+  c  & \rightarrow & \saquoted{x}\; c \\
+     & \mid        & \saquoted{y}\;
   \end{eqnarray*}
   \vspace*{-0.5cm}
 
@@ -1343,33 +1663,33 @@ Abbildung \ref{fig:dragon-book.grammar} gezeigt Grammatik, die ich dem \emph{Dra
 \begin{figure}[!ht]
 \centering
       \epsfig{file=Abbildungen/cc-LR.eps, scale=0.5}
-      \caption{LR-Goto-Graph f\"ur die Grammatik aus Abbildung \ref{fig:dragon-book.grammar}.}
+      \caption{LR-Goto-Graph für die Grammatik aus Abbildung \ref{fig:dragon-book.grammar}.}
   \label{fig:cc-LR.eps}
 \end{figure}
 
 
-Abbildung \ref{fig:cc-LR.eps} zeigt den sogenannten \emph{LR-Goto-Graphen} f\"ur diese Grammatik.
-Die Knoten dieses Graphen sind die Zust\"ande.  
-Betrachten wir den LR-Goto-Graphen, so stellen wir fest, dass die Zust\"ande $s_6$ und
+Abbildung \ref{fig:cc-LR.eps} zeigt den sogenannten \blue{LR-Goto-Graphen} für diese Grammatik.
+Die Knoten dieses Graphen sind die Zustände.  
+Betrachten wir den LR-Goto-Graphen, so stellen wir fest, dass die Zustände $s_6$ und
 $s_3$ sich nur in den Mengen der Folge-Token unterscheiden, denn es gilt einerseits
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_6 = \Bigl\{ s \rightarrow \squoted{x} \bullet c: \squoted{\symbol{36}}, 
-                 c \rightarrow \bullet\, \quoted{x} c:  \squoted{\symbol{36}},
-                 c \rightarrow \bullet\, \quoted{y}:    \squoted{\symbol{36}}
+$s_6 = \Bigl\{ s \rightarrow \saquoted{x} \bullet c: \saquoted{\symbol{36}}, 
+                 c \rightarrow \bullet\, \aquoted{x} c:  \saquoted{\symbol{36}},
+                 c \rightarrow \bullet\, \aquoted{y}:    \saquoted{\symbol{36}}
        \Bigr\}$, 
 \\[0.2cm]
 und andererseits haben wir
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_3 = \Bigl\{ s \rightarrow \squoted{x} \bullet c: \{ \squoted{x}, \squoted{y} \}, 
-                 c \rightarrow \bullet\, \quoted{x} c:  \{ \squoted{x}, \squoted{y} \},
-                 c \rightarrow \bullet\, \quoted{y}:    \{ \squoted{x}, \squoted{y} \}  
+$s_3 = \Bigl\{ s \rightarrow \saquoted{x} \bullet c: \{ \saquoted{x}, \saquoted{y} \}, 
+                 c \rightarrow \bullet\, \aquoted{x} c:  \{ \saquoted{x}, \saquoted{y} \},
+                 c \rightarrow \bullet\, \aquoted{y}:    \{ \saquoted{x}, \saquoted{y} \}  
        \Bigr\}$.
 \\[0.2cm]
-Offenbar entsteht die Menge $s_3$ aus der Menge $s_6$ indem \"uberall $\squoted{\symbol{36}}$
-durch die Menge $\{ \squoted{x}, \squoted{y}\}$ ersetzt wird.  Genauso kann die Menge $s_7$ in $s_4$
-und $s_9$ in $s_8$ \"uberf\"uhrt werden.  Die entscheidende Erkenntnis ist nun, dass die
+Offenbar entsteht die Menge $s_3$ aus der Menge $s_6$ indem überall $\saquoted{\symbol{36}}$
+durch die Menge $\{ \saquoted{x}, \saquoted{y}\}$ ersetzt wird.  Genauso kann die Menge $s_7$ in $s_4$
+und $s_9$ in $s_8$ überführt werden.  Die entscheidende Erkenntnis ist nun, dass die
 Funktion $\textsl{goto}()$ unter dieser Art von Transformation invariant ist, denn bei der
 Definition dieser Funktion spielt die Menge der Folge-Token keine Rolle.  So sehen wir zum
 Beispiel, dass einerseits
@@ -1378,33 +1698,33 @@ Beispiel, dass einerseits
 $\textsl{goto}(s_3, c) = s_8$ \quad und \quad und 
 $\textsl{goto}(s_6, c) = s_9$ 
 \\[0.2cm]
-gilt und dass andererseits der Zustand $s_9$ in den Zustand $s_8$ \"ubergeht, wenn wir
-\"uberall in $s_9$ das Terminal $\squoted{\symbol{36}}$ durch die Menge 
- $\{ \squoted{x}, \squoted{y}\}$ ersetzen.  Definieren wir den \emph{Kern}
+gilt und dass andererseits der Zustand $s_9$ in den Zustand $s_8$ übergeht, wenn wir
+überall in $s_9$ das Terminal $\saquoted{\symbol{36}}$ durch die Menge 
+ $\{ \saquoted{x}, \saquoted{y}\}$ ersetzen.  Definieren wir den \blue{Kern}
 einer Menge von erweiterten markierten Regeln dadurch, dass wir in jeder Regel die Menge
-der Folgetoken wegstreichen, und fassen dann Zust\"ande mit demselben Kern zusammen, so
+der Folgetoken wegstreichen, und fassen dann Zustände mit demselben Kern zusammen, so
 erhalten wir den in 
 Abbildung \ref{fig:cc-LALR.eps} gezeigten Goto-Graphen.
 
 \begin{figure}[!ht]
 \centering
   \hspace*{-0.6cm} \epsfig{file=Abbildungen/cc-LALR, scale=0.5}
-  \caption{Der LALR-Goto-Graph f\"ur die Grammatik aus Abbildung \ref{fig:dragon-book.grammar}.}
+  \caption{Der LALR-Goto-Graph für die Grammatik aus Abbildung \ref{fig:dragon-book.grammar}.}
   \label{fig:cc-LALR.eps}
 \end{figure}
 
 Um die Beobachtungen, die wir bei der Betrachtung der in Abbildung
 \ref{fig:dragon-book.grammar} gezeigten Grammatik gemacht gaben, verallgemeinern und formalisieren zu
-k\"onnen, definieren wir ein Funktion 
+können, definieren wir ein Funktion 
 $\textsl{core}()$, die den Kern einer Menge von e.m.R.s berechnet und damit diese Menge in
-eine Menge markierter Regeln \"uberf\"uhrt: 
+eine Menge markierter Regeln überführt: 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{core}(\mathcal{M}) := 
    \{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \bullet \gamma:L) \in \mathcal{M} \}$. 
 \\[0.2cm]
 Die Funktion $\textsl{core}()$ entfernt also einfach die Menge der Folge-Tokens von den e.m.R.s.
-Wir hatten die Funktion $\textsl{goto}()$ f\"ur eine Menge $\mathcal{M}$ von erweiterten
+Wir hatten die Funktion $\textsl{goto}()$ für eine Menge $\mathcal{M}$ von erweiterten
 markierten Regeln und ein Symbol $x$ durch
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1414,7 +1734,7 @@ $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{
 $.
 \\[0.2cm]
 definiert.  Offenbar spielt die Menge der Folge-Token bei der Berechnung von
-$\textsl{goto}(\mathcal{M}, x)$ keine Rolle, formal gilt f\"ur zwei e.m.R.-Mengen
+$\textsl{goto}(\mathcal{M}, x)$ keine Rolle, formal gilt für zwei e.m.R.-Mengen
 $\mathcal{M}_1$ und $\mathcal{M}_2$ und ein Symbol $x$ die Formel:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1424,8 +1744,8 @@ $\textsl{core}(\mathcal{M}_1) = \textsl{core}(\mathcal{M}_2) \;\Rightarrow\;
 $.
 \vspace*{0.2cm}
 
-F\"ur zwei e.m.R.-Mengen $\mathcal{M}$ und $\mathcal{N}$, die
-den gleichen Kern haben, definieren wir die \emph{erweiterte Vereinigung}  
+Für zwei e.m.R.-Mengen $\mathcal{M}$ und $\mathcal{N}$, die
+den gleichen Kern haben, definieren wir die \blue{erweiterte Vereinigung}  
 $\mathcal{M} \uplus \mathcal{N}$ von $\mathcal{M}$ und $\mathcal{N}$ als
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1441,12 +1761,12 @@ die auf einer Menge von Mengen von e.m.R.s definiert ist: Ist $\frak{I}$
 eine Menge von Mengen von e.m.R.s, die alle den gleichen Kern haben, gilt also
 \[ \frak{I} = \{ \mathcal{M}_1, \cdots, \mathcal{M}_k \} \quad \mbox{mit} \quad
    \textsl{core}(\mathcal{M}_i) = \textsl{core}(\mathcal{M}_j) \quad 
-   \mbox{f\"ur alle $i,j\in\{1,\cdots,k\}$,} 
+   \mbox{für alle $i,j\in\{1,\cdots,k\}$,} 
 \]
 so definieren wir
 \[ \biguplus \frak{I} := \mathcal{M}_1 \uplus \cdots \uplus \mathcal{M}_k. 
 \]
-Es sei nun $\Delta$ die Menge aller Zust\"ande eines LR-Parsers.  Dann ist die Menge der Zust\"ande des
+Es sei nun $\Delta$ die Menge aller Zustände eines LR-Parsers.  Dann ist die Menge der Zustände des
 entsprechenden LALR-Parsers durch die erweiterte Vereinigung der Menge aller der Teilmengen 
 von $\Delta$ gegeben, deren Elemente den gleichen Kern haben:
 \[ \frak{Q} := \left\{ \biguplus \frak{I} \mid \frak{I} \in 2^\Delta \wedge 
@@ -1454,13 +1774,13 @@ von $\Delta$ gegeben, deren Elemente den gleichen Kern haben:
       \wedge \mbox{und $\frak{I}$ maximal} 
    \right\}. 
 \]
-Die Forderung ``$\frak{I}$ maximal'' dr\"uckt in der obigen Definition aus, dass in $\frak{I}$ tats\"achlich
+Die Forderung ``$\frak{I}$ maximal'' drückt in der obigen Definition aus, dass in $\frak{I}$ tatsächlich
 \underline{alle} Mengen aus $\Delta$ zusamengefasst sind, die den selben Kern haben.
-Die so definierte Menge $\frak{Q}$ ist die Menge der LALR-Zust\"ande.  
+Die so definierte Menge $\frak{Q}$ ist die Menge der LALR-Zustände.  
 
-Als n\"achstes \"uberlegen wir, wie sich die Berechnung von $\textsl{goto}(\mathcal{M},X)$
-\"andern muss, wenn $\mathcal{M}$ ein Element der Menge $\frak{Q}$ der LALR-Zust\"ande ist.  
-Zur Berechnung von $\textsl{goto}(\mathcal{M},X)$ berechnen wir zun\"achst die Menge
+Als nächstes überlegen wir, wie sich die Berechnung von $\textsl{goto}(\mathcal{M},X)$
+ändern muss, wenn $\mathcal{M}$ ein Element der Menge $\frak{Q}$ der LALR-Zustände ist.  
+Zur Berechnung von $\textsl{goto}(\mathcal{M},X)$ berechnen wir zunächst die Menge
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{closure}\Bigl( \bigl\{  
@@ -1469,9 +1789,9 @@ $\textsl{closure}\Bigl( \bigl\{
 $.
 \\[0.2cm]
 Das Problem ist, dass diese Menge im Allgemeinen kein Element der Menge $\frak{Q}$ ist,
-denn die Zust\"ande in $\frak{Q}$ entstehen ja durch die Zusammenfassung mehrerer LR-Zust\"ande.
-Die Zust\"ande, die bei der Berechnung von $\frak{Q}$ zusammengefasst werden, haben aber alle den selben
-Kern.  Daher enth\"alt die  Menge
+denn die Zustände in $\frak{Q}$ entstehen ja durch die Zusammenfassung mehrerer LR-Zustände.
+Die Zustände, die bei der Berechnung von $\frak{Q}$ zusammengefasst werden, haben aber alle den selben
+Kern.  Daher enthält die  Menge
 \\[0.2cm]
 \hspace*{1.3cm}
 $\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
@@ -1482,7 +1802,7 @@ $\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
 $
 \\[0.2cm]
 genau ein Element und dieses Element ist der Wert von $\textsl{goto}(\mathcal{M}, X)$.  Folglich
-k\"onnen wir  
+können wir  
 \\[0.2cm]
 \hspace*{1.3cm}
 $\ds\textsl{goto}(\mathcal{M}, X) := \textsl{arb}\Bigl(\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
@@ -1493,89 +1813,89 @@ $\ds\textsl{goto}(\mathcal{M}, X) := \textsl{arb}\Bigl(\Bigl\{ q \in \frak{Q} \m
 $
 \\[0.2cm]
 setzen.  Die hier verwendete Funktion $\textsl{arb}()$ dient dazu, ein beliebiges Element aus einer Menge
-zu extrahieren.  Da die Menge, aus der hier das Element extrahiert wird, genau ein Element enth\"alt, ist
+zu extrahieren.  Da die Menge, aus der hier das Element extrahiert wird, genau ein Element enthält, ist
 $\textsl{goto}(\mathcal{M}, x)$ wohldefiniert.
-Die Berechnung des Ausdrucks $\textsl{action}(\mathcal{M}, t)$ \"andert sich gegen\"uber der Berechnung f\"ur
+Die Berechnung des Ausdrucks $\textsl{action}(\mathcal{M}, t)$ ändert sich gegenüber der Berechnung für
 einen LR-Parser nicht. 
 
 \section{Vergleich von SLR-, LR- und LALR-Parsern}
 Wir wollen nun die verschiedenen Methoden, mit denen wir in diesem Kapitel
 Shift-Reduce-Parser konstruiert haben, vergleichen.  Wir nennen eine Sprache $\mathcal{L}$
-eine \emph{SLR-Sprache}, wenn $\mathcal{L}$ von einem SLR-Parser erkannt werden kann.
-Die Begriffe \emph{kanonische LR-Sprache} und \emph{LALR-Sprache} werden analog definiert.
+eine \blue{SLR-Sprache}, wenn $\mathcal{L}$ von einem SLR-Parser erkannt werden kann.
+Die Begriffe \blue{kanonische LR-Sprache} und \blue{LALR-Sprache} werden analog definiert.
  Zwischen diesen Sprachen bestehen die folgende Beziehungen:
 \\[0.2cm]
 \hspace*{1.3cm}
-\emph{SLR-Sprache} $\subsetneq$ \emph{LALR-Sprache} $\subsetneq$ \emph{kanonische LR-Sprache} 
+\blue{SLR-Sprache} $\subsetneq$ \blue{LALR-Sprache} $\subsetneq$ \blue{kanonische LR-Sprache} 
 \hspace*{\fill} $(\star)$
 \\[0.2cm]
 Diese Inklusionen sind leicht zu verstehen:  Bei der Definition der LR-Parser hatten wir
-zu den markierten Regeln  Mengen von Folge-Token hinzugef\"ugt.  Dadurch war
-es m\"oglich, in bestimmten F\"allen Shift-Reduce- und Reduce-Reduce-Konflikte zu vermeiden.
-Da die Zustands-Mengen der kanonischen LR-Parser unter Umst\"anden sehr gro{\ss} werden k\"onnen,
+zu den markierten Regeln  Mengen von Folge-Token hinzugefügt.  Dadurch war
+es möglich, in bestimmten Fällen Shift-Reduce- und Reduce-Reduce-Konflikte zu vermeiden.
+Da die Zustands-Mengen der kanonischen LR-Parser unter Umständen sehr groß werden können,
 hatten wir dann wieder solche Mengen von erweiterten markierten Regeln zusammengefasst,
-f\"ur die die Menge der Folge-Token identisch war.  So hatten wir die LALR-Parser
-erhalten.  Durch die Zusammenfassung von Regel-Menge k\"onnen wir
-uns allerdings in bestimmten F\"allen Reduce-Reduce-Konflikte einhandeln, so dass die 
+für die die Menge der Folge-Token identisch war.  So hatten wir die LALR-Parser
+erhalten.  Durch die Zusammenfassung von Regel-Menge können wir
+uns allerdings in bestimmten Fällen Reduce-Reduce-Konflikte einhandeln, so dass die 
 Menge der LALR-Sprachen eine Untermenge der kanonischen LR-Sprachen ist.
 
 Wir werden in den folgenden Unterabschnitten zeigen, dass die Inklusionen in $(\star)$ echt sind.  
 
-\subsection{\emph{SLR-Sprache} $\subsetneq$ \emph{LALR-Sprache}}
-Die Zust\"ande eines LALR-Parsers enthalten gegen\"uber den Zust\"anden eines SLR-Parsers noch
-Mengen von Folge-Token.  Damit sind LALR-Parser mindestens genauso m\"achtig wie SLR-Parser.
-Wir zeigen nun, dass LALR-Parser tats\"achlich m\"achtiger als SLR-Parser sind.  Um diese
-Behauptung zu belegen, pr\"asentieren wir eine Grammatik, f\"ur die es zwar einen LALR-Parser,
+\subsection{\blue{SLR-Sprache} $\subsetneq$ \blue{LALR-Sprache}}
+Die Zustände eines LALR-Parsers enthalten gegenüber den Zuständen eines SLR-Parsers noch
+Mengen von Folge-Token.  Damit sind LALR-Parser mindestens genauso mächtig wie SLR-Parser.
+Wir zeigen nun, dass LALR-Parser tatsächlich mächtiger als SLR-Parser sind.  Um diese
+Behauptung zu belegen, präsentieren wir eine Grammatik, für die es zwar einen LALR-Parser,
 aber keinen SLR-Parser gibt.  Wir hatten auf Seite \pageref{fig:reduce-reduce-conflict.grammar}
 gesehen, dass die Grammatik
 \\[0.2cm]
 \hspace*{1.3cm}
-$s \;\rightarrow\; a \quoted{x} a \quoted{y} \mid b \quoted{y} b \quoted{x}$, \quad
+$s \;\rightarrow\; a \aquoted{x} a \aquoted{y} \mid b \aquoted{y} b \aquoted{x}$, \quad
 $a \;\rightarrow\;\varepsilon$, \quad
 $b \;\rightarrow\; \varepsilon$
 \\[0.2cm]
-keine SLR-Grammatik ist.  Sp\"ater hatten wir gesehen, dass diese Grammatik von einem
+keine SLR-Grammatik ist.  Später hatten wir gesehen, dass diese Grammatik von einem
 kanonischen LR-Parser geparst werden kann.  Wir zeigen nun, dass diese Grammatik auch von
-einem LALR-Parser geparst werden kann.  Dazu berechnen wir die Menge der LALR-Zust\"ande.
-Dazu ist zun\"achst die Menge der kanonischen LR-Zust\"ande zu berechnen.  Diese Berechnung
-hatten wir bereits fr\"uher durchgef\"uhrt und dabei die folgenden Zust\"ande erhalten:
+einem LALR-Parser geparst werden kann.  Dazu berechnen wir die Menge der LALR-Zustände.
+Dazu ist zunächst die Menge der kanonischen LR-Zustände zu berechnen.  Diese Berechnung
+hatten wir bereits früher durchgeführt und dabei die folgenden Zustände erhalten:
 \begin{enumerate}
 \item $s_0  = \bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36},
-                     s \rightarrow \bullet\, a \squoted{x} a \squoted{y}:\symbol{36},
-                     s \rightarrow \bullet\, b \squoted{y} b \squoted{x}:\symbol{36},
-                     a \rightarrow \bullet\,: \squoted{x},
-                     b \rightarrow \bullet\,: \squoted{y}
+                     s \rightarrow \bullet\, a \saquoted{x} a \saquoted{y}:\symbol{36},
+                     s \rightarrow \bullet\, b \saquoted{y} b \saquoted{x}:\symbol{36},
+                     a \rightarrow \bullet\,: \saquoted{x},
+                     b \rightarrow \bullet\,: \saquoted{y}
               \bigr\}
       $,
-\item $s_1 = \bigl\{ s \rightarrow a \bullet \squoted{x} a \squoted{y}:\symbol{36} \bigr\}$,
+\item $s_1 = \bigl\{ s \rightarrow a \bullet \saquoted{x} a \saquoted{y}:\symbol{36} \bigr\}$,
 \item $s_2 = \bigl\{ \widehat{s} \rightarrow s \bullet:\symbol{36} \bigr\}$,
-\item $s_3 = \bigl\{ s \rightarrow b \bullet \squoted{y} b \squoted{x}: \symbol{36} \bigr\}$,
-\item $s_4 = \bigl\{ s \rightarrow b \squoted{y} \bullet b \squoted{x}: \symbol{36},
-                     b \rightarrow \bullet\,: \squoted{x}
+\item $s_3 = \bigl\{ s \rightarrow b \bullet \saquoted{y} b \saquoted{x}: \symbol{36} \bigr\}$,
+\item $s_4 = \bigl\{ s \rightarrow b \saquoted{y} \bullet b \saquoted{x}: \symbol{36},
+                     b \rightarrow \bullet\,: \saquoted{x}
              \bigr\}
       $,
-\item $s_5 = \bigl\{ s \rightarrow b \squoted{y} b \bullet \squoted{x}: \symbol{36} \bigr\}$,
-\item $s_6 = \bigl\{ s \rightarrow b \squoted{y} b \squoted{x} \bullet: \symbol{36} \bigr\}$,
-\item $s_7 = \bigl\{ s \rightarrow a \squoted{x} \bullet a \squoted{y}:\symbol{36},
-                     a \rightarrow \bullet\,: \squoted{y}
+\item $s_5 = \bigl\{ s \rightarrow b \saquoted{y} b \bullet \saquoted{x}: \symbol{36} \bigr\}$,
+\item $s_6 = \bigl\{ s \rightarrow b \saquoted{y} b \saquoted{x} \bullet: \symbol{36} \bigr\}$,
+\item $s_7 = \bigl\{ s \rightarrow a \saquoted{x} \bullet a \saquoted{y}:\symbol{36},
+                     a \rightarrow \bullet\,: \saquoted{y}
               \bigr\}
       $,
-\item $s_8 = \bigl\{ s \rightarrow a \squoted{x} a \bullet \squoted{y}:\symbol{36} \bigr\}$,
-\item $s_9 = \bigl\{ s \rightarrow a \squoted{x} a \squoted{y} \bullet :\symbol{36} \bigr\}$.
+\item $s_8 = \bigl\{ s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36} \bigr\}$,
+\item $s_9 = \bigl\{ s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36} \bigr\}$.
 \end{enumerate}
-Wir stellen fest, dass die Kerne aller hier aufgelisteten Zust\"ande verschieden sind.
-Damit stimmt bei dieser Grammatik die Menge der Zust\"ande des LALR-Parser mit der Menge der
-Zust\"ande des kanonischen LR-Parsers \"uberein.  Daraus folgt, dass es auch bei
-den LALR-Zust\"anden keine Konflikte gibt, denn beim \"Ubergang von kanonischen LR-Parsern zu
-LALR-Parsern haben wir lediglich Zust\"ande mit gleichem Kern zusammengefasst, die
-Definition der Funktionen $\textsl{goto}()$ und $\textsl{action}()$ blieb unver\"andert.
+Wir stellen fest, dass die Kerne aller hier aufgelisteten Zustände verschieden sind.
+Damit stimmt bei dieser Grammatik die Menge der Zustände des LALR-Parser mit der Menge der
+Zustände des kanonischen LR-Parsers überein.  Daraus folgt, dass es auch bei
+den LALR-Zuständen keine Konflikte gibt, denn beim übergang von kanonischen LR-Parsern zu
+LALR-Parsern haben wir lediglich Zustände mit gleichem Kern zusammengefasst, die
+Definition der Funktionen $\textsl{goto}()$ und $\textsl{action}()$ blieb unverändert.
 
-\subsection{\emph{LALR-Sprache} $\subsetneq$ \emph{kanonische LR-Sprache}}
-Wir hatten LALR-Parser dadurch definiert, dass wir verschiedene Zust\"ande eines kanonischen LR-Parsers
-zusammengefasst haben.  Damit ist klar, dass kanonische LR-Parser mindestens so m\"achtig
-sind wie LALR-Parser.  Um zu zeigen, dass kanonische LR-Parser tats\"achlich m\"achtiger sind
-als LALR-Parser, ben\"otigen wir eine Grammatik, f\"ur die sich zwar ein kanonischer LR-Parser,
-aber kein LALR-Parser erzeugen l\"asst.  Abbildung \ref{fig:lr-but-notlalr.g} zeigt eine
+\subsection{\blue{LALR-Sprache} $\subsetneq$ \blue{kanonische LR-Sprache}}
+Wir hatten LALR-Parser dadurch definiert, dass wir verschiedene Zustände eines kanonischen LR-Parsers
+zusammengefasst haben.  Damit ist klar, dass kanonische LR-Parser mindestens so mächtig
+sind wie LALR-Parser.  Um zu zeigen, dass kanonische LR-Parser tatsächlich mächtiger sind
+als LALR-Parser, benötigen wir eine Grammatik, für die sich zwar ein kanonischer LR-Parser,
+aber kein LALR-Parser erzeugen lässt.  Abbildung \ref{fig:lr-but-notlalr.g} zeigt eine
 solche Grammatik, die ich dem Drachenbuch entnommen habe.
 
 \begin{figure}[htbp]
@@ -1586,12 +1906,12 @@ solche Grammatik, die ich dem Drachenbuch entnommen habe.
     \vspace*{-0.3cm}
 
   \begin{eqnarray*}
-  s  & \rightarrow & \quoted{v} a \quoted{y} \\
-     & \mid        & \quoted{w} b \quoted{y} \\
-     & \mid        & \quoted{v} b \quoted{z} \\
-     & \mid        & \quoted{w} a \quoted{z} \\[0.1cm]
-  a  & \rightarrow & \quoted{x}              \\[0.1cm]
-  b  & \rightarrow & \quoted{x}              
+  s  & \rightarrow & \aquoted{v} a \aquoted{y} \\
+     & \mid        & \aquoted{w} b \aquoted{y} \\
+     & \mid        & \aquoted{v} b \aquoted{z} \\
+     & \mid        & \aquoted{w} a \aquoted{z} \\[0.1cm]
+  a  & \rightarrow & \aquoted{x}              \\[0.1cm]
+  b  & \rightarrow & \aquoted{x}              
   \end{eqnarray*}
   \vspace*{-0.5cm}
 
@@ -1603,97 +1923,97 @@ solche Grammatik, die ich dem Drachenbuch entnommen habe.
   \label{fig:lr-but-notlalr.g}
 \end{figure}
 
-Wir berechnen zun\"achst die Menge der Zust\"ande eines kanonischen LR-Parsers f\"ur diese
+Wir berechnen zunächst die Menge der Zustände eines kanonischen LR-Parsers für diese
 Grammatik.  Wir erhalten dabei die folgende Mengen von erweiterten markierten Regeln:
 \begin{enumerate}
 \item $s_0 = \textsl{closure}(\widehat{s} \rightarrow \bullet\, \;s: \symbol{36}) =
        \{
        \begin{array}[t]{lcl}
          \widehat{s} & \rightarrow & \bullet \;s: \symbol{36},                \\
-         s           & \rightarrow & \bullet \squoted{v} a \squoted{y}: \symbol{36}, \\
-         s           & \rightarrow & \bullet \squoted{v} b \squoted{z}: \symbol{36}, \\
-         s           & \rightarrow & \bullet \squoted{w} a \squoted{z}: \symbol{36}, \\
-         s           & \rightarrow & \bullet \squoted{w} b \squoted{y}: \symbol{36}\;\},
+         s           & \rightarrow & \bullet \saquoted{v} a \saquoted{y}: \symbol{36}, \\
+         s           & \rightarrow & \bullet \saquoted{v} b \saquoted{z}: \symbol{36}, \\
+         s           & \rightarrow & \bullet \saquoted{w} a \saquoted{z}: \symbol{36}, \\
+         s           & \rightarrow & \bullet \saquoted{w} b \saquoted{y}: \symbol{36}\;\},
         \end{array}
        $
 \item $s_1 = \textsl{goto}(s_0, s) =\{ \widehat{s} \rightarrow s \bullet: \symbol{36} \}$
-\item $s_2 = \textsl{goto}(s_0, \quoted{v}) = \{ 
+\item $s_2 = \textsl{goto}(s_0, \aquoted{v}) = \{ 
        \begin{array}[t]{lcl}
-        s & \rightarrow & \squoted{v} \bullet b \squoted{z}: \symbol{36}, \\
-        s & \rightarrow & \squoted{v} \bullet a \squoted{y}: \symbol{36}, \\
-        a & \rightarrow & \bullet \squoted{x}: \squoted{y}, \\
-        b & \rightarrow & \bullet \squoted{x}: \squoted{z}\; \},
+        s & \rightarrow & \saquoted{v} \bullet b \saquoted{z}: \symbol{36}, \\
+        s & \rightarrow & \saquoted{v} \bullet a \saquoted{y}: \symbol{36}, \\
+        a & \rightarrow & \bullet \saquoted{x}: \saquoted{y}, \\
+        b & \rightarrow & \bullet \saquoted{x}: \saquoted{z}\; \},
        \end{array}
       $
-\item $s_3 = \textsl{goto}(s_0, \quoted{w}) = \{ 
+\item $s_3 = \textsl{goto}(s_0, \aquoted{w}) = \{ 
        \begin{array}[t]{lcl}
-       s & \rightarrow & \squoted{w} \bullet a \squoted{z}: \symbol{36},  \\
-       s & \rightarrow & \squoted{w} \bullet b \squoted{y}: \symbol{36},  \\
-       a & \rightarrow & \bullet \squoted{x}: \squoted{z},                \\
-       b & \rightarrow & \bullet \squoted{x}: \squoted{y}\; \},
+       s & \rightarrow & \saquoted{w} \bullet a \saquoted{z}: \symbol{36},  \\
+       s & \rightarrow & \saquoted{w} \bullet b \saquoted{y}: \symbol{36},  \\
+       a & \rightarrow & \bullet \saquoted{x}: \saquoted{z},                \\
+       b & \rightarrow & \bullet \saquoted{x}: \saquoted{y}\; \},
        \end{array}
       $
-\item $s_4 = \textsl{goto}(s_2, \quoted{x}) =
-             \{ a \rightarrow \squoted{x} \bullet: \squoted{y},\;
-                b \rightarrow \squoted{x} \bullet: \squoted{z} \}$,
-\item $s_5 = \textsl{goto}(s_3, \quoted{x}) =
-             \{ a \rightarrow \squoted{x} \bullet: \squoted{z},\,
-                b \rightarrow \squoted{x} \bullet: \squoted{y} \}$,
+\item $s_4 = \textsl{goto}(s_2, \aquoted{x}) =
+             \{ a \rightarrow \saquoted{x} \bullet: \saquoted{y},\;
+                b \rightarrow \saquoted{x} \bullet: \saquoted{z} \}$,
+\item $s_5 = \textsl{goto}(s_3, \aquoted{x}) =
+             \{ a \rightarrow \saquoted{x} \bullet: \saquoted{z},\,
+                b \rightarrow \saquoted{x} \bullet: \saquoted{y} \}$,
 \item $s_6 = \textsl{goto}(s_2, a) =
-             \{ s \rightarrow \squoted{v} a \bullet \squoted{y}: \symbol{36} \}$,
-\item $s_7 = \textsl{goto}(s_6, \quoted{y}) =
-             \{ s \rightarrow \squoted{v} a \squoted{y} \bullet: \symbol{36} \}$,
+             \{ s \rightarrow \saquoted{v} a \bullet \saquoted{y}: \symbol{36} \}$,
+\item $s_7 = \textsl{goto}(s_6, \aquoted{y}) =
+             \{ s \rightarrow \saquoted{v} a \saquoted{y} \bullet: \symbol{36} \}$,
 \item $s_8 = \textsl{goto}(s_2, b) =
-             \{ s \rightarrow \squoted{v} b \bullet \squoted{z}: \symbol{36} \}$,
-\item $s_9 = \textsl{goto}(s_8, \quoted{z}) =
-             \{ s \rightarrow \squoted{v} b \squoted{z} \bullet: \symbol{36} \}$,
+             \{ s \rightarrow \saquoted{v} b \bullet \saquoted{z}: \symbol{36} \}$,
+\item $s_9 = \textsl{goto}(s_8, \aquoted{z}) =
+             \{ s \rightarrow \saquoted{v} b \saquoted{z} \bullet: \symbol{36} \}$,
 \item $s_{10} = \textsl{goto}(s_3, a) =
-                \{ s \rightarrow \squoted{w} a \bullet \squoted{z}: \symbol{36} \}$,
-\item $s_{11} = \textsl{goto}(s_{10}, \quoted{z}) =
-                \{ s \rightarrow \squoted{w} a \squoted{z} \bullet: \symbol{36} \}$,
+                \{ s \rightarrow \saquoted{w} a \bullet \saquoted{z}: \symbol{36} \}$,
+\item $s_{11} = \textsl{goto}(s_{10}, \aquoted{z}) =
+                \{ s \rightarrow \saquoted{w} a \saquoted{z} \bullet: \symbol{36} \}$,
 \item $s_{12} = \textsl{goto}(s_3, b) =
-                \{ s \rightarrow \squoted{w} b \bullet \squoted{y}: \symbol{36} \}$,
-\item $s_{13} = \textsl{goto}(s_{12}, \quoted{y}) =
-                \{ s \rightarrow \squoted{w} b \squoted{y} \bullet: \symbol{36} \}$.
+                \{ s \rightarrow \saquoted{w} b \bullet \saquoted{y}: \symbol{36} \}$,
+\item $s_{13} = \textsl{goto}(s_{12}, \aquoted{y}) =
+                \{ s \rightarrow \saquoted{w} b \saquoted{y} \bullet: \symbol{36} \}$.
 \end{enumerate}
-Die einzigen Zust\"ande, bei denen es Konflikte geben k\"onnte, sind die Mengen $s_4$ und
+Die einzigen Zustände, bei denen es Konflikte geben könnte, sind die Mengen $s_4$ und
 $s_5$, denn hier sind prinzipiell sowohl Reduktionen mit der Regel
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \squoted{x}$ \quad als auch mit \quad
-$b \rightarrow \squoted{x}$
+$a \rightarrow \saquoted{x}$ \quad als auch mit \quad
+$b \rightarrow \saquoted{x}$
 \\[0.2cm]
-m\"oglich.  Da allerdings die Mengen der Folge-Token einen leeren Durchschnitt haben, gibt
-es tats\"achlich keinen Konflikt und die Grammatik ist eine kanonische LR-Grammatik.
+möglich.  Da allerdings die Mengen der Folge-Token einen leeren Durchschnitt haben, gibt
+es tatsächlich keinen Konflikt und die Grammatik ist eine kanonische LR-Grammatik.
 
-Wir berechnen als n\"achstes die LALR-Zust\"ande der oben angegebenen Grammatik.  Die einzigen
-Zust\"ande, die einen gemeinsamen Kern haben, sind die beiden Zust\"ande $s_4$ und $s_5$, denn
+Wir berechnen als nächstes die LALR-Zustände der oben angegebenen Grammatik.  Die einzigen
+Zustände, die einen gemeinsamen Kern haben, sind die beiden Zustände $s_4$ und $s_5$, denn
 es gilt
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{core}(s_4) = \{ a \rightarrow \squoted{x} \bullet,\;
-                b \rightarrow \squoted{x} \bullet \} = \textsl{core}(s_5)$.
+$\textsl{core}(s_4) = \{ a \rightarrow \saquoted{x} \bullet,\;
+                b \rightarrow \saquoted{x} \bullet \} = \textsl{core}(s_5)$.
 \\[0.2cm]
-Bei der Berechnung der LALR-Zust\"ande werden diese beiden Zust\"ande zu einem Zustand
+Bei der Berechnung der LALR-Zustände werden diese beiden Zustände zu einem Zustand
 $s_{\{4,5\}}$ zusammengefasst.  Dieser neue Zustand hat die Form
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_{\{4,5\}} = \bigl\{ A \rightarrow \squoted{x} \bullet: \{\squoted{y}, \squoted{z} \},\;
-                       B \rightarrow \squoted{x} \bullet: \{\squoted{y}, \squoted{z} \} \bigr\}$.
+$s_{\{4,5\}} = \bigl\{ A \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saquoted{z} \},\;
+                       B \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saquoted{z} \} \bigr\}$.
 \\[0.2cm]
 Hier gibt es offensichtlich  einen Reduce-Reduce-Konflikt, denn einerseits haben wir
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_{\{4,5\}}, \squoted{y}) = \pair(\textsl{reduce}, A \rightarrow \squoted{x})$,
+$\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\textsl{reduce}, A \rightarrow \saquoted{x})$,
 \\[0.2cm]
 andererseits gilt aber auch
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_{\{4,5\}}, \squoted{y}) = \pair(\textsl{reduce}, B \rightarrow \squoted{x})$.
+$\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\textsl{reduce}, B \rightarrow \saquoted{x})$.
 
 \exercise
 Es sei $G = \langle V, T, R, s \rangle$ eine LR-Grammatik und $\mathcal{N}$ sei die Menge der
-LALR-Zust\"ande der Grammatik.  \"Uberlegen Sie, warum es in der Menge $\mathcal{N}$ keine
+LALR-Zustände der Grammatik.  überlegen Sie, warum es in der Menge $\mathcal{N}$ keine
 Shift-Reduce-Konflikte geben kann.  \eox
 
 
@@ -1703,28 +2023,28 @@ invention,  the space savings of LALR parsing in comparison to LR parsing were c
 
 
 \subsection{Bewertung der verschiedenen Methoden}
-F\"ur die Praxis sind SLR-Parser nicht ausreichend, denn es gibt eine Reihe praktisch
-relevanter Sprach-Konstrukte, f\"ur die sich kein SLR-Parser erzeugen l\"asst.  Kanonische
-LR-Parser sind wesentlich m\"achtiger, ben\"otigen allerdings oft deutlich mehr Zust\"ande. 
+Für die Praxis sind SLR-Parser nicht ausreichend, denn es gibt eine Reihe praktisch
+relevanter Sprach-Konstrukte, für die sich kein SLR-Parser erzeugen lässt.  Kanonische
+LR-Parser sind wesentlich mächtiger, benötigen allerdings oft deutlich mehr Zustände. 
 Hier stellen LALR-Parser einen Kompromiss dar:  Einerseits sind LALR-Sprachen fast so
 ausdrucksstark  wie kanonische LR-Sprachen, andererseits liegt der Speicherbedarf von
-LALR-Parsern in der gleichen Gr\"o{\ss}enordnung wie der Speicherbedarf von SLR-Parsern.  Beispielsweise
-hat die SLR-Parse-Tabelle f\"ur die Sprache \texttt{C} insgesamt 349 Zust\"ande, die entsprechende
-LR-Parse-Tabelle kommt auf 1572 Zust\"ande, w\"ahrend der LALR-Parser mit 350 Zust\"anden auskommt und damit nur
+LALR-Parsern in der gleichen Größenordnung wie der Speicherbedarf von SLR-Parsern.  Beispielsweise
+hat die SLR-Parse-Tabelle für die Sprache \texttt{C} insgesamt 349 Zustände, die entsprechende
+LR-Parse-Tabelle kommt auf 1572 Zustände, während der LALR-Parser mit 350 Zuständen auskommt und damit nur
 einen Zustand mehr als der SLR-Parser hat.  
-In den heute in der Regel zur Verf\"ugung stehenden Hauptspeichern lassen sich allerdings
-auch kanonische LR-Parser meist m\"uhelos unterbringen, so dass es eigentlich keinen zwingenden
+In den heute in der Regel zur Verfügung stehenden Hauptspeichern lassen sich allerdings
+auch kanonische LR-Parser meist mühelos unterbringen, so dass es eigentlich keinen zwingenden
 Grund mehr gibt, statt eines LR-Parsers einen LALR-Parser einzusetzen.  
 
 Andererseits wird niemand einen LALR-Parser oder einen kanonischen LR-Parser von Hand
-programmieren wollen.  Stattdessen werden Sie sp\"ater einen Parser-Generator wie \textsl{Bison}
+programmieren wollen.  Stattdessen werden Sie später einen Parser-Generator wie \textsl{Bison}
 oder \textsl{JavaCup} einsetzen, der Ihnen einen  Parser generiert.  Das Werkzeug Bison
-ist ein Parser-Generator f\"ur \texttt{C}, \texttt{C++} und bietet auch eine, allerdings leider noch
-experimentelle, Unterst\"utzung f\"ur \textsl{Java},
-w\"ahrend \textsl{JavaCup} auf die Sprache \textsl{Java} beschr\"ankt ist.  Falls Sie
+ist ein Parser-Generator für \texttt{C}, \texttt{C++} und bietet auch eine, allerdings leider noch
+experimentelle, Unterstützung für \textsl{Java},
+während \textsl{JavaCup} auf die Sprache \textsl{Java} beschränkt ist.  Falls Sie
 \textsl{JavaCup} benutzen, haben Sie keine Wahl, denn dieses Werkzeug erzeugt immer einen
 LALR-Parser.  Bei \href{http://www.gnu.org/software/bison/manual/bison.html}{\textsl{Bison}} ist es
-ab der Version 3.0  auch m\"oglich, einen LR-Parser zu erzeugen.
+ab der Version 3.0  auch möglich, einen LR-Parser zu erzeugen.
 
 
 
