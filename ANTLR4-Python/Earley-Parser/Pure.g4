@@ -2,7 +2,7 @@ grammar Grammar;
 
 start: grmrl+;
 
-grmrl: VARIABLE ':' item+ ;
+grmrl: VARIABLE ':' item* ;
  
 item : VARIABLE 
      | TOKEN  
