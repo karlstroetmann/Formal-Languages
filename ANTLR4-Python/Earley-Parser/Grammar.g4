@@ -8,7 +8,7 @@ start returns [g]
 
 grmrl returns [r]
     : {body = []}
-      v=VARIABLE ':' (i=item {body.append($i.atom)})+ ';' 
+      v=VARIABLE ':' (i=item {body.append($i.atom)})* ';' 
       {$r = ($v.text,) + tuple(body)}
     ;
  
