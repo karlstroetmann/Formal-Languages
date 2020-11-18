@@ -2,16 +2,22 @@ grammar Grammar;
 
 start returns [g]
     : {Rules = []}
-      (r=grmrl {Rules.append($r.r)})+
+      (grmrl {Rules += $grmrl.rl})+
       {$g = Rules}
     ;
 
-grmrl returns [r]
-    : {Body = []}
-      v=VARIABLE ':' (i=item {Body.append($i.atom)})+ ';' 
-      {$r = ($v.text,) + tuple(Body)}
+grmrl returns [rl]
+    : {RuleList = []}
+      v=VARIABLE ':' b1=body {RuleList.append(($v.text,) + $b1.il)}
+      ('|' b2=body {RuleList.append(($v.text,) + $b2.il)})* ';' 
+      {$rl = RuleList}
     ;
- 
+
+body returns [il]
+    : {Body = []} (i=item {Body.append($i.atom)})*
+      {$il = tuple(Body)}
+    ;
+
 item returns [atom]
     : v=VARIABLE {$atom = $v.text}
     | t=TOKEN    {$atom = $t.text}
