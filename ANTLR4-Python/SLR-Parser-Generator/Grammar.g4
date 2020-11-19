@@ -24,8 +24,8 @@ item returns [atom]
     | l=LITERAL  {$atom = $l.text}
     ;
 
-VARIABLE: [a-z]+;
-TOKEN   : [A-Z]+;
+VARIABLE: [a-z][a-z_]*;
+TOKEN   : [A-Z][A-Z_]*;
 LITERAL : '\'' ~('\'')+ '\'';
         
 WS      : [ \t\n\r] -> skip ;
