@@ -25,17 +25,17 @@ statement_list
     | statement_list statement
     ;
 
-statement: ID ':=' expr ';'
-         | ID ':=' 'read' '(' ')' ';'
-         | 'print' '(' expr ')' ';'
-         | 'if'    '(' boolExpr ')' '{' statement_list '}'
-         | 'while' '(' boolExpr ')' '{' statement_list '}'
-         | 'for' '(' ID ':=' expr ';' boolExpr ';' ID ':=' expr ')' '{' statement_list '}'
-         | 'return' expr ';'
-         ;
+statement
+    : expr ';'
+    | assignment ';'    
+    | 'if'    '(' bool_expr ')' '{' statement_list '}'
+    | 'while' '(' bool_expr ')' '{' statement_list '}'
+    | 'for' '(' assignment ';' bool_expr ';' assignment ')' '{' statement_list '}'
+    | 'return' expr ';'
+    ;
 
-assignment 
-    : ID ':=' expr 
+assignment
+    : ID ':=' expr
     ;
 
 bool_expr 
@@ -50,10 +50,10 @@ conjunction
 
 negation
     : '¬' negation
-    | boool_atom     
+    | bool_atom     
     ;
 
-boool_atom 
+bool_atom 
     : '(' bool_expr ')' 
     | expr '=' expr
     | expr '≠' expr
@@ -77,23 +77,17 @@ product
 factor 
     : '(' expr ')'      
     | NUMBER 
-    | DOUBLE
-    | STRING    
     | ID    
     | ID '(' expr_list ')'        
     ;
 
 expr_list
     :
-    | ID
-    | ID ',' ne_expr_list
+    | expr
+    | expr ',' ne_expr_list
     ;
 
 ne_expr_list
-    : ID
-    | ID ',' ne_expr_list
+    : expr
+    | expr ',' ne_expr_list
     ;
-
-
-
-
