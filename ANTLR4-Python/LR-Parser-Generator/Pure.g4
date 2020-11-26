@@ -16,3 +16,4 @@ TOKEN   : [A-Z]+;
 LITERAL : '\'' ~('\'')+ '\'';
         
 WS      : [ \t\n\r] -> skip ;
+COMMENT : '//' ~('\n')* -> skip ;
