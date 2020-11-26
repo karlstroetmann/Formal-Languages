@@ -89,7 +89,7 @@ We discuss this program line by line.
       constructor for the class \texttt{Hello}.  As this code is copied verbatim to the beginning 
       of every class file, we will not discuss it further. 
 \item Line 10 -- 17 defines the method \texttt{main} that does the actual work.
-  \begin{enumerate}
+  \begin{enumerate}[(a)]
   \item Line 10 uses the directive ``\texttt{.method}'' to declare the name of the method and its
         signature.  The string 
         \\[0.2cm]
@@ -107,7 +107,7 @@ We discuss this program line by line.
         \item Finally, the character ``\texttt{V}'' specifies that the return type of the method \texttt{main}
               is ``\texttt{void}''.
        \end{enumerate}
-  \item Line 11 uses the directive ``\texttt{.limit}'' to specify the number of local variables 
+  \item Line 11 uses the directive ``\texttt{.limit locals}'' to specify the number of local variables 
         used by the method \texttt{main}.  In this case, there is just one local variable.  This variable
         corresponds to the parameter of the method main.  The assembler file shown in Figure
         \ref{fig:Hello.jas} on page \pageref{fig:Hello.jas} corresponds to the \textsl{Java} code
@@ -146,7 +146,12 @@ We discuss this program line by line.
           In reality, all real processors make use of registers.  However, it is possible 
           to simulate a stack machine using a real processor and that is what is done in the Java
           virtual machine.}.
-        Line 12 uses the directive ``\texttt{.stack}'' to specify the the maximal height of the
+        Line 12 uses the directive
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        ``\texttt{.limit stack}''
+        \\[0.2cm]
+        to specify the the maximal height of the
         stack.  In this case, the stack is allowed to contain a maximum of two objects.  It is easy
         to see that we indeed do never place more than two objects onto the stack, since line
         13 pushes the object 
@@ -158,8 +163,8 @@ We discuss this program line by line.
         Then, line 14 pushes a reference to the string ``\texttt{Hello World}'' onto the stack.
         The other instructions to not push anything onto the stack.
   \item Line 15 calls the method \texttt{println}, which is a method of the class
-        ``\texttt{java.io.PrintStream}''.  It also specifies that \texttt{println} is used to print
-        a string.
+        ``\texttt{java.io.PrintStream}''.  It also specifies that \texttt{println} takes one argument of
+        type \texttt{java.lang.String} and returns nothing.  
   \item Line 16 returns from the method \texttt{main}.
   \item In line 17 the directive ``\texttt{.end}''  marks the end of the code corresponding to the method 
         \texttt{main}.
@@ -212,7 +217,7 @@ variables reside on the stack.  Any command takes its arguments from the top of 
 replaces these arguments with the result of the operation performed by the command.
 For example, if we want to add two values, then we first have to
 push both values onto the stack.  Next, performing the add operation will pop these values from the
-stack and then push their with their sum onto the stack.
+stack and then push their sum onto the stack.
 
 
 \section{Assembler Instructions}
@@ -225,22 +230,22 @@ is limited, we won't discuss these instructions.  Before we are able to discuss 
 instructions we have to discuss how the main memory is organized in the \textsc{Jvm}: In the
 \textsc{Jvm}, the memory is split into four parts: 
 \begin{enumerate}
-\item The \emph{program memory} contains the program code as a sequence of bytes.
-\item The operands of the different machine instructions are put onto the \emph{stack}.
+\item The \blue{program memory} contains the program code as a sequence of bytes.
+\item The operands of the different machine instructions are put onto the \blue{stack}.
       Furthermore, the stack contains the arguments and the local variables of a procedure.
       However, in the context of the \textsc{Jvm} the procedures are called \emph{methods} instead
       of procedures.
 
       The register \texttt{SP} points to the top of the stack.
       If a method is called, the arguments of the method are placed on the stack.  
-      The register \texttt{LV} (\emph{local variables}) points to the first argument of the current  
+      The register \texttt{LV} (\blue{local variables}) points to the first argument of the current  
       method.    On top of the arguments, the local variables of the method are put on the stack.
       Both the arguments and the local variables can be accessed via the register \texttt{LV}
       by specifying their offset from the first argument.
       We will discuss the register \texttt{LV} in more detail when we discuss the invocation of methods. 
-\item The \emph{heap} is used for dynamically allocated memory.  Newly created objects are
+\item The \blue{heap} is used for dynamically allocated memory.  Newly created objects are
       located in the heap.
-\item The \emph{constant pool} contains the definitions of constants and also the addresses of
+\item The \blue{constant pool} contains the definitions of constants and also the addresses of
       methods in program memory.
 \end{enumerate}
 In the following, we will be mostly concerned with the stack and the heap.
@@ -349,9 +354,9 @@ We proceed to discuss some of the assembler instructions.
       computes the remainder $a \,\texttt{\%}\, b$ of the division of $a$ by $b$ where $a$ and $b$ are
       integer values found on top of the stack.
 \item The instruction \squoted{\texttt{iand}}
-      computes the bitwise conjunction of the values on top of the stack.
+      computes the bitwise and of the values on top of the stack.
 \item The instruction \squoted{\texttt{ior}}
-      computes the bitwise disjunction of the integer values that are on top of the stack.
+      computes the bitwise or of the integer values that are on top of the stack.
 \item The instruction \squoted{\texttt{ixor}}
       computes the bitwise \href{http://en.wikipedia.org/wiki/Exclusive_or}{\emph{exclusive or}} of
       the integer values that are on top of the stack. 
@@ -685,7 +690,7 @@ We proceed to discuss some of the assembler instructions.
 In this subsection we discuss those commands that change the control flow.
 \begin{enumerate}
 \item The instruction \squoted{\texttt{goto} $l$}
-      jumps to the label $l$.  Here the label $l$ is a label name that has to be declared inside the
+      jumps to the \blue{label} $l$.  Here the label $l$ is a label name that has to be declared inside the
       method containing this \texttt{goto} command.  A label with name \textsl{target} is declared using the syntax
       \\[0.2cm]
       \hspace*{1.3cm}
