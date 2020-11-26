@@ -29,3 +29,4 @@ TOKEN   : [A-Z][A-Z_]*;
 LITERAL : '\'' ~('\'')+ '\'';
         
 WS      : [ \t\n\r] -> skip ;
+COMMENT : '//' ~('\n')* -> skip ;

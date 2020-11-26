@@ -1,3 +1,10 @@
+// This is the grammar for the programming language C.
+
+translation_unit
+	: external_declaration
+	| translation_unit external_declaration
+	;
+
 primary_expression
 	: IDENTIFIER
 	| CONSTANT
@@ -380,11 +387,6 @@ jump_statement
 	| 'break' ';'
 	| 'return' ';'
 	| 'return' expression ';'
-	;
-
-translation_unit
-	: external_declaration
-	| translation_unit external_declaration
 	;
 
 external_declaration
