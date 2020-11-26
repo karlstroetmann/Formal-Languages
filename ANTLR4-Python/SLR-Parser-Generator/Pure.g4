@@ -15,4 +15,5 @@ VARIABLE: [a-z][a-z_]*;
 TOKEN   : [A-Z][A_Z_]*;
 LITERAL : '\'' ~('\'')+ '\'';
         
-WS      : [ \t\n\r] -> skip ;
+WS      : [ \t\n\r]     -> skip ;
+COMMENT : '//' ~('\n')* -> skip ;
