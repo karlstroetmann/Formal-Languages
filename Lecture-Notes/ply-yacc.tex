@@ -404,8 +404,7 @@ For the grammar shown previously we could add the following \blue{operator prece
 \begin{verbatim}
     precedence = (
         ('left', '+', '-'),
-        ('left', '*', '/'),
-    )
+        ('left', '*', '/'),    )
 \end{verbatim}
 This declaration specifies that the operators ``\texttt{+}'' and ``\texttt{-}'' have a lower precedence than
 the operators  ``\texttt{*}'' and ``\texttt{/}''.  Furthermore, it specifies that all these operators associate
@@ -497,13 +496,13 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
 Next, we explain in detail how \textsc{Ply} uses operator precedence relations to resolve shift/reduce conflicts.
 \begin{enumerate}
 \item First, \textsc{Ply} assigns a precedence level to every grammar rule.  This precedence level is the
-      precedence level of the last operator symbol occurring in the grammar rule.  Most of the times, there is
-      operator would determine the precedence of the grammar rule. 
+      precedence level of the last operator symbol occurring in the grammar rule.  Most of the times, there is just
+      one operator that determines the precedence of the grammar rule. 
       In the grammar at hand the precedences of the rules would as shown in the table below. 
       \begin{center}
         \begin{tabular}[t]{|l|c|}
           \hline
-          Regel                          & Präzedenz  \\
+          rule                          & precedence  \\
           \hline
           \hline
           $\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{expr}$ & 1          \\
@@ -538,12 +537,12 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
       and the precedence of the rule $r_2$ is  $p(r_2)$.  Then there are five cases that depend
       on the relative values of $p(o)$ and $p(r_2)$ and on the associativity of the operator $o$.
       \begin{enumerate}[(a)]
-      \item $p(o) > p(c \rightarrow \gamma)$
+      \item $p(o) > p(c \rightarrow \gamma)$.
         
             In this case the precedence of the operator $o$ is higher than the precedence of the rule $r_2$.
             Therefore the operator $o$ is shifted:
-            \hspace*{1.3cm}
             \\[0.2cm]
+            \hspace*{1.3cm}
             $\textsl{action}(s,o) = \langle \texttt{shift}, \textsl{goto}(s,o) \rangle$.
             \\[0.2cm]
             To understand this rule we just have to watch what happens when we parse
@@ -579,9 +578,9 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             $
             \\[0.2cm]
             When the parser next sees the token ``\texttt{*}'', then it must not reduce the symbol stack using
-            the rule, because it has to multiply the numbers $2$ and $3$.  Therefore, the token
-            ``\texttt{*}'' has to be shifted.
-      \item $p(o) < p(c \rightarrow \gamma)$
+            the rule $\textsl{expr} \rightarrow \textsl{expr} \squoted{+} \textsl{expr}$, because it has to
+            multiply the numbers $2$ and $3$ first.  Therefore, the token ``\texttt{*}'' has to be shifted.
+      \item $p(o) < p(r_2)$.
             
             Now the precedence of the operator that occurs in the rule $r_2$ is higher than the precedence of
             the operator $o$.  Therefore the correct action is to reduce with the rule  $r_2$: 
@@ -589,7 +588,7 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             \hspace*{1.3cm}
             $\textsl{action}(s,o) = \langle \texttt{reduce}, r_2 \rangle$.
             \\[0.2cm]
-            To see that this makes sense we discuss parsing of the expression
+            To see that this makes sense we discuss the parsing of the expression
             \\[0.2cm]
             \hspace*{1.3cm}
             $\texttt{1*2+3}$
@@ -623,9 +622,13 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             $
             \\[0.2cm]
             When the parser now sees the operator  ``\texttt{+}'', it has to reduce the string
-            ``\texttt{1*2}'' using the rule $\textsl{expr} \rightarrow \textsl{expr} \squoted{*}
-            \textsl{expr}$, as it has to multiply the numbers $1$ and $2$.  
-      \item $p(o) = p(c \rightarrow \gamma)$ and the operator $o$ is left associative
+            ``\texttt{1*2}'' using the rule
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\textsl{expr} \rightarrow \textsl{expr} \squoted{*} \textsl{expr}$,
+            \\[0.2cm]
+            as it has to multiply the numbers $1$ and $2$.  
+      \item $p(o) = p(r_2)$ and the operator $o$ is left associative.
             
             Then we reduce the symbol stack with the rule $r_2$, we have 
             \\[0.2cm]
@@ -669,8 +672,7 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             the symbol stack using the rule 
             $\textsl{expr} \rightarrow \textsl{expr} \squoted{-} \textsl{expr}$ as it has to subtract $2$ from
             $1$.  If it would shift instead it would compute $1 - (2-3)$ instead of computing $(1-2)-3$.
-      \item $p(o) = p(c \rightarrow \gamma)$ and the operator $o$ associates to the right 
-            $c \rightarrow \gamma$
+      \item $p(o) = p(r_2)$ and the operator $o$ associates to the right.
             
             In this case the operator $o$ is shifted
             \\[0.2cm]
@@ -701,7 +703,7 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             \\[0.2cm]
             Here the token  \quoted{\texttt{\symbol{94}}} has to be shifted
             since we first have to compute the expression ``$3 \texttt{\symbol{94}} 4$''.
-      \item $p(o) = p(c \rightarrow \gamma)$ and the operator $o$ has been declared to be non-associative
+      \item $p(o) = p(r_2)$ and the operator $o$ has been declared to be non-associative.
             
             In this case we have a syntax error:
             \\[0.2cm]
@@ -720,15 +722,12 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             \\[0.2cm]
             %$
             Once the string ``\texttt{1 < 1}'' has been read and the next token is the operator ``\texttt{<}''
-            the parser recognizes that there is an error.
-
-            \remarkEng
-            It is important to note that \textsc{Ply} will resolve this shift/reduce conflict by putting an
-            error entry in the action table.
-      \item $p(o)$ is undefined or $p(c \rightarrow \gamma)$ is undefined
+            the parser recognizes that there is an error.  Therefore, \textsc{Ply} will resolve this
+            shift/reduce conflict by putting an error entry into the action table.
+      \item $p(o)$ is undefined or $p(r_2)$ is undefined.
 
             In this case there is a shift/reduce conflict and \textsc{Ply} prints a warning message when
-            generating the parser.  Nevertheless, the conflict is resolved in favour of shifting.
+            generating the parser.  The conflict is then resolved in favour of shifting.
       \end{enumerate}
 \end{enumerate}
 
