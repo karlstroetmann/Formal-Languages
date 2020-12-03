@@ -2,9 +2,9 @@
 Most\footnote{The programming language \texttt{C++} is a noteable exception.} modern programming languages can
 be parsed using an LALR-Parser.  As this lesson is based on the programming language \textsl{Python}, this
 chapter discusses how the parser generator \href{https://www.dabeaz.com/ply/}{\textsc{Ply}} can be used to
-generate a parser for any LALR grammar.  In Chapter \ref{chapter:ply-lex} we have already seen how \textsc{Ply}
-can be used to generate a scanner.  This chapter focuses on the parser-generating aspect of \textsc{Ply}. 
-If you haven't done so already, you can install \textsc{Ply} via \texttt{anaconda} as follows:
+generate a parser for any language that has an LALR grammar.  In Chapter \ref{chapter:ply-lex} we have already
+seen how \textsc{Ply} can be used to generate a scanner.  This chapter focuses on the parser-generating aspect
+of \textsc{Ply}.   If you haven't done so already, you can install \textsc{Ply} via \texttt{anaconda} as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{conda install -c anaconda ply}
@@ -245,7 +245,7 @@ grammar is implemented in \textsc{Ply}.  We discuss it line by line.
               ]{python3}
     def p_error(p):
         if p:
-            print(f'Syntax error at {p.value}.')
+            print(f'Syntax error at {p.value} in line {p.lexer.lineno}.')
         else:
             print('Syntax error at end of input.')
         
@@ -826,16 +826,13 @@ und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    a ::= b V
-       |  c W
-       ;
-    b ::= X U
-       ;
-    c ::= X U
-       ;
+    a : b 'V'
+      | c 'W'
+    b : 'X' 'U'
+    c : 'X' 'U'
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Eine zu \ref{fig:lr-conflict.g} äquivalente LR(1)-Grammatik.}
+\caption{Eine zu Abbildung \ref{fig:lr-conflict.g} äquivalente LR(1)-Grammatik.}
 \label{fig:lr-conflict-resolved.g}
 \end{figure}
 
@@ -863,17 +860,21 @@ ist das nächste Token hingegen der Buchstabe $\squoted{W}$, so nehmen wir stattd
 $c \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{W}$.
 \\[0.2cm]
 Abbildung
-\ref{fig:lr-conflict-resolved.g} zeigt die entsprechend modifizierte Grammatik
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LookAheadConflict/solved.cup}{\texttt{solved.cup}},
+\ref{fig:lr-conflict-resolved.g} zeigt die entsprechend modifizierte Grammatik, die Sie unter
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Ply/Look-Ahead-Solved.ipynb}{\texttt{github.com/karlstroetmann/Formal-Languages/tree/master/Ply/Look-Ahead-Solved.ipynb}}
+\\[0.2cm]
+im Netz finden.
 
-\subsection{Mysteriöse Reduce/Reduce-Konflikte}
-Wir sprechen dann von einem \emph{mysteriösen Reduce/Reduce-Konflikt}, wenn die gegebene Grammatik eine
-LR(1)-Grammatik ist, sich aber beim Übergang von den LR-Zuständen zu den LALR-Zuständen Reduce/Reduce-Konflikte
-ergeben.  Die in Abbildung \ref{fig:mysterious.cup} gezeigte Grammatik 
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/MysteriousConflict/mysterious.cup}{\texttt{mysterious.cup}}
-habe ich dem 
-\href{http://www.gnu.org/software/bison/manual/}{\textsl{Bison}-Handbuch} entnommen. 
 
+\subsection{Mysterious Reduce/Reduce Conflicts}
+A conflict is called a  \blue{mysterious reduce/reduce conflikt} if the conflict results from the merger of
+states that happens when we go from an LR parsing table to an LALR parsing table.  The grammar in Figure
+\ref{fig:Mysterious-Conflicts.ipynb} on page \pageref{fig:Mysterious-Conflicts.ipynb} is the same as the
+grammar shown in Figure \ref{fig:lr-but-notlalr.g} on page \pageref{fig:lr-but-notlalr.g} in the previous
+chapter.  Then we had seen that this grammar is an LR grammar, but not LALR grammar.  Let us see what happens
+if we use \textsc{Ply} to generate the states for this grammar.
 
 \begin{figure}[!ht]
 \centering
@@ -886,130 +887,35 @@ habe ich dem
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    terminal    ID, COMMA, COLON;
-    nonterminal def, param_spec, return_spec, type, name_list, name;
+    s : 'v' a 'y'
+      | 'w' b 'y'
+      | 'v' b 'z'
+      | 'w' a 'z'
+      
+    a : X
     
-    def   
-        ::= param_spec return_spec COMMA
-         ;
-    param_spec
-        ::= type
-         |  name_list COLON type
-         ;    
-    return_spec
-        ::= type
-         |  name COLON type
-         ;
-    type  
-        ::= ID
-         ;    
-    name
-        ::= ID
-         ;
-    name_list
-        ::= name
-         |  name COMMA name_list
-         ;
+    b : X
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Eine \textsc{Cup}-Grammatik mit einem mysteriösen Reduce/Reduce-Konflikt.}
-\label{fig:mysterious.cup}
+\caption{A grammar that generates a mysterious reduce/reduce conflict.}
+\label{fig:Mysterious-Conflicts.ipynb}
 \end{figure}
 \vspace*{0.3cm}
 
-Übersetzen wir diese Grammatik mit \textsc{Cup}, so erhalten wir unter anderem den folgenden Zustand:
-\begin{verbatim}
-    lalr_state [1]: {
-      [name ::= ID (*) , {COMMA COLON }]
-      [type ::= ID (*) , {ID COMMA }]
-    }
-\end{verbatim}
-Da in beiden Mengen von Folgetoken das Token \texttt{COMMA} auftritt, gibt es hier offensichtlich einen
-Reduce/Reduce-Konflikt.   Um diesen Konflikt besser zu verstehen, berechnen wir zunächst die Zustände
-eines kanonischen LR-Parsers für diese Grammatik.
-Wir erhalten dann eine Menge von Zuständen, von denen die für den späteren Konflikt ursächlichen 
-Zuständen in Abbildung \ref{fig:mysterious.txt} gezeigt sind.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    s0 = { S -> <*> def: [$],
-           def -> <*> param_spec return_spec ',': [$],
-           param_spec -> <*> name_list ':' type: [ID],
-           param_spec -> <*> type: [ID],
-           name_list -> <*> name: [':'],
-           name_list -> <*> name ',' name_list: [':'],
-           name -> <*> ID: [',', ':'],
-           type -> <*> ID: [ID]
-         }
-    s2 = { def -> param_spec <*> return_spec ',': [$],
-           return_spec -> <*> name ':' type: [','],
-           return_spec -> <*> type: [','],
-           name -> <*> ID: [':'],
-           type -> <*> ID: [',']
-         }
-    s7 = { name -> ID <*>: [',', ':'],
-           type -> ID <*>: [ID]
-         }
-    s8 = { name -> ID <*>: [':'],
-           type -> ID <*>: [',']
-         }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{LR-Zustände der in Abbildung \ref{fig:mysterious.cup} gezeigten Grammatik.}
-\label{fig:mysterious.txt}
-\end{figure} %\$
-
-Analysieren wir die Zustände, so stellen wir fest, dass beim Übergang von LR-Zuständen zu den
-LALR-Zuständen die beiden Zustände $s_7$ und $s_8$ zu einem Zustand zusammengefasst werden, denn diese
-beiden Zustände haben den selben Kern.  Bei der Zusammenfassung entsteht der Zustand, der von
-\textsc{Cup} als ``\texttt{lalr\_state [1]}'' bezeichnet hat.  Die Zustände $s_7$ und $s_8$ selber haben
-noch keinen Konflikt, weil dort die Mengen der Folgetoken disjunkt sind.  Der Konflikt tritt erst durch
-die Vereinigung dieser beiden Mengen auf, denn dadurch ist das Token ``$\texttt{,}$'' als Folgetoken für
-beide in dem Zustand enthaltenen Regeln zulässig.   Um den Konflikt aufzulösen müssen wir verhindern, dass
-die beiden Zustände $s_7$ und $s_8$ zusammengefasst werden.  Dazu analysieren wir zunächst, wo diese
-Zustände herkommen.
-\begin{enumerate}
-\item Den Zustand $s_7$ erhalten wir, wenn wir im Zustand $s_0$ das Token \texttt{ID} lesen, denn
-      es gilt 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $s_7 = \textsl{goto}(s_0, \mathtt{ID})$.
-\item Der Zustand $s_8$ entsteht, wenn das Token \texttt{ID} im Zustand $s_2$ gelesen wird, wir haben
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $s_8 = \textsl{goto}(s_2, \mathtt{ID})$.
-\end{enumerate}
-Die Idee zur Auflösung des Konflikts ist, dass wir den Zustand $s_2$ so ändern, dass die Kerne von
-$s_7 = \textsl{goto}(s_0, \mathtt{ID})$ und $s_8 = \textsl{goto}(s_0, \mathtt{ID})$ unterschiedlich werden.  
-Die erweiterten markierten Regeln in den Zuständen $s_0$ und $s_2$, die letztlich für den Konflikt verantwortlich
-sind, sind die Grammatik-Regeln für die syntaktische Variablen \textsl{param\_spec} und
-\textsl{return\_spec}, denn von diesen Regeln werden die  Zustände $s_7$ und $s_8$ abgeleitet.
-Um zu verhindern, dass diese Zustände zusammengefasst werde, ändern wir die Regeln für die
-syntaktische Variable \textsl{return\_spec} wie in der in Abbildung \ref{fig:myst-solved.g}
-gezeigten Grammatik
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/MysteriousConflict/mysterious-solved.cup}{\texttt{mysterious-solved.cup}}
- ab,
-indem wir eine zusätzliche Grammatik-Regel 
+When we run \textsc{Ply} to produce the parsing table, we get the states shown in Figure
+\ref{fig:Mysterious-Conflicts.parser.out} on page \pageref{fig:Mysterious-Conflicts.parser.out}.
+This Figure only shows two states, \texttt{state 6} and \texttt{state 9}.  I have taken the liberty to annotate
+the extended marked rules occurring in these states with their follow sets.  Taken by itself, none of these two
+states has a conflict since the follow sets of the respective rules are disjoint.  However, 
+it is obvious that these two states have the same core and should have been merged.  The resulting state would
+have the form 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{return\_spec} \rightarrow \mathtt{ID}\;\, \mathtt{BOGUS}$
+$\bigl\{ a \rightarrow X \bullet:\{\saquoted{y}, \saquoted{z} \},
+         b \rightarrow X \bullet:\{\saquoted{y}, \saquoted{z} \}
+\bigr\}$
 \\[0.2cm]
-einführen.  Wenn das Terminal \texttt{BOGUS} nie vom Scanner erzeugt werden kann, dann ändert sich durch
-die Hinzunahme dieser Regel die von der Grammatik erzeugte Sprache nicht.  Allerdings ändern sich nun die
-LR-Zustände.  Abbildung \ref{fig:myst-solved.txt} zeigt, wie sich die entsprechenden Zustände ändern.
-Insbesondere sehen wir, dass der Zustand $s_8$ nun eine weitere markierte Regel enthält, zu der es in dem
-Zustand $s_7$ kein äquivalent gibt.  Die Konsequenz ist, dass diese Zustände beim Übergang von den
-LR-Zuständen zu den LALR-Zuständen nicht mehr zusammengefasst werden können, da sie unterschiedliche
-Kerne haben.  Daher gibt es dann auch keinen Konflikt mehr. 
+and obviously has a reduce/reduce conflict if the next token is either \saquoted{y} or \saquoted{z}.
 
 \begin{figure}[!ht]
 \centering
@@ -1022,237 +928,32 @@ Kerne haben.  Daher gibt es dann auch keinen Konflikt mehr.
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    def : param_spec return_spec ','
-        ;    
-    param_spec
-        : type
-        |  name_list ':' type
-        ;
-    return_spec
-        : type
-        | name ':' type
-        | ID BOGUS      // this never happens
-        ;
-    type: ID
-        ;
-    name: ID
-        ;
-    name_list
-        : name
-        | name ',' name_list
-        ;
+    state 6
+    
+        (5) a -> X . : 'y'
+        (6) b -> X . : 'z'
+    
+        y               reduce using rule 5 (a -> X .)
+        z               reduce using rule 6 (b -> X .)
+
+    state 9
+    
+        (6) b -> X . : 'y'
+        (5) a -> X . : 'z'
+    
+        y               reduce using rule 6 (b -> X .)
+        z               reduce using rule 5 (a -> X .)
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Auflösung des mysteriösen Reduce/Reduce-Konflikts.}
-\label{fig:myst-solved.g}
+\caption{A grammar that generates a mysterious reduce/reduce conflict.}
+\label{fig:Mysterious-Conflicts.parser.out}
 \end{figure}
+\vspace*{0.3cm}
 
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    s0 = { S -> <*> def: [$],
-           def -> <*> param_spec return_spec ',': [$],
-           name -> <*> ID: [',', ':'],
-           name_list -> <*> name: [':'],
-           name_list -> <*> name ',' name_list: [':'],
-           param_spec -> <*> name_list ':' type: [ID],
-           param_spec -> <*> type: [ID],
-           type -> <*> ID: [ID]
-         }    
-    s2 = { def -> param_spec <*> return_spec ',': [$],
-           name -> <*> ID: [':'],
-           return_spec -> <*> ID BOGUS: [','],
-           return_spec -> <*> name ':' type: [','],
-           return_spec -> <*> type: [','],
-           type -> <*> ID: [',']
-         }
-    s7 = { name -> ID <*>: [',', ':'],
-           type -> ID <*>: [ID]
-         }    
-    s8 = { name -> ID <*>: [':'],
-           return_spec -> ID <*> BOGUS: [','],
-           type -> ID <*>: [',']
-         }
-\end{Verbatim}
-\vspace*{-0.3cm} %\$
-\caption{Einige Zustände der in Abbildung \ref{fig:myst-solved.g} gezeigten Grammatik.}
-\label{fig:myst-solved.txt}
-\end{figure}
-
-\section{Auflösung von Shift/Reduce-Konflikten}
-Es gibt im Wesentlichen zwei Arten von Shift/Reduce-Konflikten:
-\begin{enumerate}
-\item Konflikte, die auf eine Mehrdeutigkeit der Grammatik zurückzuführen sind.
-
-      Solche Mehrdeutigkeits-Konflikte hatten wir beispielsweise in der Grammatik für arithmetische
-      Ausdrücke, die in Abbildung \ref{fig:shift-reduce-conflict.grammar} auf Seite
-      \pageref{fig:shift-reduce-conflict.grammar} gezeigt ist, diskutiert.  In dem Beispiel waren
-      diese Konflikte darauf zurückzuführen, dass durch die Grammatik keine Präzedenzen für die
-      arithmetischen Operatoren festgelegt wurde, so dass am Ende nicht klar war, ob ein Ausdruck
-      der Form ``\texttt{1+2*3}'' als ``\texttt{1+(2*3)}'' oder als ``\texttt{(1+2)*3}'' zu
-      interpretieren ist.
-
-      Wir haben bereits früher in Abschnitt \ref{section:operator-precedence} besprochen, wie solche
-      Konflikte durch die Spezifikation von Operator-Präzedenzen aufgelöst werden können.
-\item Konflikte, die entstehen, weil ein Look-Ahead von einem Token nicht ausreichend ist um zu
-      entscheiden, ob das nächste Token der Eingabe auf den Stack geschoben werden soll, oder 
-      ob stattdessen der Stack durch Anwendung einer Grammatik-Regel reduziert werden muss.
-      Solche \emph{Look-Ahead}-Konflikte   werden wir in diesem Abschnitt diskutieren.
-\end{enumerate}
-Als Beispiel für einen Look-Ahead-Konflikt betrachten wir die in Abbildung \ref{fig:lambda.g}
-gezeigte Grammatik
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LambdaExpr/lambda.cup}{\texttt{lambda.cup}}.  
-Diese Grammatik beschreibt drei Arten von Ausdrücken:
-\begin{enumerate}
-\item $\lambda$-Ausdrücke haben syntaktisch die Form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{[$x_1$, $\cdots$, $x_n$] |-> $e$}.
-      \\[0.2cm]
-      Ein solcher Ausdruck steht für eine Funktion, die $n$ Argumente $x_1$, $\cdots$, $x_n$
-      verarbeitet und als Ergebnis den Ausdruck $e$ zurück liefert, wobei der Ausdruck $e$ im
-      Allgemeinen von den Parametern $x_1$, $\cdots$, $x_n$ abhängen wird.   Ein konkretes Beispiel
-      wäre etwa der $\lambda$-Ausdruck
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{[x, y] |-> [x, y, x]}.
-\item Zusätzlich sind als Ausdrücke Variablen-Namen zugelassen.
-\item Außerdem sind auch Listen von Ausdrücken möglich, wobei diese Listen in eckigen Klammern
-      eingefasst werden.  Diese Listen können dabei beliebig geschachtelt sein.
-\end{enumerate}
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    terminal MAPSTO, LBRACKET, RBRACKET, COMMA, IDENTIFIER;
-    
-    nonterminal expr, exprList, lambdaDefinition, identifierList;
-    
-    expr ::= lambdaDefinition
-          |  IDENTIFIER  
-          |  LBRACKET exprList RBRACKET
-          ;   
-    lambdaDefinition
-         ::= LBRACKET identifierList RBRACKET MAPSTO expr
-          ;
-    identifierList
-         ::= IDENTIFIER COMMA identifierList 
-          |  IDENTIFIER
-          ;
-    exprList
-         ::= expr COMMA exprList
-          |  expr
-          ;
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Eine \textsc{Cup}-Grammatik für $\lambda$-Ausdrücke.}
-\label{fig:lambda.g}
-\end{figure}
-
-Versuchen wir mit \textsc{Cup} einen Parser für diese Grammatik zu erzeugen, so erhalten wir
-verschiedene Shift/Reduce-Konflikte.  Diese Konflikte entstehen in dem Zustand Nummer 6, der in
-Abbildung \ref{fig:lambda.g:state6} gezeigt ist.  Da auf eine \textsl{expr} ein ``\texttt{,}''
-folgen kann, dieses aber in dem Zustand gleichzeitig auch auf den Stack geschoben werden kann, ist
-nicht klar, ob mit der Regel 
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{expr} \rightarrow \mathtt{IDENTIFIER}$
-\\[0.2cm]
-reduziert werden darf, wenn das Look-Ahead-Token ein Komma ist.  Um zu entscheiden, ob der Parser
-versucht eine Liste von \texttt{IDENTIFIER}n zu parsen, müsste der Parser bis zu dem Token
-\texttt{MAPSTO} schauen können.  Wenn später ein solches Token noch kommt, dann würde der Parser im
-Zustand 6 versuchen, eine \texttt{identifierList} zu parsen und das Komma sollte auf den Stack
-geschoben werden.  Andernfalls könnte mit der Regel 
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{expr} \rightarrow \mathtt{IDENTIFIER}$
-\\[0.2cm]
-reduziert werden. Leider lässt ein LR-Parser-Generator nicht zu, dass wir den noch ungelesenen Teil
-der Eingabe inspizieren.  Wir müssen daher eine andere Lösung suchen.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    lalr_state [6]: {
-      [identifierList ::= IDENTIFIER (*) COMMA identifierList , {RBRACKET }]
-      [expr ::= IDENTIFIER (*) , {RBRACKET COMMA }]
-      [identifierList ::= IDENTIFIER (*) , {RBRACKET }]
-    }
-\end{Verbatim}
- \vspace*{-0.3cm}
-\caption{Der Zustand mit der Nummer 6 zu der Grammatik aus Abbildung \ref{fig:lambda.g}}
-\label{fig:lambda.g:state6}
-\end{figure}
-
-Wir können den Shift/Reduce-Konflikt lösen, indem wir die Grammatik wie in der in Abbildung
-\ref{fig:lambda-generalized.cup} gezeigten Grammatik
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Cup/LambdaExpr/lambda-generalized.cup}{\texttt{lambda-generalized.cup}}
- \textbf{verallgemeinern}.  Diese Grammatik lässt auch
-Ausdrücke zu, bei denen in der Argument-Liste nicht nur Variablen-Namen enthält, sondern Ausdrücke
-beliebiger Komplexität.  Damit beschreibt diese Grammatik eine Sprache, die eigentlich zu allgemein
-ist.  Es ist aber ein leichtes, später den resultierenden Syntax-Baum drauf hin zu untersuchen, ob
-in der Parameter-Liste tatsächlich nur Variablen stehen oder nicht.  Daher bietet eine solche
-Verallgemeinerung der Grammatik eine praktische Möglichkeit um Shift/Reduce-Konflikte zu lösen.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm, 
-                  xrightmargin  = 0.8cm,
-                ]
-    terminal    MAPSTO, LBRACKET, RBRACKET, COMMA, IDENTIFIER;
-    
-    nonterminal expr, exprList, lambdaDefinition;
-    
-    expr ::= lambdaDefinition
-          |  IDENTIFIER  
-          |  LBRACKET exprList RBRACKET
-          ;
-    
-    lambdaDefinition
-         ::= LBRACKET exprList RBRACKET MAPSTO expr
-          ;
-    
-    exprList
-         ::= expr COMMA exprList
-          |  expr
-          ;
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die verallgemeinerte Grammatik für $\lambda$-Ausdrücke.}
-\label{fig:lambda-generalized.cup}
-\end{figure}
-\vspace*{\fill}
-
+Interestingly, \textsc{Ply} does not merge these states and can therefore produce a parse table without
+conflicts.  On the other hand, \textsc{Ply} claims to generate LALR tables.  Therefore, I have have written an
+email to \href{https://en.wikipedia.org/wiki/David_M._Beazley}{David Beaszley} asking whether this behaviour is
+a feature or a bug.  So far I haven't received an answer.
 
 %%% Local Variables: 
 %%% mode: latex
