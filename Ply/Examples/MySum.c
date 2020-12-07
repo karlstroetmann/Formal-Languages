@@ -4,10 +4,10 @@ int sum(int n) {
     while (n != 0) {
         s = s + n;
         n = n - 1;
-    };
+    }
     return s;
 }
-
+   @  ;
 int main() {
     int n;
     n = 6 * 6;
