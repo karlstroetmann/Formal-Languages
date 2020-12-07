@@ -7,7 +7,7 @@ int sum(int n) {
     }
     return s;
 }
-   @  ;
+
 int main() {
     int n;
     n = 6 * 6;
