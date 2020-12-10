@@ -1,45 +1,51 @@
 \chapter{Entwicklung eines einfachen Compilers} 
-In diesem Kapitel konstruieren wir einen Compiler, der ein Fragment der Sprache \texttt{C}
+In diesem Kapitel konstruieren wir einen Compiler, der ein Fragment der Sprache \mytt{C}
 in \textsl{Java}-Assembler übersetzt.  
-Das von dem Compiler übersetzte Fragment der Sprache \texttt{C} bezeichnen wir als
-\textsl{Integer}-\texttt{C}, denn es steht dort nur der Datentyp \texttt{int} zur Verfügung.
+Das von dem Compiler übersetzte Fragment der Sprache \mytt{C} bezeichnen wir als
+\blue{\textsl{Integer}-\mytt{C}}, \index{\textsl{Integer}-\mytt{C}}
+denn es steht dort nur der Datentyp \mytt{int} zur Verfügung.
+Zwar wäre es problemlos möglich, auch weitere Datentypen zu unterstützen, allerdings würde der Mehraufwand dann
+inkeinem guten Verhältnis zum didaktischen Nutzen des Beispiels mehr stehen.
+
 Ein Compiler besteht prinzipiell aus den folgenden Komponenten:
 \begin{enumerate}
 \item Der Scanner liest die zu übersetzende Datei ein und zerlegt diese in eine Folge von Token.
       
-      Wir werden unseren Scanner mit Hilfe des Werkzeugs \textsl{JFlex} entwickeln.
+      Wir werden unseren Scanner mit Hilfe des Werkzeugs \textsc{Ply} entwickeln.
 \item Der Parser liest die Folge von Token und produziert als Ergebnis einen abstrakten Syntax-Baum.
 
-      Wir werden den Parser mit Hilfe von \textsc{Cup} generieren.
+      Wir werden bei der Erstellung des Parsers ebenfalls \textsc{Ply} verwenden.
 \item Der Typ-Checker überprüft den abstrakten Syntax-Baum auf Typ-Fehler.
 
       Da die von uns übersetzte Sprache nur einen einzelnen Datentyp enthält, erübrigt
       sich diese Phase für den von uns entwickelten Compiler.
-\item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgründen aber nicht betrachten.
+\item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgründen aber nicht mehr 
+      betrachten können.
 \item Der Code-Generator übersetzt schließlich den Parse-Baum in eine Folge von
       \textsc{Java}-Assembler-Befehlen.  
+\item Das dabei entstehende Assembler-Programm können wir mit \textsl{Jasmin} in Java-Bytecode übersetzen.
+\item Der Java-Bytecode kann mit Hilfe des Befehls \mytt{Java} ausgeführt werden.  
 \end{enumerate}
-Bei unseren Compiler sind wir an dieser Stelle schon fertig.  Bei Compilern, deren Zielcode ein
-\textsc{Risc}-Assembler-Programm ist, wird normalerweise zunächst auch ein Code erzeugt, der dem
+Bei Compilern, deren Zielcode ein \textsc{Risc}-Assembler-Programm ist, wird normalerweise zunächst auch ein
+Code erzeugt, der dem 
 \textsc{Jvm}-Code ähnelt.  Ein solcher Code wird als \emph{Zwischen-Code} bezeichnet.  Es bleibt
-dann die Aufgabe eines sogenannten \emph{Backends}, daraus ein Assembler-Programm für einen gegebene
+dann die Aufgabe eines sogenannten \emph{Backends}, daraus ein Assembler-Programm für eine gegebene
 Prozessor-Architektur zur erzeugen.  Die schwierigste Aufgabe besteht hier darin, für die
-verwendeten Variablen eine Register-Zuordnung zu finden, bei der möglichst alle Variablen in
+verwendeten Variablen eine Register-Zuordnung zu finden, bei der möglichst viele Variablen in
 Registern vorgehalten werden können.  
 Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung nicht behandeln.
-% Dieses Thema ist allerdings so komplex, dass wir es in einem separaten Kapitel diskutieren.
 
-\section{Die Programmiersprache \textsl{Integer}-\texttt{C}}
+\section{Die Programmiersprache \textsl{Integer}-\mytt{C}}
 
 \begin{figure}[!ht]
   \begin{center}
   \begin{minipage}[t]{12.5cm}
   \begin{eqnarray*}    
-\textsl{program}      & \rightarrow & \;\textsl{function}^+ \\[0.2cm]
-\textsl{function}     & \rightarrow & \quoted{int} \textsc{Id} \quoted{(} \textsl{paramList} \quoted{)} \quoted{\{} \textsl{decl}\,^+\; \textsl{stmnt}^+ \;\squoted{\}} \\[0.2cm]
-\textsl{paramList}    & \rightarrow & \;(\squoted{int}\, \textsc{Id}\; (\squoted{,}\, \quoted{int} \textsc{Id})^*)?  \\[0.2cm]
+\textsl{program}      & \rightarrow & \;\textsl{function}\mytt{+} \\[0.2cm]
+\textsl{function}     & \rightarrow & \quoted{int} \textsc{Id} \quoted{(} \textsl{paramList} \quoted{)} \quoted{\{} \textsl{decl}\,\mytt{+}\; \textsl{stmnt}\mytt{+} \;\squoted{\}} \\[0.2cm]
+\textsl{paramList}    & \rightarrow & \;(\squoted{int}\, \textsc{Id}\; (\squoted{,}\, \quoted{int} \textsc{Id})\mytt{*})?  \\[0.2cm]
 \textsl{decl}  & \rightarrow & \quoted{int} \textsc{Id} \quoted{;}  \\[0.2cm]
-\textsl{stmnt}    & \rightarrow & \quoted{\{} \textsl{stmnt}^* \quoted{\}}  \\[0.0cm]
+\textsl{stmnt}    & \rightarrow & \quoted{\{} \textsl{stmnt}\mytt{*} \quoted{\}}  \\[0.0cm]
                       & \mid        & \;\textsc{Id} \quoted{=} \textsl{expr} \;\squoted{;} \\[0.0cm]
                       & \mid        &  \quoted{if} \quoted{(} \textsl{boolExpr} \quoted{)} \textsl{stmnt} \\[0.0cm]
                      & \mid         &  \quoted{if} \quoted{(} \textsl{boolExpr} \quoted{)} \textsl{stmnt} \quoted{else} \textsl{stmnt} \\[0.0cm]
@@ -52,35 +58,37 @@ Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung 
  \textsl{expr} & \rightarrow & \textsl{expr} \;(\squoted{+} \mid \squoted{-} \mid \squoted{*} \mid \squoted{/})\; \textsl{expr} \\[0.0cm]
      & \mid        &  \quoted{(} \textsl{expr} \quoted{)}                 \\[0.0cm]
      & \mid        &  \textsc{Number}                             \\[0.0cm]
-     & \mid        &  \textsc{Id}\; (\squoted{(} (\textsl{expr}\; (\squoted{,}\; \textsl{expr})^*)?\;\squoted{)})?  
+     & \mid        &  \textsc{Id}\; (\squoted{(} (\textsl{expr}\; (\squoted{,}\; \textsl{expr})\mytt{*})?\;\squoted{)})?  
   \end{eqnarray*}
   \vspace*{-0.5cm}
 
   \end{minipage}
   \end{center}
   \caption{Eine \textsc{Ebnf}-Grammatik für \textsl{Integer}-\textsc{C}}
-\label{fig:compiler.cup}
+\label{fig:compiler.ebnf}
 \end{figure}
 
 \noindent
-Wir stellen nun die Sprache \textsl{Integer}-\texttt{C} vor, die unser Compiler übersetzen
+Wir stellen nun die Sprache \textsl{Integer}-\mytt{C} vor, die unser Compiler übersetzen
 soll.  In diesem Zusammenhang sprechen wir auch von der \emph{Quellsprache} unseres Compilers.
-Abbildung \ref{fig:compiler.cup} zeigt die Grammatik der Quellsprache in 
+Abbildung \ref{fig:compiler.ebnf} auf Seite \pageref{fig:compiler.ebnf} zeigt die Grammatik der Quellsprache in 
 erweiterter Backus-Naur-Form (\textsc{Ebnf}). 
-Die Grammatik für \textsl{Integer}-\texttt{C} verwendet die folgenden beiden Terminale:
+Die Grammatik für \textsl{Integer}-\mytt{C} verwendet die folgenden Terminale:
 \begin{enumerate}
 \item \textsc{Id} steht für eine Folge von Ziffern, Buchstaben und dem Unterstrich, die 
       mit einem Buchstaben beginnt.  Eine \textsc{Id} bezeichnet entweder eine Variable oder
       den Namen einer Funktion.
 \item \textsc{Number} steht für eine Folge von Ziffern, die als Dezimalzahl interpretiert wird.
+\item Daneben haben wir eine Reihe von Operatoren wie z.B.~\quoted{+},\quoted{-}, etc., sowie Schlüsselwörter
+      wie beispielsweise \quoted{if}, \quoted{while}.
 \end{enumerate}
 Nach der oben angegebenen Grammatik ist ein Programm eine Liste von Funktionen.
 Eine Funktion besteht aus der Deklaration der Signatur, worauf in geschweiften Klammern
-eine Liste von Deklarationen (\textsl{decl}) und Befehlen (\textsl{stmt}) folgt.  Jeder Befehl wird
-durch ein Semikolon abgeschlossen.  Der Aufbau der einzelnen Befehle ist dann
+eine Liste von Deklarationen (\textsl{decl}) und Befehlen (\textsl{stmt}) folgt.  
+Der Aufbau der einzelnen Befehle ist dann
 ähnlich wie bei der Sprache \textsc{Sl}, für die wir im Kapitel \ref{chapter:interpreter}
 einen Interpreter entwickelt haben.
-Die in Abbildung \ref{fig:compiler.cup} gezeigte Grammatik ist mehrdeutig:
+Die in Abbildung \ref{fig:compiler.ebnf} gezeigte Grammatik ist mehrdeutig:
 \begin{enumerate}
 \item Die Grammatik hat das \emph{Dangling-Else-Problem}.
 
@@ -119,24 +127,24 @@ Die in Abbildung \ref{fig:compiler.cup} gezeigte Grammatik ist mehrdeutig:
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Ein einfaches \textsc{Integer}-\texttt{C}-Programm.}
+\caption{Ein einfaches \textsc{Integer}-\mytt{C}-Programm.}
 \label{fig:sum.c}
 \end{figure}
 
 \noindent
-Abbildung \ref{fig:sum.c} zeigt ein einfaches \textsc{Integer}-\texttt{C}-Programm.  Die Funktion
+Abbildung \ref{fig:sum.c} zeigt ein einfaches \textsc{Integer}-\mytt{C}-Programm.  Die Funktion
 $\textsl{sum}(n)$ berechnet die Summe
  $\sum\limits_{i=1}^n i$
-und die Funktion $\textsl{main}()$ ruft die Funktion \texttt{sum} mit dem Argument $6 \cdot 6$ auf.
-Die in dem Programm verwendete Funktion \texttt{println} gibt ihr Argument gefolgt von einem
-Zeilenumbruch aus.
+und die Funktion $\textsl{main}()$ ruft die Funktion \mytt{sum} mit dem Argument $6 \cdot 6$ auf.
+Die in dem Programm verwendete Funktion \mytt{println} gibt ihr Argument gefolgt von einem
+Zeilenumbruch aus.  Wir gehen hier davon aus, dass diese Funktion vordefiniert ist.
 \pagebreak
 
 \section{Developing the  Scanner and the Parser}
 We construct both the scanner and the parser using  \textsl{Ply}.
-The figures \ref{fig:Compiler.ipynb:lex1} and \ref{fig:Compiler.ipynb:lex2} shows the scanner.  The scanner
-recognizes the operators, keywords, identifiers, and numbers.  Also the scanner is largely similar to those
-scanners that we have already seen before, there are a few points worth mentioning.
+Figure \ref{fig:Compiler.ipynb:lex} shows the scanner.  The scanner
+recognizes the operators, keywords, identifiers, and numbers.  As the scanner is mostly similar to those
+scanners that we have already seen before, there are only a few points worth mentioning.
 
 \begin{figure}[!ht]
 \centering
@@ -145,8 +153,8 @@ scanners that we have already seen before, there are a few points worth mentioni
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
                 ]
     import ply.lex as lex
     
@@ -154,81 +162,19 @@ scanners that we have already seen before, there are a few points worth mentioni
                'INT', 'IF', 'ELSE', 'WHILE', 'RETURN'
              ]
     
-    def t_NUMBER(t):
-        r'0|[1-9][0-9]'
-        return t
+    t_NUMBER = r'0|[1-9][0-9]'
     
-    def t_EQ(t):
-        r'=='
-        return t
-    
-    def t_NE(t):
-        r'!='
-        return t
-    
-    def t_LE(t):
-        r'<='
-        return t
-    
-    def t_GE(t):
-        r'>='
-        return t
-    
-    def t_AND(t):
-        r'&&'
-        return t
-    
-    def t_OR(t):
-        r'\|\|'
-        return t
+    t_EQ  = r'=='
+    t_NE  = r'!='
+    t_LE  = r'<='
+    t_GE  = r'>='
+    t_AND = r'&&'
+    t_OR  = r'\|\|'
     
     def t_COMMENT(t):
         r'//[^\n]*'
         pass
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{The scanner for \textsl{Integer}-\texttt{C}, part 1.}
-\label{fig:Compiler.ipynb:lex1}
-\end{figure}
 
-\begin{enumerate}
-\item While we do not need to declare tokens for those operators that consist of just one token, 
-      we have to declare those tokens that consist of two or more characters.  For example, the operator
-      \quoted{==} is represented by the token \texttt{'EQ'} and defined in line 11--13.
-\item Our programming language supports single line comments that start with the string \quoted{//} and extend
-      to the end of the line.  These comments are implemented via the token \texttt{COMMENT} that is defined in
-      line 35--37.  Note that the function \texttt{t\_COMMENT} does not return a value.  Therefore,
-      these comments are simply discarded.
-\item The most interesting aspect is the implementation the keywords like \quoted{while} or \quoted{return}.
-      Note that we have defined separate tokens for all of the keywords but we have not implemented any
-      functions for these keywords.  For example, we have not defined a function with the name
-      \texttt{t\_return}.
-      The reason is that, syntactically, all of the keywords are identifiers and are recognized by the regular
-      expression
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{r'[a-zA-Z][a-zA-Z0-9\_]*'}
-      \\[0.2cm]
-      that is used for recognizing identifiers.  However, the function \texttt{t\_ID} that recognizes
-      identifiers does not immediately return the token \texttt{'ID'} when it has scanned the name of an
-      identifier.  Rather, it first checks whether this name is a predefined keyword.  The predefined keywords
-      are the key of the dictionary \texttt{Keywords} that is defined in line 38-43.  The values of the
-      keywords in this dictionary are the token types.  Therefore, the function \texttt{t\_ID} sets the
-      \blue{token type} of the token that is returned to the value stored in the dictionary \texttt{Keywords}.
-      In case a name is not defined in this dictionary, the token type is set to \texttt{'ID'}.
-\end{enumerate}
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  firstnumber   = last,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
     Keywords = { 'int'   : 'INT', 
                  'if'    : 'IF',
                  'else'  : 'ELSE', 
@@ -248,9 +194,9 @@ scanners that we have already seen before, there are a few points worth mentioni
     def t_newline(t):
         r'\n+'
         t.lexer.lineno += t.value.count('\n')
-    
+
     def t_error(t):
-        print(f"Illegal character '{t.value[0]}'")
+        print(f"Illegal character '{t.value[0]}' in line {t.lineno}.")
         t.lexer.skip(1)
     
     __file__ = 'main'
@@ -258,177 +204,47 @@ scanners that we have already seen before, there are a few points worth mentioni
     lexer = lex.lex()
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{The  Scanner for \textsl{Integer}-\texttt{C}, part 2.}
-\label{fig:Compiler.ipynb:lex2}
+\caption{The scanner for \textsl{Integer}-\mytt{C}.}
+\label{fig:Compiler.ipynb:lex}
 \end{figure}
 
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    Program = Program(List<Function> functionList);
-    
-    Function = Function(String            name, 
-                        List<String>      parameterList, 
-                        List<Declaration> mDeclarations,
-                        List<Statement>   body);
-    
-    Statement = Block(List<Statement> statementList)
-              + Assign(String var, Expr expr)
-              + IfThen(BoolExpr boolExpr, Statement statement)
-              + IfThenElse(BoolExpr condition, Statement then, Statement else)
-              + While(BoolExpr condition, Statement statement)
-              + Return(Expr expr)
-              + ExprStatement(Expr expr);
-    
-    Declaration = Declaration(String var);
-    
-    Expr = Sum(Expr lhs, Expr rhs)                        // +
-         + Difference(Expr lhs, Expr rhs)                 // -
-         + Product(Expr lhs, Expr rhs)                    // *
-         + Quotient(Expr lhs, Expr rhs)                   // /
-         + MyNumber(Integer number)                       
-         + Variable(String name)
-         + FunctionCall(String name, List<Expr> args);
-    
-    BoolExpr = Equation(Expr lhs, Expr rhs)               // ==
-             + Inequation(Expr lhs, Expr rhs)             // !=
-             + LessOrEqual(Expr lhs, Expr rhs)            // <=
-             + GreaterOrEqual(Expr lhs, Expr rhs)         // >=
-             + LessThan(Expr lhs, Expr rhs)               // <
-             + GreaterThan(Expr lhs, Expr rhs)            // >
-             + Negation(BoolExpr expr)                    // !
-             + Conjunction(BoolExpr lhs, BoolExpr rhs)    // &&
-             + Disjunction(BoolExpr lhs, BoolExpr rhs);   // ||
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Spezifikation der Klassen zur Darstellung des Syntax-Baums.}
-\label{fig:program.ep}
-\end{figure}
-Before we can discuss the parser, we have to specify the classes that are used to represent the
-abstract syntax tree that is generated by the parser.  I have chosen to describe these classes using
-a formal notation.  The specification is shown in Figure \ref{fig:program.ep} on page \pageref{fig:program.ep}.
-We discuss this specification now line by line.
 \begin{enumerate}
-\item In line 1, the equation
+\item If a token does not have to be manipulated by the scanner, then it can be defined by a simple equation 
+      of the form 
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{Program = Program(List<Function> functionList)}
+      \mytt{t\_\textsl{name} = \textsl{regexp}}
       \\[0.2cm]
-      specifies that the class \texttt{Program} has one member variable called
-      \texttt{mFunctionList}.  (Note that it is called ``\texttt{mFunctionList}'' rather than
-      ``\texttt{functionList}''.  The reason is that in order to distinguish the member variables of
-      a class from the local variables of a method I have decided to start all member variables with
-      the letter ``\texttt{m}''.)
-      The variable \texttt{mFunctionList} has the type \texttt{List<Function>}.
-      Therefore, an object of class \texttt{Program} is essentially a list of objects of
-      class \texttt{Function}.
-\item Similarly, in line 3 to 6 the equation
-      \begin{verbatim}
-    Function = Function(String            name, 
-                        List<String>      parameterList, 
-                        List<Declaration> mDeclarations,
-                        List<Statement>   body);
-      \end{verbatim}
-      \vspace*{-0.5cm}
-
-      specifies that the class \texttt{Function} has four attributes:
-      \begin{enumerate}
-      \item \texttt{mName} is a \texttt{String} storing the name of the function,
-      \item \texttt{mParameterList} is the list of formal parameters of the function,
-      \item \texttt{mDeclarations} is the list of local variable declarations occurring in
-            the body of the function, while
-      \item \texttt{mBody} is the list of statements that make up the definition of the function.
-      \end{enumerate}
-      \pagebreak
-
-\item Next, the equation
-      \begin{verbatim}
-    Statement = Block(List<Statement> statementList)
-              + Assign(String var, Expr expr)
-              + IfThen(BoolExpr boolExpr, Statement statement)
-              + IfThenElse(BoolExpr condition, Statement then, Statement else)
-              + While(BoolExpr condition, Statement statement)
-              + Return(Expr expr)
-              + ExprStatement(Expr expr);
-      \end{verbatim}
-      tells us that there is an abstract class \texttt{Statement} and that the classes
-      \texttt{Block}, \texttt{Assign}, $\cdots$, \texttt{ExprStatement} are derived from
-      this class.
-      \begin{enumerate}
-      \item \texttt{Block} is a class representing a list of statements enclosed in
-            the curly braces \squoted{\{} and \squoted{\}}.  This list of statemments is
-            stored in the member variable \texttt{mStatementList}.
-      \item \texttt{Assign} is a class representing an assignment statement.  Therefore,
-            this class has two attributes:
-            \begin{itemize}
-            \item \texttt{mVar} is the name of the variable on the left hand side of the
-                  assignment and
-            \item \texttt{mExpr} is the expression on the right hand side of the  assignment.
-            \end{itemize}
-      \item \texttt{IfThen} is a class representing an \texttt{if-then} statement without
-            a trailing \texttt{else} clause.  This class has two member variables:
-            \begin{itemize}
-            \item \texttt{mBoolExpr} is the Boolean expression controlling whether the
-            \item \texttt{mStatement} is to be executed.
-            \end{itemize}
-      \item \texttt{IfThenElse} is a class representing an \texttt{if-then-else}
-            statement. This class has three member variables:
-            \begin{itemize}
-            \item \texttt{mBoolExpr} is the Boolean expression controlling the execution.
-            \item \texttt{mThen} is the statement that is executed if
-                  \texttt{mBoolExpr} evaluates as \texttt{true}.
-            \item \texttt{mElse} is the statement that is executed if
-                  \texttt{mBoolExpr} evaluates as \texttt{false}.
-            \end{itemize}
-      \item \texttt{While} is a class representing a \texttt{while} loop. 
-            This class has two member variables:
-            \begin{itemize}
-            \item \texttt{mBoolExpr} is the Boolean expression controlling the loop.
-            \item \texttt{mStatement} is a statement that is executed as long as
-                  \texttt{mBoolExpr} evaluates to \texttt{true}.
-            \end{itemize}
-      \item \texttt{Return} is a class representing a \texttt{return} statement. 
-            This class has the member variable \texttt{mExpr}.  Evaluation of this expression
-            yields the value to be returned.  Note that in the grammar given in Figure
-            \ref{fig:compiler.cup} on page \pageref{fig:compiler.cup} the expression following the
-            return statement is not optional.
-      \item \texttt{ExprStatement} is a class representing an expression that is to be
-             evaluated as a statement.        
-      \end{enumerate}
-\item The equation in line 16 specifies that the class \texttt{Declaration} has one member
-      variable with name \texttt{mVar}.  This variable stores the name of the variable
-      that is declared in the variable declaration associated with the corresponding
-      object of class \texttt{Declaration}.
-\item Similarly, the equations defining \texttt{Expr} and \texttt{BoolExpr} specify the
-      representation of arithmetical and Boolean expressions.  We refrain from a detailed discussion
-      here, since by now you should have gotten the idea.
+      where \textsl{name} is the name of the token and \textsl{regexp} is the regular expression defining the
+      token.  We have used this shortcut to define most of the tokens recognized by our scanner.
+\item While we do not need to declare tokens for those operators that consist of just one token, 
+      we have to declare those tokens that consist of two or more characters.  For example, the operator
+      \quoted{==} is represented by the token \mytt{'EQ'} and defined in line 9.
+\item Our programming language supports single line comments that start with the string \quoted{//} and extend
+      to the end of the line.  These comments are implemented via the token \mytt{COMMENT} that is defined in
+      line 16--18.  Note that the function \mytt{t\_COMMENT} does not return a value.  Therefore,
+      these comments are simply discarded.  This is also the reason that we have to use a function to define
+      this token.
+\item The most interesting aspect is the implementation of keywords like \quoted{while} or \quoted{return}.
+      Note that we have defined separate tokens for all of the keywords but we have not defined any
+      of these tokens.  For example, we have not defined \mytt{t\_return}.
+      The reason is that, syntactically, all of the keywords are identifiers and are recognized by the regular
+      expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \mytt{r'[a-zA-Z][a-zA-Z0-9\_]*'}
+      \\[0.2cm]
+      that is used for recognizing identifiers in line 28.  However, the function \mytt{t\_ID} that recognizes
+      identifiers does not immediately return the token \mytt{'ID'} when it has scanned the name of an
+      identifier.  Rather, it first checks whether this name is a predefined keyword.  The predefined keywords
+      are the key of the dictionary \mytt{Keywords} that is defined in line 38-43.  The values of the
+      keywords in this dictionary are the token types.  Therefore, the function \mytt{t\_ID} sets the
+      \blue{token type} of the token that is returned to the value stored in the dictionary \mytt{Keywords}.
+      In case a name is not defined in this dictionary, the token type is set to \mytt{'ID'}.
+\item The scanner implements the function \mytt{t\_newline} in line 6.  This function is needed
+      to update the attribute \mytt{lineno} of the scanner.  This attribute stores the line number and is
+      needed for error messages.
 \end{enumerate}
-Now we are ready to present the \textsc{Cup} specification of our parser.  For reasons of space,
-we have split the \textsc{Cup} grammar into three parts. 
-\begin{enumerate}
-\item Figure \ref{fig:compiler.cup-1} shows the specification of the syntactical variables,
-      terminals, and the specification of the precedences of the terminals.
-      Note that the arithmetical operators have a higher precedence than the logical operators.
-\item Figure \ref{fig:compiler.cup-2} and \ref{fig:compiler.cup-3} show the grammar including the
-      actions needed to construct the syntax tree.  Note that the grammar allows the list of
-      functions to be empty.  Of course, an empty program wouldn't be of any use, but this approach
-      simplifies the construction of the associated lists.
-
-      Observe that the actions given in the grammar only construct the abstract syntax tree.
-      Everything else, in particular the generation of code, is then delegated to appropriate
-      methods in the classes representing the syntax tree.   We will discuss the code generation
-      later in a separate section. 
-\end{enumerate}
-
-
 
 \begin{figure}[!ht]
 \centering
@@ -437,147 +253,363 @@ we have split the \textsc{Cup} grammar into three parts.
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
                 ]
-    import java_cup.runtime.*;
-    import java.util.*;
+    import ply.yacc as yacc
     
-    class  IntegerCParser;
+    start = 'program'
     
-    terminal           COMMA, PLUS, MINUS, TIMES, SLASH, LPAREN, RPAREN, LBRACE, RBRACE;
-    terminal           ASSIGN, EQ, LT, GT, LE, GE, NE, AND, OR, NOT;
-    terminal           IF, ELSE, WHILE, RETURN, SEMICOLON; 
-    terminal           INT;
-    terminal String    ID;
-    terminal Integer   NUMBER;
+    precedence = (
+        ('left', 'OR'),
+        ('left', 'AND'),
+        ('left', '!'),
+        ('nonassoc', 'EQ', 'NE', 'LE', 'GE', '<', '>'),
+        ('left', '+', '-'),
+        ('left', '*', '/')
+    )
     
-    nonterminal Program           program;
-    nonterminal List<Function>    functionList;
-    nonterminal Function          function;
-    nonterminal List<String>      paramList, neParamList;
-    nonterminal Declaration       declaration;
-    nonterminal List<Declaration> declarations;
-    nonterminal Statement         stmnt;
-    nonterminal List<Statement>   stmntList;
-    nonterminal Expr              expr;
-    nonterminal List<Expr>        exprList, neExprList;
-    nonterminal BoolExpr          boolExpr;
+    def p_program_one(p):
+        "program : function"
+        p[0] = ('program', p[1])
+        
+    def p_program_more(p):
+        "program : function program"
+        p[0] = ('program', p[1]) + p[2][1:]
     
-    precedence left     OR;
-    precedence left     AND;
-    precedence right    NOT;
-    precedence left     PLUS, MINUS;
-    precedence left     TIMES, SLASH;
+    def p_function(p):
+        "function : INT ID '(' param_list ')' '{' decl_list stmnt_list '}'"
+        p[0] = ('fct', p[2], p[4], p[7], p[8])
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Declaration of terminals, syntactical variables, and operator precedences.}
-\label{fig:compiler.cup-1}
+\label{fig:Compiler.ipynb-1}
 \end{figure}
+
+Now we are ready to present the specification of our parser.  For reasons of space,
+we have split the grammar into six parts.  We start with Figure \ref{fig:Compiler.ipynb-1} on page
+\pageref{fig:Compiler.ipynb-1}.  
+\begin{enumerate}
+\item Line 3 declares the start symbol \mytt{program}.
+\item Line 5--12 declare the operator precedences.
+  \begin{enumerate}[(a)]
+  \item The operator ``\mytt{||}'' that represents \blue{logical or} has the lowest precedence and associates
+        to the left.  
+  \item The operator ``\mytt{\&\&}'' that represents \blue{logical and} binds stronger than ``\mytt{||}''
+        but not as strong as  the negation operator ``\mytt{!}''.
+  \item The negation operator ``\mytt{!}'' is right associative because we want to interpret an expression of
+        the form $\mytt{!!}a$ as  $\mytt{!}(\mytt{!}a)$.
+  \item The comparison operators ``\mytt{==}'', ``\mytt{!=}'', ``\mytt{<=}'', ``\mytt{>=}'',
+        ``\mytt{<}'', and ``\mytt{>}'' are non-associative, since our programming languages disallows 
+        the chaining of comparison operators, i.e.~an expression of the form $x < y < z$ is syntactically
+        invalid.
+  \item The arithmetical operators ``\mytt{+}'' and ``\mytt{-}'' have a lower precedence than the
+        arithmetical operators ``\mytt{*}'' and ``\mytt{/}''. 
+  \end{enumerate}
+\item A \mytt{program} is a non-empty list of \mytt{function} definitions.  Therefore, it is either a single
+      function definition (line 14--16) or it is a function definition followed by more function definitions
+      (line 18--20).
+
+      The purpose of the parser is to turn the given program into an abstract syntax tree.  This abstract
+      syntax tree is represented as a \blue{nested tuple}.  A program consisting of the functions 
+      $f_1$, $\cdots$, $f_n$ is represented as the nested tuple.
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(\squoted{program}, f_1, \cdots, f_n)$.
+      \\[0.2cm] 
+      If in line 19 a \mytt{program} consisting of a \mytt{function} and another \mytt{program} is
+      parsed, the expression \mytt{p[2]} in line 20 refers to the abstract syntax tree representing the
+      \mytt{program} that follows the \mytt{function}.  The expression \mytt{p[2][1:]} discards the
+      keyword \squoted{program} that is at the start of this nested tuple.  Hence,  \mytt{p[2][1:]}
+      is just a tuple of the functions following the first \mytt{function}.  Therefore, the assignment to \mytt{p[0]}
+      creates a nested tuple that starts with the keyword \squoted{program} followed by all the functions
+      defined in this program.
+\item A \texttt{function} definition starts with the keyword \squoted{int} that is followed by the name of the
+      function, an opening parenthesis, a list of the parameters of the function, a closing parenthesis,
+      an opening brace, a list of declarations, a list of statements, and finally a closing brace.
+\end{enumerate}
 
 \begin{figure}[!ht]
 \centering
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
-                  firstnumber   = last,
                   labelposition = bottomline,
+                  firstnumber   = last,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
                 ]
-    start with program;
+    def p_param_list_empty(p):
+        "param_list :"
+        p[0] = ('.', )
+        
+    def p_param_list_one(p):
+        "param_list : INT ID"
+        p[0] = ('.', p[2])
+        
+    def p_param_list_more(p):
+        "param_list : INT ID ',' ne_param_list"
+        p[0] = ('.', p[2]) + p[4][1:]
     
-    program ::= functionList:l {: RESULT = new Program(l); :} ;
+    def p_ne_param_list_one(p):
+        "ne_param_list : INT ID"
+        p[0] = ('.', p[2])
+        
+    def p_ne_param_list_more(p):
+        "ne_param_list : INT ID ',' ne_param_list"
+        p[0] = ('.', p[2]) + p[4][1:]
     
-    functionList ::= /* epsilon */ {: RESULT = new LinkedList<Function>(); :}
-                  |  functionList:l function:f {: l.add(f); RESULT = l; :}
-                  ;
+    def p_decl_list_one(p):
+        "decl_list :"
+        p[0] = ('.',)
     
-    function ::= INT ID:f LPAREN paramList:p RPAREN 
-                 LBRACE declarations:d stmntList:l RBRACE
-                 {: RESULT = new Function(f, p, d, l); :}
-              ;
+    def p_decl_list_more(p):
+        "decl_list : INT ID ';' decl_list"
+        p[0] = ('.', p[2]) + p[4][1:]
     
-    paramList ::= /* epsilon */ {: RESULT = new LinkedList<String>(); :}
-               |  neParamList:l {: RESULT = l;                        :}
-               ;
+    def p_stmnt_list_one(p):
+        "stmnt_list :"
+        p[0] = ('.',)
     
-    neParamList ::= INT ID:v {: RESULT = new LinkedList<String>(); RESULT.add(v); :}
-                 |  neParamList:l COMMA INT ID:v {: RESULT = l; RESULT.add(v);    :}
-                 ;           
-    
-    declaration ::= INT ID:v SEMICOLON {: RESULT = new Declaration(v); :} ;
-    
-    declarations ::= /* epsilon */ {: RESULT = new LinkedList<Declaration>(); :}
-                  |  declarations:l declaration:d {: RESULT = l; RESULT.add(d); :}
-                  ;
-    
-    stmnt ::= LBRACE stmntList:l RBRACE           {: RESULT = new Block(l);     :}
-           |  ID:v ASSIGN expr:e SEMICOLON        {: RESULT = new Assign(v, e); :}
-           |  IF LPAREN boolExpr:b RPAREN stmnt:s {: RESULT = new IfThen(b, s); :}        
-           |  IF LPAREN boolExpr:b RPAREN stmnt:t ELSE stmnt:e
-                  {: RESULT = new IfThenElse(b, t, e); :}
-           |  WHILE LPAREN boolExpr:b RPAREN stmnt:s
-                  {: RESULT = new While(b, s); :}
-           |  RETURN expr:e SEMICOLON   {: RESULT = new Return(e);        :}
-           |  expr:e SEMICOLON          {: RESULT = new ExprStatement(e); :}
-           ;
-    
-    stmntList ::= /* epsilon */       {: RESULT = new LinkedList<Statement>(); :}
-               |  stmntList:l stmnt:s {: l.add(s); RESULT = l;                 :}
-               ;
+    def p_stmnt_list_more(p):
+        "stmnt_list : stmnt stmnt_list"
+        p[0] = ('.', p[1]) + p[2][1:]
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{The first part of the \textsc{Cup} grammar.}
-\label{fig:compiler.cup-2}
+\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\label{fig:Compiler.ipynb-2}
 \end{figure}
 
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = last,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    boolExpr ::= expr:l EQ expr:r          {: RESULT = new Equation(      l, r); :}
-              |  expr:l NE expr:r          {: RESULT = new Inequation(    l, r); :}
-              |  expr:l LE expr:r          {: RESULT = new LessOrEqual(   l, r); :}
-              |  expr:l GE expr:r          {: RESULT = new GreaterOrEqual(l, r); :}
-              |  expr:l LT expr:r          {: RESULT = new LessThan(      l, r); :}
-              |  expr:l GT expr:r          {: RESULT = new GreaterThan(   l, r); :}
-              |  NOT boolExpr:e            {: RESULT = new Negation(      e   ); :}
-              |  boolExpr:l AND boolExpr:r {: RESULT = new Conjunction(   l, r); :}
-              |  boolExpr:l OR  boolExpr:r {: RESULT = new Disjunction(   l, r); :}
-              ;
-    
-    expr ::= expr:l PLUS  expr:r            {: RESULT = new Sum(       l, r);   :}
-          |  expr:l MINUS expr:r            {: RESULT = new Difference(l, r);   :}
-          |  expr:l TIMES expr:r            {: RESULT = new Product(   l, r);   :}
-          |  expr:l SLASH expr:r            {: RESULT = new Quotient(  l, r);   :}
-          |  LPAREN expr:e RPAREN           {: RESULT = e;                      :}
-          |  NUMBER:n                       {: RESULT = new MyNumber(n);        :}
-          |  ID:v                           {: RESULT = new Variable(v);        :}
-          |  ID:n LPAREN exprList:l RPAREN  {: RESULT = new FunctionCall(n, l); :}
+Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, declaration lists, and statement lists.
+\begin{enumerate}
+\item The definition of a list of parameters is quite involved, because parameter lists may be empty and,
+      furthermore, different parameters have to be separated by \squoted{,}.  Therefore, we have to introduce 
+      the additional syntactical variable \mytt{ne\_param\_list}, which represents a non-empty parameter
+      list.  The grammar rules for \mytt{param\_list} are as follows:
+      \begin{verbatim}
+        param_list 
+             :
+             | 'int' ID
+             | 'int' ID ',' ne_param_list
+             ;
+        ne_param_list 
+             : 'int' ID
+             | 'int' ID ',' ne_param_list
+             ;
+      \end{verbatim}
+      We use the \quoted{.} as a key to represent lists of any kind.
+\item The grammar rules for a list of declarations are as follows:
+      \begin{verbatim}
+      decl_list
+          : 
+          | 'int' ID ';' decl_list
           ;
-    
-    exprList ::= /* epsilon */ {: RESULT = new LinkedList<Expr>(); :}
-              |  neExprList:l  {: RESULT = l;                      :}
-              ;
-    
-    neExprList ::= expr:e {: RESULT = new LinkedList<Expr>(); RESULT.add(e); :}                  
-                |  neExprList:l COMMA expr:e {: RESULT = l; RESULT.add(e);   :}
-                ;
+      \end{verbatim}
+      Observe that with this definition a list of declarations may be empty.
+      The grammar rules are simpler than for parameter lists because every variable declaration is ended 
+      with a semicolon, while parameters are separated by commas and the last parameter must not be followed by
+      a comma.
+\item The grammar rules for a list of statements are as follows:
+      \begin{verbatim}
+      stmnt_list
+          : 
+          | stmnt stmnt_list
+          ;
+      \end{verbatim}
+\end{enumerate}
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  firstnumber   = last,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    def p_stmnt_block(p):
+        "stmnt : '{' stmnt_list '}'"
+        p[0] = p[2]
+        
+    def p_stmnt_assign(p):
+        "stmnt : ID '=' expr ';'"
+        p[0] = ('=', p[1], p[3])
+        
+    def p_stmnt_if(p):
+        "stmnt : IF '(' bool_expr ')' stmnt"
+        p[0] = ('if', p[3], p[5])   
+        
+    def p_stmnt_if_else(p):
+        "stmnt : IF '(' bool_expr ')' stmnt ELSE stmnt"
+        p[0] = ('if-else', p[3], p[5], p[7])
+        
+    def p_stmnt_while(p):
+        "stmnt : WHILE '(' bool_expr ')' stmnt"
+        p[0] = ('while', p[3], p[5])
+        
+    def p_stmnt_return(p):
+        "stmnt : RETURN expr ';'"
+        p[0] = ('return', p[2])
+        
+    def p_stmnt_expr(p):
+        "stmnt : expr ';'"
+        p[0] = p[1]
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{The last part of the \textsc{Cup} grammar.}
-\label{fig:compiler.cup-3}
+\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\label{fig:Compiler.ipynb-3}
 \end{figure}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  firstnumber   = last,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    def p_bool_expr_or(p):
+        "bool_expr : bool_expr OR bool_expr"
+        p[0] = ('||', p[1], p[3])
+        
+    def p_bool_expr_and(p):
+        "bool_expr : bool_expr AND bool_expr"
+        p[0] = ('&&', p[1], p[3])
+    
+    def p_bool_expr_neg(p):
+        "bool_expr : '!' bool_expr"
+        p[0] = ('!', p[2])
+
+    def p_bool_expr_eq(p):
+        "bool_expr : expr EQ expr"
+        p[0] = ('==', p[1], p[3])
+    
+    def p_bool_expr_ne(p):
+        "bool_expr : expr NE expr"
+        p[0] = ('!=', p[1], p[3])
+    
+    def p_bool_expr_le(p):
+        "bool_expr : expr LE expr"
+        p[0] = ('<=', p[1], p[3])
+        
+    def p_bool_expr_ge(p):
+        "bool_expr : expr GE expr"
+        p[0] = ('>=', p[1], p[3])
+        
+    def p_bool_expr_lt(p):
+        "bool_expr : expr '<' expr"
+        p[0] = ('<', p[1], p[3])
+    
+    def p_bool_expr_gt(p):
+        "bool_expr : expr '>' expr"
+        p[0] = ('>', p[1], p[3])
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\label{fig:Compiler.ipynb-4}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  firstnumber   = last,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    def p_expr_plus(p):
+        "expr : expr '+' expr"
+        p[0] = ('+', p[1], p[3])
+        
+    def p_expr_minus(p):
+        "expr : expr '-' expr"
+        p[0] = ('-', p[1], p[3])
+        
+    def p_expr_times(p):
+        "expr : expr '*' expr"
+        p[0] = ('*', p[1], p[3])
+        
+    def p_expr_divide(p):
+        "expr : expr '/' expr"
+        p[0] = ('/', p[1], p[3])
+        
+    def p_expr_group(p):
+        "expr : '(' expr ')'"
+        p[0] = p[2]
+    
+    def p_expr_number(p):
+        "expr : NUMBER"
+        p[0] = ('Number', p[1])
+    
+    def p_expr_id(p):
+        "expr : ID"
+        p[0] = p[1]
+        
+    def p_expr_fct_call(p):
+        "expr : ID '(' expr_list ')'"
+        p[0] = ('call', p[1]) + p[3][1:]
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\label{fig:Compiler.ipynb-5}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  firstnumber   = last,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    def p_expr_list_empty(p):
+        "expr_list :"
+        p[0] = ('.',)
+        
+    def p_expr_list_one(p):
+        "expr_list : expr"
+        p[0] = ('.', p[1])     
+    
+    def p_expr_list_more(p):
+        "expr_list : expr ',' ne_expr_list"
+        p[0] = ('.', p[1]) + p[3][1:]     
+    
+    def p_ne_expr_list_one(p):
+        "ne_expr_list : expr"
+        p[0] = ('.', p[1]) 
+        
+    def p_ne_expr_list_more(p):
+        "ne_expr_list : expr ',' ne_expr_list"
+        p[0] = ('.', p[1]) + p[3][1:] 
+    
+    def p_error(p):
+        if p:
+            print(f'Syntax error at token "{p.value}" in line {p.lineno}.')
+        else:
+            print('Syntax error at end of input.')
+    
+    parser = yacc.yacc(write_tables=False, debug=True)
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\label{fig:Compiler.ipynb-6}
+\end{figure}
+
+
+
 
 
 
