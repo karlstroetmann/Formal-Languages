@@ -282,7 +282,7 @@ scanners that we have already seen before, there are only a few points worth men
         p[0] = ('fct', p[2], p[4], p[7], p[8])
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\caption{Grammar for Integer-\texttt{C}, part 1.}
 \label{fig:Compiler.ipynb-1}
 \end{figure}
 
@@ -324,7 +324,7 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
       is just a tuple of the functions following the first \mytt{function}.  Therefore, the assignment to \mytt{p[0]}
       creates a nested tuple that starts with the keyword \squoted{program} followed by all the functions
       defined in this program.
-\item A \texttt{function} definition starts with the keyword \squoted{int} that is followed by the name of the
+\item A \mytt{function} definition starts with the keyword \squoted{int} that is followed by the name of the
       function, an opening parenthesis, a list of the parameters of the function, a closing parenthesis,
       an opening brace, a list of declarations, a list of statements, and finally a closing brace.
 \end{enumerate}
@@ -377,7 +377,7 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
         p[0] = ('.', p[1]) + p[2][1:]
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\caption{ Grammar for Integer-\texttt{C}, part 2.}
 \label{fig:Compiler.ipynb-2}
 \end{figure}
 
@@ -398,7 +398,7 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
              | 'int' ID ',' ne_param_list
              ;
       \end{verbatim}
-      We use the \quoted{.} as a key to represent lists of any kind.
+      We use the \quoted{.} as a key to represent lists of any kind as nested tuples.
 \item The grammar rules for a list of declarations are as follows:
       \begin{verbatim}
       decl_list
@@ -458,11 +458,23 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
         p[0] = p[1]
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\caption{Grammar for Integer-\texttt{C}, part 3.}
 \label{fig:Compiler.ipynb-3}
 \end{figure}
 
-
+\noindent
+Figure \ref{fig:Compiler.ipynb-3} on page \pageref{fig:Compiler.ipynb-3} shows how the variable \mytt{stmnt} is
+defined.  The grammar rules for statements are as follows:
+\begin{verbatim}
+        stmnt : '{' stmnt_list '}'
+              | ID '=' expr ';'
+              | 'if' '(' bool_expr ')' stmnt
+              | 'if' '(' bool_expr ')' stmnt 'else' stmnt
+              | 'while' '(' bool_expr ')' stmnt
+              | 'return' expr ';'
+              | expr ';'
+              ;
+\end{verbatim}
 
 \begin{figure}[!ht]
 \centering
@@ -486,6 +498,10 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
     def p_bool_expr_neg(p):
         "bool_expr : '!' bool_expr"
         p[0] = ('!', p[2])
+
+    def p_bool_expr_paren(p):
+        "bool_expr : '(' bool_expr ')'"
+        p[0] = p[2]
 
     def p_bool_expr_eq(p):
         "bool_expr : expr EQ expr"
@@ -512,9 +528,26 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
         p[0] = ('>', p[1], p[3])
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\caption{Grammar for Integer-\texttt{C}, part 4.}
 \label{fig:Compiler.ipynb-4}
 \end{figure}
+
+\noindent
+Figure \ref{fig:Compiler.ipynb-4} on page \pageref{fig:Compiler.ipynb-4} shows how Boolean expressions are
+defined.  The grammar rules are as follows:
+\begin{verbatim}
+        bool_expr : bool_expr '||' bool_expr
+                  | bool_expr '&&' bool_expr
+                  | '!' bool_expr
+                  | '(' bool_expr ')'
+                  | expr '==' expr
+                  | expr '!=' expr
+                  | expr '<=' expr
+                  | expr '>=' expr
+                  | expr '<'  expr
+                  | expr '>'  expr
+                  ;
+\end{verbatim}
 
 \begin{figure}[!ht]
 \centering
@@ -560,9 +593,41 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
         p[0] = ('call', p[1]) + p[3][1:]
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\caption{Grammar for Integer-\texttt{C}, part 5.}
 \label{fig:Compiler.ipynb-5}
 \end{figure}
+\noindent
+Figure \ref{fig:Compiler.ipynb-5} on page \pageref{fig:Compiler.ipynb-5} shows lists of expression how arithmetic expressions
+are defined.  The grammar rules are as follows:
+\begin{verbatim}
+        expr : expr '+' expr
+             | expr '-' expr
+             | expr '*' expr
+             | expr '/' expr
+             | '(' expr ')'
+             | NUMBER
+             | ID
+             | ID '(' expr_list ')'
+\end{verbatim}
+
+\noindent
+Finally, Figure \ref{fig:Compiler.ipynb-6} on page \pageref{fig:Compiler.ipynb-6} shows how \mytt{expr\_list}
+is defined.  
+\begin{verbatim}
+        expr_list :
+                  | expr
+                  | expr ',' ne_expr_list
+                  ;
+
+        ne_expr_list : expr
+                     | expr ',' ne_expr_list
+                     ;
+\end{verbatim}
+Furthermore, this function shows the definition of the function \mytt{p\_error}, which is called if
+\textsc{Ply} detects a syntax error.  \textsc{Ply} will detect a syntax error in the case that the state of the
+generated shift/reduce parser has no action for the next input token.  The argument \mytt{p} to the function
+\mytt{p\_error} is the first token for which the action of the shift/reduce parser is undefined.
+In this case \mytt{p.value} is the part of the input string corresponding to this token.
 
 \begin{figure}[!ht]
 \centering
@@ -604,9 +669,26 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
     parser = yacc.yacc(write_tables=False, debug=True)
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Declaration of terminals, syntactical variables, and operator precedences.}
+\caption{Grammar for Integer-\texttt{C}, part 6.}
 \label{fig:Compiler.ipynb-6}
 \end{figure}
+\pagebreak
+
+\exercise
+Extend the parser that is available at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{
+ https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Compiler.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Compiler.ipynb} 
+\\[0.2cm]
+so that it supports the ternary \texttt{C}-operator for conditional expressions.  For example, in \texttt{C},
+the following assignment using the ternary operator can be used the assign \mytt{max} the maximum of the values
+of \mytt{x} and \mytt{y}:
+\\[0.2cm]
+\hspace*{1.3cm}
+\mytt{max = x > y ? x : y;}
+\\[0.2cm]
+Extend the parser so it can process the assignment shown above. \eox 
 
 
 
