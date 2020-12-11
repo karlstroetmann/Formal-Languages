@@ -5,7 +5,7 @@ arithmetic expressions, Boolean expression, statements, and function definitions
 \subsection{Translation of Arithmetic Expressions}
 Given an arithmetic expression $e$, the translation of $e$ is supposed to generate some code that, when
 executed, places the result of evaluating the expression $e$ onto the stack.  To this end we define a function
-\texttt{compile} that has the following signature:
+\mytt{compile} that has the following signature:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mytt{compile}: \textsl{Expr} \times \textsl{SymbolTable} \times \textsl{ClassName} \rightarrow 
@@ -18,25 +18,25 @@ $\mytt{compile}(\mytt{expr}, \mytt{st}, \mytt{name})$.
 \\[0.2cm]
 The interpretation of the arguments is as follows:
 \begin{enumerate}[(a)]
-\item \texttt{expr} is the arithmetic expression that is to be translated into assembler code.
-\item \texttt{st} is the \blue{symbol table}: \index{symbol table} Concretely, this is a dictionary that maps
+\item \mytt{expr} is the arithmetic expression that is to be translated into assembler code.
+\item \mytt{st} is the \blue{symbol table}: \index{symbol table} Concretely, this is a dictionary that maps
       the variable names to their position on the stack.  For example, if \squoted{x} is a variable that is the
       third variable in the local variable frame, then we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{st['x'] = 2},
+      \mytt{st['x'] = 2},
       \\[0.2cm]
       because the first variable in the local variable frame has index 0.  We will discuss later how the 
       positions of the variables on the stack is fixed.
-\item \texttt{name} is the name of the class that is to be used by our compiler.
+\item \mytt{name} is the name of the class that is to be used by our compiler.
 
      As we generate \textsl{Java} assembler and in \textsl{Java} every function has to be a part of a class,
      all functions that we create have to be static functions that are defined inside a class.  Therefore,
-     \texttt{name} is the name of this class.
+     \mytt{name} is the name of this class.
 
-     This argument \texttt{name} is only needed when function calls are translated.
+     This argument \mytt{name} is only needed when function calls are translated.
 \end{enumerate}
-The function \texttt{compile} returns a pair.  
+The function \mytt{compile} returns a pair.  
 \begin{enumerate}[(a)]
 \item The first component of this pair is a list of \textsl{Java} 
       assembler commands that adhere to the syntax recognized by \textsl{Jasmin}.  In general, when the
@@ -44,295 +44,265 @@ The function \texttt{compile} returns a pair.
       considerable room on the stack.  However, it has to be guaranteed that when the execution of theses
       commands finishes, the stack is back to its original height plus one because the net 
       effect of executing these commands must be to put the value of the expression on the stack.
-\item The second component of the return value of \texttt{compile} is a natural number.
-      This natural number tells us how much the stack might grow when \texttt{expr} is evaluated.
+\item The second component of the return value of \mytt{compile} is a natural number.
+      This natural number tells us how much the stack might grow when \mytt{expr} is evaluated.
       This information is needed because the \textsl{Java} virtual machine needs this information in advance:
       In \textsl{Java}, every function has to declare how much space it might use on the stack.
-      This declaration is done using the pseudo assembler command \texttt{.limit}.  Controlling the 
+      This declaration is done using the pseudo assembler command \mytt{.limit}.  Controlling the 
       maximum height of the stack is a security feature of \textsl{Java} that prevents those exploits that
       utilize stack overflows.
 \end{enumerate}
 In the following, we discuss the evaluation of the different arithmetic expressions one by one.
 
 
-\subsubsection{Übersetzung einer Variablen}
-Um eine Variable $v$ auszuwerten, laden wir diese Variable mit dem Kommando 
-\[  \texttt{iload}\;\; v  \]
-auf den Stack.  Daher hat die Klasse \texttt{Variable} die in Abbildung \ref{fig:Expr:Variable.java}
-gezeigte Form.  Die Klasse Variable verwaltet eine Member-Variable mit dem Namen
-\texttt{mName}, die den Namen der Variablen angibt.  Die Methode $\textsl{compile}()$ legt
-zunächst in Zeile 8 eine neue Liste von Assembler-Kommandos an und erzeugt dann in Zeile
-9 das Assembler-Kommando
-\[ \texttt{iload}\;\;v, \]
-das als einziges Kommando in diese Liste eingefügt wird.  Hierbei ist $v$ die Nummer der Variablen,
-die in der Symbol-Tabelle, die dem Konstruktor als Argument übergeben wird, gespeichert ist.
-Anschließend kann die Liste als Ergebnis zurück gegeben werden.
-
-Die Methode \texttt{stackSize} gibt beim Laden einer Variablen  den Wert $1$ zurück, denn es
-wird ja nur ein Objekt auf dem Stack abgelegt.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public class Variable extends Expr {
-        private String mName;
-    
-        public Variable(String name) {
-            mName = name;
-        }
-        public List<AssemblerCmd> compile(Map<String, Integer> symbolTable) {
-            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
-            AssemblerCmd iload = new ILOAD(symbolTable.get(mName));
-            result.add(iload);
-            return result;
-        }
-        public Integer stackSize() {
-            return 1;
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Variable}.}
-\label{fig:Expr:Variable.java}
-\end{figure}
-
-\subsubsection{Übersetzung einer Konstanten}
-Eine Konstante $c$ kann mit Hilfe des Befehls
+\subsubsection{Translation of a Variable}
+If the expression that is to be compiled is a variable $v$, we have to load this variable on the stack using
+the command \mytt{iload}.  This command has one parameter which is the index of the variable on the local
+variable frame.  This index is stored in the symbol table \mytt{st}.  Since we just need one entry on the
+stack to store the variable we have
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{ldc} $c$
+$\mytt{compile}(v, \mytt{st}, \mytt{name}) = 
+ \bigl\langle\mytt{[}\;\; \mytt{iload}\; \mytt{st[}v\mytt{]}\; \mytt{]}, \; 1\bigr\rangle$ \quad
+ if $v$ is a variable.
 \\[0.2cm]
-auf den Stack geladen werden.
-
+The code for translating a variable is shown in Figure \ref{fig:Compiler.ipynb:compile:var} on page
+\pageref{fig:Compiler.ipynb:compile:var}.
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public class MyNumber extends Expr {
-        private Integer mNumber;
-    
-        public MyNumber(Integer number) {
-            mNumber = number;
-        }
-        public List<AssemblerCmd> compile(Map<String, Integer> symbolTable) {
-            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
-            AssemblerCmd ldc = new LDC(mNumber);
-            result.add(ldc);
-            return result;
-        }
-        public Integer stackSize() {
-            return 1;
-        }    
-    }
-\end{Verbatim}
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = 1,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = -0.2cm,
+                 xleftmargin   = 0.8cm,
+                 xrightmargin  = 0.8cm,
+               ]{python3}
+    def compile_expr(expr, st, class_name):
+        if isinstance(expr, str):
+            number = st[expr]
+            Cmd    = indent(f'iload {number}')
+            return [Cmd], 1
+        ...
+\end{minted}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{MyNumber}.}
-\label{fig:Expr:MyNumber.java}
+\caption{Translation of a variable.}
+\label{fig:Compiler.ipynb:compile:var}
 \end{figure}
 
-Abbildung \ref{fig:Expr:MyNumber.java} zeigt die Implementierung der Klasse
-\texttt{MyNumber}, die eine Konstante darstellt.  Die Konstante selbst wird in der 
-Member-Variablen \texttt{mNumber} gespeichert.  
-Die Methode $\textsl{compile}()$ gibt eine 
-Liste zurück, die den Befehl \texttt{ldc} enthält.
+\subsubsection{Translation of a Constant}
+We can load a constant $c$ onto the stack using the assembler command 
+\\[0.2cm]
+\hspace*{1.3cm}
+\mytt{ldc} $c$.
+\\[0.2cm]
+As we only need the room to store $c$ on the stack, we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mytt{compile}(c, \mytt{st}, \mytt{name}) = 
+ \bigl\langle\mytt{[}\;\; \mytt{ldc}\; c \;\mytt{]}, \; 1\bigr\rangle$ \quad
+ if $c$ is a constant.
+\\[0.2cm]
+The code for translating a constant is shown in Figure \ref{fig:Compiler.ipynb:compile:const} on page
+\pageref{fig:Compiler.ipynb:compile:const}.
 
-Die Methode \texttt{stackSize} gibt  den Wert $1$ zurück, den es wird ja nur eine Zahl auf den
-Stack gelegt.
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = last,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = -0.2cm,
+                 xleftmargin   = 0.8cm,
+                 xrightmargin  = 0.8cm,
+               ]{python3}
+    def compile_expr(expr, st, class_name):
+        ...
+        elif expr[0] == 'Number':
+            _, n = expr
+            Cmd  = indent(f'ldc {n}')
+            return [Cmd], 1
+        ...
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Translation of a variable.}
+\label{fig:Compiler.ipynb:compile:const}
+\end{figure}
 
-\subsubsection{Übersetzung zusammengesetzter Ausdrücke}
-Um einen Ausdruck der Form
+\subsubsection{Translation of an Arithmetic Operator}
+In order to translate an expression of the form
 \[ \textsl{lhs} \quoted{+} \textsl{rhs} \]
-zu übersetzen, muss zunächst Code erzeugt werden, der die Ausdrücke \textsl{lhs} und
-\textsl{rhs} rekursiv übersetzt.  Wird dieser Code ausgeführt, so liegen  auf dem Stack
-anschließend die Werte von \textsl{lhs} und \textsl{rhs}.  Durch den Befehl \texttt{iadd} werden diese
-nun addiert.  Die Übersetzung kann also wie folgt spezifiziert werden:
-\[ \textsl{compile}(\textsl{lhs} \quoted{+} \textsl{rhs}) = 
-   \textsl{lhs}.\textsl{compile}() + \textsl{rhs}.\textsl{compile}() + [ \texttt{iadd} ],  
-\]
-wobei der Operator ``+'' auf der rechten Seite dieser Gleichung der Verkettung von Listen dient.  Abbildung
-\ref{fig:Expr:Sum.java} zeigt die Umsetzung dieser Überlegung.  
+into assembler code, we first have to recursively translate the expressions \textsl{lhs} and
+\textsl{rhs} into assembler code.  Later, when this code is executed the values of the expressions
+\textsl{lhs} und \textsl{rhs} are placed on the stack.  We add these values using the command \mytt{iadd}.
+If the evaluation of \textsl{lhs} needs $s_1$ words on the stack and the evaluation of \textsl{rhs} needs $s_2$
+words on the stack, then the evaluation of $\textsl{lhs} + \textsl{rhs}$ needs 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\max(s_1, 1 + s_2)$
+\\[0.2cm]
+words on the stack, because when \textsl{rhs} is evaluated, the value of \textsl{lhs} occupies already one position
+on the stack and hence the evaluation of \textsl{rhs} can only use the memory cells that are above the position
+where \textsl{lhs} is stored. Therefore, the compilation of $\textsl{lhs} + \textsl{rhs}$ can be specified as
+follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+$
+\begin{array}[t]{cll}
+        & \mytt{compile}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
+\wedge  & \mytt{compile}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
+\rightarrow & \mytt{compile}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
+            \bigl\langle L1 + L2 + \mytt{[}\; \mytt{iadd} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
+\end{array}$
+\\[0.2cm]
+Figure \ref{fig:Compiler.ipynb:compile:iadd} on page \pageref{fig:Compiler.ipynb:compile:iadd} shows how the
+translation of the addition of expressions is implemented.  The translation of subtraction, multiplication, and
+division is similar.
 
-Bei der Berechnung der Größe des benötigten Stacks gehen wir von folgenden Überlegungen aus:
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = last,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = -0.2cm,
+                 xleftmargin   = 0.8cm,
+                 xrightmargin  = 0.8cm,
+               ]{python3}
+    def compile_expr(expr, st, class_name):
+        ...
+        elif expr[0] == '+':
+            _, lhs, rhs = expr
+            L1, sz1 = compile_expr(lhs, st, class_name)
+            L2, sz2 = compile_expr(rhs, st, class_name)
+            Cmd     = indent('iadd')
+            return L1 + L2 + [Cmd], max(sz1, 1 + sz2) 
+        ...
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Translation of the addition of expressions.}
+\label{fig:Compiler.ipynb:compile:iadd}
+\end{figure}
+
+
+\subsubsection{Translation of a Function Call}
+In order to translate a function call of the form  $f(a_1, \cdots, a_n)$ we first have to translate the
+arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
 \begin{enumerate}
-\item Zunächst benötigen wir für die Auswertung von \textsl{lhs} einen Stack der Größe
-      $\textsl{lhs}.\mathtt{stackSize}()$.  Nachdem \textsl{lhs ausgewertet}  worden ist, verbleibt
-      aber nur der Wert von \textsl{lhs} auf dem Stack.
-\item Falls wir für die Auswertung von \textsl{rhs} weniger Platz auf dem Stack benötigen als für
-      die Auswertung von \textsl{lhs}, dann reicht insgesamt der Stack aus, der für die Auswertung
-      von \textsl{lhs} allokiert worden ist, denn das Ergebnis der Auswertung von \textsl{lhs}
-      benötigt nur eine Speicherstelle und da die Auswertung von \textsl{rhs} nach Voraussetzung
-      weniger Platz auf dem Stack benötigt als die Auswertung von \textsl{lhs} benötigt hat, reicht
-      der verbleibende Platz auf dem Stack aus um \textsl{rhs} auszuwerten.
-\item Falls die Auswertung von \textsl{rhs} genauso viel oder mehr Platz braucht als die Auswertung von \textsl{lhs},
-      dann muss der Stack insgesamt die Höhe
+\item $f$ is a user defined function.  In this case, the byte code treats $f$ as a static function of the
+      class \mytt{class\_name}.  This static function can be called using the assembler command
+      \mytt{invokestatic}.  In order to calculate the stack size that needs to be reserved for the evaluation
+      of  $f(a_1, \cdots, a_n)$, let us assume that we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{rhs}.\texttt{stackSize}() + 1$
+      $\mytt{compile}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$,
       \\[0.2cm]
-      haben, denn wir müssen zusätzlich ja noch das Ergebnis der Auswertung von \textsl{lhs} speichern.
-\end{enumerate}
-Insgesamt sehen wir, dass die Höhe des Stacks durch die Formel
-\\[0.2cm]
-\hspace*{1.3cm}
-$\texttt{max}(\textsl{lhs}.\texttt{stackSize}(), \textsl{rhs}.\texttt{stackSize}() + 1)$
-\\[0.2cm]
-gegeben ist.
-Die Übersetzung von Ausdrücken der Form 
-\[ \textsl{lhs} - \textsl{rhs}, \quad\textsl{lhs} * \textsl{rhs} 
-   \quad \mbox{und} \quad\textsl{lhs} / \textsl{rhs} 
-\]
-verläuft nach demselben Schema.  Statt des Befehls \texttt{iadd} verwenden wir hier die
-entsprechenden Befehle \texttt{isub}, \texttt{imul} und \texttt{idiv}.
+      i.e.~evaluation of the $i^\mathrm{th}$ argument is done by the list of assembler commands $L_i$ and
+      needs a stack size of $s_i$.  As we are evaluating the arguments $a_i$ in the order from $a_1$ to $a_n$,
+      the evaluation of $a_i$ needs a stack size of $i-1 + s_i$, since the results from the evaluation of
+      the arguments $a_1$, $\cdots$, $a_{i-1}$ are already placed on the stack.  Therefore, if we define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s := \max(s_1, 1 + s_2, \cdots, i - 1 + s_i, \cdots, n-1 + s_n)$,
+      \\[0.2cm]
+      then $s$ is the total amount of stack size needed to evaluate the arguments.  Furthermore, let us define
+      the \blue{signature} of $f$ as the string
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{fs} := \mytt{class\_name/}\mytt{f(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)I}$.
+      \\[0.2cm]
+      Then we can define the
+      value of
+      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) :=
+      \bigl\langle L_1 + \cdots + L_n + \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
+\item If $f$ is the function \mytt{println}, then \textsl{Jasmin} treats $f$ as a method of the
+      predefined object \mytt{java.lang.System.out}.
+      This method can be invoked using the assembler command
+      \mytt{invokevirtual}.  As before, let us assume that we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{compile}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$.
+      \\[0.2cm]
+      This time, we have to start by putting the object \mytt{java.lang.System.out} onto the stack before we
+      can evaluate any of the arguments.  Therefore, in order to calculate the stack size we now define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s := \max(1 + s_1, 2 + s_2, \cdots, i - 1 + s_i, \cdots, n + s_n)$.
+      \\[0.2cm]
+      In this case we have to define the \blue{signature} of $f$ as the string
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{fs} := \mytt{java/io/PrintStream/println(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)V}$.
+      \\[0.2cm]
+      Furthermore, we define the command \mytt{gs} for putting the object \mytt{java.lang.System.out} onto the
+      stack as 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{gs} :=  \mytt{getstatic java/lang/System/out Ljava/io/PrintStream;}$.
+      \\[0.2cm]
+      Then we can define the
+      value of
+      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := \\[0.1cm]
+      \hspace*{2.8cm} \bigl\langle \mytt{[} \;\mytt{gs} \;\mytt{]} + L_1 + \cdots + L_n +
+                   \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
+      \end{enumerate}
 
-
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.3cm,
-                ]
-    public class Sum extends Expr {
-        private Expr mLhs;
-        private Expr mRhs;
-    
-        public Sum(Expr lhs, Expr rhs) {
-            mLhs = lhs;
-            mRhs = rhs;
-        }
-        public List<AssemblerCmd> compile(Map<String, Integer> symbolTable) {
-            List<AssemblerCmd> result = mLhs.compile(symbolTable);
-            result.addAll(mRhs.compile(symbolTable));
-            result.add(new IADD());
-            return result;
-        }
-        public Integer stackSize() {
-            return Math.max(mLhs.stackSize(), mRhs.stackSize() + 1);
-        }
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Sum}.}
-\label{fig:Expr:Sum.java}
-\end{figure}
-
-
-
-\subsubsection{Übersetzung von Funktions-Aufrufen}
-Ein Funktions-Aufruf der Form $f(e_1, \cdots, e_n)$ kann übersetzt werden, indem zunächst die
-Ausdrücke $e_1$, $\cdots$, $e_n$ übersetzt werden.  Anschließend wird dann die Funktion
-$f$ mit Hilfe des Kommandos \texttt{invokevirtual} aufgerufen.  
- Damit hat die Übersetzung im Allgemeinen die folgende Form:
-\\[0.2cm]
-$ \textsl{compile}\bigl(f(e_1,\cdots,e_n)\bigr) = 
-   \textsl{compile}(e_1) + \cdots + \textsl{compile}(e_n) + [ \texttt{invokevirtual}\; f] 
-$
-\\[0.2cm]
-Allerdings müssen wir noch einen Sonderfall berücksichtigen. Falls es sich bei der Funktion $f$
-um die Funktion \texttt{println}() handelt, so müssen wir vor der eigentlichen Ausgabe
-noch den \texttt{PrintStream} auf den Stack legen, anschließend ist das Argument auszuwerten und zum
-Schluss können wir dann die Methode \texttt{println} aufrufen.  Da die Funktion \texttt{println}
-selber kein Ergebnis berechnet, ist es in diesem Fall erforderlich, einen Dummy-Wert auf dem Stack abzulegen.
-Philosophische Betrachtungen, die über den Rahmen der Vorlesung hinausgehen, legen nahe, hierfür den
-Wert 42 zu wählen. 
-
+Figure \ref{fig:Compiler.ipynb:compile:iadd} on page \pageref{fig:Compiler.ipynb:compile:iadd} shows how the
+translation of function calls is implemented.  
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.3cm,
-                ]
-    public class FunctionCall extends Expr {
-        private String     mName;
-        private List<Expr> mArgs;
-    
-        public FunctionCall(String name, List<Expr> args) {
-            mName = name;
-            mArgs = args;
-        }
-        public List<AssemblerCmd> compile(Map<String, Integer> symbolTable) {
-            List<AssemblerCmd> result = new LinkedList<AssemblerCmd>();
-            if (mName.equals("println")) { 
-                AssemblerCmd getStatic = 
-                    new GETSTATIC("java/lang/System/out Ljava/io/PrintStream;");
-                result.add(getStatic);
-                for (Expr arg: mArgs) {
-                    result.addAll(arg.compile(symbolTable));
-                }
-                AssemblerCmd println = new PRINTLN();
-                AssemblerCmd bipush  = new BIPUSH(42);
-                result.add(println);
-                result.add(bipush);
-                return result;
-            }
-            for (Expr arg: mArgs) {
-                result.addAll(arg.compile(symbolTable));
-            }
-            String descr = Compiler.sClassName + "/" + mName + "(";
-            for (int i = 0; i < mArgs.size(); ++i) {
-                descr += "I";
-            }
-            descr += ")I";
-            AssemblerCmd invoke = new INVOKE(descr);
-            result.add(invoke);
-            return result;
-        }
-        public Integer stackSize() {
-            Integer biggest = 0;
-            for (int i = 0; i < mArgs.size(); ++i) {
-                biggest = Math.max(biggest, i + mArgs.get(i).stackSize());
-            }
-            if (mName.equals("println")) {
-                ++biggest;
-            }
-            return Math.max(biggest, 1);
-        }
-    }
-\end{Verbatim}
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = last,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = -0.2cm,
+                 xleftmargin   = 0.8cm,
+                 xrightmargin  = 0.8cm,
+               ]{python3}
+    def compile_expr(expr, st, class_name):
+        ...
+        elif expr[0] == 'call' and expr[1] == 'println':
+            _, _, *args = expr
+            CmdLst    = ['getstatic java/lang/System/out Ljava/io/PrintStream;')
+            stck_size = 0
+            cnt       = 0
+            for arg in args:
+                L, sz_arg = compile_expr(arg, st, class_name)
+                stck_size = max(stck_size, cnt + 1 + sz_arg)
+                CmdLst   += L
+                cnt      += 1
+            CmdLst += [f'invokevirtual java/io/PrintStream/println({"I"*cnt})V']
+            return CmdLst, stck_size
+        elif expr[0] == 'call' and expr[1] != 'println':
+            _, f, *args = expr
+            CmdLst    = []
+            stck_size = 0
+            cnt       = 0
+            for arg in args:
+                L, sz_arg = compile_expr(arg, st, class_name)
+                stck_size = max(stck_size, cnt + sz_arg)
+                CmdLst   += L
+                cnt      += 1
+            CmdLst += [f'invokestatic {class_name}/{f}({"I"*cnt})I']
+            return CmdLst, max(stck_size, 1)
+        ...
+\end{minted}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{FunctionCall}.}
-\label{fig:Expr:FunctionCall.java}
+\caption{Translation of function calls.}
+\label{fig:Compiler.ipynb:compile:call}
 \end{figure}
-
-Abbildung \ref{fig:Expr:FunctionCall.java} zeigt die Implementierung der Klasse
-\texttt{FunctionCall}, die einen Funktions-Aufruf repräsentiert.  Die Klasse hat zwei
-Member-Variablen.
-\begin{enumerate}
-\item \texttt{mName} ist der Name der aufgerufenen Funktion.
-\item \texttt{mArgs} ist die Liste der Argumente, mit der die Funktion aufgerufen wird.
-\end{enumerate}
-Falls es sich bei der Funktion nicht um die Methode \texttt{println} handelt, werden zunächst alle
-Argumente der Funktion ausgewertet und die Ergebnisse dieser Argumente auf dem Stack abgelegt.
-Schließlich wird die Funktion über den Befehl \texttt{invokevirtual} aufgerufen, der durch die
-Klasse \texttt{INVOKE} dargestellt wird.
-
-Bei der Berechnung der Größe des benötigten Stacks ist zu berücksichtigen, das bei der Auswertung
-des Arguments mit dem Index $i$ bereits $i$ Werte auf dem Stack liegen.
-\pagebreak
-
 
 \subsection{Übersetzung von Boole'schen Ausdrücken}
 Boole'sche Ausdrücke werden aus Gleichungen und Ungleichungen mit Hilfe der logischen Operatoren
@@ -341,7 +311,7 @@ Wir beginnen mit der Übersetzung von Gleichungen.
 
 \subsubsection{Übersetzung von Gleichungen}
 Bevor wir eine Gleichung der Form
-\[ \textsl{lhs}\; \texttt{==} \;\textsl{rhs} \]
+\[ \textsl{lhs}\; \mytt{==} \;\textsl{rhs} \]
 übersetzen können, müssen wir uns überlegen, was der erzeugte Code überhaupt erreichen soll.  Eine
 naheliegende Forderung ist, dass am Ende auf dem Stack eine 1 abgelegt wird, wenn die Werte der
 beiden Ausdrücke \textsl{lhs} und \textsl{rhs} übereinstimmen.  Andernfalls soll auf dem Stack eine
@@ -389,7 +359,7 @@ beiden Ausdrücke \textsl{lhs} und \textsl{rhs} übereinstimmen.  Andernfalls soll
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Equation}.}
+\caption{Die Klasse \mytt{Equation}.}
 \label{fig:Expr:Equation.java}
 \end{figure}
 
@@ -397,69 +367,69 @@ beiden Ausdrücke \textsl{lhs} und \textsl{rhs} übereinstimmen.  Andernfalls soll
 \item Zunächst erzeugen wir in den Zeilen 10 und 11 den Code zur Auswertung von \textsl{lhs} und \textsl{rhs}.
       Wenn dieser Code abgearbeitet worden ist, liegen die Werte von \textsl{lhs} und \textsl{rhs}
       auf dem Stack.
-\item Anschließend überprüfen wir mit Hilfe des Befehls \texttt{if\_icmpeq}, ob die beiden Werte
+\item Anschließend überprüfen wir mit Hilfe des Befehls \mytt{if\_icmpeq}, ob die beiden Werte
       gleich sind.  Falls dies so ist, legen wir eine 1 auf den Stack, sonst eine 0.
 \end{enumerate}
 Damit hat der erzeugte Code insgesamt die folgende Form
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}(\textsl{lhs}\;\texttt{==}\;\textsl{rhs}) & = & 
+   \textsl{compile}(\textsl{lhs}\;\mytt{==}\;\textsl{rhs}) & = & 
          \textsl{lhs}.\textsl{compile}()  \\
    & + & \textsl{rhs}.\textsl{compile}()  \\
-   & + & [ \;\texttt{if\_icmpeq}\; \textsl{true} \; ]  \\
-   & + & [ \;\texttt{bipush}\;0\; ]  \\
-   & + & [ \;\texttt{goto}\;\textsl{next}\; ]  \\
-   & + & [ \;\textsl{true}\texttt{:}\; ]  \\
-   & + & [ \;\texttt{bipush}\;1\; ]  \\
-   & + & [ \;\textsl{next}\texttt{:}\; ]  \\
+   & + & [ \;\mytt{if\_icmpeq}\; \textsl{true} \; ]  \\
+   & + & [ \;\mytt{bipush}\;0\; ]  \\
+   & + & [ \;\mytt{goto}\;\textsl{next}\; ]  \\
+   & + & [ \;\textsl{true}\mytt{:}\; ]  \\
+   & + & [ \;\mytt{bipush}\;1\; ]  \\
+   & + & [ \;\textsl{next}\mytt{:}\; ]  \\
    \end{array}
 \]
-Diese Gleichung ist in der Methode $\textsl{compile}()$ der Klasse \texttt{Equation} eins zu eins umgesetzt worden.
+Diese Gleichung ist in der Methode $\textsl{compile}()$ der Klasse \mytt{Equation} eins zu eins umgesetzt worden.
 
 \subsubsection{Übersetzung von negierten Gleichungen}
 Die Übersetzung einer negierten Gleichung der Form
-\[ \textsl{lhs}\;\texttt{!=}\;\textsl{rhs} \]
-verläuft analog zu der Übersetzung einer Gleichung, denn wir müssen hier nur den Befehl \texttt{if\_icmpeq}
-durch den Befehl \texttt{if\_icmpne} ersetzen.  Daher lautet die Spezifikation
+\[ \textsl{lhs}\;\mytt{!=}\;\textsl{rhs} \]
+verläuft analog zu der Übersetzung einer Gleichung, denn wir müssen hier nur den Befehl \mytt{if\_icmpeq}
+durch den Befehl \mytt{if\_icmpne} ersetzen.  Daher lautet die Spezifikation
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}(\textsl{lhs}\;\texttt{!=}\;\textsl{rhs}) & = & 
+   \textsl{compile}(\textsl{lhs}\;\mytt{!=}\;\textsl{rhs}) & = & 
          \textsl{lhs}.\textsl{compile}()  \\
    & + & \textsl{rhs}.\textsl{compile}()  \\
-   & + & [ \;\texttt{if\_icmpne}\; \textsl{true} \; ]  \\
-   & + & [ \;\texttt{bipush}\;0\; ]  \\
-   & + & [ \;\texttt{goto}\;\textsl{next}\; ]  \\
-   & + & [ \;\textsl{true}\texttt{:}\; ]  \\
-   & + & [ \;\texttt{bipush}\;1\; ]  \\
-   & + & [ \;\textsl{next}\texttt{:}\; ]  \\
+   & + & [ \;\mytt{if\_icmpne}\; \textsl{true} \; ]  \\
+   & + & [ \;\mytt{bipush}\;0\; ]  \\
+   & + & [ \;\mytt{goto}\;\textsl{next}\; ]  \\
+   & + & [ \;\textsl{true}\mytt{:}\; ]  \\
+   & + & [ \;\mytt{bipush}\;1\; ]  \\
+   & + & [ \;\textsl{next}\mytt{:}\; ]  \\
    \end{array}
 \]
 Dies kann wieder eins zu eins umgesetzt werden.  Aus Platzgründen verzichten wir darauf, die Klasse 
-\texttt{Inequation} zu präsentieren.
+\mytt{Inequation} zu präsentieren.
 
 \subsubsection{Übersetzung von Ungleichungen}
 The compilation of inequations of the form 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{lhs} \;\texttt{<=}\; \textsl{rhs}$, \quad 
-$\textsl{lhs} \;\texttt{<}\; \textsl{rhs}$, \quad 
-$\textsl{lhs} \;\texttt{>=}\; \textsl{rhs}$, \quad and \quad
-$\textsl{lhs} \;\texttt{<}\; \textsl{rhs}$,
+$\textsl{lhs} \;\mytt{<=}\; \textsl{rhs}$, \quad 
+$\textsl{lhs} \;\mytt{<}\; \textsl{rhs}$, \quad 
+$\textsl{lhs} \;\mytt{>=}\; \textsl{rhs}$, \quad and \quad
+$\textsl{lhs} \;\mytt{<}\; \textsl{rhs}$,
 \\[0.2cm]
 is essentially the same as the compilation of equations.  We only have to replace the assembler
-command \texttt{if\_icmpeq} with either \texttt{if\_icmple}, \texttt{if\_icmplt},
-\texttt{if\_icmpge}, or \texttt{if\_icmpgt}.
+command \mytt{if\_icmpeq} with either \mytt{if\_icmple}, \mytt{if\_icmplt},
+\mytt{if\_icmpge}, or \mytt{if\_icmpgt}.
 
 \subsubsection{Übersetzung von Konjunktionen}
 Die Übersetzung einer Konjunktion der Form
-\[ \textsl{lhs}\;\texttt{\&\&}\;\textsl{rhs} \]
+\[ \textsl{lhs}\;\mytt{\&\&}\;\textsl{rhs} \]
 kann wie folgt spezifiziert werden:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}(\textsl{lhs}\;\texttt{\&\&}\;\textsl{rhs}) & = & 
+   \textsl{compile}(\textsl{lhs}\;\mytt{\&\&}\;\textsl{rhs}) & = & 
          \textsl{lhs}.\textsl{compile}()  \\
    & + & \textsl{rhs}.\textsl{compile}()  \\
-   & + & [ \;\texttt{iand}\; ]  
+   & + & [ \;\mytt{iand}\; ]  
 \end{array}
 \]
 Abbildung \ref{fig:Expr:Conjunction.java} zeigt die Umsetzung dieser Gleichung.
@@ -495,37 +465,37 @@ Abbildung \ref{fig:Expr:Conjunction.java} zeigt die Umsetzung dieser Gleichung.
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Conjunction}.}
+\caption{Die Klasse \mytt{Conjunction}.}
 \label{fig:Expr:Conjunction.java}
 \end{figure}
 
-Die obige Umsetzung entspricht allerdings nicht dem, was in der Sprache \texttt{C}
+Die obige Umsetzung entspricht allerdings nicht dem, was in der Sprache \mytt{C}
 tatsächlich passiert.  Dort wird die Auswertung eines Ausdrucks der Form 
 \\[0.2cm]
 \hspace*{1.3cm}
-\textsl{lhs} \texttt{\&\&} \textsl{rhs}
+\textsl{lhs} \mytt{\&\&} \textsl{rhs}
 \\[0.2cm]
 abgebrochen, sobald das Ergebnis der Auswertung feststeht.  Liefert die Auswertung
 von \textsl{lhs} als Ergebnis eine $0$, so wird der Ausdruck \textsl{rhs} nicht mehr
 ausgewertet.  Falls dieser Ausdruck Seiteneffekte hat, ist das Ergebnis der Auswertung dann
 also verschieden von unserer Auswertung.
 
-Eine Disjunktion wird in analoger Weise auf den Assembler-Befehl \texttt{ior} zurück geführt.
+Eine Disjunktion wird in analoger Weise auf den Assembler-Befehl \mytt{ior} zurück geführt.
 
 \subsubsection{Übersetzung von Negationen}
-Die Übersetzung einer Negation der Form $\texttt{!}\textsl{expr}$ kann nicht so geradlinig behandelt
+Die Übersetzung einer Negation der Form $\mytt{!}\textsl{expr}$ kann nicht so geradlinig behandelt
 werden wie die Übersetzung von Konjunktionen und Disjunktionen.  Das liegt daran, dass es einen
-Assembler-Befehl \texttt{inot}, der den oben auf dem Stack liegenden Wert negiert, nicht gibt.
+Assembler-Befehl \mytt{inot}, der den oben auf dem Stack liegenden Wert negiert, nicht gibt.
 Aber es geht auch anders, denn weil wir die Wahrheitswerte durch 1 und 0 darstellen, können wir die
 Negation arithmetisch wie folgt spezifizieren:
-\[ \texttt{!}x = 1 - x. \]
+\[ \mytt{!}x = 1 - x. \]
 Damit verläuft die Übersetzung einer Negation nach dem folgenden Schema:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}(\texttt{!}\textsl{expr}) & = & 
-         [\;\texttt{bipush}\;1\;]  \\
+   \textsl{compile}(\mytt{!}\textsl{expr}) & = & 
+         [\;\mytt{bipush}\;1\;]  \\
    & + & \textsl{expr}.\textsl{compile}()  \\
-   & + & [\;\texttt{isub}\;]  
+   & + & [\;\mytt{isub}\;]  
 \end{array}
 \]
 Abbildung \ref{fig:Expr:Negation.java} zeigt die Umsetzung dieser Idee.
@@ -561,7 +531,7 @@ Abbildung \ref{fig:Expr:Negation.java} zeigt die Umsetzung dieser Idee.
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Negation}.}
+\caption{Die Klasse \mytt{Negation}.}
 \label{fig:Expr:Negation.java}
 \end{figure}
 
@@ -577,20 +547,20 @@ intermediate values that have been put on the stack during the execution of the 
 
 \subsubsection{Übersetzung von Zuweisungen}
 Wir untersuchen als erstes, wie eine Zuweisung der Form
-\[ x \;\texttt{=}\; \textsl{expr} \]
+\[ x \;\mytt{=}\; \textsl{expr} \]
 übersetzt werden kann.  Die Grundidee besteht darin, zunächst den Ausdruck \textsl{expr}
 auszuwerten.  Als Folge dieser Auswertung wird dann ein Wert auf dem Stack zurück bleiben, der das
-Ergebnis dieser Auswertung ist.  Diesen Wert können wir mit dem Befehl \texttt{istore} unter der
+Ergebnis dieser Auswertung ist.  Diesen Wert können wir mit dem Befehl \mytt{istore} unter der
 Variable $x$ abspeichern.  Folglich kann die Übersetzung einer Zuweisung wie folgt spezifiziert werden:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}(x \texttt{=} \textsl{expr}) & = & 
+   \textsl{compile}(x \mytt{=} \textsl{expr}) & = & 
          \textsl{expr}.\textsl{compile}()  \\
-   & + & [\;\texttt{istore}\;x\;]  
+   & + & [\;\mytt{istore}\;x\;]  
 \end{array}
 \]
 Die Idee wird in der in Abbildung \ref{fig:Statement:Assign.java} gezeigten Klasse
-\texttt{Assign} umgesetzt.
+\mytt{Assign} umgesetzt.
 
 \begin{figure}[!ht]
 \centering
@@ -622,25 +592,25 @@ Die Idee wird in der in Abbildung \ref{fig:Statement:Assign.java} gezeigten Klas
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Assign}.}
+\caption{Die Klasse \mytt{Assign}.}
 \label{fig:Statement:Assign.java}
 \end{figure}
 
 \subsubsection{Übersetzung von Ausdrücken als Befehlen}
 Die Übersetzung eines Ausdrucks, der als Befehl verwendet wird, birgt eine Tücke:
 Die Übersetzung des Ausdrucks selber hinterlässt auf dem Stack einen Wert.  Dieser muss aber bei
-Beendigung des Befehls vom Stack entfernt werden!  Daher müssen wir den Befehl \texttt{pop} an das
+Beendigung des Befehls vom Stack entfernt werden!  Daher müssen wir den Befehl \mytt{pop} an das
 Ende der Liste der Assembler-Befehle anfügen, die bei der Übersetzung des Ausdrucks erzeugt werden.
-Die Übersetzung eines  Befehls vom Typ \texttt{ExprStatement} wird also
+Die Übersetzung eines  Befehls vom Typ \mytt{ExprStatement} wird also
 wie folgt spezifiziert:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}(\textsl{expr}\texttt{;}) & = & 
+   \textsl{compile}(\textsl{expr}\mytt{;}) & = & 
          \textsl{expr}.\textsl{compile}()  \\
-   & + & [\;\texttt{pop}\;]  
+   & + & [\;\mytt{pop}\;]  
 \end{array}
 \]
-Abbildung \ref{fig:Statement:ExprStatement.java} zeigt die Klasse \texttt{ExprStatement}, in der
+Abbildung \ref{fig:Statement:ExprStatement.java} zeigt die Klasse \mytt{ExprStatement}, in der
 diese Überlegung umgesetzt wird.
 
 \begin{figure}[!ht]
@@ -671,25 +641,25 @@ diese Überlegung umgesetzt wird.
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{ExprStatement}.}
+\caption{Die Klasse \mytt{ExprStatement}.}
 \label{fig:Statement:ExprStatement.java}
 \end{figure}
 
 \subsubsection{Die Übersetzung von Verzweigungs-Befehlen}
 Als nächstes überlegen wir, wie ein Verzweigungs-Befehl der Form
-\[ \texttt{if}\; (\textsl{expr})\; \textsl{statement} \]
+\[ \mytt{if}\; (\textsl{expr})\; \textsl{statement} \]
 übersetzt werden kann.  Offenbar muss zunächst der Boole'sche Ausdruck \textsl{expr} übersetzt
 werden.  Die Auswertung dieses Ausdrucks wird auf dem Stack entweder eine 1 oder eine 0
 hinterlassen, je nachdem, ob die Bedingung des Tests wahr oder falsch wahr.  Mit dem Befehl
-\texttt{ifeq} können wir überprüfen, welcher dieser beiden Fälle vorliegt.  
+\mytt{ifeq} können wir überprüfen, welcher dieser beiden Fälle vorliegt.  
 Das führt zu der folgenden Spezifikation:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}\bigl(\texttt{if}\; (\textsl{expr})\;\textsl{statement}\bigr) & = & 
+   \textsl{compile}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{statement}\bigr) & = & 
          \textsl{expr}.\textsl{compile}()  \\
-   & + & [\;\texttt{ifeq}\;\textsl{else}\;] \\
+   & + & [\;\mytt{ifeq}\;\textsl{else}\;] \\
    & + & \textsl{statement}.\textsl{compile}() \\
-   & + & [\;\textsl{else}\texttt{:}\;]        
+   & + & [\;\textsl{else}\mytt{:}\;]        
 \end{array}
 \]
 Diese Spezifikation ist in der Abbildung \ref{fig:Statement:IfThen.java} umgesetzt worden.
@@ -729,25 +699,25 @@ Diese Spezifikation ist in der Abbildung \ref{fig:Statement:IfThen.java} umgeset
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{IfThen.java}}
+\caption{Die Klasse \mytt{IfThen.java}}
 \label{fig:Statement:IfThen.java}
 \end{figure}
 
 \vspace*{0.1cm}
 
 Die Übersetzung eines Verzweigungs-Befehls der Form
-\[ \texttt{if}\; (\textsl{expr})\; \textsl{thenStmnt} \;\texttt{else}\; \textsl{elseStmnt} \]
+\[ \mytt{if}\; (\textsl{expr})\; \textsl{thenStmnt} \;\mytt{else}\; \textsl{elseStmnt} \]
 erfolgt in analoger Art und Weise.  Diesmal lautet die Spezifikation:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}\bigl(\texttt{if}\; (\textsl{expr})\;\textsl{thenStmnt}\;\texttt{else}\;\textsl{elseStmnt}\bigr) & = & 
+   \textsl{compile}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{thenStmnt}\;\mytt{else}\;\textsl{elseStmnt}\bigr) & = & 
          \textsl{expr}.\textsl{compile}()  \\
-   & + & [\;\texttt{ifeq}\;\textsl{else}\;] \\
+   & + & [\;\mytt{ifeq}\;\textsl{else}\;] \\
    & + & \textsl{thenStmnt}.\textsl{compile}() \\
-   & + & [\;\texttt{goto}\;\textsl{next}\;]    \\    
-   & + & [\;\textsl{else}\texttt{:}\;]         \\
+   & + & [\;\mytt{goto}\;\textsl{next}\;]    \\    
+   & + & [\;\textsl{else}\mytt{:}\;]         \\
    & + & \textsl{elseStmnt}.\textsl{compile}()\;]    \\    
-   & + & [\;\textsl{next}\texttt{:}\;]         
+   & + & [\;\textsl{next}\mytt{:}\;]         
 \end{array}
 \]
 Diese Spezifikation ist in der Abbildung \ref{fig:Statement:IfThenElse.java} umgesetzt worden.
@@ -792,23 +762,23 @@ Diese Spezifikation ist in der Abbildung \ref{fig:Statement:IfThenElse.java} umg
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{IfThenElse}.}
+\caption{Die Klasse \mytt{IfThenElse}.}
 \label{fig:Statement:IfThenElse.java}
 \end{figure}
 
 \subsubsection{Die Übersetzung einer Schleife}
-Die Übersetzung einer \texttt{while}-Schleife der Form
-\[ \texttt{while}\;(\textsl{cond})\;\textsl{statement} \]
+Die Übersetzung einer \mytt{while}-Schleife der Form
+\[ \mytt{while}\;(\textsl{cond})\;\textsl{statement} \]
 orientiert sich an der folgenden Spezifikation:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}\bigl(\texttt{while}\; (\textsl{cond})\;\textsl{stmnt}\bigr) & = & 
-         [\;\textsl{loop}\texttt{:}\;]            \\
+   \textsl{compile}\bigl(\mytt{while}\; (\textsl{cond})\;\textsl{stmnt}\bigr) & = & 
+         [\;\textsl{loop}\mytt{:}\;]            \\
    & + & \textsl{cond}.\textsl{compile}()         \\
-   & + & [\;\texttt{ifeq}\;\textsl{next}\;] \\
+   & + & [\;\mytt{ifeq}\;\textsl{next}\;] \\
    & + & \textsl{stmnt}.\textsl{compile}()    \\    
-   & + & [\;\texttt{goto}\;\textsl{loop}\;]    \\    
-   & + & [\;\textsl{next}\texttt{:}\;]         
+   & + & [\;\mytt{goto}\;\textsl{loop}\;]    \\    
+   & + & [\;\textsl{next}\mytt{:}\;]         
 \end{array}
 \]
 Die Umsetzung dieser Spezifikation sehen Sie in Abbildung \ref{fig:Statement:While.java}.
@@ -850,22 +820,22 @@ Die Umsetzung dieser Spezifikation sehen Sie in Abbildung \ref{fig:Statement:Whi
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{While}.}
+\caption{Die Klasse \mytt{While}.}
 \label{fig:Statement:While.java}
 \end{figure}
 
 \subsubsection{Übersetzen einer Liste von Befehlen}
 Eine in geschweiften Klammern eingeschlossene Liste von Befehlen der Form
-\[ \{ \textsl{stmnt}_1\texttt{;}\; \cdots\; \textsl{stmnt}_n\texttt{;} \} \]
+\[ \{ \textsl{stmnt}_1\mytt{;}\; \cdots\; \textsl{stmnt}_n\mytt{;} \} \]
 wird dadurch übersetzt, dass die Listen, die bei der Übersetzung der einzelnen Befehle
 $\textsl{stmnt}_i$ entstehen, aneinander gehängt werden:
 \[
    \begin{array}[t]{lcl}
-   \textsl{compile}\bigl(\texttt{\{} \textsl{stmnt}_1\texttt{;}\; \cdots\; \textsl{stmnt}_n\texttt{;} \texttt{\}}\bigr) & = & 
+   \textsl{compile}\bigl(\mytt{\{} \textsl{stmnt}_1\mytt{;}\; \cdots\; \textsl{stmnt}_n\mytt{;} \mytt{\}}\bigr) & = & 
          \textsl{compile}(\textsl{stmnt}_1) + \cdots + \textsl{compile}(\textsl{stmnt}_n).
    \end{array}
 \]
-Diese Idee ist in der Klasse \texttt{Block} realisiert worden. Abbildung
+Diese Idee ist in der Klasse \mytt{Block} realisiert worden. Abbildung
 \ref{fig:Statement:Block.java} zeigt diese Klasse.
 
 \begin{figure}[!ht]
@@ -901,7 +871,7 @@ Diese Idee ist in der Klasse \texttt{Block} realisiert worden. Abbildung
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Block}.}
+\caption{Die Klasse \mytt{Block}.}
 \label{fig:Statement:Block.java}
 \end{figure}
 
@@ -910,11 +880,11 @@ Nachdem wir jetzt gesehen haben, wie die einzelnen Teile eines Programms in List
 Assembler-Befehlen übersetzt werden können, müssen wir noch zeigen, wie die einzelnen Komponenten
 unseres Programms zusammen spielen.  Dazu sind noch zwei Klassen zu diskutieren:
 \begin{enumerate}
-\item Die Klasse \texttt{Function} repräsentiert die Definition einer Funktion.
-\item Die Klasse \texttt{Program}  repräsentiert das vollständige Programm.
+\item Die Klasse \mytt{Function} repräsentiert die Definition einer Funktion.
+\item Die Klasse \mytt{Program}  repräsentiert das vollständige Programm.
 \end{enumerate}
-Wir beginnen mit der Diskussion der Klasse \texttt{Function}.  Abbildung
-\ref{fig:Compiler:Function.java} zeigt die Klasse \texttt{Function}, allerdings ohne die
+Wir beginnen mit der Diskussion der Klasse \mytt{Function}.  Abbildung
+\ref{fig:Compiler:Function.java} zeigt die Klasse \mytt{Function}, allerdings ohne die
 Implementierung der Methode $\textsl{compile}()$, die wir aus Platzgründen in die Abbildung
 \ref{fig:Compiler:Function.compile} ausgelagert haben.
 
@@ -952,18 +922,18 @@ Implementierung der Methode $\textsl{compile}()$, die wir aus Platzgründen in di
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Function}.}
+\caption{Die Klasse \mytt{Function}.}
 \label{fig:Compiler:Function.java}
 \end{figure}
 
 
-Die Klasse \texttt{Function} enthält vier Member-Variablen:
+Die Klasse \mytt{Function} enthält vier Member-Variablen:
 \begin{enumerate}
-\item \texttt{mName} gibt den Namen der Funktion an.
-\item \texttt{mParameterList} ist die Liste der Parameter, 
+\item \mytt{mName} gibt den Namen der Funktion an.
+\item \mytt{mParameterList} ist die Liste der Parameter, 
       mit der die Funktion aufgerufen wird.
-\item \texttt{mDeclarations} ist die Liste der Variablen-Deklarationen.
-\item \texttt{mBody} ist die Liste von Befehlen, die im Rumpf der Funktion
+\item \mytt{mDeclarations} ist die Liste der Variablen-Deklarationen.
+\item \mytt{mBody} ist die Liste von Befehlen, die im Rumpf der Funktion
       ausgeführt werden.
 \end{enumerate}
 
@@ -1036,7 +1006,7 @@ Die Klasse \texttt{Function} enthält vier Member-Variablen:
 \vspace*{\fill}
 \pagebreak
 
-Die eigentliche Arbeit der Klasse \texttt{Funktion} wird in der Methode $\textsl{compile}()$, die in Abbildung
+Die eigentliche Arbeit der Klasse \mytt{Funktion} wird in der Methode $\textsl{compile}()$, die in Abbildung
 \ref{fig:Compiler:Function.compile} gezeigt ist, geleistet.  Es sind zwei Fälle zu unterscheiden:
 \begin{enumerate}
 \item Falls die zu übersetzende Funktion den Namen \squoted{main} hat, so hat der erzeugte
@@ -1063,7 +1033,7 @@ Die eigentliche Arbeit der Klasse \texttt{Funktion} wird in der Methode $\textsl
        \end{Verbatim}
        % \$
 
-       Hier bezeichnet $l$ die Anzahl der in der Funktion \texttt{main} verwendeten lokalen Variablen,
+       Hier bezeichnet $l$ die Anzahl der in der Funktion \mytt{main} verwendeten lokalen Variablen,
        $s$ ist die maximale Höhe des Stacks
        und $s_1$, $\cdots$, $s_n$ bezeichnen die einzelnen Assemblerbefehle, die bei der Übersetzung
        des Rumpfes der Funktion erzeugt werden.
@@ -1095,7 +1065,7 @@ Die eigentliche Arbeit der Klasse \texttt{Funktion} wird in der Methode $\textsl
        Weiter sind $s_1$, $\cdots$, $s_n$ die Assemblerbefehle des Rumpfes der Funktion.
 \end{enumerate}
 Abbildung \ref{fig:Compiler:Function.stackSize} zeigt die Implementierung der Funktion
-\texttt{stackSize}. Da die einzelnen Befehle nichts auf dem Stack zurück lassen dürfen, ergibt sich
+\mytt{stackSize}. Da die einzelnen Befehle nichts auf dem Stack zurück lassen dürfen, ergibt sich
 die Höhe des Stacks, der zur Ausführung aller Befehle benötigt wird, als das Maximum der Höhen der
 einzelnen Befehle.
 
@@ -1155,23 +1125,23 @@ einzelnen Befehle.
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Program}.}
+\caption{Die Klasse \mytt{Program}.}
 \label{fig:Program.java}
 \end{figure}
  
 \noindent
-Zum Abschluss diskutieren wir die Klasse \texttt{Program}, die in Abbildung
+Zum Abschluss diskutieren wir die Klasse \mytt{Program}, die in Abbildung
 \ref{fig:Program.java} gezeigt wird.  Diese Klasse verwaltet in der Member-Variablen
-\texttt{mFunctionList} die Liste aller zu übersetzenden Funktionen.  
+\mytt{mFunctionList} die Liste aller zu übersetzenden Funktionen.  
 
 Bei der Übersetzung der Funktionen ist darauf zu achten, dass zuerst die Funktion $\textsl{main}()$
 übersetzt wird, denn diese muss am Anfang der erzeugten Assembler-Datei stehen.  In der
-\texttt{C}-Datei ist die Funktion $\textsl{main}()$ aber die letzte Funktion, denn in der Sprache
-\texttt{C} müssen alle Funktionen vor ihrer Verwendung deklariert worden sein.
+\mytt{C}-Datei ist die Funktion $\textsl{main}()$ aber die letzte Funktion, denn in der Sprache
+\mytt{C} müssen alle Funktionen vor ihrer Verwendung deklariert worden sein.
 
 Wie übersetzen in Zeile 11 als erstes die Funktion $\textsl{main}()$.  Anschließend werden in der
 Schleife, die sich von Zeile 12 bis 15 erstreckt, die restlichen Funktionen übersetzt.
-Der erzeugte Code befindet sich dann in der Liste \texttt{fctList}, die als Ergebnis zurück gegeben wird.  
+Der erzeugte Code befindet sich dann in der Liste \mytt{fctList}, die als Ergebnis zurück gegeben wird.  
 
 
 Übersetzen wir die in Abbildung
@@ -1247,19 +1217,19 @@ den Rahmen der Vorlesung heraus.
 \exerciseEng
 The goal of this exercise is to extend the language supported by the compiler presented in this chapter.
 \begin{enumerate}
-\item[(a)] Extend the compiler so that \texttt{for}-loops are supported.  The syntax of these \texttt{for}-loops
-           should be similar to the syntax of \texttt{for}-loops in the programming language \texttt{C}.
+\item[(a)] Extend the compiler so that \mytt{for}-loops are supported.  The syntax of these \mytt{for}-loops
+           should be similar to the syntax of \mytt{for}-loops in the programming language \mytt{C}.
 \item[(b)] Extend the compiler so that increment and decrement statements of the form
            \\[0.2cm]
            \hspace*{1.3cm}
-           \texttt{++}\textsl{var}\texttt{;}  \quad and \quad
-           \texttt{--}\textsl{var}\texttt{;}  
+           \mytt{++}\textsl{var}\mytt{;}  \quad and \quad
+           \mytt{--}\textsl{var}\mytt{;}  
            \\[0.2cm]
            are supported.  As we only intend to use these statements in the update statement of a
-           \texttt{for}-loop, there is no need to support these operators inside expressions. 
+           \mytt{for}-loop, there is no need to support these operators inside expressions. 
 \end{enumerate}
-In order to test your version of the compiler, rewrite the example integer-\texttt{C} program
-presented in this chapter to use both a \texttt{for}-loop and the increment operator.  \eox
+In order to test your version of the compiler, rewrite the example integer-\mytt{C} program
+presented in this chapter to use both a \mytt{for}-loop and the increment operator.  \eox
 
 
 %%% Local Variables: 
