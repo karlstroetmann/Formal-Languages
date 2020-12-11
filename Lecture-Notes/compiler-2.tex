@@ -1,52 +1,59 @@
-\section{Die Code-Erzeugung}
-Nun haben wir alles Material zusammen, um die eigentliche Code-Erzeugung diskutieren zu können.
-Wir gliedern unsere Darstellung, indem wir die Übersetzung arithmetischer Ausdrücke,
-Boole'schen Ausdrücke, Befehle und Funktionen getrennt behandeln.  Wir beginnen damit, dass wir
-zeigen, wie arithmetische Ausdrücke übersetzt werden.
+\section{Code Generation}
+Next, we discuss the generation of code.  We structure our representation by discussing the code generation for
+arithmetic expressions, Boolean expression, statements, and function definitions separately. 
 
+\subsection{Translation of Arithmetic Expressions}
+Given an arithmetic expression $e$, the translation of $e$ is supposed to generate some code that, when
+executed, places the result of evaluating the expression $e$ onto the stack.  To this end we define a function
+\texttt{compile} that has the following signature:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mytt{compile}: \textsl{Expr} \times \textsl{SymbolTable} \times \textsl{ClassName} \rightarrow 
+                 \textsl{Pair}\mathtt{<}\textsl{List}\mathtt{<}\textsl{AsmCmd}\mathtt{>}, \mathbb{N}\mathtt{>}.$
+\\[0.2cm]
+A call to this function has the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mytt{compile}(\mytt{expr}, \mytt{st}, \mytt{name})$.
+\\[0.2cm]
+The interpretation of the arguments is as follows:
+\begin{enumerate}[(a)]
+\item \texttt{expr} is the arithmetic expression that is to be translated into assembler code.
+\item \texttt{st} is the \blue{symbol table}: \index{symbol table} Concretely, this is a dictionary that maps
+      the variable names to their position on the stack.  For example, if \squoted{x} is a variable that is the
+      third variable in the local variable frame, then we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{st['x'] = 2},
+      \\[0.2cm]
+      because the first variable in the local variable frame has index 0.  We will discuss later how the 
+      positions of the variables on the stack is fixed.
+\item \texttt{name} is the name of the class that is to be used by our compiler.
 
-\subsection{Übersetzung arithmetischer Ausdrücke}
-Die Übersetzung eines arithmetischen Ausdrucks \textsl{expr} soll Code erezeugen, durch dessen
-Ausführung das Ergebnis der Auswertung auf den Stack gelegt wird.  Zu diesem Zweck deklariert
-die abstrakte Klasse \texttt{Expr}, die in Abbildung \ref{fig:Expr.java2} gezeigt ist, die Methode
-\[  \texttt{public abstract List<AssemblerCmd> compile(Map<String, Integer> symbolTable);} \]
-die als Ergebnis eine Liste von Assembler-Kommandos erzeugt.  Werden diese Kommandos
-ausgeführt, so liegt anschließend der Wert des Ausdrucks auf dem Stack.
-Bei dem Parameter \texttt{symbolTable}, welcher der Methode \texttt{compile} als Argument übergeben
-wird, handelt es sich um eine Funktion, die jeder Variablen eine eindeutige Position im Stack
-zuordnet, an der diese Variable im Stack gespeichert wird.  Diese Positionen werden bei der
-Deklaration der einzelnen Variablen berechnet.  Die Details dieser Berechnung diskutieren wir, wenn
-wie die Implementierung der Klasse \texttt{Function} diskutieren.
+     As we generate \textsl{Java} assembler and in \textsl{Java} every function has to be a part of a class,
+     all functions that we create have to be static functions that are defined inside a class.  Therefore,
+     \texttt{name} is the name of this class.
 
-Außerdem deklariert die Klasse \texttt{Expr} noch die Methode \texttt{stackSize}.  Aufgabe dieser
-Methode ist es zu berechnen, wie groß der Stack bei der Auswertung des Ausdrucks maximal werden
-kann. Diese Information benötigen wir um später mit Hilfe der Direktive ``\texttt{.limit stack}''
-die maximale Größe des Stacks spezifizieren zu können.  Dies ist erforderlich, da in \textsl{Java}
-jede Methode angeben muss, wie groß der Stack maximal werden kann.
+     This argument \texttt{name} is only needed when function calls are translated.
+\end{enumerate}
+The function \texttt{compile} returns a pair.  
+\begin{enumerate}[(a)]
+\item The first component of this pair is a list of \textsl{Java} 
+      assembler commands that adhere to the syntax recognized by \textsl{Jasmin}.  In general, when the
+      expression that is translated is complex, the execution of these assembler commands might need
+      considerable room on the stack.  However, it has to be guaranteed that when the execution of theses
+      commands finishes, the stack is back to its original height plus one because the net 
+      effect of executing these commands must be to put the value of the expression on the stack.
+\item The second component of the return value of \texttt{compile} is a natural number.
+      This natural number tells us how much the stack might grow when \texttt{expr} is evaluated.
+      This information is needed because the \textsl{Java} virtual machine needs this information in advance:
+      In \textsl{Java}, every function has to declare how much space it might use on the stack.
+      This declaration is done using the pseudo assembler command \texttt{.limit}.  Controlling the 
+      maximum height of the stack is a security feature of \textsl{Java} that prevents those exploits that
+      utilize stack overflows.
+\end{enumerate}
+In the following, we discuss the evaluation of the different arithmetic expressions one by one.
 
-Im Folgenden betrachten wir die Übersetzung der verschiedenen arithmetischen Ausdrücke der Reihe
-nach.
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    public abstract class Expr {
-        public abstract List<AssemblerCmd> compile(Map<String, Integer> symbolTable);
-        public abstract Integer stackSize();  // maximum size of stack needed
-    }
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Klasse \texttt{Expr}.}
-\label{fig:Expr.java2}
-\end{figure}
 
 \subsubsection{Übersetzung einer Variablen}
 Um eine Variable $v$ auszuwerten, laden wir diese Variable mit dem Kommando 
