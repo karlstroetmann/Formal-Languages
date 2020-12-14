@@ -55,7 +55,7 @@ Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung 
    \textsl{boolExpr} & \rightarrow & \textsl{expr} \;(\squoted{==} \mid \squoted{!=} \mid \squoted{<=} \mid \squoted{>=} \mid \squoted{<} \mid \squoted{>})\;  \textsl{expr} \\
          & \mid        &  \quoted{!} \textsl{boolExpr}             \\[0.0cm]
          & \mid        &  \textsl{boolExpr} \;(\squoted{\&\&} \mid \squoted{||})\; \textsl{boolExpr}   \\[0.2cm]
- \textsl{expr} & \rightarrow & \textsl{expr} \;(\squoted{+} \mid \squoted{-} \mid \squoted{*} \mid \squoted{/})\; \textsl{expr} \\[0.0cm]
+ \textsl{expr} & \rightarrow & \textsl{expr} \;(\squoted{+} \mid \squoted{-} \mid \squoted{*} \mid \squoted{/} \mid \squoted{\%})\; \textsl{expr} \\[0.0cm]
      & \mid        &  \quoted{(} \textsl{expr} \quoted{)}                 \\[0.0cm]
      & \mid        &  \textsc{Number}                             \\[0.0cm]
      & \mid        &  \textsc{Id}\; (\squoted{(} (\textsl{expr}\; (\squoted{,}\; \textsl{expr})\mytt{*})?\;\squoted{)})?  
@@ -187,7 +187,7 @@ scanners that we have already seen before, there are only a few points worth men
         t.type = Keywords.get(t.value, 'ID')
         return t
     
-    literals = ['+', '-', '*', '/', '(', ')', '{', '}', ';', '=', '<', '>', '!']
+    literals = ['+', '-', '*', '/', '%', '(', ')', '{', '}', ';', '=', '<', '>', '!']
     
     t_ignore  = ' \t\r'
     
@@ -266,7 +266,7 @@ scanners that we have already seen before, there are only a few points worth men
         ('left', '!'),
         ('nonassoc', 'EQ', 'NE', 'LE', 'GE', '<', '>'),
         ('left', '+', '-'),
-        ('left', '*', '/')
+        ('left', '*', '/', '%')
     )
     
     def p_program_one(p):
@@ -576,6 +576,10 @@ defined.  The grammar rules are as follows:
         "expr : expr '/' expr"
         p[0] = ('/', p[1], p[3])
         
+    def p_expr_modulo(p):
+        "expr : expr '%' expr"
+        p[0] = ('%', p[1], p[3])
+
     def p_expr_group(p):
         "expr : '(' expr ')'"
         p[0] = p[2]
@@ -604,6 +608,7 @@ are defined.  The grammar rules are as follows:
              | expr '-' expr
              | expr '*' expr
              | expr '/' expr
+             | expr '%' expr
              | '(' expr ')'
              | NUMBER
              | ID
