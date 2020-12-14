@@ -1,3 +1,4 @@
+/*** This function computes the factorial of a given number n. ***/
 int fakultaet(int n) {
     int p;
     p = 1;
@@ -7,7 +8,7 @@ int fakultaet(int n) {
     }
     return p;
 }
-
+// This function os executed when the program runs.
 int main() {
     int n;
     n = 1; 

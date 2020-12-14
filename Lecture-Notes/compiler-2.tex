@@ -5,38 +5,38 @@ arithmetic expressions, Boolean expression, statements, and function definitions
 \subsection{Translation of Arithmetic Expressions}
 Given an arithmetic expression $e$, the translation of $e$ is supposed to generate some code that, when
 executed, places the result of evaluating the expression $e$ onto the stack.  To this end we define a function
-\mytt{compile} that has the following signature:
+\mytt{compile\_expr} that has the following signature:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}: \textsl{Expr} \times \textsl{SymbolTable} \times \textsl{ClassName} \rightarrow 
-                 \textsl{Pair}\mathtt{<}\textsl{List}\mathtt{<}\textsl{AsmCmd}\mathtt{>}, \mathbb{N}\mathtt{>}.$
+$\mytt{compile\_expr}: \textsl{Expr} \times \textsl{SymbolTable} \times \textsl{ClassName} \rightarrow 
+                 \bigl\langle\textsl{List}\mytt{[}\textsl{AsmCmd}\mytt{]}, \mathbb{N}\bigr\rangle.$
 \\[0.2cm]
-A call to this function has the form
+A call of this function has the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\mytt{expr}, \mytt{st}, \mytt{name})$.
+$\mytt{compile\_expr}(\mytt{expr}, \mytt{st}, \mytt{name})$.
 \\[0.2cm]
 The interpretation of the arguments is as follows:
 \begin{enumerate}[(a)]
 \item \mytt{expr} is the arithmetic expression that is to be translated into assembler code.
 \item \mytt{st} is the \blue{symbol table}: \index{symbol table} Concretely, this is a dictionary that maps
-      the variable names to their position on the stack.  For example, if \squoted{x} is a variable that is the
-      third variable in the local variable frame, then we have
+      the variable names to their position in the local variable frame.  For example, if \squoted{x} is a
+      variable that occupies the third slot in the local variable frame, then we have
       \\[0.2cm]
       \hspace*{1.3cm}
       \mytt{st['x'] = 2},
       \\[0.2cm]
       because the first variable in the local variable frame has index 0.  We will discuss later how the 
-      positions of the variables on the stack is fixed.
+      positions of the variables in the local variable frame is assigned.
 \item \mytt{name} is the name of the class that is to be used by our compiler.
 
-     As we generate \textsl{Java} assembler and in \textsl{Java} every function has to be a part of a class,
-     all functions that we create have to be static functions that are defined inside a class.  Therefore,
-     \mytt{name} is the name of this class.
+      As we generate \textsl{Java} assembler and in \textsl{Java} every function has to be a part of a class,
+      all functions that we create have to be static functions that are defined inside the \textsl{Java}
+      \mytt{.class} file that is generated.  The parameter \mytt{name} specifies the name of this class.
 
-     This argument \mytt{name} is only needed when function calls are translated.
+      The argument \mytt{name} is only needed when function calls are translated.
 \end{enumerate}
-The function \mytt{compile} returns a pair.  
+The function \mytt{compile\_expr} returns a pair.  
 \begin{enumerate}[(a)]
 \item The first component of this pair is a list of \textsl{Java} 
       assembler commands that adhere to the syntax recognized by \textsl{Jasmin}.  In general, when the
@@ -44,7 +44,7 @@ The function \mytt{compile} returns a pair.
       considerable room on the stack.  However, it has to be guaranteed that when the execution of theses
       commands finishes, the stack is back to its original height plus one because the net 
       effect of executing these commands must be to put the value of the expression on the stack.
-\item The second component of the return value of \mytt{compile} is a natural number.
+\item The second component of the return value of \mytt{compile\_expr} is a natural number.
       This natural number tells us how much the stack might grow when \mytt{expr} is evaluated.
       This information is needed because the \textsl{Java} virtual machine needs this information in advance:
       In \textsl{Java}, every function has to declare how much space it might use on the stack.
@@ -56,13 +56,13 @@ In the following, we discuss the evaluation of the different arithmetic expressi
 
 
 \subsubsection{Translation of a Variable}
-If the expression that is to be compiled is a variable $v$, we have to load this variable on the stack using
+If the expression that is to be compiled is a variable $v$, we have to load this variable onto the stack using
 the command \mytt{iload}.  This command has one parameter which is the index of the variable on the local
 variable frame.  This index is stored in the symbol table \mytt{st}.  Since we just need one entry on the
 stack to store the variable we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(v, \mytt{st}, \mytt{name}) = 
+$\mytt{compile\_expr}(v, \mytt{st}, \mytt{name}) = 
  \bigl\langle\mytt{[}\;\; \mytt{iload}\; \mytt{st[}v\mytt{]}\; \mytt{]}, \; 1\bigr\rangle$ \quad
  if $v$ is a variable.
 \\[0.2cm]
@@ -82,8 +82,7 @@ The code for translating a variable is shown in Figure \ref{fig:Compiler.ipynb:c
                ]{python3}
     def compile_expr(expr, st, class_name):
         if isinstance(expr, str):
-            number = st[expr]
-            return [f'iload {number}'], 1
+            return [f'iload {st[expr]}'], 1
         ...
 \end{minted}
 \vspace*{-0.3cm}
@@ -100,7 +99,7 @@ We can load a constant $c$ onto the stack using the assembler command
 As we only need the room to store $c$ on the stack, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(c, \mytt{st}, \mytt{name}) = 
+$\mytt{compile\_expr}(c, \mytt{st}, \mytt{name}) = 
  \bigl\langle\mytt{[}\;\; \mytt{ldc}\; c \;\mytt{]}, \; 1\bigr\rangle$ \quad
  if $c$ is a constant.
 \\[0.2cm]
@@ -150,14 +149,14 @@ follows:
 \hspace*{1.3cm}
 $
 \begin{array}[t]{cll}
-        & \mytt{compile}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
-\wedge  & \mytt{compile}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
-\rightarrow & \mytt{compile}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
+        & \mytt{compile\_expr}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
+\wedge  & \mytt{compile\_expr}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
+\rightarrow & \mytt{compile\_expr}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
             \bigl\langle L1 + L2 + \mytt{[}\; \mytt{iadd} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
 \end{array}$
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:iadd} on page \pageref{fig:Compiler.ipynb:compile:iadd} shows how the
-translation of the addition of expressions is implemented.  The translation of subtraction, multiplication, and
+translation of arithmetic operators is implemented.  The translation of subtraction, multiplication, and
 division is similar.
 
 \begin{figure}[!ht]
@@ -173,11 +172,13 @@ division is similar.
                ]{python3}
     def compile_expr(expr, st, class_name):
         ...
-        elif expr[0] == '+':
-            _, lhs, rhs = expr
+        elif expr[0] in  ['+', '-', '*', '/']:
+            op, lhs, rhs = expr
             L1, sz1 = compile_expr(lhs, st, class_name)
             L2, sz2 = compile_expr(rhs, st, class_name)
-            return L1 + L2 + ['iadd'], max(sz1, 1 + sz2) 
+            OpToCmd = { '+': 'iadd', '-': 'isub', '*': 'imul', '/': 'idiv' }
+            Cmd     = indent(OpToCmd[op])
+            return L1 + L2 + [Cmd], max(sz1, 1 + sz2)
         ...
 \end{minted}
 \vspace*{-0.3cm}
@@ -196,7 +197,7 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       of  $f(a_1, \cdots, a_n)$, let us assume that we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mytt{compile}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$,
+      $\mytt{compile\_expr}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$,
       \\[0.2cm]
       i.e.~evaluation of the $i^\mathrm{th}$ argument is done by the list of assembler commands $L_i$ and
       needs a stack size of $s_i$.  As we are evaluating the arguments $a_i$ in the order from $a_1$ to $a_n$,
@@ -207,25 +208,25 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       $s := \max(s_1, 1 + s_2, \cdots, i - 1 + s_i, \cdots, n-1 + s_n)$,
       \\[0.2cm]
       then $s$ is the total amount of stack size needed to evaluate the arguments.  Furthermore, let us define
-      the \blue{signature} of $f$ as the string
+      the \blue{signature} \mytt{fs} of the function $f$ as the string
       \\[0.2cm]
       \hspace*{1.3cm}
       $\mytt{fs} := \mytt{class\_name/}\mytt{f(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)I}$.
       \\[0.2cm]
       Then we can define the
       value of
-      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
       \\[0.2cm]
-      \hspace*{1.3cm}
-      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) :=
+      \hspace*{0.8cm}
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) :=
       \bigl\langle L_1 + \cdots + L_n + \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
-\item If $f$ is the function \mytt{println}, then \textsl{Jasmin} treats $f$ as a method of the
-      predefined object \mytt{java.lang.System.out}.
+\item If $f$ is the function \mytt{println}, then \textsl{Jasmin} treats the function $f$ as a method of the
+      predefined \textsl{Java} object \mytt{java.lang.System.out}.
       This method can be invoked using the assembler command
       \mytt{invokevirtual}.  As before, let us assume that we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mytt{compile}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$.
+      $\mytt{compile\_expr}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$.
       \\[0.2cm]
       This time, we have to start by putting the object \mytt{java.lang.System.out} onto the stack before we
       can evaluate any of the arguments.  Therefore, in order to calculate the stack size we now define
@@ -233,7 +234,7 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       \hspace*{1.3cm}
       $s := \max(1 + s_1, 2 + s_2, \cdots, i - 1 + s_i, \cdots, n + s_n)$.
       \\[0.2cm]
-      In this case we have to define the \blue{signature} of $f$ as the string
+      In this case we have to define the \blue{signature} \mytt{fs} of $f$ as the string
       \\[0.2cm]
       \hspace*{1.3cm}
       $\mytt{fs} := \mytt{java/io/PrintStream/println(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)V}$.
@@ -246,10 +247,10 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       \\[0.2cm]
       Then we can define the
       value of
-      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mytt{compile}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := \\[0.1cm]
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := \\[0.1cm]
       \hspace*{2.8cm} \bigl\langle \mytt{[} \;\mytt{gs} \;\mytt{]} + L_1 + \cdots + L_n +
                    \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
       \end{enumerate}
@@ -304,7 +305,19 @@ translation of function calls is implemented.
 \subsection{Translation of Boolean Expressions}
 Boolean expressions are build from equations and inequations using the logical operators
 \qote{!} (logical not), \qote{\&\&} (logical and), and \qote{||} (logical or).
-We start with the translation of equations.
+To compile Boolean expressions we define a function
+\mytt{compile\_bool} that has the following signature:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mytt{compile\_bool}: \textsl{BoolExpr} \times \textsl{SymbolTable} \times \textsl{ClassName} \rightarrow 
+                 \bigl\langle\textsl{List}\mytt{[}\textsl{AsmCmd}\mytt{]}, \mathbb{N}\bigr\rangle.$
+\\[0.2cm]
+The interpretation of the arguments is similar to the interpretation of the arguments
+of the function \mytt{compile\_expr}.  
+When we execute the list of assembler commands that result from the compilation of a Boolean expression, we
+expect that the execution of theses commands either puts the number $1$ (representing \mytt{True}) or the
+number $0$ (representing \mytt{False}) onto the stack. 
+We start our discussion of the function \mytt{compile\_bool} with the translation of equations.
 
 \subsubsection{Translation of Equations}
 In the \textsl{Java} virtual machine, the logical values \mytt{True} and \mytt{False} are represented by
@@ -315,8 +328,8 @@ should either place the number $1$ or $0$ onto the stack: If the value of \texts
 Let us assume that we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{lhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$ \quad and \quad
-$\mytt{compile}(\textsl{rhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$.
+$\mytt{compile\_expr}(\textsl{lhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$ \quad and \quad
+$\mytt{compile\_expr}(\textsl{rhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$.
 \\[0.2cm]
 Then the stack size needed for evaluating the equation $\textsl{lhs}\; \mytt{==} \;\textsl{rhs}$ is given by
 the expression 
@@ -324,10 +337,10 @@ the expression
 \hspace*{1.3cm}
 $\max(s_1, 1 + s_2)$
 \\[0.2cm]
-and the function \mytt{compile} can be specified as follows:
+and the function \mytt{compile\_bool} can be specified as follows:
 \[
    \begin{array}[t]{lcccl}
-   \textsl{compile}(\textsl{lhs}\;\mytt{==}\;\textsl{rhs}, \mytt{st}, \mytt{class\_name}) & = & 
+   \textsl{compile\_bool}(\textsl{lhs}\;\mytt{==}\;\textsl{rhs}, \mytt{st}, \mytt{class\_name}) & = & 
          \bigl\langle & \quad & L_1  \\
    &&& + & L_2 \\
    &&& + & [ \;\mytt{if\_icmpeq}\; \textsl{true} \; ]  \\
@@ -345,52 +358,13 @@ function that is compiled.  Let me explain this equation in detail:
 \item Executing $L_1$ and $L_2$ leaves two values on the stack.  These values are then compared using the
       assembler command \mytt{if\_icmpeq}.  If these value are the same, execution proceeds at the label
       \textsl{true}.
-\item If the value are different, the value $0$ is pushed onto the stack.
+\item Otherwise execution commences with the next instruction and hence the value $0$ is pushed onto the stack.
 \item Next, the control flow jumps to the label \textsl{next}, which is at the end of the generated
       list of assembler commands.  Hence, in this case the execution of equation
-      $\textsl{lhs} \mytt{==} \textsl{rhs}$ is finished. 
-\item Otherwise, i.e.~if the values of \textsl{lhs} and \textsl{rhs} have been the same, the number $1$
+      $\textsl{lhs}\; \mytt{==} \;\textsl{rhs}$ is finished. 
+\item If the values of \textsl{lhs} and \textsl{rhs} are the same, the number $1$
       is pushed onto the stack.
 \end{enumerate}
-Figure \ref{fig:Compiler.ipynb:compile:eq} on page \pageref{fig:Compiler.ipynb:compile:eq} shows how the
-translation of the equation $\textsl{lhs} \mytt{==} \textsl{rhs}$ is implemented.  
-
-\begin{figure}[!ht]
-\centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
-                 bgcolor       = sepia,
-                 numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
-               ]{python3}
-    def compile_expr(expr, st, class_name):
-        ...
-        if expr[0] == '==':
-            _, lhs, rhs = expr
-            L1, sz1    = compile_expr(lhs, st, class_name)
-            L2, sz2    = compile_expr(rhs, st, class_name)
-            true_label = new_label()
-            next_label = new_label()
-            CmdLst     = L1 + L2
-            CmdLst    += ['if_icmpeq ' + true_label]
-            CmdLst    += ['bipush 0']
-            CmdLst    += ['goto ' + next_label]
-            CmdLst    += [true_label + ':']
-            CmdLst    += ['bipush 1']
-            CmdLst    += [next_label + ':']
-            return CmdLst, max(sz1, 1 + sz2)
-        ...
-\end{minted}
-\vspace*{-0.3cm}
-\caption{Translation of equations.}
-\label{fig:Compiler.ipynb:compile:eq}
-\end{figure}
-
-
-\subsubsection{Translation of Inequations}
 The translation of a negated equation of the form
 \[ \textsl{lhs}\;\mytt{!=}\;\textsl{rhs} \]
 is similar to the translation of an equation:  We only have to replace the command \mytt{if\_icmpeq} with the
@@ -406,6 +380,49 @@ we have to replace the command \mytt{if\_icmpeq} with the command \mytt{if\_icmp
 If the inequation has the form
 \[ \textsl{lhs}\;\mytt{>}\;\textsl{rhs} \]
 we have to replace the command \mytt{if\_icmpeq} with the command \mytt{if\_icmpgt}.
+Figure \ref{fig:Compiler.ipynb:compile:eq} on page \pageref{fig:Compiler.ipynb:compile:eq} shows how the
+translation of equations and inequations is implemented.  
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = 1,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = -0.2cm,
+                 xleftmargin   = 0.8cm,
+                 xrightmargin  = 0.8cm,
+               ]{python3}
+    def compile_bool(expr, st, class_name):
+        if expr[0] in ['==', '!=', '<=', '>=', '<', '>']:
+            OpToCmd = { '==': 'if_icmpeq', 
+                        '!=': 'if_icmpne', 
+                        '<=': 'if_icmple',
+                        '>=': 'if_icmpge',
+                        '<' : 'if_icmplt',
+                        '>' : 'if_icmpgt'
+                      }
+            op, lhs, rhs = expr
+            L1, sz1    = compile_expr(lhs, st, class_name)
+            L2, sz2    = compile_expr(rhs, st, class_name)
+            true_label = new_label()
+            next_label = new_label()
+            CmdLst     = L1 + L2
+            cmd        = OpToCmd[op]
+            CmdLst    += [indent(cmd + ' ' + true_label)]
+            CmdLst    += [indent('bipush 0')]
+            CmdLst    += [indent('goto ' + next_label)]
+            CmdLst    += [' ' * 4 + true_label + ':']
+            CmdLst    += [indent('bipush 1')]
+            CmdLst    += [' ' * 4 + next_label + ':']
+            return CmdLst, max(sz1, 1 + sz2)
+            ...
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Translation of equations.}
+\label{fig:Compiler.ipynb:compile:eq}
+\end{figure}
 
 \subsubsection{Translation of Binary Boolean Operators}
 In order to translate an expression of the form
@@ -427,9 +444,9 @@ specified as follows:
 \hspace*{1.3cm}
 $
 \begin{array}[t]{cll}
-        & \mytt{compile}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
-\wedge  & \mytt{compile}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
-\rightarrow & \mytt{compile}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
+        & \mytt{compile\_bool}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
+\wedge  & \mytt{compile\_bool}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
+\rightarrow & \mytt{compile\_bool}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
             \bigl\langle L1 + L2 + \mytt{[}\; \mytt{iand} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
 \end{array}$
 \\[0.2cm]
@@ -452,16 +469,13 @@ translation of binary logical operators is implemented.
                ]{python3}
     def compile_expr(expr, st, class_name):
         ...
-        elif expr[0] == '&&':
-            _, lhs, rhs = expr
-            L1, sz1 = compile_expr(lhs, st, class_name)
-            L2, sz2 = compile_expr(rhs, st, class_name)
-            return L1 + L2 + ['iand'], max(sz1, 1 + sz2)
-        elif expr[0] == '||':
-            _, lhs, rhs = expr
-            L1, sz1    = compile_expr(lhs, st, class_name)
-            L2, sz2    = compile_expr(rhs, st, class_name)
-            CmdLst     = L1 + L2 + ['ior']
+        elif expr[0] in ['&&', '||']:
+            op, lhs, rhs = expr
+            OpToCmd      = { '&&': iand, '||': 'ior' }
+            L1, sz1      = compile_bool(lhs, st, class_name)
+            L2, sz2      = compile_bool(rhs, st, class_name)
+            cmd          = OpToCmd[op]
+            CmdLst       = L1 + L2 + [indent(cmd)]
             return CmdLst, max(sz1, 1 + sz2)
         ...
 \end{minted}
@@ -480,23 +494,24 @@ is evaluated, the evaluation is stopped as soon the evaluation of \textsl{lhs}
 returns $0$ because then there is no point to evaluate \textsl{rhs}, since if the value of \textsl{lhs} is $0$,
 the result of the expression $\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}$ is $0$, independent from the value of
 the expression \textsl{rhs}. 
+\pagebreak
 
 \subsubsection{Translation of Negations}
 The translation of an expression of the form $\mytt{!}\textsl{expr}$ is not as straightforward as the
 translation of conjunctions and disjunctions.  The reason is that \textsl{Jasmin} has no assembler command of
-the for \mytt{inot} that negates a logical value.  But there is another way: Since we represent the truth
+the form \mytt{inot} that negates a logical value.  But there is another way: Since we represent the truth
 values as $0$ and $1$, we can specify negation arithmetically as follows:
 \[ \mytt{!}x = 1 - x. \]
 Therefore, if we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{arg}, \mytt{st}, \mytt{class\_name}) = \pair(L, s)$
+$\mytt{compile\_bool}(\textsl{arg}, \mytt{st}, \mytt{class\_name}) = \pair(L, s)$
 \\[0.2cm]
 we can define:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\mytt{!}\textsl{arg}, \mytt{st}, \mytt{class\_name})
-  = \bigl\langle \mytt{[bipush 1]} + L + \mytt{[isub]}, s + 1 \bigr\rangle$.
+$\mytt{compile\_bool}(\mytt{!}\textsl{arg}, \mytt{st}, \mytt{class\_name})
+  = \bigl\langle \mytt{[bipush 1]} + L + \mytt{[isub]}, 1 + s \bigr\rangle$.
 Figure \ref{fig:Compiler.ipynb:compile:not} on page \pageref{fig:Compiler.ipynb:compile:not} shows how the
 translation of the negation operator is implemented.
 
@@ -534,6 +549,17 @@ Of course, during the execution of the statement the stack may well
 grow and shrink.  But once the execution of the statement has finished, the stack has to be cleaned from all
 intermediate values that have been put on the stack during the execution of the statement.
 
+To compile statements we define a function
+\mytt{compile\_stmnt} that has the following signature:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mytt{compile\_stmnt}: \textsl{Stmnt} \times \textsl{SymbolTable} \times \textsl{ClassName} \rightarrow 
+                 \bigl\langle\textsl{List}\mytt{[}\textsl{AsmCmd}\mytt{]}, \mathbb{N}\bigr\rangle.$
+\\[0.2cm]
+The interpretation of the arguments is similar to the interpretation of the arguments
+of the function \mytt{compile\_expr}.  
+
+
 \subsubsection{Translation of Assignments}
 To begin with, we show how an assignment of the form 
 \[ x \;\mytt{=}\; \textsl{expr} \]
@@ -542,12 +568,12 @@ is translated.  The idea is to evaluate \textsl{expr}.  As a consequence of this
 \mytt{istore}. Therefore, if we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L, s)$
+$\mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L, s)$
 \\[0.2cm]
 we can define:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(x = \textsl{expr}, \mytt{st}, \mytt{class\_name})
+$\mytt{compile\_stmnt}(x = \textsl{expr}, \mytt{st}, \mytt{class\_name})
 = \bigl\langle L + \mytt{[istore st[x]]}, s \bigr\rangle $.
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:assign} on page \pageref{fig:Compiler.ipynb:compile:assign} shows how the
@@ -588,17 +614,17 @@ Obviously, we first have to translate the Boolean expression \textsl{bool\_expr}
 If we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+$\mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \\[0.2cm]
 and, furthermore, 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{stmnt}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$,
+$\mytt{compile\_stmnt}(\textsl{stmnt}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$,
 \\[0.2cm]
 then we can define:
 \[
    \begin{array}[t]{lcccl}
-   \textsl{compile}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{stmnt}, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
+   \textsl{compile\_stmnt}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{stmnt}, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
    &&& + & [\;\mytt{ifeq}\;\textsl{else}\;] \\
    &&& + & L_2 \\
    &&& + & [\;\textsl{else}\mytt{:}\;], \qquad \max(s_1, s_2) \bigr\rangle        
@@ -615,14 +641,14 @@ The translation of a branching command of the form
 \[ \mytt{if}\; (\textsl{bool\_expr})\; \textsl{stmnt}_1\; \mytt{else}\; \textsl{stmnt}_2 \]
 is similar.  Let us assume that we have the following:
 \begin{enumerate}
-\item $\mytt{compile}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
-\item $\mytt{compile}(\textsl{stmnt}_1, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$, and
-\item $\mytt{compile}(\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}) = \pair(L_3, s_3)$.
+\item $\mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+\item $\mytt{compile\_stmnt}(\textsl{stmnt}_1, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$, and
+\item $\mytt{compile\_stmnt}(\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}) = \pair(L_3, s_3)$.
 \end{enumerate}
 Then we define:
 \[
    \begin{array}[t]{lcccl}
-   \textsl{compile}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{stmnt}_1\mytt{else}\;\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
+   \textsl{compile\_stmnt}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{stmnt}_1\mytt{else}\;\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
    &&& + & [\;\mytt{ifeq}\;\textsl{else}\;] \\
    &&& + & L_2 \\
    &&& + & [\mytt{goto}\;\textsl{next}] \\
@@ -681,17 +707,17 @@ If we want to translate a \mytt{while} loop of the form
 we recursively compute
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{cond}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+$\mytt{compile\_expr}(\textsl{cond}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \\[0.2cm]
 and
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{stmnt}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$,
+$\mytt{compile\_stmnt}(\textsl{stmnt}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$,
 \\[0.2cm]
 Then we can define
 \[
    \begin{array}[t]{lcccl}
-     \textsl{compile}\bigl(\mytt{while}\; (\textsl{cond})\;\textsl{stmnt}, \mytt{st}, \mytt{class\_name}\bigr)
+     \textsl{compile\_stmnt}\bigl(\mytt{while}\; (\textsl{cond})\;\textsl{stmnt}, \mytt{st}, \mytt{class\_name}\bigr)
      & = & \bigl\langle & & [ \textsl{loop}:]  \\
    &&& + & L_1 \\
    &&& + & [\;\mytt{ifeq}\;\textsl{next}\;] \\
@@ -744,11 +770,11 @@ $\mytt{return}\; \textsl{expr} \mytt{;}$
 we first have to translate the expression \textsl{expr}.  Assume that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L, s)$.
+$\mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L, s)$.
 \\[0.2cm]
 Then we can define
 \\[0.2cm]\hspace*{1.3cm}
-$\mytt{compile}(\mytt{return}\; \textsl{expr} \mytt{;}, \mytt{st}, \mytt{class\_name}) =
+$\mytt{compile\_stmnt}(\mytt{return}\; \textsl{expr} \mytt{;}, \mytt{st}, \mytt{class\_name}) =
  \bigl\langle L + [\mytt{ireturn}], s \bigr\rangle$.
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:return} on page \pageref{fig:Compiler.ipynb:compile:return} shows how a
@@ -785,12 +811,12 @@ The translation of block statement of the form
 proceeds by translating the statements $\textsl{stmnt}_i$ separately.  Assume that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{stmnt}_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$
+$\mytt{compile\_stmnt}(\textsl{stmnt}_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$
 \quad for $i=1,\cdots,n$.
 \\[0.2cm]
 Then we define
 \[
-     \textsl{compile}\bigl(\mytt{\{} \textsl{stmnt}_1\mytt{;}\; \cdots\; \textsl{stmnt}_n\mytt{;} \mytt{\}},
+     \textsl{compile\_stmnt}\bigl(\mytt{\{} \textsl{stmnt}_1\mytt{;}\; \cdots\; \textsl{stmnt}_n\mytt{;} \mytt{\}},
      \mytt{st}, \mytt{class\_name}\bigr) :=
      \bigl\langle L_1 + \cdots + L_n, \max(s_1, \cdots, s_n) \bigr\rangle.
 \]
@@ -838,8 +864,8 @@ At present, the only expression whose evaluation does not create a value is an i
 Therefore, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile}(\textsl{expr}\mytt{;}, \mytt{st}, \mytt{class\_name})
-=  \mytt{compile}(\textsl{expr}\mytt{;}, \mytt{st}, \mytt{class\_name})$.
+$\mytt{compile\_stmnt}(\textsl{expr}\mytt{;}, \mytt{st}, \mytt{class\_name})
+=  \mytt{compile\_expr}(\textsl{expr}\mytt{;}, \mytt{st}, \mytt{class\_name})$.
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:expr_stmnt} on page \pageref{fig:Compiler.ipynb:compile:expr_stmnt} shows how the
 translation of an expression statement is implemented.
