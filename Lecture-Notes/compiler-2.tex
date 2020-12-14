@@ -494,7 +494,6 @@ is evaluated, the evaluation is stopped as soon the evaluation of \textsl{lhs}
 returns $0$ because then there is no point to evaluate \textsl{rhs}, since if the value of \textsl{lhs} is $0$,
 the result of the expression $\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}$ is $0$, independent from the value of
 the expression \textsl{rhs}. 
-\pagebreak
 
 \subsubsection{Translation of Negations}
 The translation of an expression of the form $\mytt{!}\textsl{expr}$ is not as straightforward as the
@@ -511,7 +510,8 @@ we can define:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mytt{compile\_bool}(\mytt{!}\textsl{arg}, \mytt{st}, \mytt{class\_name})
-  = \bigl\langle \mytt{[bipush 1]} + L + \mytt{[isub]}, 1 + s \bigr\rangle$.
+= \bigl\langle \mytt{[bipush 1]} + L + \mytt{[isub]}, 1 + s \bigr\rangle$.
+\\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:not} on page \pageref{fig:Compiler.ipynb:compile:not} shows how the
 translation of the negation operator is implemented.
 
@@ -541,7 +541,7 @@ translation of the negation operator is implemented.
 \end{figure}
 
 
-\subsection{How to Compile a Statement}
+\subsection{Translation of Statements}
 Next, we show how statements are compiled.  First of all, we agree that the execution of a statement
 must not change the size of the stack:  The size of stack before the execution of a statement must
 be the same as the size of the stack after after the statement has been executed.
@@ -557,8 +557,8 @@ $\mytt{compile\_stmnt}: \textsl{Stmnt} \times \textsl{SymbolTable} \times \texts
                  \bigl\langle\textsl{List}\mytt{[}\textsl{AsmCmd}\mytt{]}, \mathbb{N}\bigr\rangle.$
 \\[0.2cm]
 The interpretation of the arguments is similar to the interpretation of the arguments
-of the function \mytt{compile\_expr}.  
-
+of the function \mytt{compile\_expr}.  The only difference is that the first argument now is an abstract syntax
+tree that represents a statement.
 
 \subsubsection{Translation of Assignments}
 To begin with, we show how an assignment of the form 
@@ -614,7 +614,7 @@ Obviously, we first have to translate the Boolean expression \textsl{bool\_expr}
 If we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+$\mytt{compile\_expr}(\textsl{bool\_expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \\[0.2cm]
 and, furthermore, 
 \\[0.2cm]
@@ -641,14 +641,16 @@ The translation of a branching command of the form
 \[ \mytt{if}\; (\textsl{bool\_expr})\; \textsl{stmnt}_1\; \mytt{else}\; \textsl{stmnt}_2 \]
 is similar.  Let us assume that we have the following:
 \begin{enumerate}
-\item $\mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+\item $\mytt{compile\_expr}(\textsl{bool\_expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \item $\mytt{compile\_stmnt}(\textsl{stmnt}_1, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$, and
 \item $\mytt{compile\_stmnt}(\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}) = \pair(L_3, s_3)$.
 \end{enumerate}
 Then we define:
-\[
+\\[0.2cm]
+\hspace*{0.3cm}
+$
    \begin{array}[t]{lcccl}
-   \textsl{compile\_stmnt}\bigl(\mytt{if}\; (\textsl{expr})\;\textsl{stmnt}_1\mytt{else}\;\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
+   \textsl{compile\_stmnt}\bigl(\mytt{if}\; (\textsl{bool\_expr})\;\textsl{stmnt}_1\;\mytt{else}\;\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
    &&& + & [\;\mytt{ifeq}\;\textsl{else}\;] \\
    &&& + & L_2 \\
    &&& + & [\mytt{goto}\;\textsl{next}] \\
@@ -656,8 +658,8 @@ Then we define:
    &&& + & L_3 \\
    &&& + & [\;\textsl{next}\mytt{:}\;], \qquad \max(s_1, s_2, s_3) \bigr\rangle        
 \end{array}
-\]
-
+$
+\\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:if} on page \pageref{fig:Compiler.ipynb:compile:if} shows how the
 translation of branching statements is implemented.
 
@@ -865,7 +867,7 @@ Therefore, we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mytt{compile\_stmnt}(\textsl{expr}\mytt{;}, \mytt{st}, \mytt{class\_name})
-=  \mytt{compile\_expr}(\textsl{expr}\mytt{;}, \mytt{st}, \mytt{class\_name})$.
+=  \mytt{compile\_expr}(\textsl{expr}, \mytt{st}, \mytt{class\_name})$.
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:expr_stmnt} on page \pageref{fig:Compiler.ipynb:compile:expr_stmnt} shows how the
 translation of an expression statement is implemented.
@@ -894,9 +896,6 @@ translation of an expression statement is implemented.
 
 
 \subsection{Translation of a Function Definition}
-Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:fct} shows a
-function definition is translated.  
-
 \begin{figure}[!ht]
 \centering
 \begin{minted}[ frame         = lines, 
@@ -912,9 +911,9 @@ function definition is translated.
         global label_counter
         label_counter = 0
         _, name, parameters, variables, stmnts = fct_def
-        parameters = create_list(parameters)
-        variables  = create_list(variables)
-        stmnts     = create_list(stmnts)
+        _, *parameters = parameters
+        _, *variables  = variables
+        _, *stmnts     = stmnts
         m   = len(parameters)
         n   = len(variables)
         st  = {}
@@ -947,7 +946,9 @@ function definition is translated.
 \caption{Translation of a function definition.}
 \label{fig:Compiler.ipynb:compile:fct}
 \end{figure}
-
+\noindent
+Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:fct} shows how a
+function definition is translated.  
 In order to understand how this works we have to understand what type of code the function \mytt{compile} has
 to generate.  Depending on whether the function that is translated is the function \mytt{main} or not there
 are two cases.
@@ -980,6 +981,8 @@ are two cases.
        height of the stack.
        Finally,  $s_1$, $\cdots$, $s_n$ are the assembler commands that result from translating the block
        inside the function.
+\pagebreak
+       
 \item Otherwise, the following code is to be generated:
 
       \begin{Verbatim}[ frame         = lines, 
@@ -1015,7 +1018,7 @@ are two cases.
 We proceed to discuss the implementation shown in Figure \ref{fig:Compiler.ipynb:compile:fct} line by line.
 \begin{enumerate}
 \item We initialize the global variable \mytt{label\_counter} to $0$.
-      every time a new label is generated, this counter will be incremented by the function \mytt{new\_label}
+      Every time a new label is generated, this counter will be incremented by the function \mytt{new\_label}
       that creates labels of the form \mytt{l1}, \mytt{l2}, etc.
 \item The nested tuple that is produced by the parser from a function definition has the form
       \\[0.2cm]
@@ -1023,9 +1026,11 @@ We proceed to discuss the implementation shown in Figure \ref{fig:Compiler.ipynb
       $(\mytt{'fct'}, \textsl{name}, \textsl{parameters}, \textsl{variables}, \textsl{stmnts})$.
       \begin{enumerate}[(a)]
       \item \textsl{name} is the name of the function.
-      \item \textsl{parameters} is the list of the parameters.
-      \item \textsl{variables} is the list of all local variables declared in the function.
-      \item \textsl{stmnts} is the list of all statements in the body of the function.
+      \item \textsl{parameters} is the abstract syntax tree representing the list of parameters.
+      \item \textsl{variables} is the abstract syntax tree representing the list of all local variables
+            declared in the function. 
+      \item \textsl{stmnts} is the the abstract syntax tree representing the list of all statements in the body
+            of the function. 
       \end{enumerate}
 \item Initially, the parameters, variables, and statements are stored as nested tuples.
       In line 5-7 these nested tuples are transformed into proper lists.
@@ -1046,8 +1051,8 @@ We proceed to discuss the implementation shown in Figure \ref{fig:Compiler.ipynb
 \subsection{Compiling a Program}
 We conclude this chapter by presenting the function \mytt{compile\_program} that is shown in Figure
 \ref{fig:Compiler.ipynb:compile_program} on page \pageref{fig:Compiler.ipynb:compile_program}. This function
-takes the name of a file as its argument.  This file is expected to contain a program written in the version of
-integer \mytt{C} that has been presented in this chapter.  If the name of this file is, for example,
+takes the name of a file as its argument.  This file is expected to contain a program written in the subset
+of the programming language \mytt{C} that has been presented in this chapter.  If the name of this file is, for example,
 \mytt{Test.c}, then the function \mytt{compile\_program} generates a file with the name \mytt{Test.jas},
 that contains an assembler program that adheres to the rules of \textsl{Jasmin}. We proceed to discuss the
 function \mytt{compile\_program} line by line. 
@@ -1178,7 +1183,7 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
         aload 0
         invokenonvirtual java/lang/Object/<init>()V
         return
-        .end method
+    .end method
         
     .method public static sum(I)I
     .limit locals 2
