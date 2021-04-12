@@ -1,6 +1,6 @@
 Formal-Languages
 ================
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/karlstroetmann/Algorithms/HEAD)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/karlstroetmann/Formal-Languages/HEAD)
 
 Lecture notes and examples for my class on formal languages and compilers.
 
