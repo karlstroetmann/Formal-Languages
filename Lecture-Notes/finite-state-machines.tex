@@ -1359,7 +1359,7 @@ In this section we show how to minimize the number of states of a deterministic 
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$.
 \\[0.2cm]
-Without loss of the generality we want to assume that the \textsc{Fsm} $F$ is complete: Therefore, we assume that
+Without loss of generality we want to assume that the \textsc{Fsm} $F$ is complete: Therefore, we assume that
 for each state $q \in Q$ and each letter $c \in \Sigma$ the expression $\delta(q, c)$ 
 returns a state of $Q$.  Our goal is to find a deterministic finite state machine
 \\[0.2cm]
@@ -1379,7 +1379,17 @@ $\delta^*: Q \times \Sigma^* \rightarrow Q$
 \\[0.2cm]
 which extends the function $\delta$ by accepting a string instead of a single character as its first argument.
 The function call $\delta^*(q,s)$ calculates the state $p$ which the \textsc{Fsm} $F$ enters if it reads the
-string $s$ in the state $q$.  Since the function $\delta^*$ is a generalization of the function $\delta$, in
+string $s$ in the state $q$. As we have assumed the \textsl{Fsm} F to be complete, we have that
+\\[0.2cm]
+\hspace*{1.3cm}
+$\delta(q, c) \not \Omega$ \quad for all $q \in Q$ and all $c \in \Sigma$ 
+\\[0.2cm]
+and then $\delta^*(q,w)$ is defined by induction on $w$ as follows:
+\begin{enumerate}[(a)]
+\item $\delta^*(q, \varepsilon) := q$ \quad for all $q \in Q$.
+\item $\delta^*(q, cw) := \delta^*(\delta(q, c), v)$ \quad for all $q \in Q$, $c \in \Sigma$, and $v \in \Sigma^*$.
+\end{enumerate}
+Since the function $\delta^*$ is a generalization of the function $\delta$, in
 the future we will not distinguish in the notation between $\delta$ and $\delta^*$ and write $\delta$ for both functions. 
 
 Obviously, in a finite state machine 
@@ -1405,7 +1415,8 @@ In general, we can minimize an \textsc{Fsm} by identifying certain states.
 If we look for example at the \textsc{Fsm} shown in figure \ref{fig:nicht-gleichwertig.dot}, we can identify
 the states $q_1$ and $q_2$ as well as $q_3$ and $q_4$ without changing the language of the \textsc{Fsm}. 
 The central idea in minimizing a \textsc{Fsm} is that we compute those states which \textbf{must not} be
-identified and consider all other states as equivalent.
+identified and consider all other states as equivalent.  States that must not be identified are called
+\blue{separable states}.  This notion is defined next.
 
 \begin{Definition}[Separable States]
 Assume $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ is a deterministic finite state machine.
@@ -1417,8 +1428,7 @@ $s \in \Sigma^*$ such that either
 \end{enumerate}
 holds.  In this case, the string $s$ \blue{separates} \index{separates} $p_1$ and $p_2$. \qed
 \end{Definition}
-If two states $p_1$ and $p_2$ are separable, then it is obvious that theses states are not
-equivalent.
+If two states $p_1$ and $p_2$ are separable, then it is obvious that theses states must not be identified.
 We define an equivalence relation $\sim$ on the set $Q$ of all states by setting
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1426,10 +1436,10 @@ $p_1 \sim p_2$ \quad iff \quad
 $\forall s \in \Sigma^*:\bigl(\delta(p_1,s) \in A \leftrightarrow \delta(p_2,s) \in A\bigr)$.
 \\[0.2cm]
 Hence, two states $p_1$ and $p_2$ are considered to be equivalent iff they are not separable.   
-The claim is that we can identify all equivalent states.  The identification of two states $p_1$ and
-$p_2$ is done by removing the state $p_2$ from the set $Q$ and changing the transition
-function $\delta$ in a way that the new version of $\delta$ will return
-$p_1$ in all those cases where the old version of $\delta$ had returned $p_2$.
+The claim is that we can identify all pairs $\langle p_1, p_2\rangle$ of equivalent states.  The identification
+of two states $p_1$ and $p_2$ is done by removing the state $p_2$ from the set $Q$ and changing the transition
+function $\delta$ in a way that the new version of $\delta$ will return $p_1$ in all those cases where the old
+version of $\delta$ had returned $p_2$. 
 
 
 The question remains how we can determine which states are distinguishable.
@@ -1454,18 +1464,13 @@ holds. This idea leads to an algorithm that uses two steps:
       states $\delta(p,c)$ and $\delta(q,c)$ are already distinguishable, we add this pair to the set $V$:  
       \\[0.2cm]
       \hspace*{1.3cm} 
-      \texttt{while ($\exists \pair(p,q) \in Q \times Q: \exists c \in \Sigma:\langle\delta(p,c),
-        \delta(q,c)\rangle \in V \wedge \pair(p,q) \notin V$) \{} \\
+      \texttt{while $\exists \pair(p,q) \in Q \times Q: \exists c \in \Sigma:\langle\delta(p,c),
+        \delta(q,c)\rangle \in V \wedge \pair(p,q) \notin V$ } \\
       \hspace*{1.8cm}
       \texttt{choose $\pair(p,q) \in Q \times Q$ such that} $\langle\delta(p,c),
-      \delta(q,c)\rangle \in V \wedge \pair(p,q) \notin V$ \texttt{\{}
-\\
+      \delta(q,c)\rangle \in V \wedge \pair(p,q) \notin V$ \\
       \hspace*{2.3cm}
       \texttt{$V$ := $V \cup \{\, \pair(p,q),\, \pair(q,p)\, \}$;} \\
-      \hspace*{1.8cm}
-      \texttt{\}}\\
-      \hspace*{1.3cm}
-      \texttt{\}}
 \end{enumerate}
 If we have found all pairs $\pair(p,q)$ of distinguishable states, then we can identify all states $p$ and $q$
 which are not distinguishable and therefore $\langle p, q \rangle \not\in V$.   The \textsc{Fsm} constructed in
