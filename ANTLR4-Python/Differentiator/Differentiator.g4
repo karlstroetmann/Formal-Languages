@@ -20,6 +20,6 @@ factor returns [result]
     | n=NUMBER             {$result = int($n.text)      }
     ;
 
-VAR    : [a-zA-Z][a-zA-Z0-9]*;
+VAR    : [a-zA-Z][a-zA-Z0-9_]*;
 NUMBER : '0'|[1-9][0-9]*;
 WS     : [ \t\n\r] -> skip; 
