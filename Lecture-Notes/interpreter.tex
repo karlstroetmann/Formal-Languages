@@ -1,4 +1,11 @@
 \section{Implementing a Simple Interpreter  \label{chapter:interpreter}}
+\textsc{Antlr} unterstützt \textsc{Ebnf}-Grammatiken.
+Beispielsweise werden die Postfix-Operatoren ``\texttt{*}'' und ``\texttt{+}'' unterstützt.
+Wir demonstrieren die Verwendung dieser Operatoren, indem wir
+mit Hilfe des Parser-Generators \textsc{Antlr} einen Interpreter für eine einfache Programmiersprache
+entwickeln.  Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Antlr}-Grammatik der Programmier-Sprache, für die wir 
+in diesem Abschnitt einen Interpreter entwickeln.  Die Syntax dieser Sprache ist an die Syntax der Sprache
+\texttt{C} angelehnt.
 
 \begin{figure}[!ht]
 \centering
@@ -16,7 +23,6 @@
     program  : statement+
              ;  
     statement: VAR ':=' expr ';'
-             | VAR ':=' 'read' '(' ')' ';'
              | 'print' '(' expr ')' ';'
              | 'if'    '(' boolExpr ')' '{' statement* '}'
              | 'while' '(' boolExpr ')' '{' statement* '}'
@@ -32,7 +38,8 @@
              | product '/' factor
              | factor
              ;
-    factor   : '(' expr ')'
+   factor    : 'read' '(' ')' 
+             | '(' expr ')'
              | VAR
              | NUMBER
              ;
@@ -47,20 +54,16 @@
 \label{fig:Pure.g4}
 \end{figure}
 
-In diesem Kapitels erstellen wir mit Hilfe des Parser-Generators \textsc{Antlr} einen
-Interpreter für eine einfache Programmiersprache.  Erfreulicherweise akzeptiert
-\textsc{Antlr} seit der Version \texttt{4.0} auch Grammatiken, die einfache Links-Rekursion
-enthalten.  Auch eine Links-Faktorisierung der Grammatik ist nicht mehr notwendig.
-Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Antlr}-Grammatik der Programmier-Sprache, für die wir
-in diesem Abschnitt einen Interpreter entwickeln.  Die Befehle dieser Sprache sind Zuweisungen, Print-Befehle,
+Die Befehle der zu implementierenden Sprache sind Zuweisungen, Print-Befehle,
 \texttt{if}-Abfragen, sowie \texttt{while}-Schleifen.  Abbildung \ref{fig:sum.sl} zeigt
 ein Beispiel-Programm, das dieser Grammatik entspricht.  Dieses Programm liest zunächst eine Zahl
-ein, die in der Variablen \texttt{n} gespeichert wird.  Anschlie{\ss}end wird die Summe
+ein, die in der Variablen \texttt{n} gespeichert wird.  Anschlie{\ss}end wird mit Hilfe einer
+\texttt{while}-Schleife die Summe
 \\[0.2cm]
 \hspace*{1.3cm}
 $\ds\sum\limits_{\mbox{$\normalsize i=1$}}^{\mbox{$\normalsize n^2$}} \mbox{\Large $i$}$
 \\[0.2cm]
-in der Variablen \texttt{s} akkumuliert und am Ende des Programms ausgegeben.
+berechnet und am Ende des Programms ausgegeben.
 
 
 \begin{figure}[!ht]
@@ -86,6 +89,7 @@ in der Variablen \texttt{s} akkumuliert und am Ende des Programms ausgegeben.
 \caption{Ein Programm zur Berechnung der Summe $\sum\limits_{i=0}^{n^2} i$.}
 \label{fig:sum.sl}
 \end{figure}
+\FloatBarrier
 
 Ähnlich wie bei unserem Programm zum symbolischen Differenzieren werden wir die einzelnen Befehle als
 geschachtelte Tupel darstellen.  Das in Abbildung \ref{fig:sum.sl} gezeigte Programm wird dabei durch das in
@@ -105,12 +109,11 @@ Abbildung \ref{fig:sum.ast} gezeigte geschachtelte Tupel dargestellt.
         ('read', 'n'),
         (':=', 's', 0),
         (':=', 'i', 0),
-        ('while',
-     	    ('<',  'i', ('*', 'n', 'n')),
+        ('while', ('<',  'i', ('*', 'n', 'n')),
             (':=', 'i', ('+', 'i', 1)),
-     	    (':=', 's', ('+', 's', 'i'))
+            (':=', 's', ('+', 's', 'i'))
         ),
-     ('print', 's')
+        ('print', 's')
     )
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -139,7 +142,6 @@ Abbildung \ref{fig:sum.ast} gezeigte geschachtelte Tupel dargestellt.
     statement returns [stmnt]
         @init {SL = []}
         : v = VAR ':=' e = expr ';'       {$stmnt = (':=', $v.text, $e.result)}
-        | v = VAR ':=' 'read' '(' ')' ';' {$stmnt = ('read', $v.text)}
         | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
         | 'if' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
           {$stmnt = ('if', $b.result, SL)}
@@ -165,9 +167,10 @@ Abbildung \ref{fig:sum.ast} gezeigte geschachtelte Tupel dargestellt.
         ;
     
     factor returns [result]
-        : '(' expr ')' {$result = $expr.result}
-        | v = VAR      {$result = $v.text}
-        | n = NUMBER   {$result = int($n.text)}
+        : 'read' '(' ')' {$stmnt = ('read',)}
+        | '(' expr ')'   {$result = $expr.result}
+        | v = VAR        {$result = $v.text}
+        | n = NUMBER     {$result = int($n.text)}
         ;
 \end{Verbatim}
 \vspace*{-0.3cm} %\$
@@ -199,18 +202,6 @@ Werkzeug \textsc{Antlr}.
             \\[0.2cm]
             \hspace*{1.3cm}
             $(\texttt{':='}, v, e)$
-            \\[0.2cm]
-            dargestellt.
-      \item Der Befehl zum Einlesen einer Zahl hat die Form:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $v \;\texttt{:=}\; \texttt{read()} \texttt{;}$
-            \\[0.2cm]
-            Die Aufgabe dieses Befehl ist es, den vom Benutzer eingegebenen Text in eine Zahl umzuwandeln, die
-            dann in der Variablen $v$ abgespeichert wird.  Der Befehl wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{'read'}, v)$
             \\[0.2cm]
             dargestellt.
       \item Der Befehl zur Ausgabe eines Wertes hat die Form:
@@ -361,6 +352,47 @@ zwei getrennte Kommentare erkannt.
 \label{fig:Interpreter.ipynb:main}
 \end{figure}
 
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def execute_tuple(Statement_List, Values={}):
+        for stmnt in Statement_List:
+            execute(stmnt, Values)
+    
+    def execute(stmnt, Values):
+        op = stmnt[0]
+        if stmnt == 'program':
+            pass
+        elif op == ':=':
+            _, var, value = stmnt
+            Values[var] = evaluate(value, Values)
+        elif op == 'print':
+            _, expr = stmnt
+            print(evaluate(expr, Values))
+        elif op == 'if':
+            _, test, *SL = stmnt
+            if evaluate(test, Values):
+                execute_tuple(SL, Values)
+        elif op == 'while':
+            _, test, *SL = stmnt
+            while evaluate(test, Values):
+                execute_tuple(SL, Values)
+        else:
+            assert False, f'{stmnt} unexpected'
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Die Funktion \texttt{execute}.}
+\label{fig:Interpreter.ipynb:execute}
+\end{figure}
+
 Abbildung \ref{fig:Interpreter.ipynb:main} zeigt die Funktion \texttt{main}, die als Eingabe den Namen einer
 Datei erhält, die ein Programm unserer einfachen Programmiersprache enthält.  Dieses Programm wird geparsed und
 dadurch in das geschachtelte Tupel \texttt{Statements} umgewandelt.  Die Funktion \texttt{execute\_tuple} führt
@@ -422,7 +454,7 @@ Fallunterscheidung nach der Art des auszuführenden Befehls.
       werden Die Befehle in der Liste \texttt{SL} solange ausgeführt, bis die Auswertung von \texttt{test}
       \texttt{False} ergibt.
 \end{enumerate}
-
+\FloatBarrier
 
 \begin{figure}[!ht]
 \centering
@@ -435,47 +467,51 @@ Fallunterscheidung nach der Art des auszuführenden Befehls.
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
-    def execute_tuple(Statement_List, Values={}):
-        for stmnt in Statement_List:
-            execute(stmnt, Values)
-    
-    def execute(stmnt, Values):
-        op = stmnt[0]
-        if stmnt == 'program':
-            pass
-        elif op == ':=':
-            _, var, value = stmnt
-            Values[var] = evaluate(value, Values)
-        elif op == 'read':
-            _, var = stmnt
-            Values[var] = int(input())
-        elif op == 'print':
-            _, expr = stmnt
-            print(evaluate(expr, Values))
-        elif op == 'if':
-            _, test, *SL = stmnt
-            if evaluate(test, Values):
-                execute_tuple(SL, Values)
-        elif op == 'while':
-            _, test, *SL = stmnt
-            while evaluate(test, Values):
-                execute_tuple(SL, Values)
-        else:
-            assert False, f'{stmnt} unexpected'
+    def evaluate(expr, Values):
+        if isinstance(expr, int):
+            return expr
+        if isinstance(expr, str):
+            return Values[expr] 
+        op = expr[0]
+        if op == 'read':
+            return int(input('Please enter a natural number:'))
+        if op == '==':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) == evaluate(rhs, Values)
+        if op == '<':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) < evaluate(rhs, Values)
+        if op == '+':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) + evaluate(rhs, Values)
+        if op == '-':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) - evaluate(rhs, Values)
+        if op == '*':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) * evaluate(rhs, Values)
+        if op == '/':
+            _, lhs, rhs = expr
+            return evaluate(lhs, Values) / evaluate(rhs, Values)
+        assert False, f'{stmnt} unexpected'
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Funktion \texttt{execute}.}
-\label{fig:Interpreter.ipynb:execute}
+\caption{Die Funktion \texttt{evaluate}.}
+\label{fig:Interpreter.ipynb:evaluate}
 \end{figure}
+\FloatBarrier
 
 Abbildung \ref{fig:Interpreter.ipynb:evaluate} zeigt die Implementierung der Funktion \texttt{evaluate}.
 Diese Funktion erhält als Eingabe einen arithmetischen Ausdruck und ein Dictionary, in dem die 
 Werte der Variablen abgelegt sind.  
-\begin{enumerate}
+\begin{enumerate}[(a)]
 \item Falls es sich bei dem auszuwertenden Ausdruck um eine Zahl handelt, geben wir diese Zahl als Ergebnis
       zurück.
 \item Falls es sich bei dem auszuwertenden Ausdruck um eine Variable handelt, so schlagen wir den Wert dieser
       Variable in dem Dictionary \texttt{Values} nach und geben wir diesen Wert als Ergebnis zurück.
+\item Falls es sich bei dem auszuwertenden Ausdruck um einen Aufruf der Funktion \texttt{read}   handelt,
+      fordern wir den Benutzer auf, eine natürliche Zahl einzugeben.  Den vom Benutzer eingegebenen String
+      wandeln wir dann noch in eine Zahl um.
 \item Falls es sich bei dem auszuwertenden Ausdruck um einen Boole'schen Ausdruck der Form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -501,62 +537,15 @@ Werte der Variablen abgelegt sind.
 \item Die Auswertung der arithmetischen Operatoren \texttt{'-'}, \texttt{'*'} und \texttt{'/'}
       verläuft analog zur Auswertung des Operators \texttt{'+'}.
 \end{enumerate}
+\FloatBarrier
 
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    def evaluate(expr, Values):
-        if isinstance(expr, int):
-            return expr
-        if isinstance(expr, str):
-            return Values[expr] 
-        op = expr[0]
-        if op == '==':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) == evaluate(rhs, Values)
-        if op == '<':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) < evaluate(rhs, Values)
-        if op == '+':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) + evaluate(rhs, Values)
-        if op == '-':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) - evaluate(rhs, Values)
-        if op == '*':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) * evaluate(rhs, Values)
-        if op == '/':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) / evaluate(rhs, Values)
-        assert False, f'{stmnt} unexpected'
-\end{Verbatim}
-\vspace*{-0.3cm}
-\caption{Die Funktion \texttt{evaluate}.}
-\label{fig:Interpreter.ipynb:evaluate}
-\end{figure}
-
-
-
-
-\pagebreak
 \exercise
-\begin{enumerate}
-\renewcommand{\labelenumi}{(\alph{enumi})}
+\begin{enumerate}[(a)]
 \item Erweitern Sie den Interpreter so, dass auch der Operator ``\texttt{<=}'' unterstützt wird.
 \item Erweitern Sie den Interpreter um \texttt{for}-Schleifen.
 \item Erweitern Sie den Interpreter um die logischen Operatoren
       ``\texttt{\&\&}'' für das logische \emph{Und}, ``\texttt{||}'' für das logische \emph{Oder}
-      und ``\texttt{!}'' für die Negation an.  Dabei soll der Operator ``\texttt{!}'' am
+      und ``\texttt{!}'' für die Negation.  Dabei soll der Operator ``\texttt{!}'' am
       stärksten und der Operator ``\texttt{||}'' am schwächsten binden.
 \item Erweitern Sie die Syntax der arithmetischen Ausdrücke so, dass auch vordefinierte 
       mathematische Funktionen wie $\texttt{exp}()$ oder $\texttt{ln}()$ benutzt werden
@@ -569,7 +558,7 @@ Werte der Variablen abgelegt sind.
       Daher reicht es nicht mehr, die Belegungen der Variablen in einem
       global definierten Dictionary zu verwalten. \eox
 \end{enumerate}
-\renewcommand{\labelenumii}{\arabic{enumii}.}
+
 
 
 %%% Local Variables: 

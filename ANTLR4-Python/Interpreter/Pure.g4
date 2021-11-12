@@ -4,7 +4,6 @@ program  : statement+
          ;
 
 statement: VAR ':=' expr ';'
-         | VAR ':=' 'read' '(' ')' ';'
          | 'print' '(' expr ')' ';'
          | 'if'    '(' boolExpr ')' '{' statement* '}'
          | 'while' '(' boolExpr ')' '{' statement* '}'
@@ -24,7 +23,8 @@ product  : product '*' factor
          | factor
          ;
 
-factor   : '(' expr ')'
+factor   : 'read' '(' ')'
+         | '(' expr ')'
          | VAR
          | NUMBER
          ;

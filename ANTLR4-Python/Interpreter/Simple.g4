@@ -6,7 +6,6 @@ program returns [stmnt_list]
 
 statement returns [stmnt]
     : v = VAR ':=' e = expr ';'       {$stmnt = (':=', $v.text, $e.result)}
-    | v = VAR ':=' 'read' '(' ')' ';' {$stmnt = ('read', $v.text)}
     | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
     | 'if' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt) })* '}' 
       {$stmnt = ('if', $b.result) + tuple(SL)}
@@ -32,9 +31,10 @@ product returns [result]
     ;
 
 factor returns [result]
-    : '(' expr ')' {$result = $expr.result}
-    | v = VAR      {$result = $v.text}
-    | n = NUMBER   {$result = int($n.text)}
+    : 'read' '(' ')' {$result = ('read',)}
+    | '(' expr ')'   {$result = $expr.result}
+    | v = VAR        {$result = $v.text}
+    | n = NUMBER     {$result = int($n.text)}
     ;
 
 VAR    : [a-zA-Z][a-zA-Z_0-9]*;
