@@ -1,8 +1,8 @@
-grammar Grammar;
+grammar Pure;
 
 start: grmrl+;
 
-grmrl: VARIABLE ':' item* ;
+grmrl: VARIABLE ':' item* ';';
  
 item : VARIABLE 
      | TOKEN  
