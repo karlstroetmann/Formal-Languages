@@ -314,26 +314,26 @@ maintains two dictionaries.
                 xleftmargin   = 0.8cm,
                 xrightmargin  = 0.8cm,
               ]{python3}      
-    def parse(self, TL):
-        index   = 0      # points to next token
-        Symbols = []     # stack of symbols
-        States  = ['s0'] # stack of states, s0 is start state
-        TL     += ['EOF']
-        while True:
-            q = States[-1]
-            t = TL[index]
-            p = self.mActionTable.get((q, t), 'error')
-            if p == 'error': 
+def parse(self, TL):
+    index   = 0      # points to next token
+    Symbols = []     # stack of symbols
+    States  = ['s0'] # stack of states, s0 is start state
+    TL     += ['EOF']
+    while True:
+        q = States[-1]
+        t = TL[index]
+        # Below, an undefined table entry is interpreted as an error entry.
+        match self.mActionTable.get((q, t), 'error'):
+            case 'error': 
                 return False
-            elif p == 'accept':
+            case 'accept':
                 return True
-            elif p[0] == 'shift':
-                s = p[1]
+            case 'shift', s: 
                 Symbols += [t]
                 States  += [s]
                 index   += 1
-            elif p[0] == 'reduce':
-                head, body = p[1]
+            case 'reduce', rule:
+                head, body = rule
                 n       = len(body)
                 Symbols = Symbols[:-n]
                 States  = States [:-n] 
@@ -368,8 +368,7 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
       \begin{itemize}
       \item sets the variable $q$ to the current state,
       \item initializes $t$ to the next token, and then
-      \item sets $p$ by looking up the appropriate action in the action table.
-            Therefore $p$ is equal to $\textsl{action}(q, t)$.
+      \item looks up the appropriate action in the action table.
       \end{itemize}
       What happens next depends on this value of $\textsl{action}(q, t)$.
       \begin{enumerate}
@@ -401,9 +400,9 @@ parsed successfully and \texttt{false} otherwise.  The implementation of \textsl
             variable $A$.
             
             Furthermore, we have to remove $n$ states from the stack of states.
-            After that, we set \textsl{state} to the state that is then on top of the
-            stack of states.  Next, the new state  $\textsl{goto}(\textsl{state}, A)$ is put on top of
-            the stack of states in line 26.
+            After that, we set the variable \textsl{state} to the state that is on top of the
+            stack of states after we have removed $n$ states.  Next, the new state
+            $\textsl{goto}(\textsl{state}, A)$ is put on top of the stack of states in line 26.
       \end{enumerate}
 \end{enumerate}
 In order to make the function \textsl{parse} work we have to provide an implementation
