@@ -12,7 +12,7 @@ item : VARIABLE
      ;
 
 VARIABLE: [a-z][a-z_]*;
-TOKEN   : [A-Z][A_Z_]*;
+TOKEN   : [A-Z][A-Z_]*;
 LITERAL : '\'' ~('\'')+ '\'';
         
 WS      : [ \t\n\r]     -> skip ;
