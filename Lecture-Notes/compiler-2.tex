@@ -41,14 +41,19 @@ The function \mytt{compile\_expr} returns a pair.
 \item The first component of this pair is a list of \textsl{Java} 
       assembler commands that adhere to the syntax recognized by \textsl{Jasmin}.  In general, when the
       expression that is translated is complex, the execution of these assembler commands might need
-      considerable room on the stack.  However, it has to be guaranteed that when the execution of theses
+      considerable room on the stack.  However, it has to be guaranteed that when the execution of these
       commands finishes, the stack is back to its original height plus one because the net 
       effect of executing these commands must be to put the value of the expression on the stack.
 \item The second component of the return value of \mytt{compile\_expr} is a natural number.
       This natural number tells us how much the stack might grow when \mytt{expr} is evaluated.
       This information is needed because the \textsl{Java} virtual machine needs this information in advance:
       In \textsl{Java}, every function has to declare how much space it might use on the stack.
-      This declaration is done using the pseudo assembler command \mytt{.limit}.  Controlling the 
+      This declaration is done using the pseudo assembler command
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \mytt{.limit stack} \mytt{\textsl{sz}}
+      \\[0.2cm]
+      where \mytt{\textsl{sz}} is the maximum size of the stack.  Controlling the 
       maximum height of the stack is a security feature of \textsl{Java} that prevents those exploits that
       utilize stack overflows.
 \end{enumerate}
@@ -59,7 +64,7 @@ In the following, we discuss the evaluation of the different arithmetic expressi
 If the expression that is to be compiled is a variable $v$, we have to load this variable onto the stack using
 the command \mytt{iload}.  This command has one parameter which is the index of the variable on the local
 variable frame.  This index is stored in the symbol table \mytt{st}.  Since we just need one entry on the
-stack to store the variable we have
+stack to store the variable, we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mytt{compile\_expr}(v, \mytt{st}, \mytt{name}) = 
@@ -315,7 +320,7 @@ $\mytt{compile\_bool}: \textsl{BoolExpr} \times \textsl{SymbolTable} \times \tex
 The interpretation of the arguments is similar to the interpretation of the arguments
 of the function \mytt{compile\_expr}.  
 When we execute the list of assembler commands that result from the compilation of a Boolean expression, we
-expect that the execution of theses commands either puts the number $1$ (representing \mytt{True}) or the
+expect that the execution of these commands either puts the number $1$ (representing \mytt{True}) or the
 number $0$ (representing \mytt{False}) onto the stack. 
 We start our discussion of the function \mytt{compile\_bool} with the translation of equations.
 

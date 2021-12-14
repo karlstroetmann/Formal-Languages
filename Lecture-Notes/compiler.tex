@@ -22,9 +22,9 @@ Ein Compiler besteht prinzipiell aus den folgenden Komponenten:
 \item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgründen aber nicht mehr 
       betrachten können.
 \item Der Code-Generator übersetzt schließlich den Parse-Baum in eine Folge von
-      \textsc{Java}-Assembler-Befehlen.  
+      Assembler-Befehlen, die der Syntax von \textsl{Jasmin} entsprechen.  
 \item Das dabei entstehende Assembler-Programm können wir mit \textsl{Jasmin} in Java-Bytecode übersetzen.
-\item Der Java-Bytecode kann mit Hilfe des Befehls \mytt{Java} ausgeführt werden.  
+\item Der Java-Bytecode kann mit Hilfe des Befehls \mytt{java} ausgeführt werden.  
 \end{enumerate}
 Bei Compilern, deren Zielcode ein \textsc{Risc}-Assembler-Programm ist, wird normalerweise zunächst auch ein
 Code erzeugt, der dem 
@@ -75,12 +75,12 @@ Abbildung \ref{fig:compiler.ebnf} auf Seite \pageref{fig:compiler.ebnf} zeigt di
 erweiterter Backus-Naur-Form (\textsc{Ebnf}). 
 Die Grammatik für \textsl{Integer}-\mytt{C} verwendet die folgenden Terminale:
 \begin{enumerate}
-\item \textsc{Id} steht für eine Folge von Ziffern, Buchstaben und dem Unterstrich, die 
-      mit einem Buchstaben beginnt.  Eine \textsc{Id} bezeichnet entweder eine Variable oder
+\item \textsc{Id} ist eine Abkürzung für \blue{Identifier} und steht für eine Folge von Ziffern, Buchstaben und
+      dem Unterstrich, die mit einem Buchstaben beginnt.  Eine \textsc{Id} bezeichnet entweder eine Variable oder
       den Namen einer Funktion.
 \item \textsc{Number} steht für eine Folge von Ziffern, die als Dezimalzahl interpretiert wird.
 \item Daneben haben wir eine Reihe von Operatoren wie z.B.~\quoted{+},\quoted{-}, etc., sowie Schlüsselwörter
-      wie beispielsweise \quoted{if}, \quoted{while}.
+      wie beispielsweise \squoted{if}, \squoted{else} und \squoted{while}.
 \end{enumerate}
 Nach der oben angegebenen Grammatik ist ein Programm eine Liste von Funktionen.
 Eine Funktion besteht aus der Deklaration der Signatur, worauf in geschweiften Klammern
@@ -93,9 +93,8 @@ Die in Abbildung \ref{fig:compiler.ebnf} gezeigte Grammatik ist mehrdeutig:
 \item Die Grammatik hat das \emph{Dangling-Else-Problem}.
 
       Dieses Problem haben wir bereits im Kapitel \ref{chapter:bottom-up} im Rahmen einer Aufgabe diskutiert.
-      Wir hatten damals das Problem dadurch gelöst, dass wir das Schlüsselwort \quoted{else} shiften.
-      Da dies genau das ist, was \textsc{Ply} per default in einem Shift-Reduce-Konflikt macht, brauchen wir
-      uns um dieses Problem nicht weiter zu kümmern.
+      Wir werden das Problem bei dem Parser, den wir nun vorstellen, durch die Verwendung von
+      Operator-Präzedenzen lösen. 
 \item Für die bei arithmetischen und Boole'schen Ausdrücken verwendeten Operatoren
       müssen Präzedenzen festgelegt werden, um die Mehrdeutigkeiten bei der Interpretation dieser Ausdrücke
       aufzulösen. 
@@ -127,7 +126,7 @@ Die in Abbildung \ref{fig:compiler.ebnf} gezeigte Grammatik ist mehrdeutig:
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Ein einfaches \textsc{Integer}-\mytt{C}-Programm.}
+\caption{Ein einfaches \textsc{Integer}-\mytt{C}-Programm zur Berechnung der Summe $\sum\limits_{i=1}^{6 \cdot 6} i$.}
 \label{fig:sum.c}
 \end{figure}
 
@@ -187,7 +186,7 @@ scanners that we have already seen before, there are only a few points worth men
         t.type = Keywords.get(t.value, 'ID')
         return t
     
-    literals = ['+', '-', '*', '/', '%', '(', ')', '{', '}', ';', '=', '<', '>', '!']
+    literals = ['+','-','*','/','%','(',')','{','}',';','=','<','>','!',',']
     
     t_ignore  = ' \t\r'
     
@@ -219,7 +218,7 @@ scanners that we have already seen before, there are only a few points worth men
       token.  We have used this shortcut to define most of the tokens recognized by our scanner.
 \item While we do not need to declare tokens for those operators that consist of just one token, 
       we have to declare those tokens that consist of two or more characters.  For example, the operator
-      \quoted{==} is represented by the token \mytt{'EQ'} and defined in line 9.
+      \quoted{==} is represented by the token \mytt{'EQ'} and is defined in line 9.
 \item Our programming language supports single line comments that start with the string \quoted{//} and extend
       to the end of the line.  These comments are implemented via the token \mytt{COMMENT} that is defined in
       line 16--18.  Note that the function \mytt{t\_COMMENT} does not return a value.  Therefore,
@@ -389,7 +388,7 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
       list.  The grammar rules for \mytt{param\_list} are as follows:
       \begin{verbatim}
         param_list 
-             :
+             : /* epsilon */
              | 'int' ID
              | 'int' ID ',' ne_param_list
              ;
@@ -402,18 +401,18 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
 \item The grammar rules for a list of declarations are as follows:
       \begin{verbatim}
       decl_list
-          : 
+          : /* epsilon */
           | 'int' ID ';' decl_list
           ;
       \end{verbatim}
       Observe that with this definition a list of declarations may be empty.
-      The grammar rules are simpler than for parameter lists because every variable declaration is ended 
-      with a semicolon, while parameters are separated by commas and the last parameter must not be followed by
-      a comma.
+      The grammar rules for a list of declarations are simpler than the grammar rules for parameter lists
+      because every variable declaration is ended with a semicolon, while parameters are separated by commas
+      and the last parameter must not be followed by a comma.
 \item The grammar rules for a list of statements are as follows:
       \begin{verbatim}
       stmnt_list
-          : 
+          : /* epsilon */
           | stmnt stmnt_list
           ;
       \end{verbatim}
@@ -535,6 +534,8 @@ defined.  The grammar rules for statements are as follows:
 \noindent
 Figure \ref{fig:Compiler.ipynb-4} on page \pageref{fig:Compiler.ipynb-4} shows how Boolean expressions are
 defined.  The grammar rules are as follows:
+\pagebreak
+
 \begin{verbatim}
         bool_expr : bool_expr '||' bool_expr
                   | bool_expr '&&' bool_expr
@@ -601,8 +602,10 @@ defined.  The grammar rules are as follows:
 \label{fig:Compiler.ipynb-5}
 \end{figure}
 \noindent
-Figure \ref{fig:Compiler.ipynb-5} on page \pageref{fig:Compiler.ipynb-5} shows lists of expression how arithmetic expressions
+Figure \ref{fig:Compiler.ipynb-5} on page \pageref{fig:Compiler.ipynb-5} shows how arithmetic expressions
 are defined.  The grammar rules are as follows:
+\pagebreak
+
 \begin{verbatim}
         expr : expr '+' expr
              | expr '-' expr
@@ -619,7 +622,7 @@ are defined.  The grammar rules are as follows:
 Finally, Figure \ref{fig:Compiler.ipynb-6} on page \pageref{fig:Compiler.ipynb-6} shows how \mytt{expr\_list}
 is defined.  
 \begin{verbatim}
-        expr_list :
+        expr_list : /* epsilon */
                   | expr
                   | expr ',' ne_expr_list
                   ;
@@ -679,7 +682,7 @@ In this case \mytt{p.value} is the part of the input string corresponding to thi
 \end{figure}
 \pagebreak
 
-\exercise
+\exerciseEng
 Extend the parser that is available at
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -687,18 +690,13 @@ Extend the parser that is available at
  https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Compiler.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Compiler.ipynb} 
 \\[0.2cm]
 so that it supports the ternary \texttt{C}-operator for conditional expressions.  For example, in \texttt{C},
-the following assignment using the ternary operator can be used the assign \mytt{max} the maximum of the values
-of \mytt{x} and \mytt{y}:
+the following assignment using the ternary operator can be used to assign to the variable \mytt{max}
+the maximum of the values of the variables \mytt{x} and \mytt{y}:
 \\[0.2cm]
 \hspace*{1.3cm}
 \mytt{max = x > y ? x : y;}
 \\[0.2cm]
 Extend the parser so it can process the assignment shown above. \eox 
-
-
-
-
-
 
 %%% Local Variables: 
 %%% mode: latex
