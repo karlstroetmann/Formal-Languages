@@ -1,113 +1,98 @@
 \chapter{Introduction and Motivation}
-This lecture covers both the theory of formal languages as well as some of their applications.
-In particular, we discuss the construction of scanners, parsers, interpreters, and compilers.  Furthermore, we 
-present a number of tools that can be used to build scanners and parsers.  In particular, 
-the following tools will be introduced:
+This lecture explores the theory of formal languages and delves into various applications, with a focus on the
+development of scanners, parsers, interpreters, and compilers. We also introduce several specialized tools
+designed to aid in the creation of these components, specifically: 
 \begin{enumerate}
-\item \blue{\textsc{Ply}} \index{\textsc{Ply}} generates a parser for \textsl{Python} programs. 
-\item \blue{\textsc{Antlr}} \index{\textsc{Antlr}} can generate parsers for various programming languages.  In
-      particular, \textsc{Antlr} can be used to generate parsers for both \textsl{Python} and \textsl{Java}.  
+\item \blue{\textsc{Ply}}: \index{\textsc{Ply}} A tool for generating parsers using the programming language
+      \textsl{Python}. 
+\item \blue{\textsc{Antlr}}: \index{\textsc{Antlr}} A versatile tool capable of generating parsers for multiple
+       programming languages, including \textsl{Python} and \textsl{Java}. 
 \end{enumerate}
-All of these tools are \blue{program generators}, i.e.~they take as input the description of a
-language and produce a parser as output. 
+These tools are categorized as \blue{program generators}. They accept language descriptions as input and output
+parsers accordingly. 
 
 \section{Basic Definitions}
-The central notion of this lecture is the notion of a 
-\href{http://en.wikipedia.org/wiki/Formal_language}{\emph{formal language}}, \index{formal language} which
-basically is a set of strings that is defined in some precise mathematical way.  In order to be able to define
-this notion we require some definitions.  
+The cornerstone of this lecture is the concept of a \href{http://en.wikipedia.org/wiki/Formal_language}{\emph{formal language}}, \index{formal language} essentially defined as a set of strings characterized by precise mathematical criteria. To establish this concept, we first introduce some foundational definitions.
 
 \begin{Definition}[Alphabet]
-An \blue{alphabet} $\Sigma$ \index{alphabet} is a finite, non-empty set of \blue{characters}:
+An \blue{alphabet} \( \Sigma \) \index{alphabet} is a finite, non-empty set of \blue{characters}:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\Sigma = \{ c_1, \cdots, c_n \}$. 
+\( \Sigma = \{ c_1, \ldots, c_n \} \).
 \\[0.2cm]
-Sometimes, we use the term \blue{symbol} \index{symbol} to denote a character.
+The term \blue{symbol} \index{symbol} is occasionally used interchangeably with character.
 \qed
 \end{Definition}
 
 \examplesEng
 \begin{enumerate}[(a)]
-\item $\Sigma = \{ 0, 1\}$ is an alphabet that can be used to represent binary numbers.
-\item $\Sigma = \{ \mathtt{a}, \cdots, \mathtt{z}, \mathtt{A}, \cdots, \mathtt{Z} \}$ 
-      is the alphabet used for the English language.
-\item The set $\Sigma_{\textsc{\scriptsize Ascii}} = \{ 0, 1, \cdots, 127 \}$ is known as the
-      \href{http://en.wikipedia.org/wiki/ASCII}{\textsc{Ascii}-Alphabet}. \index{\textsc{Ascii}-Alphabet} The numbers are
-      interpreted as letters, digits, punctuation symbols, and control characters.
-      For example, the numbers in the set $\{65, \cdots, 90 \}$ represent the letters
-      $\{\mathtt{A}, \cdots, \mathtt{Z}\}$.  
-      \eox
+\item \( \Sigma = \{ 0, 1 \} \) is an alphabet suitable for representing binary numbers.
+\item \( \Sigma = \{ \mathtt{a}, \ldots, \mathtt{z}, \mathtt{A}, \ldots, \mathtt{Z} \} \) comprises the alphabet for the English language.
+\item \( \Sigma_{\textsc{\scriptsize Ascii}} = \{ 0, 1, \ldots, 127 \} \) is known as the
+      \href{http://en.wikipedia.org/wiki/ASCII}{\textsc{Ascii}-Alphabet}. \index{\textsc{Ascii}-Alphabet} Here,
+      numbers correspond to letters, digits, punctuation marks, and control characters. For instance, the set
+      \( \{ 65, \ldots, 90 \} \) maps to the letters \( \{ \mathtt{A}, \ldots, \mathtt{Z} \} \).
+\item \( \Sigma_{\textsc{\scriptsize Unicode}} = \{ 0, 1, \ldots, 1,114,111 \} \) represents the
+      \href{https://en.wikipedia.org/wiki/Unicode}{\textsc{Unicode}-Alphabet}. \index{\textsc{Unicode}-Alphabet}
+      This extensive set accommodates a wide array of characters, including various scripts, symbols, and even emojis. 
+\eox
 \end{enumerate}
 
 \begin{Definition}[Strings]
-Given an alphabet $\Sigma$, a \blue{string} \index{string} is a list of characters from $\Sigma$.
-In the theory of formal languages, these lists are written without the bracket symbols and without
-separating commas.  Hence if $c_1,\cdots,c_n \in \Sigma$, then we write 
+For a given alphabet \( \Sigma \), a \blue{string} \index{string} is a sequence of characters selected from \( \Sigma \). In formal language theory, these sequences are written without brackets or separating commas. Thus, for \( c_1, \ldots, c_n \in \Sigma \), we write
 \\[0.2cm]
 \hspace*{1.3cm}
-$w = c_1\cdots c_n$ \quad instead of \quad $w = [c_1,\cdots,c_n]$.
+\( w = c_1 \ldots c_n \) \quad instead of \quad \( w = [c_1, \ldots, c_n] \).
 \\[0.2cm]
-The empty string is denoted as $\varepsilon$,\index{$\varepsilon$} i.e.~we have $\varepsilon =
-\texttt{\symbol{34}\symbol{34}}$.
-The set of all strings that can be constructed
-from the alphabet $\Sigma$ is written as $\Sigma^*$. \index{$\Sigma^*$} For emphasis, strings are often
-surrounded by quotation marks. \qed
+The empty string is represented by \( \varepsilon \), \index{\( \varepsilon \)} so \( \varepsilon = \texttt{" "} \).
+The set of all possible strings formed from the alphabet \( \Sigma \) is denoted as \( \Sigma^* \). \index{\( \Sigma^* \)} Strings are often enclosed in quotation marks for emphasis.
+\qed
 \end{Definition}
-\pagebreak
 
 \examplesEng
-\begin{enumerate}
-\item Assume that $\Sigma = \{0, 1\}$.  If we define
+\begin{enumerate}[(a)]
+\item Let \( \Sigma = \{0, 1\} \). Defining
       \\[0.2cm]
       \hspace*{1.3cm}
-      $w_1 := \mathtt{\symbol{34}01110\symbol{34}}$ \quad and \quad $w_2 := \mathtt{\symbol{34}11001\symbol{34}}$,
+      \( w_1 := \mathtt{"01110"} \) and \( w_2 := \mathtt{"11001"} \),
       \\[0.2cm]
-      then both $w_1$and $w_2$ are strings.  Therefore we have
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $w_1 \in \Sigma^*$ \quad and \quad $w_2 \in \Sigma^*$.
-\item Assume that $\Sigma = \{\mathtt{a}, \;\cdots\!,\; \mathtt{z}\}$.   If we define
+      both \( w_1 \) and \( w_2 \) are strings over \( \Sigma \). Hence, we can state:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $w := \mathtt{\symbol{34}example}\symbol{34}$,
+      \( w_1 \in \Sigma^* \) and \( w_2 \in \Sigma^* \).
+\item Consider \( \Sigma = \{\mathtt{a}, \ldots, \mathtt{z}\} \). With
       \\[0.2cm]
-      then we have $w \in \Sigma^*$. \eox
+      \hspace*{1.3cm}
+      \( w := \mathtt{"example"} \),
+      \\[0.2cm]
+      it follows that \( w \in \Sigma^* \). \eox
 \end{enumerate}
-The \emph{length} of a string $w$ is defined as the number of characters composing $w$.
-The length of $w$ is written as $|w|$.  \index{length of a string}  We use \blue{array notation} to extract the
-characters from a string: 
-Given a string $w$ and a natural number $i \leq |w|$, we agree that $w[i]$ denotes the $i$-th
-character of the string $w$.   We start to count the characters at 0 as this is the convention used in many
-many modern programming languages like \texttt{C}, \textsl{Java}, and \textsl{Python}.
 
-Next, we define the \blue{concatenation} \index{concatenation} of two strings $w_1$ and $w_2$ as the string $w$ that
-results from appending the string $w_2$ at the end of  $w_1$.  The concatenation of $w_1$ and $w_2$
-is written as $w_1 \cdot w_2$ or sometimes even shorter as $w_1w_2$.  
+The \emph{length} of a string \( w \) is denoted by \( |w| \) and represents the number of characters in \( w
+\).\index{length of a string}  
+We employ \blue{array notation} for character extraction: given a string \( w \) and a natural number
+\( i \leq |w| \), \( w[i] \) specifies the \( i \)-th character in \( w \). Character counting starts at 0, adhering to
+conventions in modern programming languages like \texttt{C}, \textsl{Java}, and \textsl{Python}. 
+
+Next, we introduce the concept of \blue{concatenation} \index{concatenation} of two strings \( w_1 \) and
+\(w_2 \). Concatenation results in a new string \( w \) formed by appending \( w_2 \) to \( w_1 \). It is
+represented as \( w_1 \cdot w_2 \) or, more succinctly, as \( w_1w_2 \). 
+
 \vspace*{0.3cm}
 
 \exampleEng
-If $\Sigma = \{\mathtt{0},\mathtt{1}\}$ and, furthermore,  $w_1 = \mathtt{\symbol{34}01\symbol{34}}$ and $w_2 = \mathtt{\symbol{34}10\symbol{34}}$, then we have
+For \( \Sigma = \{\mathtt{0}, \mathtt{1}\} \) and \( w_1 = \mathtt{"01"} \) and \( w_2 = \mathtt{"10"} \), the concatenated strings are:
 \\[0.2cm]
 \hspace*{1.3cm}
-$w_1 \cdot w_2 = \mathtt{\symbol{34}0110\symbol{34}}$ \quad and \quad $w_2 \cdot w_1 = \mathtt{\symbol{34}1001\symbol{34}}$.  \eox
+\( w_1 \cdot w_2 = \mathtt{"0110"} \) and \( w_2 \cdot w_1 = \mathtt{"1001"} \). \eox
 
 \begin{Definition}[Formal Language] \hspace*{\fill} \linebreak
-If $\Sigma$ is an alphabet, then a \emph{precisely defined} subset $L \subseteq \Sigma^*$
-is called a \blue{formal language}. \index{formal language} \qed
+Given an alphabet \( \Sigma \), a subset \( L \subseteq \Sigma^* \) is termed a \blue{formal language} if it is \emph{precisely defined}. \index{formal language} \qed
 \end{Definition}
 
-At this point, your first reaction might be to ask what exactly constitutes a \emph{precisely defined} subset.
-The idea is to have some kind of unambiguous definition of the subset $L$ that makes up the language.  We need
-to have an unambiguous definition that specifies whether a given string is indeed part of the defined language.
-To give one negative example, a language like English is not a formal language as their is no precise
-definition of what constitutes a valid sentence of the English language.
+You may wonder what it means for a subset to be \emph{precisely defined}. The criterion is the unambiguous characterization of the subset \( L \), such that it's clear whether a given string belongs to \( L \) or not. For instance, English doesn't qualify as a formal language because it lacks a precise rule set for valid sentences.
 
-The previous definition is very general.  As the lecture proceeds, we will define several
-specializations of this concept.  For us, the two most important specializations are 
-\href{http://en.wikipedia.org/wiki/Regular_language}{regular languages} \index{regular language} and
-\href{http://en.wikipedia.org/wiki/Context-free_language}{context-free languages}, \index{context-free language}
-because these two categories are the most important in computer science. 
+This initial definition is intentionally broad. As we progress through the lecture, we will explore specialized versions, most notably \href{http://en.wikipedia.org/wiki/Regular_language}{regular languages} \index{regular language} and \href{http://en.wikipedia.org/wiki/Context-free_language}{context-free languages}. \index{context-free language} These are particularly relevant in computer science.
 
 \examplesEng
 \begin{enumerate}
@@ -174,70 +159,61 @@ because these two categories are the most important in computer science.
       \item if $f$ is the function that is defined by $p$, then $f(x)$ yields the result $y$.
             \eox
       \end{enumerate}
-\end{enumerate}
-The examples given above demonstrate that the notion of a formal language is very broad.
-While it is easy to recognize the strings of the language $L_\mathbb{N}$, it is quite a bit more
-difficult to decide whether a string is a member of 
-$L_\mathbb{P}$ or $L_C$.  Finally, since the
-\href{https://en.wikipedia.org/wiki/Halting_problem}{halting problem} is undecidable, there can be 
-no algorithm that is able to decide whether a string  
-$w$ is an element of the language $L_u$. However, this language is still \blue{semi-decidable}:  If there is a string
-$w$ such that $w \in L_u$, then we are able to prove this.
+    \end{enumerate}
+
+The above examples illustrate the expansive scope of what can be considered a formal language. While it's
+straightforward to identify strings in \( L_\mathbb{N} \), it becomes substantially more challenging for
+languages like \( L_\mathbb{P} \) or \( L_C \). Moreover, owing to the
+\href{https://en.wikipedia.org/wiki/Halting_problem}{halting problem} being undecidable, no algorithm can
+definitively determine membership in \( L_u \). Nevertheless, \( L_u \) is \blue{semi-decidable}: if a string
+\( w \) belongs to \( L_u \), we can establish this fact.  
 
 \section{Overview}
-My goal in this lecture is to cover the following topics.  In order to describe these topics, I will need to
-use some notions that I cannot define precisely at this point.  Don't worry if you don't yet understand these 
-notions, as they will be explained once we get there.  Basically, this lecture comes in three parts.
+The aim of this lecture is to cover a series of interconnected topics. While I will introduce some terms that may not be immediately clear, rest assured that these will be elaborated upon as the lecture progresses. The lecture is structured into three main parts:
+
 \begin{enumerate}
-\item In the first part we discuss the theory of \blue{regular languages}.
+\item The first part delves into the theory of \blue{regular languages}.
   \begin{enumerate}[(a)]
-  \item We will start with \emph{regular expressions}.  After a formal definition of this notion,
-        we discuss how regular expressions are used in \textsl{Python}.
-  \item Next, we show how the tool \blue{\textsc{Ply}} can be used to generate scanners.
-  \item Then, we turn to the implementation of regular expressions via \blue{finite state machines}.
-  \item We show how the \blue{equivalence} of regular expressions can be checked.
-  \item We finish our discussion of regular languages by discussing their limits.
-        In particular, we discuss the \blue{Pumping Lemma}. 
+  \item We begin with an exploration of \blue{regular expressions}. After formally defining this term, we will discuss its applications in \textsl{Python}.
+  \item We then demonstrate how the \blue{\textsc{Ply}} tool can be utilized to create \blue{scanners}.
+  \item Subsequently, we examine the implementation of regular expressions via \blue{finite state machines}.
+  \item A discussion on how to verify the \blue{equivalence} of regular expressions follows.
+  \item We conclude this section by discussing the limitations of regular languages, focusing particularly on the \blue{Pumping Lemma}.
   \end{enumerate}
-\item In the second part of this lecture we discuss \blue{context free languages}.
-      Context free languages are a formalism to describe the syntax of programming languages.
-      In particular, the theory of regular languages can be used to implement parsers.
-      \begin{enumerate}[(a)]
-      \item We discuss the definition of \blue{context free grammars}.  These are used to specify 
-            context free languages.  
-      \item We discuss the parser generators \blue{\textsc{Antlr}} and \blue{\textsc{Ply}}.
-      \item We present the theory that is necessary to understand the parser generator \textsc{Ply}.
-      \item We proceed to discuss the limits of context free languages.
-      \end{enumerate}
-\item In the last part of this lecture we discuss interpreters and compilers.
+  
+\item The second part is centered on \blue{context-free languages}, which are instrumental in describing the syntax of programming languages.
+  \begin{enumerate}[(a)]
+  \item We first introduce \blue{context-free grammars}, which are employed to define context-free languages.
+  \item Next, we talk about parser generators, specifically \blue{\textsc{Antlr}} and \blue{\textsc{Ply}}.
+  \item Essential theory for understanding the parser generator \textsc{Ply} is then presented.
+  \item Lastly, we discuss the limitations of context-free languages.
+  \end{enumerate}
+
+\item The final part of this lecture covers interpreters and compilers.
+  \begin{enumerate}[(a)]
+  \item We implement an interpreter for a toy language.
+  \item Then we discuss how to write a compiler that translates another toy language into \blue{Java byte code}.
+  \end{enumerate}
 \end{enumerate}
 
 \section{Literature}
-In addition to these lecture notes there are three books that I would like to recommend:
+Besides these lecture notes, there are three books I highly recommend:
 \begin{enumerate}[(a)]
-\item \emph{Introduction to Automata Theory, Languages, and Computation}
-      \cite{hopcroft:06}
-
-      This book is the bible with respect to the theory of formal languages and it contains all the theoretical
-      results discussed in this lecture. 
-      Obviously, we will only be able to cover a small part of the results discussed in this book.
-\item \emph{Introduction to the Theory of Computation}
-      \cite{sipser:2012}
-
-      This is another readable introduction to the theory of formal languages.  It also discusses
-      the theory of computability, which is not covered in this lecture.
-\item \emph{Compilers --- Principles, Techniques and Tools}
-      \cite{aho:2006}
-
-      This book is one of the standard references with respect to the theory of compilers.  It also covers a fair amount of
-      the theory of formal languages.
+\item \emph{Introduction to Automata Theory, Languages, and Computation} \cite{hopcroft:06}
+      --- Often considered   the definitive text on formal languages, this book encompasses all the theoretical
+      concepts discussed in this lecture, although we will only touch on a subset of its content. 
+\item \emph{Introduction to the Theory of Computation} \cite{sipser:2012}
+      --- This book provides another accessible introduction to formal languages and extends to the theory of
+      computability, which is beyond the scope of this lecture. 
+\item \emph{Compilers --- Principles, Techniques and Tools} \cite{aho:2006}
+      --- A standard reference in compiler theory, this book also covers a substantial portion of formal languages.
 \end{enumerate}
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
-\item Define the notion of an \blue{alphabet}.
-\item Given an alphabet, define the notion of a \blue{string}.
-\item Define the notion of a \blue{formal language}.
+\item Define what is meant by an \blue{alphabet}.
+\item Based on a given alphabet, define the concept of a \blue{string}.
+\item Elaborate on the notion of a \blue{formal language}.
 \end{enumerate}
 
 
