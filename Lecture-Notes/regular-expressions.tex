@@ -1,136 +1,99 @@
 \chapter{Regular Expressions \label{chapter:regular-expressions}}
-\href{http://en.wikipedia.org/wiki/Regular_expression}{\emph{Regular expressions}} are terms that
-specify those formal languages that are simple enough to be recognized by a so called \blue{finite state machine}.
-The concept of finite state machines will be discussed in chapter \ref{chapter:finit-state-machines.tex}.
-A regular expression is able to specify 
+\href{http://en.wikipedia.org/wiki/Regular_expression}{\emph{Regular expressions}} are linguistic constructs designed to specify formal languages simple enough to be recognized by a \blue{finite state machine}. The notion of finite state machines will be elaborated upon in Chapter \ref{chapter:finit-state-machines.tex}. Regular expressions enable the specification of:
+
 \begin{enumerate}
-\item the choice between different alternatives,
-\item concatenation, and
-\item repetition.
+\item Alternatives among different options,
+\item Concatenation of elements, and
+\item Repetition of elements.
 \end{enumerate}
-Many modern scripting languages are based on regular expression, for example
-the initial popularity of the programming language \href{http://en.wikipedia.org/wiki/Perl}{\textsl{Perl}} was
-largely due to its efficiency in dealing with regular expressions.
-Today, all modern high-level languages, e.g.~\textsl{Python}, \textsl{Java}, \texttt{C\#}, and many others
-provide extensive libraries to support regular expressions.  Furthermore, there are a number of 
-\textsc{Unix} tools like \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}}, 
-\href{http://en.wikipedia.org/wiki/Sed}{\texttt{sed}} or
-\href{http://en.wikipedia.org/wiki/Awk}{\texttt{awk}} that are based on regular expressions.  Hence,
-every aspiring computer scientist needs to be comfortable with regular expressions.  In this chapter
-we will give a definition of regular expressions that is quite concise and is different from the definition
-given in most programming languages.  The advantage of this concise definition is that it is more convenient
-for our theoretical analysis of regular languages, which is given in Chapter 4 and Chapter 5.  In the next chapter
-we will present the syntax of regular expressions that is used in \textsl{Python}.
+
+Regular expressions form the backbone of many modern scripting languages. For instance, the initial surge in the popularity of the programming language \href{http://en.wikipedia.org/wiki/Perl}{\textsl{Perl}} can be largely attributed to its efficient handling of regular expressions. Nowadays, nearly all high-level programming languages, such as \textsl{Python}, \textsl{Java}, and \texttt{C\#}, offer comprehensive libraries to support regular expressions. 
+
+Moreover, various \textsc{Unix} utilities, including \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}}, \href{http://en.wikipedia.org/wiki/Sed}{\texttt{sed}}, and \href{http://en.wikipedia.org/wiki/Awk}{\texttt{awk}}, are fundamentally based on regular expressions. Consequently, proficiency in regular expressions is indispensable for budding computer scientists.
+
+In this chapter, we will introduce a definition of regular expressions that is more concise than those typically found in programming languages. This streamlined definition will facilitate our theoretical examination of regular languages in Chapters 4 and 5. The syntax of regular expressions as used in \textsl{Python} will be covered in the subsequent chapter.
 
 \section{Preliminary Definitions}
-Before we can define the syntax and semantics of regular expressions, we need some auxiliary definitions. 
+Before delving into the syntax and semantics of regular expressions, we need to introduce some preliminary definitions.
 
 \begin{Definition}[Product of Languages]
-  If $\Sigma$ is an  alphabet and $L_1 \subseteq \Sigma^*$ and $L_2 \subseteq \Sigma^*$ are formal
-  languages, the \blue{product} \index{product} of $L_1$ and $L_2$ is written as
-  $L_1 \cdot L_2$ \index{$L_1 \cdot L_2$} and is defined as the set of all concatenations $w_1 \cdot w_2$ such that $w_1 \in L_1$ and
-  $w_2 \in L_2$, i.e.~we have
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $L_1 \cdot L_2 := \bigl\{ w_1 \cdot w_2 \mid w_1 \in L_1 \wedge w_2 \in L_2 \bigr\}$. \eox
+  Given an alphabet \( \Sigma \) and formal languages \( L_1, L_2 \subseteq \Sigma^* \), the \blue{product} of \( L_1 \) and \( L_2 \) is denoted as \( L_1 \cdot L_2 \) and is defined as the set of all concatenations \( w_1 \cdot w_2 \) where \( w_1 \in L_1 \) and \( w_2 \in L_2 \). Formally, 
+\\[0.2cm]
+\hspace*{1.3cm}
+$ L_1 \cdot L_2 := \{ w_1 \cdot w_2 \mid w_1 \in L_1 \land w_2 \in L_2 \}$. \eox 
 \end{Definition}
 
 \exampleEng
-If $\Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \}$ and $L_1$ and $L_2$ are defined as
-\\[0.2cm]
-\hspace*{1.3cm}
-$L_1 = \{ \texttt{ab}, \texttt{bc} \}$ \quad and \quad
-$L_2 = \{ \texttt{ac}, \texttt{cb} \}$,
-\\[0.2cm]
-then the product of $L_1$ and $L_2$ is given as
-\\[0.2cm]
-\hspace*{1.3cm}
-$L_1 \cdot L_2 = \{ \texttt{abac}, \texttt{abcb}, \texttt{bcac}, \texttt{bccb} \}$.  \eox
+Suppose \( \Sigma = \{ \texttt{a}, \texttt{b}, \texttt{c} \} \) and \( L_1 \) and \( L_2 \) are given by
+\[
+L_1 = \{ \texttt{ab}, \texttt{bc} \} \quad \text{and} \quad L_2 = \{ \texttt{ac}, \texttt{cb} \},
+\]
+then \( L_1 \cdot L_2 = \{ \texttt{abac}, \texttt{abcb}, \texttt{bcac}, \texttt{bccb} \} \). \eox
+\pagebreak
 
-\begin{Definition}[Power of a Language] 
-Assume $\Sigma$ is an  alphabet, $L \subseteq \Sigma^*$ is a formal language and $n\in\mathbb{N}$.
-The  \blue{$n$-th power} of $L$ \index{$n$-th power of a language} is written as  $L^n$ \index{$L^n$} and is
-defined by induction on  $n$.  
+\begin{Definition}[Power of a Language]
+Let \( \Sigma \) be an alphabet, \( L \subseteq \Sigma^* \) a formal language, and \( n \in \mathbb{N} \). The \( n \)-th \blue{power} of \( L \), denoted as \( L^n \), is defined inductively as follows:
 \begin{enumerate}
-\item[B.C.:] $n = 0$: 
+\item[B.C.:] \( n = 0 \):
 
-      $L^0 := \{ \varepsilon \}$.
-
-      Here $\varepsilon$ denotes the empty string, i.e.~we have $\varepsilon = \texttt{\symbol{34}\symbol{34}}$.
-
-\item[I.S.:] $n \mapsto n + 1$:
-
-      $L^{n+1} = L^n \cdot L$  \eox
+             \( L^0 := \{ \varepsilon \} \), \quad where \( \varepsilon \) is the empty string.
+\item[I.S.:] \( n \mapsto n + 1 \):
+             
+             \( L^{n+1} = L^n \cdot L \). \eox
 \end{enumerate}
 \end{Definition}
 
 \exampleEng
-If $\Sigma = \{ \texttt{a}, \texttt{b} \}$ and $L = \{ \texttt{ab}, \texttt{ba} \}$, we have
+For \( \Sigma = \{ \texttt{a}, \texttt{b} \} \) and \( L = \{ \texttt{ab}, \texttt{ba} \} \), we find:
 \begin{enumerate}[(a)]
-\item $L^0 = \{ \varepsilon \}$,
-\item $L^1 = \{ \varepsilon \} \cdot \{ \texttt{ab}, \texttt{ba} \} = \{ \texttt{ab}, \texttt{ba} \} = L$,
-\item $L^2 = \{ \texttt{ab}, \texttt{ba} \} \cdot \{ \texttt{ab}, \texttt{ba} \} = 
-             \{ \texttt{abab}, \texttt{abba}, \texttt{baab}, \texttt{baba} \}$.  \eox
+\item \( L^0 = \{ \varepsilon \} \),
+\item \( L^1 = L \),
+\item \( L^2 = \{ \texttt{abab}, \texttt{abba}, \texttt{baab}, \texttt{baba} \} \). \eox
 \end{enumerate}
 
 \begin{Definition}[Kleene Closure]
-  Assume that $\Sigma$ is an Alphabet and $L \subseteq \Sigma^*$ is some formal language. Then the
-  \blue{Kleene closure} \index{Kleene closure} of $L$ is written as $L^*$ \index{$L^*$} and is defined to be
-  the union of all powers $L^n$ for all $n \in \mathbb{N}$: 
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $L^* := \bigcup\limits_{n \in \mathbb{N}} L^n = L^0 \cup L^1 \cup L^2 \cup L^3 \cup \cdots$.
-  \\[0.2cm]
-  Note that $\varepsilon \in L^*$.  Therefore, $L^*$ is never the empty set, not even if $L = \{\}$.
-  \qed  
+  Given an alphabet \( \Sigma \) and a formal language \( L \subseteq \Sigma^* \), the \blue{Kleene closure} of \( L \), denoted as \( L^* \), is the union of all \( L^n \) for \( n \in \mathbb{N} \):
+  \[
+  L^* := \bigcup_{n \in \mathbb{N}} L^n = L^0 \cup L^1 \cup L^2 \cup \cdots
+  \]
+  Note that \( \varepsilon \in L^* \), so \( L^* \) is never empty, even when \( L = \{\} \). \qed
 \end{Definition}
 
 \exampleEng
-Assume $\Sigma = \{ \texttt{a}, \texttt{b} \}$ and  $L = \{ \texttt{a} \}$.  Then we have
-\\[0.2cm]
-\hspace*{1.3cm}
-$L^* = \{ \texttt{a}^n \mid n \in \mathbb{N} \}$.
-\\[0.2cm]
-Here $\texttt{a}^n$ is the string of length $n$ that contains only the letter \texttt{a}.  Hence, we have 
-\\[0.2cm]
-\hspace*{1.3cm}
-$\texttt{a}^n = \underbrace{\texttt{a} \cdots \texttt{a}}_n$.  \eox 
+Let \( \Sigma = \{ \texttt{a}, \texttt{b} \} \) and \( L = \{ \texttt{a} \} \). Then
+\[
+L^* = \{ \texttt{a}^n \mid n \in \mathbb{N} \},
+\]
+where \( \texttt{a}^n \) represents a string of \( n \) consecutive \texttt{a}'s. \eox
 
-
-Formally, given a string $s$ and an non-negative integer Zahl $n \in \mathbb{N}$, we define the expression
- $s^n$ by induction on  $n$:
+Formally, for a string \( s \) and a non-negative integer \( n \in \mathbb{N} \), the expression \( s^n \) is defined inductively:
 \begin{enumerate}
-\item[B.C.:] $n = 0$
+\item[B.C.:] \( n = 0 \):
 
-             $s^0 := \varepsilon$. 
-\item[I.S.:] $n \mapsto n + 1$
+             \( s^0 := \varepsilon \).
+\item[I.S.:] \( n \mapsto n + 1 \):
 
-             $s^{n+1} := s^n\cdot s$, \quad where $s^n \cdot s$ denotes the concatenation of the strings $s^n$ and $s$.
-             \eox
+             \( s^{n+1} := s^n \cdot s \),  \quad where \( s^n \cdot s \) represents the concatenation of \( s^n \) and \( s \).
+\eox
 \end{enumerate}
 
-The previous example shows that the Kleene closure of a finite language can be infinite.
-It is easy to see that the Kleene closure of a language $L$ is infinite
-if $L$ contains at least one string $s$ that is different from the empty string $\varepsilon$.
-\vspace*{0.3cm}
+This highlights that the Kleene closure of a finite language can be infinite. Specifically, \( L^* \) will be infinite whenever \( L \) contains a string different from \( \varepsilon \).
+
 
 \section{The Formal Definition of Regular Expressions}
-We proceed to define the set of regular expressions given an  alphabet $\Sigma$.  This set is
-denoted as $\texttt{RegExp}_\Sigma$  \index{$\texttt{RegExp}_\Sigma$}
-and is defined by induction.  Simultaneously,  we define
-the function
+We proceed to define the set of regular expressions for a given alphabet \( \Sigma \). This set is denoted as
+\( \texttt{RegExp}_\Sigma \), and is defined inductively. Simultaneously, we define the function 
 \\[0.2cm]
 \hspace*{1.3cm}
 $L: \texttt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*}$,
 \\[0.2cm]
-which interprets every regular expression  $r$ as a formal language $L(r) \subseteq \Sigma^*$.\footnote{
-  Given a set $M$ the \blue{power set} \index{power set} of $M$, i.e.~the set of all subsets of $M$, is denoted
-  as $2^M$. \index{$2^M$} 
+which interprets each regular expression \( r \) as a formal language \( L(r) \subseteq 2^{\Sigma^*} \).\footnote{
+  Given a set \( M \), the \blue{power set} of \( M \), i.e., the set of all subsets of \( M \), is denoted as \( 2^M \).
 }
+\pagebreak
 
 \begin{Definition}[Regular Expressions]
-  The set $\texttt{RegExp}_\Sigma$ of \blue{regular expressions} \index{regular expression, definition} on the alphabet  $\Sigma$ is defined
-  by induction as follows:
+  The set \( \texttt{RegExp}_\Sigma \) of \blue{regular expressions} on the alphabet \( \Sigma \) is defined inductively as follows:
   \begin{enumerate}
   \item $\emptyset \in \texttt{RegExp}_\Sigma$ \index{$\emptyset$}
 
@@ -210,143 +173,131 @@ which interprets every regular expression  $r$ as a formal language $L(r) \subse
         in the alphabet $\Sigma$, i.e.~we have $\squoted{(} \not\in \Sigma$  and $\squoted{)} \not\in \Sigma$. \eox
   \end{enumerate}
 \end{Definition}
-Given the preceding definition it is not clear whether the regular expression
-\\[0.2cm]
-\hspace*{1.3cm}
-$\mathtt{a}+\mathtt{b}\cdot\mathtt{c}$ 
-\\[0.2cm]
-is to be interpreted as 
-\\[0.2cm]
-\hspace*{1.3cm}
-$(\mathtt{a}+\mathtt{b})\cdot\mathtt{c}$ \quad or \quad $\mathtt{a}+(\mathtt{b}\cdot\mathtt{c})$.
-\\[0.2cm]
-In order to ensure that regular expressions can be read unambiguously we have to assign \blue{operator precedences}:
+
+Given the preceding definition, it is unclear whether to interpret the regular expression
+\[
+\mathtt{a} + \mathtt{b} \cdot \mathtt{c},
+\]
+as either
+\[
+(\mathtt{a} + \mathtt{b}) \cdot \mathtt{c} \quad \text{or} \quad \mathtt{a} + (\mathtt{b} \cdot \mathtt{c}).
+\]
+To remove this ambiguity, we assign \blue{operator precedences} as follows:
 \begin{enumerate}
-\item The postfix operator ``$^*$'' has the highest precedence.
-\item The precedence of the infix operator ``$\cdot$'' is lower than the precedence of  ``$^*$'' but
-      stronger than the precedence of ``$+$''.
-\item The operator ``$+$'' has the lowest precedence.
+\item The postfix operator \( ^* \) has the highest precedence.
+\item The infix operator \( \cdot \) has lower precedence than \( ^* \) but higher precedence than \( + \).
+\item The operator \( + \) has the lowest precedence.
 \end{enumerate}
-Using these conventions, the regular expression 
-\\[0.2cm]
-\hspace*{1.3cm}
-$\mathrm{a} + \mathrm{b} \cdot \mathrm{c}^*$ \quad is interpreted as  \quad
-$\mathrm{a} + \bigl(\mathrm{b} \cdot (\mathrm{c}^*)\bigr)$.
+With these conventions, the expression
+\[
+\mathrm{a} + \mathrm{b} \cdot \mathrm{c}^*
+\]
+is interpreted as
+\[
+\mathrm{a} + \left( \mathrm{b} \cdot \left( \mathrm{c}^* \right) \right).
+\]
 
 \examplesEng
-In the following examples, the alphabet  $\Sigma$ is defined as
-\\[0.2cm]
-\hspace*{1.3cm}
-$\Sigma := \{ \texttt{a}, \texttt{b}, \texttt{c} \}$.
+In the following examples, the alphabet \( \Sigma \) is defined as
+\[
+\Sigma := \{ \texttt{a}, \texttt{b}, \texttt{c} \}.
+\]
 \begin{enumerate}
-\item $r_1 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})$
+\item \( r_1 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c}) \)
 
-      The expression  $r_1$ denotes the set of all strings that have the length $2$:
+      This expression \( r_1 \) denotes the set of all strings from $\Sigma^*$ that have length 2:
+      \[
+      L(r_1) = \bigl\{ w \in \Sigma^* \mid |w| = 2 \bigr\}.
+      \]
+      
+\item \( r_2 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})^* \)
+
+      This expression \( r_2 \) denotes the set of all strings from $\Sigma^*$ that have at least length 1:
+      \[
+      L(r_2) = \bigl\{ w \in \Sigma^* \mid |w| \geq 1 \bigr\}.
+      \]
+
+\item \( r_3 := (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot (\texttt{b} + \texttt{c})^* \)
+
+      This expression \( r_3 \) denotes the set of all strings from $\Sigma^*$ that have exactly one occurrence of the letter \texttt{a}:
+      \[
+      L(r_3) = \Bigl\{ w \in \Sigma^* \mid \#\bigl\{i \in \mathbb{N} \mid w[i] = \texttt{a} \bigr\} = 1 \Bigr\}.
+      \]
+
+\item \( r_4 :=  (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot (\texttt{b} + \texttt{c})^* + (\texttt{a} + \texttt{c})^* \cdot \texttt{b} \cdot (\texttt{a} + \texttt{c})^* \)
+
+      This expression \( r_4 \) denotes the set of all strings from $\Sigma^*$ that either contain exactly one
+      occurrence of the letter \texttt{a} or exactly one occurrence of the letter \texttt{b}: 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $L(r_1) = \bigl\{ w \in \Sigma^* \,\big|\; |w| = 2 \bigr\}$.
-\item $r_2 := (\texttt{a} + \texttt{b} + \texttt{c}) \cdot (\texttt{a} + \texttt{b} + \texttt{c})^*$
-
-      The expression  $r_2$ denotes the set of all strings that have at least the length $1$:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $L(r_2) = \bigl\{ w \in \Sigma^* \,\big|\; |w| \geq 1 \bigr\}$.
-\item $r_3 := (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot 
-              (\texttt{b} + \texttt{c})^*$
-
-      The expression $r_3$ denotes the set of all those strings that have exactly one occurrence of
-      the letter ``\texttt{a}''.  A string containing exactly one ``\texttt{a}''
-      is a string that starts with an arbitrary amount of the letters \texttt{b} and \texttt{c} 
-      (this is what $(\texttt{b} + \texttt{c})^*$ denotes), followed by the letter ``\texttt{a}'',
-      followed by another substring containing only the letters \texttt{b} and \texttt{c}.
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $L(r_3) = \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
-                        \#\bigl\{i \in  \mathbb{N} \,\big|\; w[i] = \texttt{a} \bigl\} \,= 1 \Bigr\}$.
-      \\[0.2cm]
-      Given a set $M$, the expression $\#M$ \index{$\#M$} denotes the number of elements of $M$.
-\item $r_4 :=  (\texttt{b} + \texttt{c})^* \cdot \texttt{a} \cdot (\texttt{b} + \texttt{c})^* +
-               (\texttt{a} + \texttt{c})^* \cdot \texttt{b} \cdot (\texttt{a} + \texttt{c})^*$
-
-      The regular expression $r_4$ denotes the set of all those strings that either contain exactly
-      one occurrence of the letter ``\texttt{a}'' or exactly one occurrence of the letter ``\texttt{b}''.
-      \\[0.2cm]
-      \hspace*{0.3cm}
-      $L(r_4) = \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
-                        \#\bigl\{i \in \mathbb{N} \,\big|\; w[i] = \texttt{a} \bigl\} \,=
-                        1 \Bigr\} \;\cup\;
-                \Bigl\{ w \in \Sigma^* \;\Big|\;\; 
-                        \#\bigl\{i \in \mathbb{N} \,\big|\; w[i] = \texttt{b} \bigl\} \,=
-                        1 \Bigr\}$.  \eox 
+      $L(r_4) = \Bigl\{ w \in \Sigma^* \mid \#\bigl\{i \in \mathbb{N} \mid w[i] = \texttt{a} \bigr\} = 1
+      \Bigr\} \cup \Bigl\{ w \in \Sigma^* \mid \#\bigl\{i \in \mathbb{N} \mid w[i] = \texttt{b} \bigr\} = 1
+      \Bigr\}$.  \eox
 \end{enumerate}
 
-\remarkEng 
-The syntax of regular expressions given here is the same as the syntax used in  \cite{hopcroft:06}.   However,
-the syntax used for regular expression in programming languages 
-like \textsl{Python} is different.  We will discuss these differences later.
+\remarkEng
+The syntax of regular expressions given here is the same as the syntax used in \cite{hopcroft:06}. However, the
+syntax used for regular expressions in programming languages like \textsl{Python} differs. These differences
+will be discussed later. 
 \eox
+\pagebreak
 
 \exerciseEng
-\renewcommand{\labelenumi}{(\alph{enumi})}
-\begin{enumerate}
-\item Assume $\Sigma = \{ \mathtt{a}, \mathtt{b}, \mathtt{c} \}$.  Define a regular expression for the language
-      $L \subseteq \Sigma^*$ that consists of those strings that contain at least one occurrence of
-      the letter ``\texttt{a}'' and one occurrence of the letter ``\texttt{b}''.
-\item Assume $\Sigma = \{ 0, 1 \}$.   Specify a regular expression for the language 
-      $L \subseteq \Sigma^*$ that consists of those strings $s$ such that the
-      \href{https://dictionary.cambridge.org/dictionary/english/antepenultimate}{antepenultimate} 
-      character is the symbol  ``$1$''.
-\item Again, we have $\Sigma = \{ 0, 1 \}$.   Define a regular expression for the language
-      $L \subseteq \Sigma^*$ containing all those strings that do not contain the substring  $110$.
+\begin{enumerate}[(a)]
+\item Assume \( \Sigma = \{ \mathtt{a}, \mathtt{b}, \mathtt{c} \} \). Define a regular expression for the language \( L \subseteq \Sigma^* \) that consists of those strings that contain at least one occurrence of the letter ``\texttt{a}'' and one occurrence of the letter ``\texttt{b}''.
 
-      \solutionEng
-      The regular expression $r$ that is sought for can be defined as 
+\item Assume \( \Sigma = \{ 0, 1 \} \). Specify a regular expression for the language \( L \subseteq \Sigma^* \) that consists of those strings \( s \) such that the \href{https://dictionary.cambridge.org/dictionary/english/antepenultimate}{antepenultimate} character is the symbol ``\( 1 \)''.
+
+\item Again, assume \( \Sigma = \{ 0, 1 \} \). Define a regular expression for the language \( L \subseteq \Sigma^* \) containing all those strings that do not contain the substring \( 110 \).
+
+      % \solutionEng
+      % The regular expression $r$ that is sought for can be defined as 
+      % \\[0.2cm]
+      % \hspace*{1.3cm}
+      % $r = (0 + 1 \cdot 0)^* \cdot 1^*$.
+      % \\[0.2cm]
+      % First, it is quite obvious that the language $L(r)$ does not contain a string $w$ such that
+      % $w$ contains the substring $110$.  This is so because a character $1$ that is generated by the
+      % part $(0 + 1 \cdot 0)^*$ is immediately followed by a $0$.  Hence if $w$ contains the
+      % substring $110$, the first $1$ cannot originate from the regular expression $(0 + 1 \cdot 0)^*$.
+      % Furthermore, if the first $1$ of the substring 110 originates from the regular expression
+      % $1^*$, then there cannot be a $0$ following since the language generated by $1^*$ contains
+      % only ones.
+
+      % Second, assume that the string $w$ does not contain the substring $110$.  We have to show that
+      % $w \in L(r)$.  Now if the character $1$ does not occur in the
+      % string $w$, then $w$ is just a bunch of zeros and therefore $w$ can be generated by the
+      % regular expression $(0+1\cdot 0)^*$ and hence also by $(0 + 1  \cdot 0)^* \cdot 1^*$.  If the string $w$
+      % does contain the character $1$, there are two cases.
+      % \begin{enumerate}
+      % \item The first occurrence of $1$ is followed by a $0$.  Then the prefix of $w$ up to and
+      %       including this $0$ is generated by the regular expression $(0 + 1 \cdot 0)^*$.  The
+      %       remaining part of $w$ is shorter and, by induction, can be shown to be generated by 
+      %       $(0 + 1 \cdot 0)^* \cdot 1^*$.
+      % \item The first occurrence of $1$ is followed by another $1$.  In this case, the rest of $w$
+      %       must be made up of ones.  Hence, the part of $w$ starting with the first $1$ is
+      %       generated by $1^*$ and obviously the preceding zeros can all be generated by 
+      %       $(0 + 1 \cdot 0)^*$.
+      % \end{enumerate}
+\item Again, assume \( \Sigma = \{0,1\} \). What is the language \( L \) generated by the regular expression 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $r = (0 + 1 \cdot 0)^* \cdot 1^*$.
-      \\[0.2cm]
-      First, it is quite obvious that the language $L(r)$ does not contain a string $w$ such that
-      $w$ contains the substring $110$.  This is so because a character $1$ that is generated by the
-      part $(0 + 1 \cdot 0)^*$ is immediately followed by a $0$.  Hence if $w$ contains the
-      substring $110$, the first $1$ cannot originate from the regular expression $(0 + 1 \cdot 0)^*$.
-      Furthermore, if the first $1$ of the substring 110 originates from the regular expression
-      $1^*$, then there cannot be a $0$ following since the language generated by $1^*$ contains
-      only ones.
+      $(1 + \varepsilon)\cdot(0\cdot 0^* \cdot 1)^* \cdot 0^*$? \eox
 
-      Second, assume that the string $w$ does not contain the substring $110$.  We have to show that
-      $w \in L(r)$.  Now if the character $1$ does not occur in the
-      string $w$, then $w$ is just a bunch of zeros and therefore $w$ can be generated by the
-      regular expression $(0+1\cdot 0)^*$ and hence also by $(0 + 1  \cdot 0)^* \cdot 1^*$.  If the string $w$ does contain the character $1$,
-      there are two cases.
-      \begin{enumerate}
-      \item The first occurrence of $1$ is followed by a $0$.  Then the prefix of $w$ up to and
-            including this $0$ is generated by the regular expression $(0 + 1 \cdot 0)^*$.  The
-            remaining part of $w$ is shorter and, by induction, can be shown to be generated by 
-            $(0 + 1 \cdot 0)^* \cdot 1^*$.
-      \item The first occurrence of $1$ is followed by another $1$.  In this case, the rest of $w$
-            must be made up of ones.  Hence, the part of $w$ starting with the first $1$ is
-            generated by $1^*$ and obviously the preceding zeros can all be generated by 
-            $(0 + 1 \cdot 0)^*$.
-      \end{enumerate}
-\item Again, assume $\Sigma = \{0,1\}$.  What is the language $L$ generated by the regular expression 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $(1 + \varepsilon)\cdot(0\cdot 0^* \cdot 1)^* \cdot 0^*$?  \eox
-
-      \solutionEng
-      This is the language $L$ such that the strings in $L$ do not contain the substring $11$.
+      % \solutionEng
+      % This is the language \( L \) such that the strings in \( L \) do not contain the substring \( 11 \).
+      % \eox
 \end{enumerate}
-\renewcommand{\labelenumi}{\arabic{enumi}.}
-
 
 \section{Algebraic Simplification of Regular Expressions}
-Given two regular expressions $r_1$ and $r_2$, we write
-\\[0.2cm]
+Given two regular expressions \( r_1 \) and \( r_2 \), we use the notation
+\[
 \hspace*{1.3cm}
-$r_1 \doteq r_2$ \quad iff \quad $L(r_1) = L(r_2)$,
-\\[0.2cm]
-i.e.~if $r_1$ and $r_2$ describe the same language.  If the equation $r_1 \doteq r_2$ \index{$r_1 \doteq r_2$} holds, then we
-call $r_1$ and $r_2$ \blue{equivalent}. \index{equivalence of regular expressions}  The following algebraic laws apply:
+r_1 \doteq r_2 \quad \text{iff} \quad L(r_1) = L(r_2),
+\]
+to indicate that \( r_1 \) and \( r_2 \) describe the same language. If the equation \( r_1 \doteq r_2 \)
+holds, then we refer to \( r_1 \) and \( r_2 \) as \blue{equivalent}.\index{equivalence of regular expressions} The following algebraic laws are
+applicable: 
 \begin{enumerate}[(a)]
 \item $r_1 + r_2 \doteq r_2 + r_1$
 
@@ -441,15 +392,15 @@ call $r_1$ and $r_2$ \blue{equivalent}. \index{equivalence of regular expression
 \item $r^* \doteq \varepsilon + r^* \cdot r$
 \item $r^* \doteq (\varepsilon + r)^*$
 \end{enumerate}
-\pagebreak
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
-\item Given a formal language $L$, what is the definition of $L^*$?
-\item How is the set $\mathtt{RegExp}_\Sigma$ defined?
-\item How is the function $L:\mathtt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*}$ defined?
-\item Given $r_1, r_2 \in \mathtt{RegExp}_\Sigma$, how is the notion $r_1 \doteq r_2$ defined?
+\item What is the definition of \( L^* \) for a given formal language \( L \)?
+\item How is the set \( \texttt{RegExp}_\Sigma \) formally defined?
+\item How is the function \( L: \texttt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*} \) formally defined?
+\item For \( r_1, r_2 \in \texttt{RegExp}_\Sigma \), how is the equivalence \( r_1 \doteq r_2 \) defined?
 \end{enumerate}
+
 
 
 
