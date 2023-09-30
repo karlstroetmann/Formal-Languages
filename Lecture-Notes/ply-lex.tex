@@ -1,41 +1,33 @@
 \chapter{Building Scanners with \textsl{Ply} \label{chapter:ply-lex}}
-After having defined regular expressions we will now get a taste of their power in practice.
-To this end we discuss the tool \textsc{Ply}\index{$\textsc{Ply}$}, which can generate both 
-\textsl{Python} \emph{scanners} and \textsl{Python} \emph{parsers}.
-A  \blue{scanner} \index{scanner} is a program that splits a given string into a list of \emph{tokens}, 
-where a \blue{token} \index{token} is a group of consecutive characters that logically belong together.  An example
-will clarify this.   
-The input for a \texttt{C}-compiler is an \textsc{Ascii}-string that can be interpreted as a
-valid \texttt{C} program.  In order to translate this string into machine language, the
-\texttt{C}-compiler first groups the different characters into tokens.  In the case of a \texttt{C}
-program, the compiler generates the following tokens:
-\begin{enumerate}
-\item \blue{Keywords}, a.k.a.~reserved words like ``\texttt{if}'', ``\texttt{while}'', ``\texttt{for}'', or
-      ``\texttt{switch}''.
-\item \blue{Operator symbols} like ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'', or
-      ``\texttt{<=}''. 
-\item \blue{Parentheses} like ``\texttt{(}'', ``\texttt{[}'', and ``\texttt{\{}'' and the
-      corresponding closing symbols.
-\item \blue{Constants}.  The language \texttt{C} distinguishes between three different kinds of constants:
-      \begin{enumerate}
-      \item Numbers, for example the integer ``\texttt{123}'' or the floating point number ``\texttt{1.23e2}''.
-      \item Strings, which are enclosed in double.  For example,
-            ``\texttt{\symbol{34}hello\symbol{34}}'' is a string constant.  Note that the character
-            ``\texttt{\symbol{34}}'' is part of the string constant, while the opening and closing
-            quotes surrounding the string constant have been used to separate the string constant
-            from the surrounding text. 
-      \item Single letters that are enclosed in single quotes as in
-            ``\texttt{\symbol{39}a\symbol{39}}''.
-      \end{enumerate}
-\item \blue{Identifiers} that can act as variable names, function names, or type names.
-\item \blue{Comments}, which come in two flavors:  \blue{Single line comments} start with the string
-      ``\texttt{//}'' and extend to the end of the line, while \blue{multi line comments} start with
-      the string ``\texttt{/*}'' and are ended by ``\texttt{*/}''.
-\item So called \blue{white space characters}.  For example the \blue{blank character} \texttt{' '},
-      the \blue{tabulator} \texttt{'\symbol{92}t'}, the \blue{line break} \texttt{'\symbol{92}n'}, and the
-      \blue{carriage return} \texttt{'\symbol{92}r'} are white space symbols.
+After introducing the concept of regular expressions, we will now explore their practical applications. We
+examine the parser generator \textsc{Ply}\index{$\textsc{Ply}$}, which is capable of generating both \textsl{Python}
+\emph{scanners} and \textsl{Python} \emph{parsers}.  In this chapter, we will only discuss the generation of
+scanners via \textsc{Ply}.
+A \textcolor{blue}{scanner}\index{scanner} is a program
+designed to segment a given string into a sequence of \emph{tokens}, where a
+\textcolor{blue}{token}\index{token} is a contiguous string of characters that logically group together. To
+illustrate, consider the input for a \texttt{C}-compiler, which is an \textsc{Ascii}-string representing a
+valid \texttt{C} program. The compiler initially organizes these characters into various tokens, including: 
 
-      Both white space characters and comments are silently removed by the scanner.
+\begin{enumerate}
+\item \textcolor{blue}{Keywords} or reserved words, such as, for example, ``\texttt{if}'', ``\texttt{while}'', ``\texttt{for}'', and ``\texttt{switch}''.
+\item \textcolor{blue}{Operator symbols}, for example ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'', and ``\texttt{<=}''.
+\item \textcolor{blue}{Parentheses}, which include ``\texttt{(}'', ``\texttt{[}'', ``\texttt{\{}'', and their corresponding closing symbols.
+\item \textcolor{blue}{Constants}, with \texttt{C} recognizing three types:
+    \begin{enumerate}
+    \item Numerical constants, such as the integer ``\texttt{42}'' or the floating-point number ``\texttt{1.23e2}''.
+    \item String constants enclosed in double quotes, like ``\texttt{\symbol{34}hello\symbol{34}}''.
+
+          Note that the double quote character ``\texttt{\symbol{34}}'' is part of the string constant.
+    \item Single-character constants wrapped in single quotes, as in ``\texttt{\symbol{39}a\symbol{39}}''.
+
+          Note that the single quote character ``\texttt{\symbol{39}}'' is part of the character constant.
+    \end{enumerate}
+\item \textcolor{blue}{Identifiers}, which may serve as variable names, function names, or type names.
+\item \textcolor{blue}{Comments}, available in two forms: \textcolor{blue}{Single-line comments} start with ``\texttt{//}'' and go to the end of the line, while \textcolor{blue}{multi-line comments} begin with ``\texttt{/*}'' and end with ``\texttt{*/}''.
+\item \textcolor{blue}{Whitespace characters}, such as the \textcolor{blue}{blank character} \texttt{' '}, the \textcolor{blue}{tab} \texttt{'\symbol{92}t'}, the \textcolor{blue}{newline} \texttt{'\symbol{92}n'}, and the \textcolor{blue}{carriage return} \texttt{'\symbol{92}r'}. 
+
+Both whitespace characters and comments are generally discarded by the scanner.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -50,7 +42,7 @@ program, the compiler generates the following tokens:
                   xrightmargin  = 0.8cm,
                 ]
     /* Hello World program */
-    #include<stdio.h>
+    #include <stdio.h>
     
     int main() {
         printf("Hello World!\n");
@@ -58,37 +50,41 @@ program, the compiler generates the following tokens:
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{A simple \texttt{C} program.}
+\caption{A straightforward \texttt{C} program.}
 \label{fig:hello-world.c}
 \end{figure}
 
 \noindent
-To make things more concrete, Figure \ref{fig:hello-world.c} on page \pageref{fig:hello-world.c} contains a
-\texttt{C} program that prints the string ``\texttt{Hello World!}'' followed by a newline character.  The
-scanner would transform this program into the following list of tokens:
+For a more tangible example, consider Figure \ref{fig:hello-world.c} on page \pageref{fig:hello-world.c}, which presents a \texttt{C} program that outputs the string ``\texttt{Hello World!}'' along with a newline character. The scanner processes this program into the subsequent list of tokens:
+
 \begin{verbatim}
    [ "#", "include", "<", "stdio.h", ">", "int", "main", "(", ")", "{",
-     "printf", "(", "Hello World!\n", ")", ";" "return", "1", ";", "}"
+     "printf", "(", "Hello World!\n", ")", ";", "return", "1", ";", "}"
    ]
 \end{verbatim}
-Note that the scanner discards the white space characters.  They only serve to separate tokens.
+Note that the scanner omits all white space characters, except those that occur inside string constants, as
+they are only used to demarcate tokens.  Furthermore, the comment has been removed by the scanner.
 
-Although it is possible to write a scanner manually, it is easier to generate a scanner from a specification
-with the help of a so called \blue{scanner generator}.  We discuss one such tool in the next section.
+While it is feasible to manually create a scanner, using a \textcolor{blue}{scanner generator} makes the task
+considerably simpler. We will explore one such utility in the following section. 
 
 \section{The Structure of a \textsc{Ply} Scanner Specification}
-In this section we introduce \href{https://www.dabeaz.com/ply/}{Python Lex-Yacc} which is also known as
-\textsc{Ply}.  \index{\textsc{Ply}}
-As the \href{https://www.dabeaz.com/ply/}{home page} of \textsc{Ply} states,
-``\textsc{Ply} is an implementation of the lex and yacc parsing tools for \textsl{Python}''.
-The tool has been developed by \href{https://www.dabeaz.com/}{David Beazley}.  In this
-section, we only discuss \textsc{Ply} as a scanner generator.  In Chapter \ref{chapter:ply} we will discuss how
-\textsc{Ply}  can be used to generate a parser.
+In this section, we explore \href{https://www.dabeaz.com/ply/}{Python Lex-Yacc}, commonly known as
+\textsc{Ply}. \index{\textsc{Ply}} According to its \href{https://www.dabeaz.com/ply/}{official webpage},
+\\[0.2cm]
+\hspace*{1.3cm}
+``\textsc{Ply} serves as a lex and yacc parsing toolkit for \textsl{Python}.''
+\\[0.2cm]
+The toolkit was developed by
+\href{https://www.dabeaz.com/}{David Beazley}. In this section, we focus solely on its capabilities as a
+scanner generator. A more comprehensive discussion on its parser generation features will be given in Chapter
+\ref{chapter:ply}. 
 
-We begin with a simple example.  In general, a \textsc{Ply} scanner specification is made up of three parts.
-Figure \ref{fig:Ply-Example.ipynb} shows how a scanner is specified that can tokenize arithmetical expressions.
-This example has been taken from the official \textsc{ply}
-\href{https://ply.readthedocs.io/en/latest/ply.html#specification-of-tokens}{documentation}. 
+To illustrate the core components of a \textsc{Ply} scanner specification, we consider a simple example that
+tokenizes arithmetic expressions. This example is adapted from the official \textsc{Ply}
+\href{https://ply.readthedocs.io/en/latest/ply.html#specification-of-tokens}{documentation}. A \textsc{Ply}
+scanner specification generally consists of three key parts, as demonstrated in Figure
+\ref{fig:Ply-Example.ipynb}: 
 \begin{enumerate}
 \item The module \texttt{ply.lex} contains the definition of the function \texttt{ply.lex.lex()}
       that is able to generate a scanner.
@@ -104,21 +100,21 @@ This example has been taken from the official \textsc{ply}
       \item \blue{Immediate token definitions} \index{immediate token definition} have the following form:
             \\[0.2cm]
             \hspace*{1.3cm}
-            \texttt{t\_\textsl{name} = r'\textsl{regexp}'}
+            \texttt{t\_\textsl{NAME} = r'\textsl{regexp}'}
             \\[0.2cm]
-            Here \textsl{name} has to be one of the names declared in the declaration section and
+            Here \textsl{NAME} has to be one of the names declared in the declaration section and
             \textsl{regexp} is a regular expression using the syntax that is specified in the 
             \textsl{Python} \href{https://docs.python.org/3/library/re.html}{\texttt{re}} module.
       \item \blue{Functional token definitions} \index{functional token definitions} are syntactically
             \textsl{Python function definitions} and have the following form:
             \\[0.2cm]
             \hspace*{1.3cm}
-            \texttt{def t\_\textsl{name}(t):} \\
+            \texttt{def t\_\textsl{NAME}(t):} \\
             \hspace*{2.05cm}
             \texttt{r'\textsl{regexp}'} \\
             \hspace*{2.8cm} $\vdots$ \\[0.2cm]
             Here, the vertical dots \ ``$\;\vdots\;$'' \ denote any \textsl{Python} code, while
-            \textsl{name} has to be one of the token names declared in the declaration section and
+            \textsl{NAME} has to be one of the token names declared in the declaration section and
             \textsl{regexp} is a regular expression.
             
             The functional token definition shown in line 20--23 takes a token \texttt{t} as its
@@ -162,7 +158,7 @@ This example has been taken from the official \textsc{ply}
 \item Line 38 shows how data can be fed into this scanner.
 \item In order to use this scanner we can just iterate over it as shown in line 40.  This iteration scans the
       input string using the generated scanner and produces the tokens that are recognized by the scanner one
-      by one.
+      by one.  
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -223,57 +219,48 @@ This example has been taken from the official \textsc{ply}
 \end{figure}
 
 \noindent
-If we run the program shown in Figure \ref{fig:Ply-Example.ipynb} we get the following output:
+Executing the program depicted in Figure \ref{fig:Ply-Example.ipynb} yields the following output:
+
 \begin{verbatim}
     LexToken(NUMBER,3,1,0)
     LexToken(PLUS,'+',1,2)
     LexToken(NUMBER,4,1,4)
-    LexToken(TIMES,'*',1,6)
-    LexToken(NUMBER,10,1,8)
-    LexToken(PLUS,'+',1,11)
-    LexToken(NUMBER,0,1,13)
-    LexToken(NUMBER,0,1,14)
-    LexToken(NUMBER,7,1,15)
-    LexToken(PLUS,'+',1,17)
-    LexToken(LPAREN,'(',1,19)
-    LexToken(MINUS,'-',1,20)
-    LexToken(NUMBER,20,1,21)
-    LexToken(RPAREN,')',1,23)
-    LexToken(TIMES,'*',1,25)
+    % ... (rest of the output)
     LexToken(NUMBER,2,1,27)
 \end{verbatim}
-As we can see the tokens returned by our scanner are objects of class \texttt{LexToken}.  These objects have
-four attributes:
+The scanner returns tokens as instances of the \texttt{LexToken} class, which possess four distinct attributes:
 \begin{enumerate}
-\item The first attribute is called \blue{\texttt{type}}.  Its value is a string that is the name of
-      one of the declared tokens.
-\item The second attribute is called \blue{\texttt{value}}.  Normally, this is the string that has been 
-      recognized but we are allowed to change this attribute.  For example, the function \texttt{t\_NUMBER}
-      converts the recognized string into an integer value.
-\item The third attribute is called \blue{\texttt{lineno}}.  This specifies the line number where the token has been found.
-\item The last attribute is called \blue{\texttt{lexpos}}.  This is a counter that is incremented with every
-      character that is read.
+\item The \blue{\texttt{type}} attribute indicates the type of the token. It holds a string value that
+      corresponds to one of the declared tokens. 
+\item The \blue{\texttt{value}} attribute usually contains the recognized string. However, this attribute is
+      mutable, allowing for transformations. For instance, the function \texttt{t\_NUMBER} converts this string
+      into an integer. 
+\item The \blue{\texttt{lineno}} attribute specifies the line number where the token was identified.
+\item The \blue{\texttt{lexpos}} attribute serves as a counter, incremented for each character read.
 \end{enumerate}
 
 \homeworkEng
-Install \textsc{PLy} and make sure that the example presented previously works.  
+Install \textsc{Ply} and verify that the previously presented example operates as expected.
+The program \textsc{Ply} can be installed via the following command provided the appropriate \texttt{conda}
+environment has already been activated:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{pip install ply}
+\pagebreak
 
 \section{The Syntax of Regular Expressions in \textsl{Python}}
-In the previous chapter we have defined regular expressions using only a minimal amount of syntax. 
-Using as little syntax as possible is beneficial for our upcoming theoretical investigations of
-regular expression in the next chapter where we show that regular expressions can be implemented
-using finite state machines.  However, for practical applications it is useful to considerably
-enrich the syntax of regular expressions that we have seen so far.
-For this reason, the \textsl{Python} module \blue{\textsl{re}} provides a number of abbreviations that enable us to denote
-complex regular expressions in a more compact form.  I have written a short 
+In the preceding chapter, we introduced regular expressions using a minimalistic syntax. While this simplicity
+is advantageous for the theoretical discussions in the upcoming chapter---where we explore the implementation of
+regular expressions via finite state machines---it can be limiting in practical applications. To address this,
+the \textsl{Python} module \blue{\textsl{re}} offers various syntactic abbreviations that facilitate the
+expression of complex regular expressions in a more concise manner. For an in-depth look at these features, I
+have authored a brief
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Regexp-Tutorial.ipynb}{tutorial}
-that introduces the most important features of the regular expressions defined in the module \texttt{re}.
-As it is best to read this tutorial interactively, this section only contains the reference
+that focuses on the key aspects of the \texttt{re} module's regular expressions. For an interactive experience,
+it is advisable to consult this tutorial directly. The following link serves as a reference: 
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Regexp-Tutorial.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Regexp-Tutorial.ipynb}
-\\[0.2cm]
-that points to this tutorial.
 
 \section{A Complex Example: Evaluating an Exam}
 This sections presents a more complex example that shows some of the power of \textsc{Ply}.  The
