@@ -94,7 +94,7 @@ more compactly:
   \textsl{product} & \rightarrow & \textsl{product} \quoted{/} \textsl{factor}     \\
   \textsl{product} & \rightarrow & \textsl{factor}                                 \\[0.1cm]
   \textsl{factor} & \rightarrow & \quoted{(} \textsl{arithExpr} \quoted{)}        \\
-  \textsl{factor} & \rightarrow & \textsc{variable}                               \\
+  \textsl{factor} & \rightarrow & \textsc{Variable}                               \\
   \textsl{factor} & \rightarrow & \textsc{Number} 
 \end{eqnarray*}
 We refer to the expressions on the left side of a grammar rule as
@@ -108,8 +108,8 @@ the terminals are written in lower case.  Occasionally a
 syntactic variable is also called a \blue{syntactic category}\index{syntactic category}.
 
 In the example, \textsl{arithExpr}, \textsl{product} and \textsl{factor} are the 
-\blue{syntactic variables}.  The remaining expressions, in our case \textsc{number},
-\textsc{variable} and the characters 
+\blue{syntactic variables}.  The remaining expressions, in our case \textsc{Number},
+\textsc{Variable} and the characters 
 ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{(}'' and ``\texttt{)}''
 are the \blue{terminals} or \blue{tokens}.  So these are exactly the
 characters that do not appear on the left side of a grammar rule.  There are two types of terminals:
@@ -118,7 +118,7 @@ characters that do not appear on the left side of a grammar rule.  There are two
       ``\texttt{(}''.  
 
       These terminals are used literally.
-\item Tokens such as \textsc{number} or \textsc{variable} also have a value associated with them.
+\item Tokens such as \textsc{Number} or \textsc{Variable} also have a value associated with them.
       In the case of \textsc{Number} this is a number, in the case of \textsc{Variable}
       this is a string containing the name of the variable.  We will
       always write these kinds of token with capital letters to distinguish them from the syntactic variables.
@@ -133,7 +133,7 @@ For our example, this notation looks like this:
                                      \textsl{product} \quoted{/} \textsl{factor} \;\mid\;
                                      \textsl{factor}                                             \\
   \textsl{factor} & \rightarrow & \squoted{(}\, \textsl{arithExpr} \quoted{)} \;\mid\; 
-                                     \textsc{number} \;\mid\; \textsc{variable}
+                                     \textsc{Number} \;\mid\; \textsc{Variable}
 \end{eqnarray*}
 So here the individual alternatives of a rule are separated by the metacharacter \squoted{|}.
 Following the example given above, we now present the formal definition for the notion of a
@@ -146,15 +146,15 @@ A \blue{context-free grammar} \index{context-free grammar} $G$ is a 4-tuple
 \]
 where
 \begin{enumerate}
-\item $V$ is a set of names which we call \blue{syntactic variable} \index{syntactic variables}
+\item $V$ is a set of names which we call \blue{syntactic variables} \index{syntactic variables}
       or \blue{non-terminals}\index{non-terminals}. 
       
       In the example above we have
       \\[0.2cm]
       \hspace*{1.3cm}
       $V = \{ \textsl{arithExpr}, \textsl{product}, \textsl{factor} \}$.
-\item $T$ is a set of names that we call \blue{terminals}\index{terminals}.  
-      The sets $T$ and $V$ are disjoint, so 
+\item $T$ is a set of names that we call \blue{terminals}\index{terminals}.  Terminals are also called
+      \blue{tokens}\index{tokens}.  The sets $T$ and $V$ are disjoint, so 
       \\[0.2cm]
       \hspace*{1.3cm}
       $T \cap V = \emptyset$
@@ -162,7 +162,7 @@ where
       holds.  In the example given above we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $T = \{ \textsc{number}, \textsc{variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}.$
+      $T = \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}.$
 \item $R$ is the set of \blue{grammar rules}\index{grammar rule}. Formally, a grammar rule is
       a pair of the form $\langle A, \alpha \rangle$: 
       \begin{enumerate}
@@ -201,6 +201,42 @@ where
 \end{enumerate}
 \end{Definition}
 
+\noindent
+When we present a grammar, we will usually just list the rules of the grammar and use the following convention
+to identify the start symbol and to distinguish syntactic variables from terminals.
+\begin{enumerate}
+\item The start symbol is the syntactic variable on the left hand side of the first rule.
+\item All symbols enclosed in quote symbols are terminals.  
+\item Furthermore, names starting with a capital letter are terminals.
+\item Names starting with a lower case letter are syntactic variables.
+\end{enumerate}
+
+\exampleEng
+The following set of grammar rules describes arithmetical expressions.  These arithmetical expressions are built from
+numbers and variables and the binary operators \quoted{+}, \quoted{-}, \quoted{$\cdot$}, and \quoted{/}.
+
+\begin{eqnarray*}
+  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
+                     & \;\mid\;    & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
+                     & \;\mid\;    & \textsl{product}                                \\[0.2cm]
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{$\cdot$} \textsl{factor} \\
+                     & \;\mid\;    & \textsl{product} \quoted{/} \textsl{factor}     \\
+                     & \;\mid\;    & \textsl{factor}                                 \\[0.2cm]
+  \textsl{factor}    & \rightarrow & \squoted{(}\, \textsl{arithExpr} \quoted{)}     \\
+                     & \;\mid\;    & \textsc{Number}                                 \\
+                     & \;\mid\;    & \textsc{Variable}
+\end{eqnarray*}
+In this case, we can observe the following:
+\begin{enumerate}
+\item The start symbol of the grammar is \textsl{arithExpr}, since this is the syntactic variable on the left
+      of the first grammar rule.
+\item \textsl{arithExpr}, \textsl{product}, and \textsl{factor} are the syntactic variables since they start
+      with a lower case letter.
+\item The symbols \quoted{+}, \quoted{+}, \quoted{$\cdot$}, and \quoted{/} are terminals since they are
+      enclosed in quotes.
+\item \textsc{Number} and \textsc{Variable} are terminals since they start with an upper case letter.
+\end{enumerate}
+
 \subsection{Derivations}
 Next, we want to determine which \blue{language} is defined by a given grammar $G$.
 To do this, we first define the notion of a \blue{derivation-step}. \index{derivation-step}
@@ -220,7 +256,7 @@ as
 \hspace*{1.3cm}
 $\alpha a \beta \Rightarrow_G \alpha \gamma \beta$.
 \\[0.2cm]
-If the grammar $G$ used is clear from the context, then the index $_G$
+If the grammar $G$ that us used is obviously from the context, then the index $_G$
 is omitted and we write $\Rightarrow$ in place of $\Rightarrow_G$.
 The transitive and reflexive closure of the relation $\Rightarrow_G$ is denoted by $\Rightarrow_G^*$
 .  If we want to express that the derivation of the string $w$ from the
@@ -235,28 +271,28 @@ We give an example:
 \textsl{arithExpr} 
 & \Rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
 & \Rightarrow & \textsl{product} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsl{product} \quoted{*} \textsl{factor} \quoted{+} \textsl{product} \\
-& \Rightarrow & \textsl{factor} \quoted{*} \textsl{factor} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsc{Number} \quoted{*} \textsl{factor} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsl{factor}   \\
-& \Rightarrow & \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsc{Number}   
+& \Rightarrow & \textsl{product} \quoted{$\cdot$} \textsl{factor} \quoted{+} \textsl{product} \\
+& \Rightarrow & \textsl{factor} \quoted{$\cdot$} \textsl{factor} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsl{factor} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsl{factor}   \\
+& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}   
 \end{eqnarray*}
 So we have shown that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsc{Number}$
+$\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}$
 \\[0.2cm]
-or more precisely
+holds.  More precisely we could write
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{*} \textsc{Number} \quoted{+} \textsc{Number}$
+$\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}$
 \\[0.2cm]
-applies.  If we replace the terminal \textsc{Number} by different numbers, we have thus
+since the derivation consists of eight steps.  If we replace the terminal \textsc{Number} by different numbers, we have thus
 shown that the string
 \\[0.2cm]
 \hspace*{1.3cm}
-$2 * 3 + 4$
+$2 \cdot 3 + 4$
 \\[0.2cm]
 is an arithmetic expression.  In general, we define the language $L(G)$ defined by a grammar $G$
 as the set of all strings which on the one hand consist only of terminals and which on the
@@ -278,7 +314,7 @@ $G = \bigl\langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \bigr\ran
 where the rules $R$ are given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{s} \rightarrow \quoted{(} \textsl{s} \quoted{)}  \mid \varepsilon$.
+$\textsl{s} \rightarrow \quoted{(} \textsl{s} \quoted{)}  \mid \lambda$.
 
 
 \proofEng
@@ -292,11 +328,11 @@ So let $w_n = (^n)^n$.  We show by induction over $n \in \mathbb{N}$ that $w_n \
 \begin{enumerate}
 \item[B.C.:] $n=0$.
   
-            We have $w_0 = \varepsilon$. Since the grammar contains the rule $s \rightarrow \varepsilon$ we
+            We have $w_0 = \lambda$. Since the grammar contains the rule $s \rightarrow \lambda$ we
             have
             \\[0.2cm]
             \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow \varepsilon$,
+            $\textsl{s} \Rightarrow \lambda$,
             \\[0.2cm]
             Therefore $w_0 \in L(G)$ holds.
 \item[I.S.:] $n \mapsto n + 1$. 
@@ -325,9 +361,9 @@ derivation steps:
             one step is
             \\[0.2cm]
             \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow \varepsilon$.
+            $\textsl{s} \Rightarrow \lambda$.
             \\[0.2cm]
-            Consequently, $w = \varepsilon$ must hold and because of $\varepsilon = (^0)^0 \in L$
+            Consequently, $w = \lambda$ must hold and because of $\lambda = (^0)^0 \in L$
             we have $w \in L$.
 \item[I.S.:] $n \mapsto n+1$.
 
@@ -359,12 +395,12 @@ $\textsl{count}(w,c)$.
 The function counts how many times the letter $c$ occurs in the word $w$.  The definition is done by induction
 on the string $w$.
 \begin{enumerate}
-\item[B.C.:] $w = \varepsilon$.  
+\item[B.C.:] $w = \lambda$.  
 
             We set
             \\[0.2cm]
             \hspace*{1.3cm}
-            $\textsl{count}(\varepsilon, c) := 0$.
+            $\textsl{count}(\lambda, c) := 0$.
 \item[I.S.:] $w = dv$ with $d \in \Sigma$ and $v \in \Sigma^*$.  
 
             Then $\textsl{count}(dv,c)$ is defined by case distinction:
@@ -708,7 +744,7 @@ conditions:
       rule of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $a \rightarrow \varepsilon$.
+      $a \rightarrow \lambda$.
 \item If an inner node is labeled with a variable $a$ and the children of
       of this node are labeled with the symbols $X_1$, $X_2$, $\cdots$, $X_n$, then
       the grammar $G$ contains a rule of the form 
@@ -719,7 +755,8 @@ conditions:
 If we read the leave nodes of a parse tree from left to right,  they yield a word
 that is derived from the grammar $G$.  Figure \ref{fig:parse-tree.dot} shows a
 parse tree for the word ``\texttt{2*3+4}''.  It is derived using the grammar given above for
-arithmetic expressions.
+arithmetic expressions.  The only caveat here is that instead of the symbol ``$\cdot$'' the parse tree uses the
+symbol ``$*$''.
 
 \begin{figure}[!ht]
   \centering
@@ -757,47 +794,48 @@ expressions seems very complicated because it uses three different syntactic cat
 which describes the same language:
 \\[0.2cm]
 \hspace*{1.3cm}
-$G = \bigl\langle \{\textsl{expr}\}, \{ \textsc{number}, \textsc{variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
+$G = \bigl\langle \{\textsl{expr}\}, \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{$\cdot$}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
 \\[0.2cm]
 The rules $R$ are given as follows:
 \begin{eqnarray*}
   \textsl{expr} & \rightarrow & \textsl{expr} \quoted{+} \textsl{expr}  \\
                 & \mid & \textsl{expr} \quoted{-} \textsl{expr}  \\
-                & \mid & \textsl{expr} \quoted{*} \textsl{expr}  \\
+                & \mid & \textsl{expr} \quoted{$\cdot$} \textsl{expr}  \\
                 & \mid & \textsl{expr} \quoted{/} \textsl{expr}  \\
                 & \mid & \quoted{(} \textsl{expr} \quoted{)}     \\
-                & \mid & \textsc{number}                         \\
-                & \mid & \textsc{variable}                         
+                & \mid & \textsc{Number}                         \\
+                & \mid & \textsc{Variable}                         
 \end{eqnarray*}
-In order to show that the string ``\texttt{2*3+4}'' is in the grammar generated by this language,
+In order to show that the string ``\texttt{2}$\,\cdot\,${3+4}'' is in the language generated by this grammar,
 we give the following derivation:
 \begin{eqnarray*}
 \textsl{expr} & \Rightarrow & \textsl{expr} \quoted{+} \textsl{expr}                           \\
-              & \Rightarrow & \textsl{expr} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}  \\
-              & \Rightarrow & \texttt{2} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}     \\
-              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \textsl{expr}        \\
-              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \texttt{4}           
+              & \Rightarrow & \textsl{expr} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}  \\
+              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}     \\
+              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \textsl{expr}        \\
+              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \texttt{4}           
 \end{eqnarray*}
 This derivation corresponds to the abstract syntax tree shown in Fig.
 \ref{fig:abstract-syntax-tree.dot}
-is shown.  However, there is another derivation of the string ``\texttt{2*3+4}'' with this grammar:
+is shown.  However, there is another derivation of the string ``\texttt{2$\,\cdot\,$3+4}'' with this grammar:
 \begin{eqnarray*}
-\textsl{expr} & \Rightarrow & \textsl{expr} \quoted{*} \textsl{expr}                           \\
-              & \Rightarrow & \textsl{expr} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}  \\
-              & \Rightarrow & \texttt{2} \quoted{*} \textsl{expr} \quoted{+} \textsl{expr}     \\
-              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \textsl{expr}        \\
-              & \Rightarrow & \texttt{2} \quoted{*} \texttt{3} \quoted{+} \texttt{4}           
+\textsl{expr} & \Rightarrow & \textsl{expr} \quoted{$\cdot$} \textsl{expr}                           \\
+              & \Rightarrow & \textsl{expr} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}  \\
+              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}     \\
+              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \textsl{expr}        \\
+              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \texttt{4}           
 \end{eqnarray*}
 This derivation corresponds to the abstract syntax tree shown in Fig.
 \ref{fig:abstract-syntax-tree-prod.dot}.
-In this derivation, the string ``\texttt{2*3+4}'' is apparently taken to be a product,
-which contradicts the convention that the operator ``\texttt{*}'' binds stronger than the operator
+In this derivation, the string ``\texttt{2$\,\cdot\,$3+4}'' is apparently taken to be a product,
+which contradicts the convention that the operator ``\texttt{$\cdot$}'' binds stronger than the operator
 ``\texttt{+}''.  If we were to evaluate the string using the last syntax tree, we would
 obviously get the wrong result! 
 \begin{figure}[!ht]
   \centering
       \epsfig{file=Abbildungen/abstract-syntax-tree-prod.eps, scale=0.6}
-  \caption{another abstract syntax tree for the string ``\texttt{2*3+4}''}
+  \caption{Another abstract syntax tree for the string ``\texttt{2$\,\cdot\,$3+4}''. Here ``$\cdot$'' is
+    denoted as ``\texttt{*}''.}
   \label{fig:abstract-syntax-tree-prod.dot}
 \end{figure}
 The reason for this problem is the fact that the last specified grammar is
@@ -823,7 +861,7 @@ Proofs of these claims can be found, for example, in the book by Hopcroft, Motwa
 % deren Regeln wie folgt gegeben sind:
 % \\[0.2cm]
 % \hspace*{1.3cm}
-% $\textsl{s} \;\rightarrow\; \quoted{A} s \quoted{B} s \;\mid\; \quoted{B} s \quoted{A} s \;\mid\; \varepsilon$
+% $\textsl{s} \;\rightarrow\; \quoted{A} s \quoted{B} s \;\mid\; \quoted{B} s \quoted{A} s \;\mid\; \lambda$
 % \\[0.2cm]
 % Der Grund ist, dass ein String $w \in L$ entweder mit einem \squoted{A} oder mit einem \squoted{B}
 % beginnt.  Im ersten Fall muss es zu diesem \squoted{A} ein korrespondierendes \squoted{B} geben, denn
@@ -855,7 +893,7 @@ Proofs of these claims can be found, for example, in the book by Hopcroft, Motwa
 %     & \Rightarrow &\quoted{A} \quoted{B}\quoted{A} \quoted{B} 
 % \end{eqnarray*}
 % Eine andere Ableitung desselben Strings ergibt sich, wenn wir im zweiten Ableitungs-Schritt nicht das erste
-% $s$ durch $\varepsilon$ ersetzen sondern stattdessen das zweite $s$ durch $\varepsilon$ ersetzen:
+% $s$ durch $\lambda$ ersetzen sondern stattdessen das zweite $s$ durch $\lambda$ ersetzen:
 % \begin{eqnarray*}
 %   s & \Rightarrow &\quoted{A} s \quoted{B} s                       \\
 %     & \Rightarrow &\quoted{A} s \quoted{B}                         \\
@@ -880,11 +918,11 @@ Proofs of these claims can be found, for example, in the book by Hopcroft, Motwa
 % deren Regeln wie folgt gegeben sind:
 % \hspace*{1.3cm}
 % \begin{eqnarray*}
-% \textsl{s} & \rightarrow & \textsl{u}\, \textsl{s} \;\mid\; \textsl{v}\, \textsl{s} \;\mid\; \varepsilon \\[0.2cm]
+% \textsl{s} & \rightarrow & \textsl{u}\, \textsl{s} \;\mid\; \textsl{v}\, \textsl{s} \;\mid\; \lambda \\[0.2cm]
 % \textsl{u} & \rightarrow &\quoted{A} \textsl{x} \quoted{B}                \\[0.2cm]
 % \textsl{v} & \rightarrow & \quoted{B} \textsl{y} \quoted{A}                \\[0.2cm]
-% \textsl{x} & \rightarrow & \textsl{u}\, \textsl{x} \;\mid\; \varepsilon \\[0.2cm]
-% \textsl{y} & \rightarrow & \textsl{v}\,  \textsl{y} \;\mid\; \varepsilon          
+% \textsl{x} & \rightarrow & \textsl{u}\, \textsl{x} \;\mid\; \lambda \\[0.2cm]
+% \textsl{y} & \rightarrow & \textsl{v}\,  \textsl{y} \;\mid\; \lambda          
 % \end{eqnarray*}
 % Um die Sprachen, die von den einzelnen Variablen erzeugt werden, klarer beschreiben zu
 % können, definieren wir für zwei Strings $\sigma$ und $\omega$ die Relation $\sigma \preceq \omega$ (lese: $\sigma$ ist ein
@@ -1033,7 +1071,7 @@ $
 \begin{array}[t]{lcl}
 a & \rightarrow & \gamma b \\[0.2cm]
 b & \rightarrow & \beta b \\
-  & \mid & \varepsilon 
+  & \mid & \lambda 
 \end{array}
 $
 \\[0.2cm]
@@ -1087,18 +1125,18 @@ for list, and get
 $
 \begin{array}[t]{lcl}
 a & \rightarrow & c\;l \\[0.2cm]
-l & \rightarrow & b\;l \mid \varepsilon.  
+l & \rightarrow & b\;l \mid \lambda.  
 \end{array}
 $
 \\[0.2cm]
-At this point, the auxiliary variables $b$ and $c$ can now be eliminated.  This yields to the following grammar
+At this point, the auxiliary variables $b$ and $c$ can now be eliminated.  This yields the following grammar
 rules: 
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
 a & \rightarrow & \gamma_1\;l \;\mid\; \gamma_2\;l \;\mid\; \cdots \;\mid\; \gamma_l\;l \\[0.2cm]
-l & \rightarrow & \beta_1 \;l \;\mid\; \beta_2 \;l \;\mid\; \cdots \;\mid\; \beta_k \;l \;\mid\; \varepsilon
+l & \rightarrow & \beta_1 \;l \;\mid\; \beta_2 \;l \;\mid\; \cdots \;\mid\; \beta_k \;l \;\mid\; \lambda
 \end{array}
 $
 \begin{figure}[htbp]
@@ -1110,11 +1148,11 @@ $
   \textsl{expr} & \rightarrow & \;\textsl{expr} \quoted{+} \textsl{product}  \\
                    & \mid & \;\textsl{expr} \quoted{-} \textsl{product}  \\
                    & \mid & \;\textsl{product}                           \\[0.2cm]
-  \textsl{product} & \rightarrow & \;\textsl{product} \quoted{*} \textsl{factor} \\
+  \textsl{product} & \rightarrow & \;\textsl{product} \quoted{$\cdot$} \textsl{factor} \\
                    & \mid & \;\textsl{product} \quoted{/} \textsl{factor}\\
                    & \mid & \;\textsl{factor}                            \\[0.2cm]
   \textsl{factor} & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}        \\
-                   & \mid & \;\textsc{number} 
+                   & \mid & \;\textsc{Number} 
   \end{eqnarray*}
   \vspace*{-0.5cm}
   \end{minipage}}}
@@ -1139,11 +1177,11 @@ interpreted as follows:
   \textsl{expr}        & \rightarrow & \;\textsl{product}\;\;\textsl{exprRest}            \\[0.2cm]
   \textsl{exprRest}    & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest}   \\
                        & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest}   \\
-                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+                       & \mid        & \;\lambda                                      \\[0.2cm]
   \textsl{product}     & \rightarrow & \;\textsl{factor}\;\;\textsl{productRest}          \\[0.2cm]
-  \textsl{productRest} & \rightarrow & \quoted{*} \textsl{factor}\;\;\textsl{productRest} \\
+  \textsl{productRest} & \rightarrow & \quoted{$\cdot$} \textsl{factor}\;\;\textsl{productRest} \\
                        & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest} \\
-                       & \mid        & \;\varepsilon                                      \\[0.2cm]
+                       & \mid        & \;\lambda                                      \\[0.2cm]
   \textsl{factor}      & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}                \\
                        & \mid        & \;\textsc{Number} 
   \end{eqnarray*}
@@ -1166,7 +1204,7 @@ interpreted as follows:
       \hspace*{1.3cm}
       $\textsl{op} \;\textsl{factor} \;\cdots \;\textsl{op} \;\textsl{factor}$,
       \\[0.2cm]
-      where $\textsl{op} \in \{ \quoted{*}, \quoted{/} \}$ holds. 
+      where $\textsl{op} \in \{ \quoted{$\cdot$}, \quoted{/} \}$ holds. 
 \end{enumerate}
 \pagebreak
 
@@ -1177,11 +1215,11 @@ interpreted as follows:
           \framebox{
             \begin{minipage}[t]{9cm}
               \begin{eqnarray*}
-                \textsl{regExp} & \rightarrow & \;\textsl{regExp} \quoted{+} \textsl{regExp}    \\
-                                & \mid & \;\textsl{regExp} \;\textsl{regExp}           \\
-                                & \mid & \;\textsl{regExp}\quoted{*}                     \\
-                                & \mid & \quoted{(} \textsl{regExp} \quoted{)}           \\
-                                & \mid & \;\textsc{letter}                               
+                \textsl{regExp} & \rightarrow & \;\textsl{regExp} \quoted{+} \textsl{regExp} \\
+                                & \mid & \;\textsl{regExp} \;\textsl{regExp}                 \\
+                                & \mid & \;\textsl{regExp}\quoted{*}                         \\
+                                & \mid & \quoted{(} \textsl{regExp} \quoted{)}               \\
+                                & \mid & \;\textsc{Letter}                               
               \end{eqnarray*}
               \vspace*{-0.5cm}
             \end{minipage}}
@@ -1190,7 +1228,7 @@ interpreted as follows:
       Terminals
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\{\squoted{+}, \squoted{*}, \squoted{(}, \squoted{)}, \textsc{letter}\}$.
+      $\{\squoted{+}, \squoted{*}, \squoted{(}, \squoted{)}, \textsc{Letter}\}$.
       \\[0.2cm]
       Since the grammar is ambiguous, this grammar is unsuitable for parsing.
       Transform this grammar into an unambiguous grammar where the
@@ -1404,7 +1442,7 @@ Figure \ref{fig:Top-Down-Parser.ipynb} on page
       \begin{eqnarray*}
         \textsl{exprRest} & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest} \\
                           & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest} \\
-                          & \mid        & \;\varepsilon                                    
+                          & \mid        & \;\lambda                                    
       \end{eqnarray*}
       Therefore, it checks whether the first token is either \squoted{+} or \squoted{-}.
       If the token is \squoted{+}, it parses a \textsl{product}, adds the result of this 
@@ -1417,7 +1455,7 @@ Figure \ref{fig:Top-Down-Parser.ipynb} on page
       exhausted.  In either case, the rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{exprRest} \;\rightarrow\; \varepsilon$
+      $\textsl{exprRest} \;\rightarrow\; \lambda$
       \\[0.2cm]
       is used.  Therefore, in that case we have not consumed any tokens and hence
       the input argument is already the result.
@@ -1429,9 +1467,9 @@ Figure \ref{fig:Top-Down-Parser.ipynb} on page
       The implementation is similar to the implementation of \textsl{parseExpr}.
 \item The function \texttt{parseProductRest} implements the rules
       \begin{eqnarray*}
-      \textsl{productRest} & \rightarrow & \quoted{*} \textsl{factor}\;\;\textsl{productRest} \\
+      \textsl{productRest} & \rightarrow & \quoted{$\cdot$} \textsl{factor}\;\;\textsl{productRest} \\
                        & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest}     \\
-                       & \mid        & \;\varepsilon                                      
+                       & \mid        & \;\lambda                                      
       \end{eqnarray*}
       The implementation is similar to the implementation of \textsl{parseExprRest}.
 \item The function \texttt{parseFactor} implements the rules
