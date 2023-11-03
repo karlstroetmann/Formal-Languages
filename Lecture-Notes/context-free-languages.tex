@@ -30,12 +30,11 @@ The parser receives a sequence of tokens from the scanner and has the task of co
 grammar which specifies how the input is to be structured.  As an example, consider parsing arithmetic
 expressions.  We define the set \textsl{ArithExpr} of arithmetic expressions inductively.  
 In order to correctly represent the structure of arithmetic expressions, we define
-simultaneously the sets \textsl{Product} and \textsl{Factor}.  
-The set \textsl{Product} contains arithmetic expressions that are
-expressions representing products and quotients and the set \textsl{Factor} contains numbers and parenthesized
-expressions.  The definition of these additional sets is necessary in order to get the precedences of 
-the operators right.  The basic building blocks of arithmetic expressions are variables, numbers, the
-operator symbols 
+simultaneously the sets \textsl{Product} and \textsl{Factor}.
+The set \textsl{Product} encompasses arithmetic expressions representing products and quotients, while the set
+\textsl{Factor} includes numbers and parenthesized expressions. Defining these additional sets is crucial for
+ensuring the correct precedence of operators.  The basic building blocks of arithmetic expressions are
+variables, numbers, the operator symbols 
 ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'',
 and the bracket symbols ``\texttt{(}'' and ``\texttt{)}''.  Based on these symbols
 the inductive definition of the sets \textsl{Factor}, \textsl{Product} and
@@ -54,12 +53,11 @@ the inductive definition of the sets \textsl{Factor}, \textsl{Product} and
       \\[0.2cm]
       \hspace*{1.3cm}
       $A \in \textsl{ArithExpr} \Rightarrow \quoted{(}A\quoted{)} \in \textsl{Factor}$. 
-      \\[0.2cm] 
-      A word about notation: while in the above formula $A$ is a meta-variable that stands for
-      an arbitrary arithmetic expression, the strings ``\texttt{(}'' 
-      and ``\texttt{)}'' are to be interpreted literally and are therefore 
-      enclosed in quotation marks.  The quotation marks itself are not part of the arithmetic 
-      expression but only serve the notation.
+      \\[0.2cm]
+      A note on notation: In the preceding formula, \( A \) serves as a meta-variable representing an arbitrary
+      arithmetic expression. The strings ``\texttt{(}'' and ``\texttt{)}'' should be taken literally and are
+      thus enclosed in quotation marks. These quotation marks are not part of the arithmetic expression; they
+      are used solely for notational clarity. 
 \item If $F$ is a factor, then $F$ is also a product:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -81,11 +79,8 @@ the inductive definition of the sets \textsl{Factor}, \textsl{Product} and
       $A \in \textsl{ArithExpr} \wedge P \in \textsl{Product} \Rightarrow
        A \squoted{+} P \in \textsl{ArithExpr} \;\wedge\; A \squoted{-} P \in \textsl{ArithExpr}$.
 \end{enumerate}
-
-The rules given above define the sets \textsl{Factor}, \textsl{Product} and
-\textsl{ArithExpr} by mutual recursion.
-We can write this definition in terms of so-called \blue{grammar rules} much more
-more compactly:
+The sets \textsl{Factor}, \textsl{Product}, and \textsl{ArithExpr} are defined above through mutual
+recursion. This definition can be succinctly represented using what are known as \blue{grammar rules}. 
 \begin{eqnarray*}
   \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
   \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
@@ -97,176 +92,140 @@ more compactly:
   \textsl{factor} & \rightarrow & \textsc{Variable}                               \\
   \textsl{factor} & \rightarrow & \textsc{Number} 
 \end{eqnarray*}
-We refer to the expressions on the left side of a grammar rule as
-\blue{syntactic variables}\index{syntactic variable} or as
-\blue{non-terminals}. \index{non-terminal} All other expressions are called \blue{terminals}.
-\index{terminal}
-We write syntactic variables in lowercase, because that is the convention
-in the parser generators \blue{\textsc{Antlr}} and \blue{\textsc{Ply}}, which we will introduce later. 
-In the literature, however, it is often the other way around.  There the syntactic variables are capitalized and
-the terminals are written in lower case.  Occasionally a
-syntactic variable is also called a \blue{syntactic category}\index{syntactic category}.
+Expressions on the left hand side of a grammar rule are known as \blue{syntactic variables}\index{syntactic
+  variable} or \blue{non-terminals}\index{non-terminal}, while all other expressions are termed
+\blue{terminals}\index{terminal}. We adopt the convention of writing syntactic variables in lowercase to align
+with the syntax used by parser generators such as \blue{\textsc{Antlr}} and \blue{\textsc{Ply}}, which we will
+explore later. However, it is worth noting that in much of the existing literature, the convention is reversed:
+syntactic variables are typically capitalized, and terminals are presented in lowercase. Additionally,
+syntactic variables may occasionally be referred to as \blue{syntactic categories}\index{syntactic category}. 
 
-In the example, \textsl{arithExpr}, \textsl{product} and \textsl{factor} are the 
-\blue{syntactic variables}.  The remaining expressions, in our case \textsc{Number},
-\textsc{Variable} and the characters 
-``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{(}'' and ``\texttt{)}''
-are the \blue{terminals} or \blue{tokens}.  So these are exactly the
-characters that do not appear on the left side of a grammar rule.  There are two types of terminals:
+In the example, \textsl{arithExpr}, \textsl{product}, and \textsl{factor} function as the \blue{syntactic variables}. The remaining elements, namely \textsc{Number}, \textsc{Variable}, and the symbols ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{(}'', and ``\texttt{)}'', are the \blue{terminals} or \blue{tokens}. These terminals are precisely the characters that are not found on the left side of any grammar rule. Terminals can be classified into two types:
 \begin{enumerate}
-\item Operator symbols and separators, such as ``\texttt{/}'' and
-      ``\texttt{(}''.  
-
-      These terminals are used literally.
-\item Tokens such as \textsc{Number} or \textsc{Variable} also have a value associated with them.
-      In the case of \textsc{Number} this is a number, in the case of \textsc{Variable}
-      this is a string containing the name of the variable.  We will
-      always write these kinds of token with capital letters to distinguish them from the syntactic variables.
+\item Operator symbols and separators, like ``\texttt{/}'' and ``\texttt{(}'', are used in their literal sense.
+\item Tokens such as \textsc{Number} or \textsc{Variable} carry associated values. For \textsc{Number}, the value is numeric; for \textsc{Variable}, it is a string representing the variable's name. To distinguish them from syntactic variables, these token types are always written in uppercase letters.
 \end{enumerate}
-Usually, grammar rules are rendered in a more compact notation than the one presented above.
-For our example, this notation looks like this:
+Grammar rules are often expressed in a notation more compact than that introduced previously. For the given
+example, the compact notation is as follows: 
 \begin{eqnarray*}
-  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product} \;\mid\;
-                                     \textsl{arithExpr} \quoted{-} \textsl{product} \;\mid\; 
+  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \;\quoted{+}\; \textsl{product} \;\mid\;
+                                     \textsl{arithExpr} \;\quoted{-}\; \textsl{product} \;\mid\; 
                                      \textsl{product}                                            \\
-  \textsl{product} & \rightarrow & \textsl{product} \quoted{*} \textsl{factor} \;\mid\;
-                                     \textsl{product} \quoted{/} \textsl{factor} \;\mid\;
-                                     \textsl{factor}                                             \\
-  \textsl{factor} & \rightarrow & \squoted{(}\, \textsl{arithExpr} \quoted{)} \;\mid\; 
-                                     \textsc{Number} \;\mid\; \textsc{Variable}
+  \textsl{product} & \rightarrow & \textsl{product} \;\quoted{*}\; \textsl{factor} \;\mid\;
+                                   \textsl{product} \;\quoted{/}\; \textsl{factor} \;\mid\;
+                                   \textsl{factor}                                             \\
+  \textsl{factor} & \rightarrow & \squoted{(}\,\; \textsl{arithExpr} \;\squoted{)} \;\mid\; 
+                                   \textsc{Number} \;\mid\; \textsc{Variable}
 \end{eqnarray*}
-So here the individual alternatives of a rule are separated by the metacharacter \squoted{|}.
-Following the example given above, we now present the formal definition for the notion of a
-\href{http://en.wikipedia.org/wiki/Context-free_grammar}{context-free grammar}.
+In this format, individual alternatives within a rule are demarcated by the metacharacter \squoted{|}. Building
+on the preceding example, we now introduce the formal definition of a
+\href{http://en.wikipedia.org/wiki/Context-free_grammar}{context-free grammar}. 
 
 \begin{Definition}[Context-Free Grammar]
-A \blue{context-free grammar} \index{context-free grammar} $G$ is a 4-tuple 
+A \blue{context-free grammar} \index{context-free grammar} \( G \) is a quadruple 
 \[ 
    G = \langle V, T, R, S \rangle,
 \]
 where
 \begin{enumerate}
-\item $V$ is a set of names which we call \blue{syntactic variables} \index{syntactic variables}
-      or \blue{non-terminals}\index{non-terminals}. 
-      
-      In the example above we have
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $V = \{ \textsl{arithExpr}, \textsl{product}, \textsl{factor} \}$.
-\item $T$ is a set of names that we call \blue{terminals}\index{terminals}.  Terminals are also called
-      \blue{tokens}\index{tokens}.  The sets $T$ and $V$ are disjoint, so 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $T \cap V = \emptyset$
-      \\[0.2cm]
-      holds.  In the example given above we have
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $T = \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}.$
-\item $R$ is the set of \blue{grammar rules}\index{grammar rule}. Formally, a grammar rule is
-      a pair of the form $\langle A, \alpha \rangle$: 
+\item \( V \) is a set called \blue{syntactic variables} \index{syntactic variables} or \blue{non-terminals}\index{non-terminals}. In the preceding example, we have
+      \[
+      V = \{ \textsl{arithExpr}, \textsl{product}, \textsl{factor} \}.
+      \]
+
+\item \( T \) is a set referred to as \blue{terminals}\index{terminals} or \blue{tokens}\index{tokens}. The sets \( T \) and \( V \) are disjoint, hence
+      \[
+      T \cap V = \emptyset.
+      \]
+      For the aforementioned example, we have
+      \[
+      T = \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{*}, \quoted{/}, \quoted{(}, \quoted{)} \}.
+      \]
+
+\item \( R \) is a set of \blue{grammar rules}\index{grammar rule}. A grammar rule is formally a pair \( \langle A, \alpha \rangle \) where:
       \begin{enumerate}
-      \item The first component of this pair is a syntactic variable:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $A \in V$.
-      \item The second component is a string built from syntactic variables and 
-            terminals:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\alpha \in (V \cup T)^*$.
+      \item The first component, \( A \), is a syntactic variable:
+            \[
+            A \in V.
+            \]
+      \item The second component, \( \alpha \), is a string composed of syntactic variables and terminals:
+            \[
+            \alpha \in (V \cup T)^*.
+            \]
       \end{enumerate}
-      Therefore, we have
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $R \subseteq V \times (V \cup T)^*$.
-      
-      If $\langle x, \alpha \rangle$ is a rule, we write this rule as
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $x \rightarrow \alpha$.
-      \\[0.2cm]
-      In the example given above we have defined the first rule as
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{arithExpr} \rightarrow \textsl{arithExpr} \quoted{+} \textsl{product}$
-      \\[0.2cm]
-      Formally, this rule stands for the pair
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\bigl\langle \textsl{arithExpr}, [\textsl{arithExpr}, \squoted{+}, \textsl{product}] \bigr\rangle$. 
-\item $S$ is an element of the set $V$, which we define as the \blue{start symbol}\index{start symbol}. 
-      In the example above, \textsl{arithExpr} is the start symbol.
+      Consequently, we have
+      \[
+      R \subseteq V \times (V \cup T)^*.
+      \]
+      A rule \( \langle x, \alpha \rangle \) is typically written as
+      \[
+      x \rightarrow \alpha.
+      \]
+      In the example, the first rule is
+      \[
+      \textsl{arithExpr} \rightarrow \textsl{arithExpr} \quoted{+} \textsl{product},
+      \]
+      which formally corresponds to the pair
+      \[
+      \bigl\langle \textsl{arithExpr}, [\textsl{arithExpr}, \quoted{+}, \textsl{product}] \bigr\rangle.
+      \]
+
+\item \( S \) is a member of \( V \) designated as the \blue{start symbol}\index{start symbol}. In the given example, \textsl{arithExpr} is the start symbol.
       \eox
 \end{enumerate}
 \end{Definition}
 
 \noindent
-When we present a grammar, we will usually just list the rules of the grammar and use the following convention
-to identify the start symbol and to distinguish syntactic variables from terminals.
+When presenting a grammar, we typically enumerate the grammar rules and apply the following conventions to identify the start symbol and to differentiate between syntactic variables and terminals:
 \begin{enumerate}
-\item The start symbol is the syntactic variable on the left hand side of the first rule.
-\item All symbols enclosed in quote symbols are terminals.  
-\item Furthermore, names starting with a capital letter are terminals.
-\item Names starting with a lower case letter are syntactic variables.
+\item The start symbol is the syntactic variable appearing on the left side of the first rule.
+\item Symbols enclosed within quotes are terminals.
+\item Names beginning with an uppercase letter are terminals.
+\item Names beginning with a lowercase letter are syntactic variables.
 \end{enumerate}
 
 \exampleEng
-The following set of grammar rules describes arithmetical expressions.  These arithmetical expressions are built from
-numbers and variables and the binary operators \quoted{+}, \quoted{-}, \quoted{$\cdot$}, and \quoted{/}.
+The set of grammar rules below defines arithmetic expressions constructed from numbers, variables, and the binary operators \quoted{+}, \quoted{-}, \quoted{\(\cdot\)}, and \quoted{/}.
 
 \begin{eqnarray*}
   \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
-                     & \;\mid\;    & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
-                     & \;\mid\;    & \textsl{product}                                \\[0.2cm]
-  \textsl{product}   & \rightarrow & \textsl{product} \quoted{$\cdot$} \textsl{factor} \\
-                     & \;\mid\;    & \textsl{product} \quoted{/} \textsl{factor}     \\
-                     & \;\mid\;    & \textsl{factor}                                 \\[0.2cm]
-  \textsl{factor}    & \rightarrow & \squoted{(}\, \textsl{arithExpr} \quoted{)}     \\
-                     & \;\mid\;    & \textsc{Number}                                 \\
-                     & \;\mid\;    & \textsc{Variable}
+                     & \mid        & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
+                     & \mid        & \textsl{product}                                \\[0.2cm]
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{\(\cdot\)} \textsl{factor} \\
+                     & \mid        & \textsl{product} \quoted{/} \textsl{factor}     \\
+                     & \mid        & \textsl{factor}                                 \\[0.2cm]
+  \textsl{factor}    & \rightarrow & \squoted{(} \textsl{arithExpr} \squoted{)}     \\
+                     & \mid        & \textsc{Number}                                 \\
+                     & \mid        & \textsc{Variable}
 \end{eqnarray*}
-In this case, we can observe the following:
+In this case, the following observations can be made:
 \begin{enumerate}
-\item The start symbol of the grammar is \textsl{arithExpr}, since this is the syntactic variable on the left
-      of the first grammar rule.
-\item \textsl{arithExpr}, \textsl{product}, and \textsl{factor} are the syntactic variables since they start
-      with a lower case letter.
-\item The symbols \quoted{+}, \quoted{+}, \quoted{$\cdot$}, and \quoted{/} are terminals since they are
-      enclosed in quotes.
-\item \textsc{Number} and \textsc{Variable} are terminals since they start with an upper case letter.
+\item The start symbol is \textsl{arithExpr}, as it is the syntactic variable on the left in the first grammar rule.
+\item \textsl{arithExpr}, \textsl{product}, and \textsl{factor} are recognized as syntactic variables because they start with a lowercase letter.
+\item The symbols \quoted{+}, \quoted{-}, \quoted{\(\cdot\)}, and \quoted{/} are identified as terminals since they are enclosed in quotes.
+\item \textsc{Number} and \textsc{Variable} are terminals, indicated by their initial uppercase letters.
 \end{enumerate}
 
 \subsection{Derivations}
-Next, we want to determine which \blue{language} is defined by a given grammar $G$.
-To do this, we first define the notion of a \blue{derivation-step}. \index{derivation-step}
-Assume that
+Next, we aim to identify the \blue{language} defined by a given grammar \( G \). For this purpose, we first
+define the concept of a \blue{derivation step}\index{derivation-step}. Consider the following: 
 \begin{enumerate}
-\item $G = \langle V, T, R, S \rangle$ is a grammar,
-\item $a \in V$ is a syntactic variable,
-\item $\alpha a \beta \in (V \cup T)^*$ is a string of terminals and syntactic variables,
-      containing the variable $a$, and
-\item $(a \rightarrow \gamma) \in R$ is a rule.
+\item \( G = \langle V, T, R, S \rangle \) is a grammar,
+\item \( a \) is a syntactic variable in \( V \),
+\item \( \alpha a \beta \) is a string composed of terminals and syntactic variables from \( (V \cup T)^* \), which includes the variable \( a \), and
+\item \( (a \rightarrow \gamma) \) is a rule in \( R \).
 \end{enumerate}
-Then the string $\alpha a \beta$ can be converted by a derivation step into the string 
-$\alpha \gamma \beta$, so we replace an occurrence of the syntactic variable
-$a$ by the right-hand side of the rule $a \rightarrow \gamma$.  We write this derivation step
-as
-\\[0.2cm]
+Under these conditions, the string \( \alpha a \beta \) can undergo a derivation step to transform into the
+string \( \alpha \gamma \beta \). This process involves substituting one occurrence of the syntactic variable
+\( a \) with the right-hand side \( \gamma \) of the rule \( a \rightarrow \gamma \). We denote this derivation
+step as 
+\[
 \hspace*{1.3cm}
-$\alpha a \beta \Rightarrow_G \alpha \gamma \beta$.
-\\[0.2cm]
-If the grammar $G$ that us used is obviously from the context, then the index $_G$
-is omitted and we write $\Rightarrow$ in place of $\Rightarrow_G$.
-The transitive and reflexive closure of the relation $\Rightarrow_G$ is denoted by $\Rightarrow_G^*$
-.  If we want to express that the derivation of the string $w$ from the
-non-terminal $a$ consists of $n$ derivation steps
-we write 
-\\[0.2cm]
-\hspace*{1.3cm}
-$a \Rightarrow^n w$.
-\\[0.2cm]  
-We give an example:
+\alpha a \beta \Rightarrow_G \alpha \gamma \beta.
+\]
+When the grammar \( G \) is clear from the context, we may drop the subscript \( _G \) and simply use \( \Rightarrow \) instead of \( \Rightarrow_G \). The transitive and reflexive closure of the relation \( \Rightarrow_G \) is indicated by \( \Rightarrow_G^* \). To specify that the derivation of string \( w \) from the non-terminal \( a \) encompasses \( n \) derivation steps, we write:
+
+We illustrate with an example:
 \begin{eqnarray*}
 \textsl{arithExpr} 
 & \Rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
@@ -278,113 +237,109 @@ We give an example:
 & \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsl{factor}   \\
 & \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}   
 \end{eqnarray*}
-So we have shown that
-\\[0.2cm]
+Hence, we have demonstrated that
+\[
 \hspace*{1.3cm}
-$\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}$
-\\[0.2cm]
-holds.  More precisely we could write
-\\[0.2cm]
+\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}
+\]
+is valid. To be more precise, we could express this as
+\[
 \hspace*{1.3cm}
-$\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}$
-\\[0.2cm]
-since the derivation consists of eight steps.  If we replace the terminal \textsc{Number} by different numbers, we have thus
-shown that the string
-\\[0.2cm]
+\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}
+\]
+since the derivation comprises eight steps. By substituting the terminal \textsc{Number} with distinct numerals, we demonstrate that the string
+\[
 \hspace*{1.3cm}
-$2 \cdot 3 + 4$
-\\[0.2cm]
-is an arithmetic expression.  In general, we define the language $L(G)$ defined by a grammar $G$
-as the set of all strings which on the one hand consist only of terminals and which on the
-on the other hand can be derived from the start symbol $S$ of the grammar, i.e.~we have
-\\[0.2cm]
+2 \cdot 3 + 4
+\]
+is an arithmetic expression. Generally, the language \( L(G) \) defined by a grammar \( G \) is the set of all
+strings that are exclusively composed of terminals and can be derived from the start symbol \( S \) of the
+grammar; that is, we define
+\[
 \hspace*{1.3cm}
-$L(G) := \bigl\{ w \in T^* \mid S \Rightarrow^* w \bigr\}$.
+L(G) := \{ w \in T^* \mid S \Rightarrow^* w \}.
+\]
+
 
 \exampleEng
-The language \\[0.2cm]
+The language
+\[
 \hspace*{1.3cm}
-$L = \{ (^n )^n \mid n \in \mathbb{N} \}$ 
-\\[0.2cm]
-is generated by the grammar 
-\\[0.2cm]
+L = \{ (^n )^n \mid n \in \mathbb{N} \}
+\]
+is generated by the grammar
+\[
 \hspace*{1.3cm}
-$G = \bigl\langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \bigr\rangle$,
-\\[0.2cm]
-where the rules $R$ are given as follows:
-\\[0.2cm]
+G = \langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \rangle,
+\]
+where the set of rules \( R \) is defined as:
+\[
 \hspace*{1.3cm}
-$\textsl{s} \rightarrow \quoted{(} \textsl{s} \quoted{)}  \mid \lambda$.
-
+\textsl{s} \rightarrow \squoted{(} \textsl{s} \squoted{)} \mid \lambda.
+\]
 
 \proofEng
-We first show that each word $w \in L$ 
-can be derived from the start symbol $\textsl{s}$:
-\\[0.2cm]
+We first establish that each string \( w \) in \( L \) can be derived from the start symbol \( \textsl{s} \):
+\[
 \hspace*{1.3cm}
-If $w \in L$, then $\textsl{s} \Rightarrow^* w$.
-\\[0.2cm]
-So let $w_n = (^n)^n$.  We show by induction over $n \in \mathbb{N}$ that $w_n \in L(G)$.
+\text{If } w \in L, \text{ then } \textsl{s} \Rightarrow^* w.
+\]
+Let \( w_n = (^n)^n \). We use induction on \( n \in \mathbb{N} \) to show that \( w_n \in L(G) \).
 \begin{enumerate}
-\item[B.C.:] $n=0$.
-  
-            We have $w_0 = \lambda$. Since the grammar contains the rule $s \rightarrow \lambda$ we
-            have
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow \lambda$,
-            \\[0.2cm]
-            Therefore $w_0 \in L(G)$ holds.
-\item[I.S.:] $n \mapsto n + 1$. 
+\item[\textbf{B.C.:}] \( n=0 \).
 
-            The string $w_{n+1}$ is of the form $w_{n+1} = \quoted{(}w_n\quoted{)}$, where
-            the string $w_n$ is of course also in $L$.
-            So, according to the induction hypotheses, there is a derivation of $w_n$:
-            \\[0.2cm]
+            We have \( w_0 = \lambda \). Since the grammar includes the rule \( s \rightarrow \lambda \), it follows that
+            \[
             \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow^* w_n$.
-            \\[0.2cm]
-            Overall, we then have the derivation
-            \\[0.2cm]
+            \textsl{s} \Rightarrow \lambda,
+            \]
+            and thus \( w_0 \in L(G) \).
+
+\item[\textbf{I.S.:}] \( n \mapsto n + 1 \).
+
+            The string \( w_{n+1} \) has the form \( w_{n+1} = \squoted{(}w_n\squoted{)} \), where \( w_n \) is also in \( L \).
+            By the inductive hypothesis, there exists a derivation for \( w_n \):
+            \[
             \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow \quoted{(}\textsl{s}\quoted{)} \Rightarrow^* \quoted{(} w_n \quoted{)} = w_{n+1}$.
-            \\[0.2cm]
-            Therefore $w_{n+1} \in L(G)$.
+            \textsl{s} \Rightarrow^* w_n.
+            \]
+            Thus, we obtain the derivation
+            \[
+            \hspace*{1.3cm}
+            \textsl{s} \Rightarrow \squoted{(}\textsl{s}\squoted{)} \Rightarrow^* \squoted{(} w_n \squoted{)} = w_{n+1},
+            \]
+            which confirms \( w_{n+1} \in L(G) \).
 \end{enumerate}
-Next, we show that every word $w$ that can be derived from $\textsl{s}$ is an element
-of the language $L$.  We perform the proof by induction on the number $n \in \mathbb{N}$ of the
-derivation steps:
+Next, we prove that any string \( w \) derived from \( \textsl{s} \) belongs to \( L \), using induction on the number \( n \) of derivation steps:
 \begin{enumerate}
-\item[B.C.:] $n = 1$.
-  
-            The only derivation of a string built from terminals that consists of only 
-            one step is
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow \lambda$.
-            \\[0.2cm]
-            Consequently, $w = \lambda$ must hold and because of $\lambda = (^0)^0 \in L$
-            we have $w \in L$.
-\item[I.S.:] $n \mapsto n+1$.
+\item[\textbf{B.C.:}] \( n = 1 \).
 
-            If the derivative consists of more than one step, then the derivative 
-            must have the following form:
-            \\[0.2cm]
+            The sole derivation from terminals that is one step long is
+            \[
             \hspace*{1.3cm}
-            $\textsl{s} \Rightarrow \quoted{(} \textsl{s} \quoted{)} \Rightarrow^n w$
-            \\[0.2cm]
-            From this it follows that
-            \\[0.2cm]
+            \textsl{s} \Rightarrow \lambda.
+            \]
+            Hence, \( w = \lambda \), and since \( \lambda = (^0)^0 \) belongs to \( L \), we deduce \( w \in L \).
+
+\item[\textbf{I.S.:}] \( n \mapsto n+1 \).
+
+            For a derivation exceeding one step, it must begin as
+            \[
             \hspace*{1.3cm}
-            $w = \quoted{(}v\quoted{)}$ \quad and \quad $\textsl{s} \Rightarrow^n v$.
-            \\[0.2cm]
-            By i.h.~then $v \in L$ holds.  Thus there exists $k \in \mathbb{N}$ with $v = (^k)^k$.
-            So we have
-            \\[0.2cm]
+            \textsl{s} \Rightarrow \squoted{(} \textsl{s} \squoted{)} \Rightarrow^n w.
+            \]
+            This implies
+            \[
             \hspace*{1.3cm}
-            $w = \quoted{(}v\quoted{)} = ((^k)^k) = (^{k+1})^{k+1} \in L$. \qed
+            w = \squoted{(}v\squoted{)} \quad \text{and} \quad \textsl{s} \Rightarrow^n v.
+            \]
+            By the inductive hypothesis, \( v \in L \). Therefore, there exists a \( k \in \mathbb{N} \) such that \( v = (^k)^k \).
+            Consequently,
+            \[
+            \hspace*{1.3cm}
+            w = \squoted{(}v\squoted{)} = ((^k)^k) = (^{k+1})^{k+1} \in L. 
+            \] \qed
 \end{enumerate}
-
 
 \exerciseEng
 We define for $w \in \Sigma^*$ and $c \in \Sigma$ the function
