@@ -25,7 +25,6 @@ factor
     | IDENTIFIER          
     ;
 
-IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
-FLOAT     : '0'([.][0-9]+)?
-          | [1-9][0-9]*([.][0-9]+)?;
-WS        : [ \t\n\r] -> skip; 
+IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*         ;
+FLOAT     : ([0]|[1-9][0-9]*)([.][0-9]+)? ;
+WS        : [ \t\n\r] -> skip             ;
