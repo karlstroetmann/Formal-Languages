@@ -1,13 +1,13 @@
 \section{Implementing a Simple Interpreter  \label{chapter:interpreter}}
-\textsc{Antlr} unterstützt \textsc{Ebnf}-Grammatiken.
-Beispielsweise werden die von regulären Ausdrücken bekannten Postfix-Operatoren ``\texttt{*}'', ``\texttt{+}''
-und ``\texttt{?}'' unterstützt.  Wir demonstrieren die Verwendung dieser Operatoren, indem wir
-mit Hilfe des Parser-Generators \textsc{Antlr} einen Interpreter für eine einfache Programmiersprache
-entwickeln.  Abbildung \ref{fig:Pure.g4} zeigt die \textsc{Antlr}-Grammatik der Programmier-Sprache, für die wir 
-in diesem Abschnitt einen Interpreter entwickeln.  Die Syntax dieser Sprache ist an die Syntax der Sprache
-\texttt{C} angelehnt, allerdings benutzen wir anstelle des einfachen Gleichheits-Zeichens ``\texttt{=}'' den
-String ``\texttt{:=}'' als Zuweisungs-Operator. 
 
+\textsc{Antlr} supports \textsc{Ebnf} grammars. For example, the postfix operators
+``\texttt{*}'', ``\texttt{+}'' and ``\texttt{?}'' known from regular expressions are
+supported. We demonstrate the use of these operators by developing an interpreter for a
+simple programming language using the parser generator \textsc{Antlr}. Figure
+\ref{fig:Pure.g4} shows the \textsc{Antlr} grammar of the programming language for which
+we are developing an interpreter in this section. The syntax of this language is modeled
+after the syntax of the language \texttt{C}, but instead of the simple equality sign
+``\texttt{=}'', we use the string ``\texttt{:=}'' as the assignment operator.
 
 \begin{figure}[!ht]
 \centering
@@ -47,6 +47,7 @@ String ``\texttt{:=}'' als Zuweisungs-Operator.
              ;
     VAR      : [a-zA-Z][a-zA-Z_0-9]*;
     NUMBER   : '0'|[1-9][0-9]*;
+    
     MULTI_COMMENT : '/*' .*? '*/' -> skip;
     LINE_COMMENT  : '//' ~('\n')* -> skip;
     WS            : [ \t\n\r]     -> skip; 
@@ -56,17 +57,15 @@ String ``\texttt{:=}'' als Zuweisungs-Operator.
 \label{fig:Pure.g4}
 \end{figure}
 
-Die Befehle der zu implementierenden Sprache sind Zuweisungen, Print-Befehle,
-\texttt{if}-Abfragen, sowie \texttt{while}-Schleifen.  Abbildung \ref{fig:sum.sl} zeigt
-ein Beispiel-Programm, das dieser Grammatik entspricht.  Dieses Programm liest zunächst eine Zahl
-ein, die in der Variablen \texttt{n} gespeichert wird.  Anschlie{\ss}end wird mit Hilfe einer
-\texttt{while}-Schleife die Summe
-\\[0.2cm]
+The commands of the language to be implemented include assignments, print commands,
+\texttt{if} statements, and \texttt{while} loops. Figure \ref{fig:sum.sl} shows
+an example program that conforms to this grammar. This program first reads a number
+which is stored in the variable \texttt{n}. Subsequently, the sum
+\[
 \hspace*{1.3cm}
-$\ds\sum\limits_{\mbox{$\normalsize i=1$}}^{\mbox{$\normalsize n^2$}} \mbox{\Large $i$}$
-\\[0.2cm]
-berechnet und ausgegeben.
-
+\ds\sum\limits_{\mbox{$\normalsize i=1$}}^{\mbox{$\normalsize n^2$}} \mbox{\Large $i$}
+\]
+is computed and printed using a \texttt{while} loop.
 
 \begin{figure}[!ht]
 \centering
@@ -93,10 +92,10 @@ berechnet und ausgegeben.
 \end{figure}
 \FloatBarrier
 
-Ähnlich wie bei unserem Programm zum symbolischen Differenzieren werden wir die einzelnen Befehle als
-geschachtelte Tupel darstellen.  Das in Abbildung \ref{fig:sum.sl} gezeigte Programm wird dabei durch das in
-Abbildung \ref{fig:sum.ast} gezeigte geschachtelte Tupel dargestellt.  Dieses geschachtelte Tupel ist nichts
-anderes als der abstrakte Syntax-Baum, der dem ursprünglichen Programm entspricht.
+Similar to our program for symbolic differentiation, we will represent the individual commands as
+nested tuples. The program shown in Figure \ref{fig:sum.sl} is represented by the nested tuple displayed in
+Figure \ref{fig:sum.ast}. This nested tuple is nothing other than the abstract syntax tree
+corresponding to the original program. 
 
 \begin{figure}[!ht]
 \centering
@@ -120,10 +119,9 @@ anderes als der abstrakte Syntax-Baum, der dem ursprünglichen Programm entsprich
     )
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die geschachtelte Liste, die das Programm aus Abbildung \ref{fig:sum.sl} repräsentiert.}
+\caption{A nested tuple that represents the program from Figure \ref{fig:sum.sl}.}
 \label{fig:sum.ast}
 \end{figure}
-
 
 \begin{figure}[!ht]
 \centering
@@ -131,25 +129,23 @@ anderes als der abstrakte Syntax-Baum, der dem ursprünglichen Programm entsprich
                   framesep      = 0.3cm, 
                   labelposition = bottomline,
                   numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
+                  numbersep     = -0.3cm,
+                  xleftmargin   = -0.3cm,
                   xrightmargin  = 0.0cm,
                 ]
     grammar Simple;
     
-    program returns [stmnt_list]
-        @init {SL = []}    
-        : (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = SL}
+    program returns [stmnt_list] 
+        : {SL = ['program']} (s = statement {SL.append($s.stmnt)})+ {$stmnt_list = tuple(SL)}
         ;
     
     statement returns [stmnt]
-        @init {SL = []}
         : v = VAR ':=' e = expr ';'       {$stmnt = (':=', $v.text, $e.result)}
         | 'print' '(' r = expr ')' ';'    {$stmnt = ('print', $r.result)}
-        | 'if' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
-          {$stmnt = ('if', $b.result, SL)}
-        | 'while' '(' b = boolExpr ')' '{' (l = statement {SL.append($l.stmnt) })* '}' 
-          {$stmnt = ('while', $b.result, SL)}
+        | 'if' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt)})* '}' 
+          {$stmnt = ('if', $b.result) + tuple(SL)}
+        | 'while' '(' b = boolExpr ')' {SL = []} '{' (l = statement {SL.append($l.stmnt)})* '}' 
+          {$stmnt = ('while', $b.result) + tuple(SL)}
         ;
     
     boolExpr returns [result]
@@ -170,130 +166,11 @@ anderes als der abstrakte Syntax-Baum, der dem ursprünglichen Programm entsprich
         ;
     
     factor returns [result]
-        : 'read' '(' ')' {$stmnt = ('read',)}
+        : 'read' '(' ')' {$result = ('read',)}
         | '(' expr ')'   {$result = $expr.result}
         | v = VAR        {$result = $v.text}
         | n = NUMBER     {$result = int($n.text)}
         ;
-\end{Verbatim}
-\vspace*{-0.3cm} %\$
-\caption{\textsc{Antlr}-Spezifikation der Grammatik.}
-\label{fig:Simple.g}
-\end{figure}
-
-\noindent
-Abbildung \ref{fig:Simple.g} zeigt die Implementierung des Parsers mit dem
-Werkzeug \textsc{Antlr}.  
-\begin{enumerate}
-\item Das Start-Symbol der Grammatik ist die Variable \texttt{program}.
-      Beim Parsen dieser Variable gibt der Parser ein Tupel von Befehlen in der Variable
-      \texttt{stmnt\_list} zurück.
-      Dazu initialisieren wir die Variable \texttt{SL}
-      als Liste, die nur den String \texttt{'program'} enthält.  Anschließend wird jeder Befehl, der erkannt
-      wird, an diese Liste angehängt. Schließlich wird diese Liste in ein Tupel umgewandelt und in der
-      Attribut-Variable \texttt{stmnt\_list} gespeichert. 
-\item Die syntaktische Variable \texttt{statement} beschreibt die verschiedenen Befehle, die 
-      in unserer einfachen Sprache unterstützt werden.
-      \begin{enumerate}[(a)]
-      \item Die einfachsten Befehle sind die Zuweisungen.  Diese haben die Form:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $v \;\texttt{:=}\; e \texttt{;}$
-            \\[0.2cm]
-            Hierbei ist $v$ eine Variable und $e$ ist ein arithmetischer Ausdruck.
-            Eine solche Zuweisung wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{':='}, v, e)$
-            \\[0.2cm]
-            dargestellt.
-      \item Der Befehl zur Ausgabe eines Wertes hat die Form:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\texttt{print(} e \texttt{);}$
-            \\[0.2cm]
-            Die Aufgabe dieses Befehl ist es, den Wert des Ausdrucks $e$ zu berechnen und auszugeben.
-            Dieser Befehl wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{'print'}, v)$
-            \\[0.2cm]
-            dargestellt.
-      \item Ein Test hat die Syntax:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\texttt{if}\; \texttt{(}\; b\; \texttt{)}\; \texttt{\{}\; \textsl{statements}\; \texttt{\}}$
-            \\[0.2cm]
-            Hierbei ist $b$ ein Ausdruck, dessen Auswertung \texttt{True} oder \texttt{False} ergibt
-            und \texttt{statements} ist eine Liste von Befehlen, die ausgeführt werden, falls
-            $b$ den Wert \texttt{True} hat.
-            Dieser Befehl wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{'if'}, b, \textsl{statements})$
-            \\[0.2cm]
-            dargestellt.
-      \item Eine Schleife hat die Syntax:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\texttt{while}\; \texttt{(}\; b\; \texttt{)}\; \texttt{\{}\; \textsl{statements}\; \texttt{\}}$
-            \\[0.2cm]
-            Hierbei ist $b$ ein Ausdruck, dessen Auswertung \texttt{True} oder \texttt{False} ergibt
-            und \texttt{statements} ist eine Liste von Befehlen, die ausgeführt werden, solange
-            $b$ den Wert \texttt{True} hat.
-            Dieser Befehl wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{'while'}, b, \textsl{statements})$
-            \\[0.2cm]
-            dargestellt.
-      \end{enumerate}
-\item Die syntaktische Variable \texttt{boolExpr} beschreibt einen Ausdruck, der einen Boole'schen Wert
-      annimmt.  Es gibt zwei Möglichkeiten einen solchen Wert zu erzeugen.
-      \begin{enumerate}
-      \item Ein Ausdruck der Form
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $l \;\texttt{==}\; r $
-            \\[0.2cm]
-            testet, ob die Auswertungen von $l$ und $r$ die selben Werte ergeben.
-            Dieser Befehl Ausdruck wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{'=='}, l, r)$
-            \\[0.2cm]
-            dargestellt.
-      \item Ein Ausdruck der Form
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $l \;\texttt{<}\; r $
-            \\[0.2cm]
-            testet, ob die Auswertung von $l$ einen Wert ergibt, der kleiner ist als der Wert, der sich bei der
-            Auswertung von $r$ ergibt.
-            Dieser Befehl Ausdruck wird durch das geschachtelte Tupel
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $(\texttt{'<'}, l, r)$
-            \\[0.2cm]
-            dargestellt.
-      \end{enumerate}
-\item In analoger Weise beschreiben die Variablen \texttt{expr}, \texttt{product} und \texttt{factor}
-      arithmetische Ausdrücke. 
-      Da wir dies bereits hinlänglich früher diskutiert haben, gehen wir an dieser Stelle nicht weiter auf
-      die Grammatik-Regeln ein, durch die diese Variablen definiert werden. 
-\end{enumerate}
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = last,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
     
     VAR    : [a-zA-Z][a-zA-Z_0-9]*;
     NUMBER : '0'|[1-9][0-9]*;
@@ -302,30 +179,121 @@ Werkzeug \textsc{Antlr}.
     LINE_COMMENT  : '//' ~('\n')* -> skip;
     WS            : [ \t\n\r]     -> skip;
 \end{Verbatim}
-\vspace*{-0.3cm}
-\caption{\textsc{Antlr}-Spezifikation der verschiedenen Token.}
-\label{fig:Simple-2.g}
+\vspace*{-0.3cm} %\$
+\caption{\textsc{Antlr}-Spezifikation der Grammatik.}
+\label{fig:Simple.g}
 \end{figure}
-Die Spezifikation der Token ist in Abbildung \ref{fig:Simple-2.g}
-gezeigt.  Der Scanner unterscheidet im Wesentlichen zwischen Variablen und Zahlen.
-Variablen beginnen mit einem großen oder kleinen Buchstaben, auf den dann zusätzlich Ziffern und der
-Unterstrich folgen können.  Folgen von Ziffern werden als Zahlen interpretiert.  Enthält eine solche
-Folge mehr als ein Zeichen, so darf die erste Ziffer nicht 0 sein.  Darüber hinaus entfernt der
-Scanner Whitespace und Kommentare.   Außerdem haben wir bei der
-Spezifikation von mehrzeiligen Kommentaren die sogenannte \emph{non-greedy}-Version des Operators
-``\texttt{*}'' benutzt.  Die non-greedy-Version des Operators ``\texttt{*}'' wird als
-``\texttt{*?}'' geschrieben und matched sowenig wie möglich.  Daher steht der reguläre Ausdruck
-\\[0.2cm]
+
+\noindent
+Figure \ref{fig:Simple.g} shows the implementation of the parser using the
+\textsc{Antlr} tool.
+\begin{enumerate}
+\item The start symbol of the grammar is the variable \texttt{program}.
+      When parsing this variable, the parser returns a tuple of commands in the variable
+      \texttt{stmnt\_list}.
+      To this end, we initialize the variable \texttt{SL}
+      as a list containing only the string \texttt{'program'}. Subsequently, each recognized command
+      is appended to this list. Finally, this list is converted into a tuple and stored in the
+      attribute variable \texttt{stmnt\_list}.
+\item The syntactic variable \texttt{statement} describes the various commands that 
+      are supported in our simple language.
+      \begin{enumerate}[(a)]
+      \item The simplest commands are the assignments. These have the form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $v \;\texttt{:=}\; e \texttt{;}$
+            \\[0.2cm]
+            Here, $v$ is a variable and $e$ is an arithmetic expression.
+            Such an assignment is represented by the nested tuple
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{':='}, v, e)$.
+      \item The command for printing a value has the form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{print(} e \texttt{);}$
+            \\[0.2cm]
+            The purpose of this command is to compute the value of the expression $e$ and print it.
+            This command is represented by the nested tuple
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'print'}, v)$.
+      \item A conditional test has the syntax:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{if}\; \texttt{(}\; b\; \texttt{)}\; \texttt{\{}\; \textsl{statements}\; \texttt{\}}$
+            \\[0.2cm]
+            Here, $b$ is an expression that evaluates to \texttt{True} or \texttt{False}
+            and \texttt{statements} is a list of commands that are executed if
+            $b$ evaluates to \texttt{True}.
+            This command is represented by the nested tuple
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'if'}, b, \textsl{statements})$.
+            \\[0.2cm]
+            Here, $b$ is a nested tuple representing the Boolean expression.
+      \item A loop has the syntax:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $\texttt{while}\; \texttt{(}\; b\; \texttt{)}\; \texttt{\{}\; \textsl{statements}\; \texttt{\}}$.
+            \\[0.2cm]
+            Here, $b$ is an expression that evaluates to \texttt{True} or \texttt{False}
+            and \texttt{statements} is a list of commands that are executed as long as
+            $b$ evaluates to \texttt{True}.
+            This command is represented by the nested tuple
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'while'}, b, \textsl{statements})$.
+      \end{enumerate}
+\item The syntactic variable \texttt{boolExpr} describes an expression that takes a Boolean value.
+      There are two ways to generate such a value.
+      \begin{enumerate}
+      \item An expression of the form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $l \;\texttt{==}\; r $
+            \\[0.2cm]
+            tests whether the evaluations of $l$ and $r$ yield the same values.
+            This expression is represented by the nested tuple
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'=='}, l, r)$.
+      \item An expression of the form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $l \;\texttt{<}\; r $
+            \\[0.2cm]
+            tests whether the evaluation of $l$ yields a value that is smaller than the
+            value obtained from the evaluation of $r$. 
+            This expression is represented by the nested tuple
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $(\texttt{'<'}, l, r)$
+      \end{enumerate}
+\item In a similar manner, the syntactic variables \texttt{expr}, \texttt{product}, and \texttt{factor}
+      describe arithmetic expressions.
+      Since we have already discussed this in sufficient detail earlier, we will not delve further into
+      the grammar rules that define these syntactic variables at this point.
+\end{enumerate}
+The specification of the tokens is shown in lines 40--45 of Figure \ref{fig:Simple.g}.
+The scanner primarily differentiates between variables and numbers.
+Variables start with an uppercase or lowercase letter, followed by additional digits and
+the underscore. Sequences of digits are interpreted as numbers. If such a
+sequence contains more than one character, the first digit must not be 0. Additionally, the
+scanner removes whitespace and comments. We have also used the so-called \emph{non-greedy} version of the
+operator ``\texttt{*}'' in the specification of multiline comments. The non-greedy version of the
+operator ``\texttt{*}'' is written as ``\texttt{*?}'' and matches as little as possible. Therefore, the regular expression
+\[
 \hspace*{1.3cm}
 \texttt{'/*' .*? '*/'}
-\\[0.2cm]
-für einen String, der mit der Zeichenkette ``\texttt{/*}'', mit der Zeichenkette ``\texttt{*/}''
-endet und außerdem so kurz wie möglich ist.  Dadurch werden in einer Zeile der Form
-\\[0.2cm]
+\]
+represents a string that starts with the character sequence ``\texttt{/*}'', ends with the character sequence ``\texttt{*/}'',
+and is as short as possible. This ensures that in a line like
+\[
 \hspace*{1.3cm}
 \texttt{/* Hugo */ i := i + 1; /* Anton */}
-\\[0.2cm] 
-zwei getrennte Kommentare erkannt.
+\]
+two separate comments are recognized.
 
 
 \begin{figure}[!ht]
@@ -370,94 +338,81 @@ zwei getrennte Kommentare erkannt.
         for stmnt in Statement_List:
             execute(stmnt, Values)
     
-    def execute(stmnt, Values):
-        op = stmnt[0]
-        if stmnt == 'program':
-            pass
-        elif op == ':=':
-            _, var, value = stmnt
-            Values[var] = evaluate(value, Values)
-        elif op == 'print':
-            _, expr = stmnt
-            print(evaluate(expr, Values))
-        elif op == 'if':
-            _, test, *SL = stmnt
-            if evaluate(test, Values):
-                execute_tuple(SL, Values)
-        elif op == 'while':
-            _, test, *SL = stmnt
-            while evaluate(test, Values):
-                execute_tuple(SL, Values)
-        else:
-            assert False, f'{stmnt} unexpected'
+    def execute(stmnt: NestedTuple, Values: dict[str, Number]) -> None:
+        match stmnt:
+            case 'program':
+                pass
+            case (':=', var, value):
+                Values[var] = evaluate(value, Values)
+            case ('print', expr):
+                print(evaluate(expr, Values))
+            case ('if', test, *SL):
+                if evaluate(test, Values):
+                    execute_tuple(tuple(SL), Values)
+            case ('while', test, *SL):
+                while evaluate(test, Values):
+                    execute_tuple(tuple(SL), Values)
+            case _:
+                assert False, f'{stmnt} unexpected'
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Die Funktion \texttt{execute}.}
+\caption{The function execute \texttt{execute}.}
 \label{fig:Interpreter.ipynb:execute}
 \end{figure}
 
-Abbildung \ref{fig:Interpreter.ipynb:main} zeigt die Funktion \texttt{main}, die als Eingabe den Namen einer
-Datei erhält, die ein Programm unserer einfachen Programmiersprache enthält.  Dieses Programm wird geparsed und
-dadurch in das geschachtelte Tupel \texttt{Statements} umgewandelt.  Die Funktion \texttt{execute\_tuple} führt
-die einzelnen Befehle in dem Tupel \texttt{Statements} aus.  Dazu verwendet sie die Funktion \texttt{execute},
-die einen einzelnen Befehl ausführen kann.  Abbildung \ref{fig:Interpreter.ipynb:execute} zeigt die
-Implementierung der Funktion \texttt{execute}.  Diese Implementierung besteht im Wesentlichen aus eine großen
-Fallunterscheidung nach der Art des auszuführenden Befehls.
+Figure \ref{fig:Interpreter.ipynb:main} shows the function \texttt{main}, which receives the name of a
+file containing a program in our simple programming language as input. This program is parsed and
+thus transformed into the nested tuple \texttt{Statements}. The function \texttt{execute\_tuple} executes
+the individual commands in the tuple \texttt{Statements}. It uses the function \texttt{execute} to
+execute a single command. Figure \ref{fig:Interpreter.ipynb:execute} shows the
+implementation of the function \texttt{execute}. This implementation consists mainly of a large
+case distinction based on the type of command to be executed.
 \begin{enumerate}
-\item Zunächst prüfen wir, ob \texttt{statement} der String \texttt{'program'} ist, der den Beginn des
-      Programms markiert.\footnote{
-        Diese Markierung wird nur für die Darstellung des Programms als abstrakter Syntaxbaum benötigt.}
-      Da es sich hier nur um eine Markierung und nicht um einen echten Befehl handelt, ist nichts weiter zu
-      tun.
-\item Falls es sich bei dem Befehl um eine Zuweisung der Form
+\item First, we check if \texttt{statement} is the string \texttt{'program'}, which marks the beginning of
+      the program.\footnote{
+        This marking is only needed for the representation of the program as an abstract syntax tree.}
+      Since this is only a marker and not a real command, nothing further needs to be
+      done.
+\item If the command is an assignment of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{(':=, var, value)}
+      \texttt{(':=', var, value)}
       \\[0.2cm]   
-      handelt, wird der Wert des Ausdrucks \texttt{value} mit Hilfe der Funktion \texttt{evaluate}
-      berechnet.  Dieser Wert wird dann in dem Dictionary \texttt{Values} unter dem Schlüssel \texttt{var}
-      gespeichert.
-\item Falls es sich bei dem Befehl um eine Leseoperation der Form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{('read', var)}
-      \\[0.2cm]
-      handelt, so wird mit Hilfe der \textsl{Python}-Funktion \texttt{input} ein String gelesen.
-      Dieser String wird in eine ganze Zahl umgewandelt.  Diese Zahl wird dann in dem Dictionary
-      \texttt{Values} unter dem Schlüssel \texttt{var} gespeichert.
-\item Falls es sich bei dem Befehl um eine Operation der Form
+      then the value of the expression \texttt{value} is computed using the function \texttt{evaluate}.
+      This value is then stored in the dictionary \texttt{Values} under the key \texttt{var}.
+\item If the command is an operation of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('print', expr)}
       \\[0.2cm]
-      handelt, so wird zunächst der Ausdruck \texttt{expr} mit Hilfe der Funktion \texttt{evaluate}
-      ausgewertet.  Der Dabei erhaltene Wert wird dann ausgegeben.
-\item Falls der Befehl die Form
+      then the expression \texttt{expr} is first evaluated using the function \texttt{evaluate}.
+      The resulting value is then printed.
+\item If the command is of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('if', test, $s_1$, $\cdots$, $s_n$)}
       \\[0.2cm]
-      hat, so ist \texttt{test} ein Boole'scher Ausdruck und \texttt{($s_1$, $\cdots$, $s_n$)}
-      ist ein Tupel von Befehlen, das in der Variable \texttt{SL} gespeichert wird.
-      In diesem Fall wird zunächst der Ausdruck \texttt{test} mit Hilfe der Funktion \texttt{evaluate}
-      ausgewertet.  Wenn diese Auswertung den Wert \texttt{True} ergibt, werden anschließend die
-      Befehle in dem Tupel \texttt{SL} der Reihe nach ausgeführt.
-\item Falls der Befehl die Form
+      then \texttt{test} is a nested tuple representing a Boolean expression and
+      \texttt{($s_1$, $\cdots$, $s_n$)} is a tuple of commands stored in the variable \texttt{SL}.
+      In this case, the expression \texttt{test} is first evaluated using the function \texttt{evaluate}.
+      If this evaluation yields the value \texttt{True}, then the
+      commands in the tuple \texttt{SL} are executed in sequence.
+\item If the command is of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('while', test, $s_1$, $\cdots$, $s_n$)}
       \\[0.2cm]
-      hat, so ist \texttt{test} ein Boole'scher Ausdruck und \texttt{($s_1$, $\cdots$, $s_n$)}
-      ist ein Tupel von Befehlen, das in der Variable \texttt{SL} gespeichert wird.
-      In diesem Fall wird zunächst der Ausdruck \texttt{test} mit Hilfe der Funktion \texttt{evaluate}
-      ausgewertet.  Wenn diese Auswertung den Wert \texttt{True} ergibt, werden anschließend die
-      Befehle in dem Tupel \texttt{SL} der Reihe nach ausgeführt.
-      Anschließend wird wieder der Ausdruck \texttt{test} ausgewertet.  Ist das Ergebnis
-      \texttt{False}, so ist die Auswertung des Befehls beendet.  Andernfalls
-      werden Die Befehle in der Liste \texttt{SL} solange ausgeführt, bis die Auswertung von \texttt{test}
-      \texttt{False} ergibt.
+      then \texttt{test} is a Boolean expression and \texttt{($s_1$, $\cdots$, $s_n$)}
+      is a tuple of commands stored in the variable \texttt{SL}.
+      In this case, the expression \texttt{test} is first evaluated using the function \texttt{evaluate}.
+      If this evaluation yields the value \texttt{True}, then the
+      commands in the tuple \texttt{SL} are executed in sequence.
+      Then the expression \texttt{test} is evaluated again. If the result is
+      \texttt{False}, then the execution of the command is finished. Otherwise,
+      the commands in the list \texttt{SL} are executed as long as the evaluation of \texttt{test}
+      yields \texttt{False}.
 \end{enumerate}
-\FloatBarrier
+
 
 \begin{figure}[!ht]
 \centering
@@ -470,33 +425,28 @@ Fallunterscheidung nach der Art des auszuführenden Befehls.
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
-    def evaluate(expr, Values):
-        if isinstance(expr, int):
-            return expr
-        if isinstance(expr, str):
-            return Values[expr] 
-        op = expr[0]
-        if op == 'read':
-            return int(input('Please enter a natural number:'))
-        if op == '==':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) == evaluate(rhs, Values)
-        if op == '<':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) < evaluate(rhs, Values)
-        if op == '+':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) + evaluate(rhs, Values)
-        if op == '-':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) - evaluate(rhs, Values)
-        if op == '*':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) * evaluate(rhs, Values)
-        if op == '/':
-            _, lhs, rhs = expr
-            return evaluate(lhs, Values) / evaluate(rhs, Values)
-        assert False, f'{stmnt} unexpected'
+    def evaluate(expr: NestedTuple, Values: dict[str, Number]) -> Number:
+        match expr:
+            case int():
+                return expr
+            case str():
+                return Values[expr] 
+            case ('read',):
+                return int(input('Please enter a natural number: '))
+            case ('==', lhs, rhs):
+                return evaluate(lhs, Values) == evaluate(rhs, Values)
+            case ('<', lhs, rhs):
+                return evaluate(lhs, Values) < evaluate(rhs, Values)
+            case ('+', lhs, rhs):
+                return evaluate(lhs, Values) + evaluate(rhs, Values)
+            case ('-', lhs, rhs):
+                return evaluate(lhs, Values) - evaluate(rhs, Values)
+            case ('*', lhs, rhs):
+                return evaluate(lhs, Values) * evaluate(rhs, Values)
+            case ('/', lhs, rhs):
+                return evaluate(lhs, Values) / evaluate(rhs, Values)
+            case _:
+                assert False, f'{expr} unexpected'
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Die Funktion \texttt{evaluate}.}
@@ -504,65 +454,62 @@ Fallunterscheidung nach der Art des auszuführenden Befehls.
 \end{figure}
 \FloatBarrier
 
-Abbildung \ref{fig:Interpreter.ipynb:evaluate} zeigt die Implementierung der Funktion \texttt{evaluate}.
-Diese Funktion erhält als Eingabe einen arithmetischen Ausdruck und ein Dictionary, in dem die 
-Werte der Variablen abgelegt sind.  
+Figure \ref{fig:Interpreter.ipynb:evaluate} shows the implementation of the function \texttt{evaluate}.
+This function receives an arithmetic expression and a dictionary storing the
+values of the variables as input.
 \begin{enumerate}[(a)]
-\item Falls es sich bei dem auszuwertenden Ausdruck um eine Zahl handelt, geben wir diese Zahl als Ergebnis
-      zurück.
-\item Falls es sich bei dem auszuwertenden Ausdruck um eine Variable handelt, so schlagen wir den Wert dieser
-      Variable in dem Dictionary \texttt{Values} nach und geben wir diesen Wert als Ergebnis zurück.
-\item Falls es sich bei dem auszuwertenden Ausdruck um einen Aufruf der Funktion \texttt{read}   handelt,
-      fordern wir den Benutzer auf, eine natürliche Zahl einzugeben.  Den vom Benutzer eingegebenen String
-      wandeln wir dann noch in eine Zahl um.
-\item Falls es sich bei dem auszuwertenden Ausdruck um einen Boole'schen Ausdruck der Form
+\item If the expression to be evaluated is a number, we return this number as the result.
+\item If the expression to be evaluated is a variable, we look up the value of this
+      variable in the dictionary \texttt{Values} and return this value as the result.
+\item If the expression to be evaluated is a call to the function \texttt{read},
+      we prompt the user to enter a natural number. We then convert the string entered by the user into a number.
+\item If the expression to be evaluated is a Boolean expression of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('==', lhs, rhs)}
       \\[0.2cm]
-      handelt, werten wir die Ausdrücke \texttt{lhs} und \texttt{rhs} rekursiv aus und geben genau dann
-      \texttt{True} zurück, wenn sich für beide Ausdrücke der selbe Wert ergibt.
-\item Falls es sich bei dem auszuwertenden Ausdruck um einen Boole'schen Ausdruck der Form
+      we recursively evaluate the expressions \texttt{lhs} and \texttt{rhs} and return \texttt{True} if and only if
+      both expressions yield the same value.
+\item If the expression to be evaluated is a Boolean expression of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('<', lhs, rhs)}
       \\[0.2cm]
-      handelt, werten wir die Ausdrücke \texttt{lhs} und \texttt{rhs} rekursiv aus und geben genau dann
-      \texttt{True} zurück, wenn der Wert, der sich bei der Auswertung von \texttt{lhs} ergibt, kleiner als der
-      Wert ist, der sich bei der Auswertung von \texttt{rhs} ergibt.
-\item Falls es sich bei dem auszuwertenden Ausdruck um eine Summe der Form
+      we recursively evaluate the expressions \texttt{lhs} and \texttt{rhs} and return \texttt{True} if and only if
+      the value obtained from the evaluation of \texttt{lhs} is less than the
+      value obtained from the evaluation of \texttt{rhs}.
+\item If the expression to be evaluated is a sum of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('+', lhs, rhs)}
       \\[0.2cm]
-      handelt, werten wir die Ausdrücke \texttt{lhs} und \texttt{rhs} rekursiv aus und geben die Summe dieser
-      Werte zurück. 
-\item Die Auswertung der arithmetischen Operatoren \texttt{'-'}, \texttt{'*'} und \texttt{'/'}
-      verläuft analog zur Auswertung des Operators \texttt{'+'}.
+      we recursively evaluate the expressions \texttt{lhs} and \texttt{rhs} and return the sum of these
+      values. 
+\item The evaluation of the arithmetic operators \texttt{'-'}, \texttt{'*'}, and \texttt{'/'}
+      is analogous to the evaluation of the operator \texttt{'+'}.
 \end{enumerate}
 \FloatBarrier
 
 \exercise
 \begin{enumerate}[(a)]
-\item Erweitern Sie den Interpreter so, dass auch der Operator ``\texttt{<=}'' unterstützt wird.
-\item Erweitern Sie den Interpreter um \texttt{for}-Schleifen.
-\item Erweitern Sie den Interpreter um die logischen Operatoren
-      ``\texttt{\&\&}'' für das logische \emph{Und}, ``\texttt{||}'' für das logische \emph{Oder}
-      und ``\texttt{!}'' für die Negation.  Dabei soll der Operator ``\texttt{!}'' am
-      stärksten und der Operator ``\texttt{||}'' am schwächsten binden.
-\item Erweitern Sie die Syntax der arithmetischen Ausdrücke so, dass auch vordefinierte 
-      mathematische Funktionen wie $\texttt{exp}()$ oder $\texttt{ln}()$ benutzt werden
-      können.
-\item Erweitern Sie den Interpreter so, dass auch benutzerdefinierte Funktionen möglich
-      werden. 
+\item Extend the interpreter to support the operator ``\texttt{<=}''.
+\item Add \texttt{for} loops to the interpreter.
+\item Expand the interpreter to include logical operators
+      ``\texttt{\&\&}'' for logical \emph{AND}, ``\texttt{||}'' for logical \emph{OR},
+      and ``\texttt{!}'' for negation. The operator ``\texttt{!}'' should bind the
+      strongest and the operator ``\texttt{||}'' the weakest.
+\item Extend the syntax of arithmetic expressions to include predefined
+      mathematical functions like $\texttt{exp}()$ or $\texttt{ln}()$.
+\item Enhance the interpreter to allow for user-defined functions.
       
-      \textbf{Hinweis}: Jetzt müssen Sie zwischen lokalen und globalen Variablen
-      unterscheiden.
-      Daher reicht es nicht mehr, die Belegungen der Variablen in einem
-      global definierten Dictionary zu verwalten. \eox
+      \textbf{Note}: You now need to distinguish between local and global variables.
+      Therefore, managing the variable assignments in a globally defined dictionary is no
+      longer sufficient.  Instead, you will need a  stack of dictionaries.  Every time you
+      start the execution of a user defined function, you have to put a new dictionary of
+      values onto the stack.  Initially, this new dictionary will hold the values of the
+      arguments of the function.
+      \eox 
 \end{enumerate}
-
-
 
 %%% Local Variables: 
 %%% mode: latex
