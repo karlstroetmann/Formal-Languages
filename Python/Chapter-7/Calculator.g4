@@ -4,7 +4,7 @@ grammar Calculator;
 import math
 }
 
-start: statement+ ; 
+program: statement+ ; 
 
 statement
     : IDENTIFIER ':=' expr ';' {self.Values[$IDENTIFIER.text] = $expr.result}

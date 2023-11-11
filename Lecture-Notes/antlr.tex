@@ -85,12 +85,12 @@ We discuss the implementation line by line.
 \item Similarly, the lines 8--11 and 13--15 show the grammar rules for the variables \textsl{product} and
       \textsl{factor}.   
 \item With \textsc{Antlr} the grammar and the specification of the tokens can be given in the same file.
-      In order to be able to distinguish terminals and non-terminals, terminals have to begin with an upper case 
+      In order to be able to distinguish terminals and syntactic terminals, terminals have to begin with an upper case 
       letter,\footnote
-      {It is a convention that the names of non-terminals consist of only upper case letters, but this is not required.}
-      while non-terminals start with a lower case letter.   Therefore, ``\texttt{NUMBER}'' is the name
+      {It is a convention that the names of non-terminals consist of only upper case letters, but this is not
+        required.}while syntactic terminals start with a lower case letter.   Therefore, ``\texttt{NUMBER}'' is the name
       of a terminal.
-\item In line 17 the lexical specification of the non-terminal \texttt{NUMBER} is given
+\item In line 17 the lexical specification of the terminal \texttt{NUMBER} is given
       by a regular expression.  The regular expression
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -214,10 +214,10 @@ The last example isn't very exciting as the arithmetical expressions that the pa
 evaluated.  In this section we show how arithmetical expressions can be evaluated using \textsc{Antlr}
 generated parsers.  We proceed in two steps:
 \begin{enumerate}
-\item Firstly, we present a grammar for a small \blue{symbolic calculator}.
-
-      Here, the attribute \emph{symbolic} means that the calculator supports the use of variables.
-\item Secondly, we show how this grammar can be extended with actions so that the expressions can be evaluated.
+\item Firstly, we present a grammar for a small \blue{symbolic calculator}.  Here, the attribute
+      \emph{symbolic} means that the calculator supports the use of variables that can be bound to values.
+\item Secondly, we show how this grammar can be extended with \blue{semantic actions} so that the expressions
+      can be evaluated. 
 \end{enumerate}
 Figure \ref{fig:Program.g4} presents the grammar.  In comparison with grammar for arithmetical expressions that
 was shown in Figure \ref{fig:Expr.g4} there are the following changes:
@@ -234,7 +234,7 @@ was shown in Figure \ref{fig:Expr.g4} there are the following changes:
               ]{antlr}
     grammar Program;
     
-    start: statement+ ; 
+    program: statement+ ; 
     
     statement
         : IDENTIFIER ':=' expr ';' 
@@ -271,13 +271,13 @@ was shown in Figure \ref{fig:Expr.g4} there are the following changes:
 
 
 \begin{enumerate}
-\item The start-symbol \texttt{start} now recognizes a list of \blue{statements}.
+\item The start-symbol \texttt{program} now recognizes a list of \blue{statements}.
       Note that \textsc{Antlr} provides the postfix operator ``\texttt{+}'' to
       specify non-empty sequences.  The postfix operators ``\texttt{*}'' and ``\texttt{?}'' are also 
       supported.  They have the same semantics as in regular expressions.
 \item A \texttt{statement} is either an assignment or an expression. 
 \item The rules for expressions and products are the same as previously.
-\item The rule for the non-terminal \texttt{factor} has changed.
+\item The rule for the syntactic variable \texttt{factor} has changed.
       \begin{enumerate}[(a)]
       \item Expressions are now allowed to contain calls of the function \texttt{sqrt},
             which is supposed to compute the square root of a given number.
@@ -299,7 +299,7 @@ A parser for this grammar is able to parse strings like the following:
 \begin{verbatim}
     x := 2.3 * 3.4; y := sqrt(2 * x); z := x * x + y * y; sqrt(z);
 \end{verbatim}
-Our next task is to develop an interpreter for the language specified by the grammar shown 
+Our next task is to develop an \blue{interpreter} for the language specified by the grammar shown 
 in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an interpreter can be implemented.
 
 
@@ -320,7 +320,7 @@ in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an int
     import math
     }
     
-    start: statement+ ; 
+    program: statement+ ; 
     
     statement
         : IDENTIFIER ':=' expr ';' {self.Values[$IDENTIFIER.text] = $expr.result}
@@ -386,7 +386,7 @@ in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an int
 \item Line 11 deals with the case where the parser has seen an expression followed by a semicolon.
       In this case, the result of the evaluation of the expression is printed.
 \item The \texttt{returns}-declaration in line 14 specifies that when the parser reads an expression,
-      i.e.~a string that has the syntactical form specified by the grammar rule for \texttt{expr}
+      i.e.~a string that has the syntactical form specified by the grammar rule for \texttt{expr},
       it will return the result of this evaluation in the member variable \texttt{result}.
 \item Line 15 deals with the case that the parser has found a sum of the form
       \\[0.2cm]
@@ -431,7 +431,7 @@ in Figure \ref{fig:Program.g4}.  Figure \ref{fig:Calculator.g4} shows how an int
             lexer         = CalculatorLexer(input_stream)
             token_stream  = antlr4.CommonTokenStream(lexer)
             parser.setInputStream(token_stream)
-            parser.start()
+            parser.program()
             line = input('> ')
         return parser.Values
 \end{minted}
@@ -462,7 +462,7 @@ and scanner that is generated by \textsc{Antlr}.
 \end{enumerate}
 
 \section{Generating Abstract Syntax Trees with \textsc{Antlr}}
-The evaluation of arithmetical expressions was relatively easy as it is possible to evaluate an arithmetical expression
+The evaluation of arithmetic expressions was relatively easy as it is possible to evaluate an arithmetic expression
 directly via semantic actions that are embedded in the grammar.  If the problem is more complex than the
 evaluation of an expression it is usually easier to first generate an \blue{abstract syntax tree} and then use
 the syntax tree to solve the problem at hand.  We demonstrate this approach using the problem of 
@@ -474,8 +474,8 @@ tells us that
 \hspace*{1.3cm}
 $\ds \frac{\mathrm{d} \;}{\mathrm{d} x} \bigl(x \cdot \ln(x)\bigr) = 1 \cdot \ln(x) + x \cdot \frac{1}{x}$.
 \\[0.2cm]
-As the arithmetical expressions that we want to differentiate contain the function symbols for the natural
-logarithm and for exponentiation in addition to the four arithmetical operators we have to modify the grammar
+As the arithmetic expressions that we want to differentiate contain the function symbols for the natural
+logarithm and for exponentiation in addition to the four arithmetic operators we have to modify the grammar
 given in the last section.
 Figure \ref{fig:Expr-exp-ln} shows the grammar that we are going to use for symbolic differentiation.
 
@@ -503,7 +503,7 @@ Figure \ref{fig:Expr-exp-ln} shows the grammar that we are going to use for symb
 
   \end{minipage}}}
   \end{center}
-  \caption{A grammar for arithmetical expressions with exponential function and logarithm.}
+  \caption{A grammar for arithmetic expressions with exponential function and logarithm.}
   \label{fig:Expr-exp-ln}
 \end{figure}
 
@@ -554,8 +554,7 @@ Figure \ref{fig:Differentiator.g4} shows how the grammar from Figure \ref{fig:Ex
 \begin{enumerate}
 \item The \blue{return specification} ``\texttt{returns [result]}'' in line 3 specifies
       that the expression object that is generated when the parser parses the non-terminal \texttt{expr}
-      has a member variable with the name \texttt{result}.  When referring to this variable inside a semantic
-      action we have to prefix the variable name with the dollar symbol as shown below.
+      has an attribute with the name \texttt{result}.  
 \item Line 4 recognizes a sum of the form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -563,14 +562,15 @@ Figure \ref{fig:Differentiator.g4} shows how the grammar from Figure \ref{fig:Ex
       \\[0.2cm]
       where $e$ is an expression and $p$ is a product.
       Hence the parser has to recognize an expression $e$, followed by the symbol ``\texttt{+}'' followed by a
-      product $p$.  The abstract syntax tree when reading $e$ is stored in the variable 
+      product $p$.  The abstract syntax tree when reading $e$ is stored in 
       \texttt{\symbol{36}e.result}, while the syntax tree for the product is stored in the variable
       \texttt{\symbol{36}p.result}.  To build a syntax tree for the sum $e + p$ we create the triple
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('+', \$e.result, \$p.result)}
       \\[0.2cm]
-      and assign this triple to the variable \texttt{\symbol{36}result}.
+      and assign this triple to \texttt{\symbol{36}result}.  Note that we have to prefix
+      \texttt{result} with a dollar sign here.
 \item The remaining grammar rules work in a similar way.
 \item In line 23 we can get the actual text that is matched by the terminal \texttt{VAR} by writing 
       \texttt{\symbol{36}v.text}.
@@ -595,35 +595,30 @@ of an arithmetic expression and computes the derivative with respect to variable
                  xleftmargin   = 0.8cm,
                  xrightmargin  = 0.8cm,
                ]{python3}
-    def diff(e):
-        if isinstance(e, int):
-            return '0'
-        if e[0] == '+':
-            f , g  = e[1:]
-            fs, gs = diff(f), diff(g)
-            return ('+', fs, gs)
-        if e[0] == '-':
-            f , g  = e[1:]
-            fs, gs = diff(f), diff(g)
-            return ('-', fs, gs)
-        if e[0] == '*':
-            f , g  = e[1:]
-            fs, gs = diff(f), diff(g)
-            return ('+', ('*', fs, g), ('*', f, gs))
-        if e[0] == '/':
-            f , g  = e[1:]
-            fs, gs = diff(f), diff(g)
-            return ('/', ('-', ('*', fs, g), ('*', f, gs)), ('*', g, g))
-        if e[0] == 'ln':
-            f  = e[1]
-            fs = diff(f) 
-            return ('/', fs, f)
-        if e[0] == 'exp':
-            f  = e[1]
-            fs = diff(f) 
-            return ('*', fs, e)
-        if e == 'x':
-            return '1'
+    def diff(e: NestedTuple) -> NestedTuple:
+        match e:
+            case int():
+                return '0'
+            case ('+', f, g):
+                fs, gs = diff(f), diff(g)
+                return ('+', fs, gs)
+            case ('-', f, g):
+                fs, gs = diff(f), diff(g)
+                return ('-', fs, gs)
+            case ('*', f , g):
+                fs, gs = diff(f), diff(g)
+                return ('+', ('*', fs, g), ('*', f, gs))
+            case ('/', f , g):
+                fs, gs = diff(f), diff(g)
+                return ('/', ('-', ('*', fs, g), ('*', f, gs)), ('*', g, g))
+            case ('ln', f):
+                fs = diff(f) 
+                return ('/', fs, f)
+            case ('exp', f):
+                fs = diff(f) 
+                return ('*', fs, e)
+            case 'x':
+                return '1'
         return '0'
 \end{minted}
 \vspace*{-0.3cm}
@@ -665,6 +660,10 @@ Invoking the parser in line 10 creates an abstract syntax tree that is stored in
 \label{fig:Differentiator.ipynb:main}
 \end{figure}
 \pagebreak
+
+\vspace*{\fill}
+\pagebreak
+
 
 \exerciseEng
 The \href{https://github.com/karlstroetmann/Formal-Languages}{github directory} associated with this lecture
