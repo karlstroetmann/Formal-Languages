@@ -1,6 +1,6 @@
 grammar Program;
 
-start: statement+ ; 
+program: statement+ ; 
 
 statement
     : IDENTIFIER ':=' expr ';' 
