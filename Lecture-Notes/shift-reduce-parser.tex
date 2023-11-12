@@ -1,149 +1,126 @@
-\chapter{Bottom-Up-Parser\label{chapter:bottom-up}}
-Bei der Konstruktion eines Parsers gibt es generell zwei Möglichkeiten:  Wir können
-\blue{Top-Down} oder \blue{Bottom-Up} vorgehen.  Den Top-Down-Ansatz haben wir bereits
-diskutiert.  In diesem Kapitel erläutern wir nun den Bottom-Up-Ansatz.
+\chapter{Bottom-up Parsers\label{chapter:bottom-up}}
+In constructing a parser, there are generally two approaches: \blue{top-down} and \blue{bottom-up}. We have already discussed the top-down approach. In this chapter, we will explain the bottom-up approach.
 \begin{enumerate}
-\item Wir stellen im nächsten Abschnitt das allgemeine Konzept vor, das einem
-      \blue{Bottom-Up-Parser} zu Grunde liegt.  
-\item Im darauf folgenden Abschnitt zeigen wir, wie Bottom-Up-Parser implementiert werden können
-      und stellen als eine Implementierungsmöglichkeit die \blue{Shift-Reduce-Parser} vor.
+\item In the next section, we present the general concept underlying a
+      \blue{bottom-up parser}.
+\item In the following section, we show how bottom-up parsers can be implemented and introduce
+      \blue{shift-reduce parsers} as one possible implementation. 
 
-      Ein Shift-Reduce-Parser arbeitet mit Hilfe einer Tabelle, in der
-      hinterlegt ist, wie der Parser in einem bestimmten Zustand die Eingaben verarbeiten muss.     
-\item Die Theorie, wie eine solche Tabelle sinnvoll mit Informationen gefüllt werden kann,
-      entwickeln wir dann in dem folgenden Abschnitt: Zunächst diskutieren wir die
-      \blue{SLR-Parser} (\blue{simple LR-Parser}).  Dies ist die einfachste Klasse von Shift-Reduce-Parsern.
-\item Das Konzept der SLR-Parser ist leider für die Praxis nicht mächtig genug.  Daher verfeinern wir
-      dieses Konzept und erhalten so die Klasse der
-      \blue{kanonischen LR-Parser}.    
-\item Da die Tabellen für LR-Parser in der Praxis häufig groß werden, vereinfachen wir diese Tabellen etwas und
-      erhalten dann das Konzept der \blue{LALR-Parser}, das von der Mächtigkeit zwischen dem Konzept der
-      \blue{SLR-Parser} und dem Konzept der \blue{LR-Parser} liegt.
+      A \emph{shift-reduce parser} operates with a table that specifies how the parser should process inputs in
+      a given state. 
+\item We then develop the theory of how such a table can be meaningfully filled with information in the
+      following section: First, we discuss the \blue{SLR parsers} (simple LR parsers), which are the simplest
+      class of shift-reduce parsers. 
+\item Unfortunately, the concept of SLR parsers is not powerful enough for practical use. Therefore, we refine
+      this concept to obtain the class of \blue{canonical LR parsers}.
+\item As the tables for LR parsers often become large in practice, we simplify these tables slightly and
+      then obtain the concept of LALR parsers, which in terms of power lies between the concept of
+      SLR parsers and that of LR parsers.
 \end{enumerate}
-In dem folgenden Kapitel werden wir dann den Parser-Generator \textsc{Ply} diskutieren, der ein LALR-Parser ist.
+In the following chapter, we will discuss the parser generator \textsc{Ply}, which is an LALR parser.
+
 
 \section{Bottom-Up-Parser}
-Die mit \textsc{Antlr} erstellten Parser sind sogenannte \blue{Top-Down-Parser}: Ausgehend von dem
-Start-Symbol der Grammatik wurde versucht, eine gegebene Eingabe durch Anwendung der verschiedenen
-Grammatik-Regeln zu parsen.  Die Parser, die wir nun entwickeln werden, sind
-\blue{Bottom-Up-Parser}.  Bei einem solchen Parser ist die Idee, dass wir von dem zu parsenden
-String ausgehen und dort Terminale anhand der rechten Seiten der Grammatik-Regeln zusammenfassen.  
-Wir geben ein Beispiel und versuchen den String ``\texttt{1 + 2 * 3}'' mit der Grammatik, die durch die
-Regeln 
+The parsers created with \textsc{Antlr} are known as \textcolor{blue}{top-down parsers}: starting from the start symbol of the grammar, they attempt to parse a given input by applying various grammar rules. In contrast, the parsers we are now going to develop are \textcolor{blue}{bottom-up parsers}. In such parsers, the idea is to start with the string to be parsed and group terminals based on the right-hand sides of the grammar rules.
+
+As an example, consider parsing the string ``\texttt{1 + 2 * 3}'' using the grammar defined by the following rules:
 \[ 
 \begin{array}[t]{rcl}
-  E & \rightarrow & E \quoted{+} P \;|\; P  \\[0.1cm]
-  P & \rightarrow & P \quoted{*} F \;|\; F  \\[0.1cm]
-  F & \rightarrow & \squoted{1} \;|\; \squoted{2} \;|\; \squoted{3} 
+  e & \rightarrow & e \quoted{+} p \;|\; p  \\[0.1cm]
+  p & \rightarrow & p \quoted{*} f \;|\; f  \\[0.1cm]
+  f & \rightarrow & \squoted{1} \;|\; \squoted{2} \;|\; \squoted{3} 
 \end{array}
 \]
-gegeben ist,  zu parsen.  Dazu suchen wir in diesem String
-Teilstrings, die den rechten Seiten von Grammatikregeln entsprechen, wobei wir den String
-von links nach rechts durchsuchen.  Auf diese Art versuchen wir,
-einen Parse-Baum rückwärts von unten aufzubauen:
+To parse this string, we look for substrings that correspond to the right-hand sides of grammar rules, scanning the string from left to right. This way, we try to construct a parse tree in reverse from bottom to top:
 \\[0.2cm]
 \hspace*{0.3cm} 
 $
 \begin{array}[t]{lcll}
-\texttt{1 + 2 * 3} & \Leftarrow & F \texttt{ + 2 * 3} 
-                                & (\mbox{Regel:\ }  F \rightarrow  \squoted{1}) \\
-                   & \Leftarrow & P \texttt{ + 2 * 3} 
-                                & (\mbox{Regel:\ } P \rightarrow F) \\
-                   & \Leftarrow & E \texttt{ + 2 * 3} 
-                                & (\mbox{Regel:\ }  E \rightarrow  P) \\
-                   & \Leftarrow & E \texttt{ + } F \texttt{ * 3} 
-                                & (\mbox{Regel:\ } F \rightarrow  \squoted{2}) \\
-                   & \Leftarrow & E \texttt{ + } P \texttt{ * 3} 
-                                & (\mbox{Regel:\ } P \rightarrow F) \\
-                   & \Leftarrow & E \texttt{ + } P \texttt{ * } F 
-                                & (\mbox{Regel:\ } F \rightarrow \squoted{3}) \\
-                   & \Leftarrow & E \texttt{ + } P & (\mbox{Regel:\ } P \rightarrow P \quoted{*} F) \\
-                   & \Leftarrow & E                & (\mbox{Regel:\ } E \rightarrow E \quoted{+} P) 
+\texttt{1 + 2 * 3} & \Leftarrow & f \texttt{ + 2 * 3} 
+                                & (\mbox{rule:\ }  f \rightarrow  \squoted{1}) \\
+                   & \Leftarrow & p \texttt{ + 2 * 3} 
+                                & (\mbox{rule:\ } p \rightarrow f) \\
+                   & \Leftarrow & e \texttt{ + 2 * 3} 
+                                & (\mbox{rule:\ }  e \rightarrow  p) \\
+                   & \Leftarrow & e \texttt{ + } f \texttt{ * 3} 
+                                & (\mbox{rule:\ } f \rightarrow  \squoted{2}) \\
+                   & \Leftarrow & e \texttt{ + } p \texttt{ * 3} 
+                                & (\mbox{rule:\ } p \rightarrow f) \\
+                   & \Leftarrow & e \texttt{ + } p \texttt{ * } f 
+                                & (\mbox{rule:\ } f \rightarrow \squoted{3}) \\
+                   & \Leftarrow & e \texttt{ + } p & (\mbox{rule:\ } p \rightarrow p \quoted{*} f) \\
+                   & \Leftarrow & e                & (\mbox{rule:\ } e \rightarrow e \quoted{+} P) 
 \end{array}
 $
 \\[0.2cm]
-Im ersten Schritt haben wir beispielsweise die Grammatik-Regel $F \rightarrow \squoted{1}$
-benutzt, um den String ``\texttt{1}'' durch $F$ zu ersetzen und dabei dann den String 
-``F\texttt{ + 2 * 3}'' erhalten.  Im zweiten Schritt haben wir die Regel
-$P \rightarrow F$ benutzt, um $F$ durch $P$ zu
-ersetzen.  Auf diese Art und Weise haben wir am Ende den ursprünglichen String 
-``\texttt{1 + 2 * 3}'' auf $E$ zurück geführt.  Wir können an dieser Stelle zwei
-Beobachtungen machen:
+In the first step, we used the grammar rule \(F \rightarrow \squoted{1}\) to replace the string ``\texttt{1}''
+with \(F\), thus obtaining the string ``F\texttt{ + 2 * 3}''. In the second step, we used the rule \(P
+\rightarrow F\) to replace \(F\) with \(P\). In this manner, we ultimately traced the original string
+``\texttt{1 + 2 * 3}'' back to \(E\). At this point, we can make two observations: 
 \begin{enumerate}[(a)]
-\item Wir ersetzen bei unserem Vorgehen immer den am weitesten links stehenden Teilstring,
-      der ersetzt werden kann, wenn wir den anfangs gegebenen String auf das Start-Symbol
-      der Grammatik zurück führen wollen.
-\item Schreiben wir die Ableitung, die wir rückwärts konstruiert haben, noch einmal
-      in der richtigen Reihenfolge hin, so erhalten wir:
+\item In our approach, we always replace the leftmost substring that can be replaced when we want to trace the
+  initially given string back to the start symbol of the grammar. 
+\item If we write down the derivation that we have constructed backwards, in the correct order, we obtain:
 \\[0.2cm]
 \hspace*{1.3cm}
 $
 \begin{array}[t]{lcl}
-E  & \Rightarrow & E \texttt{ + } P \\
-   & \Rightarrow & E \texttt{ + } P \texttt{ * } F \\
-   & \Rightarrow & E \texttt{ + } P \texttt{ * 3} \\
-   & \Rightarrow & E \texttt{ + } F \texttt{ * 3} \\
-   & \Rightarrow & E \texttt{ + 2 * 3} \\
-   & \Rightarrow & P \texttt{ + 2 * 3} \\
-   & \Rightarrow & F \texttt{ + 2 * 3} \\
+e  & \Rightarrow & e \texttt{ + } p \\
+   & \Rightarrow & e \texttt{ + } p \texttt{ * } f \\
+   & \Rightarrow & e \texttt{ + } p \texttt{ * 3} \\
+   & \Rightarrow & e \texttt{ + } f \texttt{ * 3} \\
+   & \Rightarrow & e \texttt{ + 2 * 3} \\
+   & \Rightarrow & p \texttt{ + 2 * 3} \\
+   & \Rightarrow & f \texttt{ + 2 * 3} \\
    & \Rightarrow & \texttt{1 + 2 * 3}
 \end{array}
 $
-\\[0.2cm]
-       Wir sehen hier, dass bei dieser Ableitung immer die am weitesten rechts stehende
-       syntaktische Variable ersetzt worden ist.  Eine derartige Ableitung wird als
-       \blue{Rechts-Ableitung} \index{Rechts-Ableitung} bezeichnet.   
+   \\[0.2cm]
+   We see here that in this derivation, the rightmost syntactic variable is always the one being replaced. Such
+   a derivation is referred to as a \textcolor{blue}{rightmost derivation}\index{rightmost derivation}. 
 
-       Im Gegensatz dazu ist es bei den Ableitungen, die ein \blue{Top-Down-Parser}
-       erzeugt, genau umgekehrt:  Dort wird immer die am weitesten links stehende
-       syntaktische Variable ersetzt.  Die mit einem solchen Parser erzeugten Ableitungen
-       heißen daher \blue{Links-Ableitungen}. \index{Links-Ableitung}
+   In contrast, the derivations produced by a \textcolor{blue}{top-down parser} are exactly the opposite:
+   there, the leftmost syntactic variable is always replaced. Therefore, the derivations created with such a
+   parser are called \textcolor{blue}{leftmost derivations}\index{leftmost derivation}. 
 \end{enumerate}
-Die obigen beiden Beobachtungen sind der Grund, weshalb die Parser, die wir in diesem
-Kapitel diskutieren, als \blue{LR-Parser} bezeichnet werden.  Das \blue{L} steht für
-\blue{\underline{l}eft to right} und beschreibt die Vorgehensweise, dass der String immer
-von links nach rechts durchsucht wird, während das \blue{R} für 
-\blue{\underline{r}everse rightmost derivation} steht
-und ausdrückt, dass solche Parser eine Rechts-Ableitung rückwärts konstruieren.
+The above two observations are the reason why the parsers discussed in this chapter are referred to as
+\textcolor{blue}{LR Parsers}. The \textcolor{blue}{L} stands for \textcolor{blue}{\underline{l}eft to right}
+and describes the approach of always scanning the string from left to right, while the \textcolor{blue}{R}
+stands for \textcolor{blue}{\underline{r}everse rightmost derivation} and indicates that such parsers construct
+a rightmost derivation in reverse. 
 \vspace*{0.2cm}
 
 \noindent
-Bei der Implementierung eines LR-Parsers stellen sich zwei Fragen:
+In the implementation of an LR parser, two questions arise:
 \begin{enumerate}
-\item Welche Teilstrings ersetzen wir?
-\item Welche Regeln verwenden wir dabei?
+\item Which substrings do we replace?
+\item Which rules do we use in the process?
 \end{enumerate}
-Die Beantwortung dieser Fragen ist im Allgemeinen nicht trivial.  Zwar gehen wir die Strings immer
-von links nach rechts durch, aber damit ist noch nicht unbeding klar, welchen Teilstring wir
-ersetzen, denn die potentiell zu ersetzenden Teilstrings können sich durchaus überlappen.
-Betrachten wir beispielsweise das Zwischenergebnis
+Answering these questions is generally non-trivial. Although we always scan the strings from left to right, it is not immediately clear which substring we should replace, as the potentially replaceable substrings can overlap. Consider, for example, the intermediate result
 \\[0.2cm]
 \hspace*{1.3cm}
-$E \texttt{ + } P \texttt{ * 3}$,
+\(e \texttt{ + } p \texttt{ * 3}\),
 \\[0.2cm]
-das wir oben im fünften Schritt erhalten haben.
-Hier könnten wir den Teilstring ``P'' mit Hilfe der Regel
-\\[0.2cm]
-\hspace*{1.3cm}
-$E \rightarrow P$
-\\[0.2cm]
-durch ``E'' ersetzen.  Dann würden wir den String
+that we obtained in the fifth step above.
+Here, we could replace the substring ``p'' using the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$E \texttt{ + } E \texttt{ * 3}$
+\(e \rightarrow p\)
 \\[0.2cm]
-erhalten.  Die einzigen Reduktionen, die wir jetzt noch durchführen können, führen über die
-Zwischenergebnisse $E \texttt{ + } E \texttt{ * }  F$ und $E \texttt{ + } E \texttt{ * } P$
-zu dem String
+with ``e''. Then, we would obtain the string
 \\[0.2cm]
 \hspace*{1.3cm}
-$E \texttt{ + } E \texttt{ * }  E$,
+\(e \texttt{ + } e \texttt{ * 3}\).
 \\[0.2cm]
-der sich dann  aber mit der oben angegebenen Grammatik nicht mehr reduzieren lässt.  
-Die Antwort auf die obigen Fragen, welchen Teilstring wir ersetzen und welche Regel wir
-verwenden, setzt einiges an Theorie voraus, die wir
-in den folgenden Abschnitten entwickeln werden.
-
+The only reductions we can now perform, via the intermediate results \(e \texttt{ + } e \texttt{ * } f\) and
+\(e \texttt{ + } e \texttt{ * } p\), lead to the string 
+\\[0.2cm]
+\hspace*{1.3cm}
+\(e \texttt{ + } e \texttt{ * } e\),
+\\[0.2cm]
+which then cannot be reduced any further with the grammar given above. The answers to the above questions,
+which substring we replace and which rule we use, require a fair amount of theory, which we will develop in the
+following sections. 
 
 \section{Shift-Reduce-Parser}
 \blue{Shift-reduce parsing} is one way to implement bottom up parsing.
