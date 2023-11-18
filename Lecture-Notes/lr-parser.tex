@@ -1,175 +1,153 @@
 \section{SLR-Parser}
-In diesem Abschnitt zeigen wir, wie wir für eine gegebene kontextfreie Grammatik $G$ 
-die im letzten Abschnitt verwendeten Funktionen 
+In this section, we demonstrate how to compute the functions 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}: Q \times T \rightarrow \textsl{Action}$ \quad and \quad $\textsl{goto}: Q \times V \rightarrow Q$
+\(\textsl{action}: Q \times T \rightarrow \textsl{Action}\) \quad and \quad \(\textsl{goto}: Q \times V \rightarrow Q\)
 \\[0.2cm]
-berechnen können.  Dazu klären wir als erstes, welche Informationen die in der Menge $Q$ enthaltenen Zustände 
-enthalten sollen.  Wir werden diese Zustände so definieren, dass sie die Information enthalten,
-welche Regel der Shift-Reduce-Parser anzuwenden versucht, welcher Teil der rechten Seite einer Grammatik-Regel 
-bereits erkannt worden ist und was noch erwartet wird.  Zu diesem Zweck definieren wir den Begriff
-einer \blue{markierten Regel}.   In der englischen Originalliteratur \cite{knuth:65} wird hier
-unglücklicherweise der inhaltsleere Begriff ``\blue{item}'' verwendet.
+that have been used in the last section to build a shift-reduce parser for a given context-free grammar \(G\).
+For this purpose, we first clarify what information the states contained in the set \(Q\) should hold. We will
+define these states in such a way that they contain information about which rule the shift-reduce parser is
+attempting to apply, which part of the right hand side of a grammar rule has already been recognized, and what
+are the symbols that are still expected. To this end, we define the concept of a \textcolor{blue}{marked rule}.
+Unfortunately, the original English literature \cite{knuth:65} uses the rather meaningless term
+``\textcolor{blue}{item}'' instead of the notion of a \emph{marked rule}. 
 
-\begin{Definition}[markierte Regel]
-  Eine \blue{markierte Regel}\index{markierte Regel} einer Grammatik $G = \langle V, T, R, s \rangle$ ist ein Tripel
+\begin{Definition}[Marked Rule]
+  A \textcolor{blue}{marked rule} \index{marked rule} of a context-free grammar \(G = \langle V, T, R, s
+  \rangle\) is a triple 
   \\[0.2cm]
   \hspace*{1.3cm}
-  $\langle a, \beta, \gamma \rangle$,
+  \(( a, \beta, \gamma )\),
   \\[0.2cm]
-  für das gilt
-  \\[0.2cm]
-  \hspace*{1.3cm}
-  $(a \rightarrow \beta \gamma) \in R$.
-  \\[0.2cm]
-  Wir schreiben eine markierte Regel der Form $\langle a, \beta, \gamma \rangle$ als
+  such that
   \\[0.2cm]
   \hspace*{1.3cm}
-  $a \rightarrow \beta \bullet \gamma$. \qed 
+  \((a \rightarrow \beta \gamma) \in R\).
+  \\[0.2cm]
+  A marked rule of the form \(\langle a, \beta, \gamma \rangle\) is written as
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  \(a \rightarrow \beta \bullet \gamma\). \eox
 \end{Definition}
 
 \noindent
-Die markierte Regel $a \rightarrow \beta \bullet \gamma$ drückt aus, dass der Parser versucht,
-mit der Regel $a \rightarrow \beta \gamma$ ein $a$ zu parsen, dabei schon $\beta$ gesehen
-hat und als nächstes versucht, $\gamma$ zu erkennen.  Das Zeichen $\bullet$ markiert also die
-Position innerhalb der rechten Seite der Regel, bis zu der wir die rechte Seite der Regel
-schon gelesen haben.
-Die Idee ist jetzt, dass wir die Zustände eines SLR-Parsers als Mengen von markierten Regeln
-darstellen.  Um diese Idee zu veranschaulichen, betrachten wir ein konkretes Beispiel:
-Wir gehen von der in Abbildung \ref{fig:Expr.grammar} auf Seite \pageref{fig:Expr.grammar}
-gezeigten Grammatik für arithmetische Ausdrücke aus, wobei wir diese Grammatik noch um ein neues Start-Symbol
-$\widehat{s}$ und die Regel
+The marked rule \(a \rightarrow \beta \bullet \gamma\) indicates that the parser is trying to parse an \(a\)
+with the rule \(a \rightarrow \beta \gamma\), having already seen \(\beta\) and is next attempting to recognize
+\(\gamma\). The symbol \(\bullet\) thus marks the part of the right side of the rule that we have
+already read.  Now the idea is to represent the states of an SLR parser as \blue{sets of marked rules}. To illustrate
+this idea, let's consider a specific example: we start with the grammar for arithmetic expressions shown in
+Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}, extending this grammar by a new start symbol
+\(\widehat{s}\) and the rule 
 \\[0.2cm]
-\hspace*{1.3cm} $\widehat{s} \rightarrow  \textsl{expr}\;\symbol{36}$
+\hspace*{1.3cm} \(\widehat{s} \rightarrow  \textsl{expr}\;\symbol{36}\)
 \\[0.2cm]
-erweitern.  Der Start-Zustand enthält offenbar die markierte Regel
+where the symbol ``$\symbol{36}$'' is used to denote \textsc{Eof}, i.e.~the end of the input.
+The start state clearly contains the marked rule
 \\[0.2cm]
-\hspace*{1.3cm} $\widehat{s} \rightarrow \varepsilon \bullet \textsl{expr}\, \symbol{36}$,
+\hspace*{1.3cm} \(\widehat{s} \rightarrow \lambda \bullet \textsl{expr}\; \symbol{36}\),
 \\[0.2cm]
-denn am Anfang versuchen wir ja, das Start-Symbol $\widehat{s}$ herzuleiten.  Die Komponente
-$\varepsilon$ drückt aus, dass wir bisher noch nichts verarbeitet haben.  Neben dieser
-markierten Regel muss der Start-Zustand dann außerdem die markierten Regeln
+since at the beginning we are trying to derive the start symbol \(\widehat{s}\).
+The component \(\lambda\) indicates that we have not yet processed anything. In addition to this marked rule, the start state must also contain the marked rules
 \begin{enumerate}
-\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{expr} \aquoted{+} \textsl{product}$,
-\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{expr} \aquoted{-} \textsl{product}$
-      \qquad und
-\item $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$
+\item \(\textsl{expr} \rightarrow \lambda \bullet \textsl{expr} \aquoted{+} \textsl{product}\),
+\item \(\textsl{expr} \rightarrow \lambda \bullet \textsl{expr} \aquoted{-} \textsl{product}\) \qquad and
+\item \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\)
 \end{enumerate}
-enthalten, denn es könnte ja beispielsweise sein, dass wir die Regel
+because, for example, it may be necessary to use the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{product}$
+\(\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{product}\)
 \\[0.2cm]  
-verwenden müssen, um die gesuchte \textsl{expr} herzuleiten.  Genauso gut könnte es natürlich sein,
-dass wir stattdessen die Regel
+to derive the sought \textsl{expr}. Similarly, it could be that instead we need to use the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{expr} \rightarrow \textsl{product}$
+\(\textsl{expr} \rightarrow \textsl{product}\)
 \\[0.2cm]
-benutzen müssen.  Das erklärt, warum wir die markierte Regel
-\\[0.2cm]
-\hspace*{1.3cm}
- $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$
-\\[0.2cm]
-in den Start-Zustand aufnehmen müssen, denn 
-da wir am Anfang noch gar nicht wissen können, welche Regel wir benötigen, muss
-der Start-Zustand daher alle diese Regeln enthalten.  Haben wir erst die markierte Regel
+This explains why we must include the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
- $\textsl{expr} \rightarrow \varepsilon \bullet \textsl{product}$ 
+ \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\)
 \\[0.2cm]
-zum Start-Zustand hinzugefügt, so sehen wir, dass wir eventuell als nächstes ein $\textsl{product}$
-lesen müssen.  Daher sehen wir,  dass der Start-Zustand außerdem noch die folgenden markierten
-Regeln enthält:  
+in the start state, because at the beginning we cannot yet know which rule we will need, so the start state must contain all these rules. Once we have added the marked rule
+\\[0.2cm]
+\hspace*{1.3cm}
+ \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\) 
+\\[0.2cm]
+to the start state, we see that we might need to read a \textsl{product} next. Therefore, the start state also contains the following marked rules:  
 \begin{enumerate}
-\item[4.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{*} \textsl{factor}$,
-\item[5.] $\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{/} \textsl{factor}$,
-\item[6.] $\textsl{product} \rightarrow \bullet\; \textsl{factor}$,
+\item[4.] \(\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{*} \textsl{factor}\),
+\item[5.] \(\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{/} \textsl{factor}\),
+\item[6.] \(\textsl{product} \rightarrow \bullet\; \textsl{factor}\),
 
-          Nun zeigt die sechste Regel, dass wir eventuell als erstes einen \textsl{factor}
-          lesen werden.  Daher fügen wir zu dem Start-Zustand auch die folgenden beiden markierten
-          Regeln hinzu: 
-\item[7.] $\textsl{factor} \rightarrow \bullet \aquoted{(} \textsl{expr} \aquoted{)}$,
-\item[8.] $\textsl{factor} \rightarrow \bullet\; \textsc{Number}$.
+      Now, the sixth rule indicates that we might first read a \textsl{factor}. Therefore, we add the following two marked rules to the start state: 
+\item[7.] \(\textsl{factor} \rightarrow \bullet \aquoted{(} \textsl{expr} \aquoted{)}\),
+\item[8.] \(\textsl{factor} \rightarrow \bullet\; \textsc{Number}\).
 \end{enumerate}
-Insgesamt sehen wir, dass der Start-Zustand aus einer Menge mit 8 markierten Regeln besteht.
-Das oben gezeigte System, aus einer gegebenen Regel weitere Regeln abzuleiten,
-formalisieren wir in dem Begriff des \blue{Abschlusses} einer Menge von markierten
-Regeln.
+Overall, we see that the start state consists of a set of 8 marked rules.
+The system shown above, for deriving further rules from a given rule,
+is formalized in the concept of the \textcolor{blue}{closure} of a set of marked rules.
 
-\begin{Definition}[$\textsl{closure}(\mathcal{M})$]
-  Es sei $\mathcal{M}$ eine Menge markierter Regeln.  Dann definieren wir den 
-  \blue{Abschluss}\index{Abschluss  einer Menge markierter Regeln} dieser Menge
-  als die kleinste Menge $\mathcal{K}$ markierter Regeln, für die folgendes gilt:
+\begin{Definition}[\(\textsl{closure}(\mathcal{M})\)]
+  Let \(\mathcal{M}\) be a set of marked rules. Then we define the \textcolor{blue}{closure} \index{closure of a set of marked rules} of this set as the smallest set \(\mathcal{K}\) of marked rules such that:
   \begin{enumerate}
-  \item $\mathcal{M} \subseteq \mathcal{K}$,
+  \item \(\mathcal{M} \subseteq \mathcal{K}\),
 
-        der Abschluss umfasst also die ursprüngliche Regel-Menge.
-  \item Ist einerseits
+        i.e.~the closure includes the original set of rules.
+  \item If on the one hand
         \\[0.2cm]
         \hspace*{1.3cm}
-        $a \rightarrow \beta \bullet c\, \delta$
+        \(a \rightarrow \beta \bullet c\, \delta\)
         \\[0.2cm]
-        eine markierte Regel aus der Menge $\mathcal{K}$, wobei $c$ eine syntaktische
-        Variable ist, und ist andererseits
-        \\[0.2cm]
-        \hspace*{1.3cm}
-        $c \rightarrow \gamma$
-        \\[0.2cm]
-        eine Grammatik-Regel der zu Grunde liegenden Grammatik $G$, so ist auch die markierte
-        Regel 
+        is a marked rule from the set \(\mathcal{K}\), where \(c\) is a syntactic variable, and on the other hand
         \\[0.2cm]
         \hspace*{1.3cm}
-        $c \rightarrow \bullet \gamma$
+        \(c \rightarrow \gamma\)
         \\[0.2cm]
-        ein Element der Menge $\mathcal{K}$.  Als Formel schreibt sich dies wie folgt:
+        is a grammar rule of the underlying grammar \(G\), then the marked rule 
         \\[0.2cm]
         \hspace*{1.3cm}
-        $(a \rightarrow \beta \bullet c\, \delta) \in \mathcal{K} 
+        \(c \rightarrow \bullet \gamma\)
+        \\[0.2cm]
+        is also an element of the set \(\mathcal{K}\). Formally, this is written as follows:
+        \\[0.2cm]
+        \hspace*{1.3cm}
+        \((a \rightarrow \beta \bullet c\, \delta) \in \mathcal{K} 
          \;\wedge\; 
          (c \rightarrow \gamma) \in R
          \;\Rightarrow\; (c \rightarrow \bullet \gamma) \in \mathcal{K}
-        $
+        \)
   \end{enumerate}
-  Die so definierte Menge $\mathcal{K}$ ist eindeutig bestimmt und wird im Folgenden mit
-  $\textsl{closure}(\mathcal{M})$ \index{$\textsl{closure}(\mathcal{M})$} bezeichnet. \eox
+  The set \(\mathcal{K}\) defined in this way is uniquely determined and is referred to as \(\textsl{closure}(\mathcal{M})\) \index{\(\textsl{closure}(\mathcal{M})\)} in the following. \eox
 \end{Definition}
 
 \noindent
-\textbf{Bemerkung}: Wenn Sie sich an den Earley-Algorithmus erinnern, dann sehen Sie, dass bei der
-Berechnung des Abschlusses dieselbe Berechnung wie bei der Vorhersage-Operation
-des  Earley-Algorithmus durchgeführt wird.  \eox
+\textbf{Remark}: If you recall the Earley algorithm, you will notice that the calculation of the closure is the
+same as the \emph{prediction operation} in the Earley algorithm. \eox 
 \vspace*{0.3cm}
 
 \noindent
-Für eine gegebene Menge $\mathcal{M}$ von markierten Regeln, kann die Berechnung von
-$\mathcal{K} := \textsl{closure}(\mathcal{M})$ iterativ erfolgen:
+For a given set \(\mathcal{M}\) of marked rules, the computation of \(\mathcal{K} := \textsl{closure}(\mathcal{M})\) can be done iteratively:
 \begin{enumerate}
-\item Zunächst setzen wir $\mathcal{K} := \mathcal{M}$.
-\item Anschließend suchen wir alle Regeln der Form
+\item Initially, set \(\mathcal{K} := \mathcal{M}\).
+\item Then, find all rules of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $a \rightarrow \beta \bullet c\, \delta$
+      \(a \rightarrow \beta \bullet c\, \delta\)
       \\[0.2cm]
-      aus der Menge $\mathcal{K}$, für die $c$ eine syntaktische Variable ist und fügen dann
-      für alle Regeln der Form $c \rightarrow \gamma$ die neue markierte Regel
+      within the set \(\mathcal{K}\), where \(c\) is a syntactic variable. Subsequently, for all rules of the form \(c \rightarrow \gamma\), add the new marked rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $c \rightarrow \bullet\gamma$
+      \(c \rightarrow \bullet\gamma\)
       \\[0.2cm]
-      in die Menge $\mathcal{K}$ ein. Dieser Schritt wird solange iteriert, bis keine neuen Regeln mehr gefunden werden.
+      into the set \(\mathcal{K}\). Repeat this step until no new rules are found.
 \end{enumerate}
-\pagebreak
 
 \example
-Wir gehen von der in Abbildung
-\ref{fig:Expr.grammar} auf Seite \pageref{fig:Expr.grammar} gezeigten Grammatik für arithmetische Ausdrücke aus
-und betrachten die Menge
+Starting from the grammar for arithmetic expressions shown in Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}, let's consider the set
 \[ \mathcal{M} := 
    \bigl\{ \textsl{product} \rightarrow \textsl{product} \aquoted{*}\! \bullet \textsl{factor} \bigr\}
 \]
-Für die Menge $\textsl{closure}(\mathcal{M})$ finden wir dann
+For the set \(\textsl{closure}(\mathcal{M})\), we then find
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
@@ -183,176 +161,168 @@ $
 \end{array}$  \eox
 \vspace*{0.3cm}
 
-
 \noindent
-Unser Ziel ist es, für eine gegebene kontextfreie Grammatik $G = \langle V, T, R, s \rangle$ einen
-Shift-Reduce-Parser 
+Our goal is to define a Shift-Reduce-Parser
 \\[0.2cm]
 \hspace*{1.3cm}
-$P = \langle Q, q_0, \textsl{action}, \textsl{goto} \rangle$
+\(P = \langle Q, q_0, \textsl{action}, \textsl{goto} \rangle\)
 \\[0.2cm]
-zu definieren.  Um dieses Ziel zu erreichen, müssen wir als erstes festlegen,
-wie wir die Zustände der Menge $Q$ definieren wollen, denn dann funktioniert die Definition der
-restlichen Komponenten fast von alleine.  Wir hatten oben schon gesagt, dass wir die Zustände
-als Mengen von markierten Regeln definieren.  Wir definieren zunächst
-\\[0.2cm]
-\hspace*{1.3cm}
-$\Gamma := \bigl\{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \gamma) \in R \bigr\}$
-\\[0.2cm]
-als die Menge aller markierten Regeln der Grammatik.  Nun ist es allerdings nicht sinnvoll,
-beliebige Teilmengen von $\Gamma$ als Zustände zuzulassen:  Eine Teilmenge $\mathcal{M}
-\subseteq \Gamma$ kommt nur dann als Zustand in Betracht, wenn die Menge $\mathcal{M}$ unter
-der Funktion $\textsl{closure}()$ \blue{abgeschlossen} ist, wenn also
-$\textsl{closure}(\mathcal{M}) = \mathcal{M}$ gilt.  Wir definieren daher
+for a given context-free grammar \(G = \langle V, T, R, s \rangle\). To achieve this goal, we first need to
+determine how to define the states in the set \(Q\), as this will almost automatically define the remaining
+components. As mentioned earlier, we define the states as sets of marked rules. Let's first define 
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q := \bigl\{ \mathcal{M} \in 2^\Gamma \mid \textsl{closure}(\mathcal{M}) = \mathcal{M} \bigr\}$.
+\(\Gamma := \bigl\{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \gamma) \in R \bigr\}\)
 \\[0.2cm]
-Die Interpretation der Mengen $\mathcal{M} \in Q$ ist die, dass ein Zustand $\mathcal{M}$ genau die markierten
-Regeln enthält, die in der durch den Zustand beschriebenen Situation angewendet werden können. 
+as the set of all marked rules of the grammar. However, it is not sensible to allow arbitrary subsets of
+\(\Gamma\) as states: A subset \(\mathcal{M} \subseteq \Gamma\) is only considered as a state if the set
+\(\mathcal{M}\) is \blue{closed} under the function \(\textsl{closure}()\), meaning
+\(\textsl{closure}(\mathcal{M}) = \mathcal{M}\). Therefore, we define 
+\\[0.2cm]
+\hspace*{1.3cm}
+\(Q := \bigl\{ \mathcal{M} \in 2^\Gamma \mid \textsl{closure}(\mathcal{M}) = \mathcal{M} \bigr\}\).
+\\[0.2cm]
+The interpretation of the sets \(\mathcal{M} \in Q\) is that a state \(\mathcal{M}\) contains exactly those
+marked rules that can be applied in the situation described by the state. 
 
-
-Zur Vereinfachung der folgenden Konstruktionen erweitern wir die
-Grammatik $G = \langle V, T, R, s \rangle$ durch Einführung eines neuen Start-Symbols $\widehat{s}$
-und eines neuen Tokens $\symbol{36}$ zu der Grammatik 
+To simplify the following constructions, we extend the
+grammar \(G = \langle V, T, R, s \rangle\) by introducing a new start symbol \(\widehat{s}\)
+and a new token \(\symbol{36}\) to the grammar
 \\[0.2cm]
 \hspace*{1.3cm}
-$\widehat{G} = 
+\(\widehat{G} = 
  \Bigl\langle V \cup \{ \widehat{s} \}, T \cup \{\symbol{36}\}, R \cup \{ \widehat{s} \rightarrow s\, \symbol{36} \}, \widehat{s} \Bigr\rangle
-$.
+\).
 \\[0.2cm]
-Das Token $\symbol{36}$ steht dabei für das Ende der Eingabe.
-Die Grammatik $\widehat{G}$ bezeichnen wir als die \blue{augmentierte Grammatik}.\index{augmentierte Grammatik}
-Die Verwendung der augmentierten Grammatik ermöglicht die nun folgende Definition des Start-Zustands.
-Wir setzen nämlich:
-\\[0.2cm]
-\hspace*{1.3cm}
-$ q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s\,\symbol{36} \bigr\} \Bigr)$.
-\\[0.2cm]
-Als nächstes konstruieren wir die Funktion $\textsl{goto}()$.  Die Definition lautet:
+The token \(\symbol{36}\) represents the end of the input.
+We refer to the grammar \(\widehat{G}\) as the \blue{augmented grammar}.\index{augmented grammar}
+The use of the augmented grammar enables the following definition of the start state.
+We set:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{goto}(\mathcal{M}, c) := \textsl{closure}\Bigl( \bigl\{ 
+\( q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s\,\symbol{36} \bigr\} \Bigr)\).
+\\[0.2cm]
+Next, we construct the function \(\textsl{goto}()\). The definition is as follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+\(\textsl{goto}(\mathcal{M}, c) := \textsl{closure}\Bigl( \bigl\{ 
    a \rightarrow \beta\, c \bullet \delta \mid (a \rightarrow \beta \bullet c\, \delta) \in \mathcal{M} 
    \bigr\} \Bigr)
-$.
+\).
 \\[0.2cm]
-Um diese Definition zu verstehen, nehmen wir an, dass der Parser in einem Zustand ist, in dem er
-versucht, ein $a$ mit Hilfe der Regel $a \rightarrow \beta\, c\, \delta$ zu erkennen und dass dabei bereits
-der Teilstring $\beta$ erkannt wurde.  Dieser Zustand wird durch die markierte Regel
-\\[0.2cm]
-\hspace*{1.3cm}
-$a \rightarrow \beta \bullet c\, \delta$ 
-\\[0.2cm] 
-beschrieben.  Wird nun ein $c$ erkannt, so kann der Parser von dem Zustand, der die 
-Regel $a \rightarrow \beta \bullet c\, \delta$ enthält in einen Zustand, der die Regel 
-$a \rightarrow \beta\, c \bullet \delta$ 
-enthält, übergehen.  Daher erhalten wir die oben angegebene Definition der Funktion $\textsl{goto}(\mathcal{M},c)$.
-Für die gleich folgende Definition der Funktion $\textsl{action}(\mathcal{M}, t)$ ist es
-nützlich, die Definition der Funktion $\textsl{goto}$ auf Terminale zu erweitern.  
-Für Terminale $t \in T$ setzen wir:
+To understand this definition, assume that the parser is in a state where it
+tries to parse an \(a\) using the rule \(a \rightarrow \beta\, c\, \delta\) and that the substring \(\beta\) has already been recognized. This state is described by the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{goto}(\mathcal{M}, t) := \textsl{closure}\Bigl( \bigl\{ 
+\(a \rightarrow \beta \bullet c\, \delta\)
+\\[0.2cm]
+If a \(c\) is now recognized, the parser can transition from the state containing the
+rule \(a \rightarrow \beta \bullet c\, \delta\) to a state containing the rule
+\(a \rightarrow \beta\, c \bullet \delta\).
+Therefore, we get the above definition of the function \(\textsl{goto}(\mathcal{M},c)\).
+For the subsequent definition of the function \(\textsl{action}(\mathcal{M}, t)\), it is
+useful to extend the definition of the function \(\textsl{goto}\) to terminals.
+For terminals \(t \in T\) we set:
+\\[0.2cm]
+\hspace*{1.3cm}
+\(\textsl{goto}(\mathcal{M}, t) := \textsl{closure}\Bigl( \bigl\{ 
    a \rightarrow \beta\, t \bullet \delta \mid (a \rightarrow \beta \bullet t\, \delta) \in \mathcal{M} 
    \bigr\} \Bigr)
-$.
+\).
 \\[0.2cm]
-Bevor wir die Funktion \textsl{action} berechnen können, müssen wir zwei weitere Funktionen definieren, 
-die Funktionen \textsl{First} und \textsl{Follow}.
+Before we can compute the function \textsl{action}, we need to define two more functions, 
+the functions \textsl{First} and \textsl{Follow}.
 
-\subsection{Die Funktionen \textsl{First} und \textsl{Follow}}
-In diesem Abschnitt definieren wir die beiden Funktionen  \textsl{First} und \textsl{Follow}.  Diese Funktionen
-werden zur Berechnung der Funktion \textsl{action} benötigt.
-Wir betrachten dazu eine kontextfreie Grammatik  $G = \langle V, T, R, s \rangle$ als vorgegeben.
+\subsection{The Functions \textsl{First} and \textsl{Follow}}
+In this section, we define the two functions \textsl{First} and \textsl{Follow}. These functions
+are needed to compute the function \textsl{action}.
+We consider a given context-free grammar \(G = \langle V, T, R, s \rangle\).
 \begin{enumerate}[(a)]
-\item Für eine syntaktische Variable $a$ berechnet $\textsl{First}(a)$ die Menge aller Token, mit denen ein
-      String $w$ beginnen kann, der von der Variable $a$ abgeleitet wird, für den also $a \Rightarrow_G^* w$ gilt.
-\item Für eine syntaktische Variable $a$ berechnet $\textsl{Follow}(a)$ die Menge der Token,
-      die auf ein $a$ in einem von $s$ abgeleiteten String folgen können, d.h.~$t \in \textsl{Follow}(a)$
-      falls es eine Ableitung der folgenden Form gibt:
+\item For a syntactic variable \(a\), \(\textsl{First}(a)\) calculates the set of all tokens with which a
+      string \(w\) can begin, which is derived from the variable \(a\), for which \(a \Rightarrow_G^* w\) holds.
+\item For a syntactic variable \(a\), \(\textsl{Follow}(a)\) calculates the set of tokens
+      that can follow an \(a\) in a string derived from \(s\), i.e., \(t \in \textsl{Follow}(a)\)
+      if there is a derivation of the following form:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $s \Rightarrow_G^* w\, a\, t\, r$.
-      Hier sind $w$ und $r$ Token-Strings, während $t$ ein einzelnes Token bezeichnet.
+      \(s \Rightarrow_G^* \beta\, a\, t\, \gamma\).
+      \\[0.2cm]
+      Here, \(\beta\) and \(\gamma\) are strings consisting of tokens and variables, while \(t\) denotes a single token.
 \end{enumerate}
 
-\begin{Definition}[$\varepsilon$-erzeugend]
-Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $\textsl{a}$ sei eine
-syntaktische Variable, also $\textsl{a} \in V$.  Die Variable $\textsl{a}$ heißt 
-\blue{$\varepsilon$-erzeugend}\index{$\varepsilon$-erzeugend} genau dann, wenn
+\begin{Definition}[$\lambda$-generating]
+Let \(G = \langle V, T, R, S \rangle\) be a context-free grammar and \(\textsl{a}\) be a
+syntactic variable, i.e., \(\textsl{a} \in V\). The variable \(\textsl{a}\) is called 
+\blue{$\lambda$-generating}\index{$\lambda$-generating} precisely when
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{a} \Rightarrow^* \varepsilon$
+\(\textsl{a} \Rightarrow^* \lambda\)
 \\[0.2cm]
-gilt, also dann, wenn sich aus der Variablen $\textsl{a}$ das leere Wort ableiten lässt. 
-Wir schreiben $\textsl{nullable}(\textsl{a})$ wenn die Variable $\textsl{a}$ als $\varepsilon$-erzeugend
-nachgewiesen ist.
+holds, which means that the empty word can be derived from the variable \(\textsl{a}\). 
+We write \(\textsl{nullable}(\textsl{a})\) if the variable \(\textsl{a}\) is $\lambda$-generating.
 \eox
 \end{Definition}
 
 \examples
 \begin{enumerate}[(a)]
-\item Bei der in Abbildung \ref{fig:Expr2} auf Seite \pageref{fig:Expr2} gezeigten Grammatik
-      sind offenbar die Variablen \textsl{exprRest} und \textsl{productRest} $\varepsilon$-erzeugend.
-\item Wir betrachten nun ein weniger offensichtliches Beispiel.  Die Grammatik $G$
-      enthalte die folgenden Regeln:
+\item In the grammar shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2},
+      the variables \textsl{exprRest} and \textsl{productRest} are \(\lambda\)-generating.
+\item Now let's consider a less obvious example. Suppose the grammar \(G\)
+      contains the following rules:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}$
+      \(S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}\)
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{a} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{b}\;\textsl{c}$
+      \(\textsl{a} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{b}\;\textsl{c}\)
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{b} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{c}\;\textsl{c}$
+      \(\textsl{b} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{c}\;\textsl{c}\)
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{c} \rightarrow \textsl{a}\;\textsl{b}\; \textsl{c} \mid \varepsilon$
+      \(\textsl{c} \rightarrow \textsl{a}\;\textsl{b}\; \textsl{c} \mid \lambda\)
       \\[0.2cm]
-      Zunächst ist offenbar die Variable $\textsl{c}$ $\varepsilon$-erzeugend.  Dann sehen wir,
-      dass aufgrund der Regel $\textsl{b} \rightarrow \textsl{c} \;\textsl{c}$ auch $\textsl{b}$ $\varepsilon$-erzeugend ist
-      und daraus folgt wegen der Regel $\textsl{a} \rightarrow \textsl{b}\;\textsl{c}$, dass auch $\textsl{a}$
-      $\varepsilon$-erzeugend ist.  Schließlich erkennen wir $S$ als $\varepsilon$-erzeugend,
-      denn die erste Regel lautet
+      Initially, it's clear that the variable \(\textsl{c}\) is \(\lambda\)-generating. Then, due to the rule
+      \(\textsl{b} \rightarrow \textsl{c} \;\textsl{c}\), \(\textsl{b}\) is also \(\lambda\)-generating, and from the rule \(\textsl{a} \rightarrow \textsl{b}\;\textsl{c}\), \(\textsl{a}\) 
+      becomes \(\lambda\)-generating as well. Finally, \(S\) is recognized as \(\lambda\)-generating,
+      since the first rule states
       \\[0.2cm]
       \hspace*{1.3cm}
-      $S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}$
+      \(S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}\)
       \\[0.2cm]
-      und hier sind alle Variablen auf der rechten Seite der Regel bereits als
-      $\varepsilon$-erzeugende Variablen nachgewiesen worden.
+      and here, all variables on the right side of the rule have already been proven to be
+      \(\lambda\)-generating variables.
 \end{enumerate}
- 
-\begin{Definition}[$\textsl{First}()$]
-Es sei $G = \langle V, T, R, s \rangle$ eine kontextfreie Grammatik und $\textsl{a} \in V$.
-Dann definieren wir $\textsl{First}(\textsl{a})$ als die Menge aller der Token $t$, mit denen ein
-von $\textsl{a}$ abgeleitetes Wort beginnen kann:
+
+\begin{Definition}[\(\textsl{First}()\)]
+Let \(G = \langle V, T, R, s \rangle\) be a context-free grammar and \(\textsl{a} \in V\).
+We define \(\textsl{First}(\textsl{a})\) as the set of all tokens \(t\) with which a
+word derived from \(\textsl{a}\) can begin:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{First}(\textsl{a}) := \{ t \in T \mid \exists \gamma \in (V \cup T)^*: \textsl{a} \Rightarrow^* t\,\gamma \}$.
+\(\textsl{First}(\textsl{a}) := \{ t \in T \mid \exists \gamma \in (V \cup T)^*: \textsl{a} \Rightarrow^* t\,\gamma \}\).
 \\[0.2cm]
-Die Definition der Funktion $\textsl{First}()$ kann wie folgt auf Strings aus $(V \cup T)^*$ 
-erweitert werden: 
+The definition of the function \(\textsl{First}()\) can be extended to strings in \((V \cup T)^*\) as follows: 
 \begin{enumerate}
-\item $\textsl{First}(\varepsilon) = \{\}$.
-\item $\textsl{First}(t \beta) = \{ t \}$ \quad if $t \in T$.
-\item $\textsl{First}(\textsl{a} \beta) = \left\{
+\item \(\textsl{First}(\lambda) = \{\}\).
+\item \(\textsl{First}(t \beta) = \{ t \}\) \quad if \(t \in T\).
+\item \(\textsl{First}(\textsl{a} \beta) = \left\{
        \begin{array}[c]{ll}
-         \textsl{First}(\textsl{a}) \cup \textsl{First}(\beta) & \mbox{if $\textsl{a} \Rightarrow^* \varepsilon$;} \\
+         \textsl{First}(\textsl{a}) \cup \textsl{First}(\beta) & \mbox{if \(\textsl{a} \Rightarrow^* \lambda\);} \\
          \textsl{First}(\textsl{a})                            & \mbox{otherwise.}
        \end{array}
        \right.
-      $ 
+      \) 
 \end{enumerate}
-If $\textsl{a}$ is a variable of $G$ and the rules defining $\textsl{a}$ are given as 
+If \(\textsl{a}\) is a variable of \(G\) and the rules defining \(\textsl{a}\) are given as 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{a} \rightarrow \alpha_1 \mid \cdots \mid \alpha_n$,
+\(\textsl{a} \rightarrow \alpha_1 \mid \cdots \mid \alpha_n\),
 \\[0.2cm]
 then we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{First}(\textsl{a}) = \bigcup\limits_{i=1}^n \textsl{First}(\alpha_i)$.   \eox
+\(\textsl{First}(\textsl{a}) = \bigcup\limits_{i=1}^n \textsl{First}(\alpha_i)\).   \eox
 \end{Definition}
 
 \remarkEng
@@ -364,346 +334,315 @@ then continue to iterate the equations defining $\textsl{First}(\textsl{a})$ unt
 $\textsl{First}(\textsl{a})$ changes any more.  The next example clarifies this idea.
 
 \example
-Wir können für die Variablen $\textsl{a}$ der in Abbildung \ref{fig:Expr2} gezeigten Grammatik 
-die Mengen $\textsl{First}(\textsl{a})$ iterativ berechnen.  Wir berechnen
-die Funktion $\textsl{First}(\textsl{a})$ für die einzelnen Variablen $\textsl{a}$ am besten so, dass wir mit den
-Variablen beginnen, die in der Hierarchie ganz unten stehen. 
+We can iteratively compute the sets \(\textsl{First}(\textsl{a})\) for the variables \(\textsl{a}\) of the grammar shown in Figure \ref{fig:Expr2}. It's best to compute the function \(\textsl{First}(\textsl{a})\) for the individual variables \(\textsl{a}\) starting with those at the bottom of the hierarchy.
 \begin{enumerate}
-\item Zunächst folgt aus den Regeln
+\item First, the rules
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{factor} \rightarrow \aquoted{(} \textsl{expr} \aquoted{)} \mid \textsc{Number}$,
+      \(\textsl{factor} \rightarrow \aquoted{(} \textsl{expr} \aquoted{)} \mid \textsc{Number}\)
       \\[0.2cm]
-      dass jeder von \textsl{factor} abgeleitete String entweder mit einer öffnenden
-      Klammer oder einer Zahl beginnt:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{First}(\textsl{factor}) = \{ \aquoted{(}, \textsc{Number}\; \}$.
-\item Analog folgt aus den Regeln 
+      imply that every string derived from \textsl{factor} either starts with an opening
+      parenthesis or a number:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{productRest} \rightarrow \aquoted{*} \textsl{factor}\;\;\textsl{productRest} \;
+      \(\textsl{First}(\textsl{factor}) = \{ \aquoted{(}, \textsc{Number}\; \}\).
+\item Similarly, from the rules 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{productRest} \rightarrow \aquoted{*} \textsl{factor}\;\;\textsl{productRest} \;
                             \mid        \aquoted{/} \textsl{factor}\;\;\textsl{productRest} \;
-                            \mid        \varepsilon$,
+                            \mid        \lambda\)
       \\[0.2cm]
-      dass ein \textsl{productRest} entweder mit dem Zeichen \qote{*} oder \qote{/} beginnt:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{First}(\textsl{productRest}) = \{ \aquoted{*}, \aquoted{/} \}$
-\item Die Regel für die Variable \textsl{product} lautet
+      we find that a \textsl{productRest} either starts with the character \qote{*} or \qote{/}:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}$.
-      \\[0.2cm]
-      Da die Variable \textsl{factor} nicht $\varepsilon$ erzeugend ist, sehen wir, dass
-      die Menge $\textsl{First}(\textsl{product})$ mit der Menge
-      $\textsl{First}(\textsl{factor})$ übereinstimmt:
+      \(\textsl{First}(\textsl{productRest}) = \{ \aquoted{*}, \aquoted{/} \}\).
+\item The rule for the variable \textsl{product} is
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{First}(\textsl{product}) = \{ \aquoted{(}, \textsc{Number}\; \}$.
-\item Aus den Regeln
+      \(\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}\).
+      \\[0.2cm]
+      Since the variable \textsl{factor} is not \(\lambda\)-generating, we see that
+      the set \(\textsl{First}(\textsl{product})\) matches the set
+      \(\textsl{First}(\textsl{factor})\):
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{exprRest} \rightarrow \aquoted{+} \textsl{product}\;\;\textsl{exprRest} 
+      \(\textsl{First}(\textsl{product}) = \{ \aquoted{(}, \textsc{Number}\; \}\).
+\item From the rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{exprRest} \rightarrow \aquoted{+} \textsl{product}\;\;\textsl{exprRest} 
                          \mid        \aquoted{-} \textsl{product}\;\;\textsl{exprRest} 
-                         \mid        \varepsilon$
+                         \mid        \lambda\),
       \\[0.2cm]
-      können wir $\textsl{First}(\textsl{exprRest})$ wie folgt berechnen:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{First}(\textsl{exprRest}) = \{ \aquoted{+}, \aquoted{-} \}$.
-\item Weiter folgt aus der Regel
+      we can compute \(\textsl{First}(\textsl{exprRest})\) as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}$
-      \\[0.2cm]
-      und der Tatsache, dass $\textsl{product}$ nicht $\varepsilon$-erzeugend ist,
-      dass die Menge $\textsl{First}(\textsl{expr})$ mit der Menge
-      $\textsl{First}(\textsl{product})$ übereinstimmt:
+      \(\textsl{First}(\textsl{exprRest}) = \{ \aquoted{+}, \aquoted{-} \}\).
+\item Further, from the rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{First}(\textsl{expr}) = \{ \aquoted{(}, \textsc{Number}\; \}$.
+      \(\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}\),
+      \\[0.2cm]
+      and the fact that the variable \(\textsl{product}\) is not \(\lambda\)-generating,
+      the set \(\textsl{First}(\textsl{expr})\) matches the set
+      \(\textsl{First}(\textsl{product})\):
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{First}(\textsl{expr}) = \{ \aquoted{(}, \textsc{Number}\; \}\).
 \end{enumerate}
-Since we have computed the sets $\textsl{First}(\textsl{a})$ in a clever order, we did not have to perform a
-proper fixpoint iteration in this example.
-\eox
+Since we have computed the sets \(\textsl{First}(\textsl{a})\) in a clever order, we did not have to perform a
+proper fixpoint iteration in this example
 
-
-\begin{Definition}[$\textsl{Follow}()$]
-Es sei $G = \langle V, T, R, S \rangle$ eine kontextfreie Grammatik und $\textsl{a} \in V$.
-Bei der Berechnung von $\textsl{Follow}()$ wird die Grammatik zunächst abgeändert,
-indem wir das Symbol $\symbol{36}$ als neues Symbol zu der Menge $T$ der Terminale
-hinzufügen.  Zu den Variablen wird das neue Symbol $\widehat{S}$ hinzugefügt, das auch
-gleichzeitig das neue Start-Symbol der Grammatik ist.  Zu der Menge $R$ der Regeln
-fügen wir die folgende Regel neu hinzu:
+\begin{Definition}[\(\textsl{Follow}()\)]
+Let \(G = \langle V, T, R, s \rangle\) be a context-free grammar and \(\textsl{a} \in V\).
+In computing \(\textsl{Follow}(\textsl{a})\), the grammar is first modified
+by adding the symbol \(\$\) as a new symbol to the set \(T\) of terminals.  This symbols signifies the end of input.
+To the variables, the new symbol \(\widehat{s}\) is added, which is also
+the new start symbol of the grammar. To the set \(R\) of rules,
+we add the following new rule:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\widehat{S} \rightarrow S\; \symbol{36}$.
+\(\widehat{s} \rightarrow s\; \$\).
 \\[0.2cm]
-Weiter definieren wir
-\\[0.2cm]
-\hspace*{1.3cm}
- $\widehat{T} := T \cup \{ \symbol{36} \}$.
-\\[0.2cm]
-Die so veränderte Grammatik bezeichnen wir als die \blue{augmentierte} Grammatik.
-Dann definieren wir $\textsl{Follow}(\textsl{a})$ als die Menge aller der Token $t$, die in einer
-Ableitung auf $\textsl{a}$ folgen können:
+Furthermore, we define
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Follow}(\textsl{a}) := 
+ \(\widehat{T} := T \cup \{ \$ \}\).
+\\[0.2cm]
+We refer to the thus modified grammar \(\widehat{G} = \langle V, \widehat{T}, R, \widehat{s} \rangle\) as the
+\textit{augmented} grammar. 
+Then we define \(\textsl{Follow}(\textsl{a})\) as the set of all tokens \(t\) that can follow the variable \(\textsl{a}\) in a derivation:
+\\[0.2cm]
+\hspace*{1.3cm}
+\(\textsl{Follow}(\textsl{a}) := 
  \bigl\{ t \in \widehat{T} \,\bigm|\, \exists \beta,\gamma \in (V \cup \widehat{T})^*: 
-                           \widehat{S} \Rightarrow^* \beta \,\textsl{a}\, t\, \gamma 
+                           \widehat{s} \Rightarrow^* \beta \,\textsl{a}\, t\, \gamma 
   \bigr\}
-$.
+\).
 \\[0.2cm]
-Wenn sich aus dem Start-Symbol $\widehat{S}$ also irgendwie ein String $\beta \,\textsl{a}\, t\,\gamma$ ableiten lässt,
-bei dem das Token $t$ auf die Variable $\textsl{a}$ folgt, dann ist $t$ ein Element
-der Menge $\textsl{Follow}(\textsl{a})$.
+If the start symbol \(\widehat{s}\) can somehow derive a string \(\beta \,\textsl{a}\, t\,\gamma\) in which the
+token \(t\) follows the variable \(\textsl{a}\), then \(t\) is an element of the set
+\(\textsl{Follow}(\textsl{a})\). 
 \eox
 \end{Definition}
 
 \example
-Wir untersuchen wieder die in Abbildung \ref{fig:Expr2} gezeigte Grammatik für arithmetische Ausdrücke.
+Let's reexamine the grammar for arithmetic expressions shown in Figure \ref{fig:Expr2}.
 \begin{enumerate}
-\item Aufgrund der neu hinzugefügten Regel
+\item Due to the newly added rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\widehat{S} \rightarrow \textsl{expr}\; \symbol{36}$
+      \(\widehat{S} \rightarrow \textsl{expr}\; \$\)
       \\[0.2cm]
-      muss die Menge $\textsl{Follow}(\textsl{expr})$ das Zeichen $\symbol{36}$
-      enthalten.  Aufgrund der Regel 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{factor} \rightarrow \aquoted{(} \textsl{expr} \aquoted{)}$
-      \\[0.2cm]
-      muss die Menge $\textsl{Follow}(\textsl{expr})$ außerdem das Zeichen \aquoted{)}
-      enthalten.  Also haben wir insgesamt
+      the set \(\textsl{Follow}(\textsl{expr})\) must contain the symbol \(\$\).
+      Furthermore, due to the rule 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Follow}(\textsl{expr}) = \{ \symbol{36}, \aquoted{)} \}$.
-\item Aufgrund der Regel 
+      \(\textsl{factor} \rightarrow \aquoted{(} \textsl{expr} \aquoted{)}\)
+      \\[0.2cm]
+      the set \(\textsl{Follow}(\textsl{expr})\) must also contain the symbol \aquoted{)}.
+      Thus, we have in total
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}$
+      \(\textsl{Follow}(\textsl{expr}) = \{ \$, \aquoted{)} \}\).
+\item Due to the rule 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{expr} \rightarrow \textsl{product}\;\;\textsl{exprRest}\)
       \\[0.2cm]      
-      wissen wir, dass alle Terminale, die auf ein \textsl{expr} folgen können, auch auf
-      ein \textsl{exprRest} folgen können, womit wir schon mal wissen, dass
-      $\textsl{Follow}(\textsl{exprRest})$ die Token $\symbol{36}$  und \aquoted{)}
-      enthält.   Da \textsl{exprRest} sonst nur am Ende der Regeln vorkommt, die
-      \textsl{exprRest} definieren, sind das auch schon alle Token, die auf
-      \textsl{exprRest} folgen können und wir haben
+      we know that all terminals that can follow an \textsl{expr} can also follow
+      an \textsl{exprRest}. Thus, we already know that
+      \(\textsl{Follow}(\textsl{exprRest})\) contains the tokens \(\$\) and \aquoted{)}.
+      Since \textsl{exprRest} otherwise only appears at the end of its defining rules, these are all the tokens that can follow
+      \textsl{exprRest}, and we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Follow}(\textsl{exprRest}) = \{ \symbol{36}, \aquoted{)} \}$.
-\item Die Regeln 
+      \(\textsl{Follow}(\textsl{exprRest}) = \{ \$, \aquoted{)} \}\).
+\item The rules 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{exprRest} \rightarrow \aquoted{+} \textsl{product}\;\;\textsl{exprRest} 
-                         \mid        \aquoted{-} \textsl{product}\;\;\textsl{exprRest}$
+      \(\textsl{exprRest} \rightarrow \aquoted{+} \textsl{product}\;\;\textsl{exprRest} 
+                         \mid        \aquoted{-} \textsl{product}\;\;\textsl{exprRest}\)
       \\[0.2cm]
-      zeigen, dass auf ein \textsl{product} alle Elemente aus $\textsl{First}(\textsl{exprRest})$
-      folgen können, aber das ist noch nicht alles:  Da die Variable \textsl{exprRest}
-      $\varepsilon$-erzeugend ist, können zusätzlich auf \textsl{product} auch
-      alle Token folgen, die auf \textsl{exprRest} folgen.  Damit haben wir insgesamt
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{Follow}(\textsl{product}) = 
-      \{ \aquoted{+}, \aquoted{-}, \symbol{36}, \aquoted{)} \}$.
-\item Die Regel
+      show that all elements from \(\textsl{First}(\textsl{exprRest})\)
+      can follow a \textsl{product}. However, that's not all: since the variable \textsl{exprRest}
+      is \(\lambda\)-generating, additionally, all tokens that can follow \textsl{exprRest} can also follow \textsl{product}. Thus, we have in total
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}$
+      \(\textsl{Follow}(\textsl{product}) = 
+      \{ \aquoted{+}, \aquoted{-}, \$, \aquoted{)} \}\).
+\item The rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{product} \rightarrow \textsl{factor}\;\;\textsl{productRest}\)
       \\[0.2cm]      
-      zeigt, dass alle Terminale, die auf ein \textsl{product} folgen können, auch auf
-      ein \textsl{productRest} folgen können.
-      Da \textsl{productRest} sonst nur am Ende der Regeln vorkommt, die
-      \textsl{productRest} definieren, sind das auch schon alle Token, die auf
-      \textsl{productRest} folgen können und wir haben insgesamt
+      shows that all terminals that can follow a \textsl{product} can also follow
+      a \textsl{productRest}.
+      Since \textsl{productRest} otherwise only appears at the end of its defining rules, these are all the tokens that can follow
+      \textsl{productRest}, and we have in total
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Follow}(\textsl{productRest}) = \{ \aquoted{+}, \aquoted{-}, \symbol{36}, \aquoted{)} \}$.
-\item Die Regeln 
+      \(\textsl{Follow}(\textsl{productRest}) = \{ \aquoted{+}, \aquoted{-}, \$, \aquoted{)} \}\).
+\item The rules 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{productRest} \rightarrow \aquoted{*} \textsl{factor}\;\;\textsl{productRest} 
-                            \mid        \aquoted{/} \textsl{factor}\;\;\textsl{productRest}$ 
+      \(\textsl{productRest} \rightarrow \aquoted{*} \textsl{factor}\;\;\textsl{productRest} 
+                            \mid        \aquoted{/} \textsl{factor}\;\;\textsl{productRest}\) 
       \\[0.2cm]
-      zeigen, dass auf ein \textsl{factor} alle Elemente aus $\textsl{First}(\textsl{productRest})$
-      folgen können, aber das ist noch nicht alles:  Da die Variable \textsl{productRest}
-      $\varepsilon$-erzeugend ist, können zusätzlich auf \textsl{factor} auch
-      alle Token folgen, die auf \textsl{productRest} folgen.  Damit haben wir insgesamt
+      show that all elements from \(\textsl{First}(\textsl{productRest})\)
+      can follow a \textsl{factor}. However, that's not all: since the variable \textsl{productRest}
+      is \(\lambda\)-generating, additionally, all tokens that can follow \textsl{productRest} can also follow \textsl{factor}. Thus, we have in total
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Follow}(\textsl{factor}) = \{ \aquoted{*}, \aquoted{/}, \aquoted{+}, \aquoted{-}, \symbol{36}, \aquoted{)} \}$.
-      \qed
+      \(\textsl{Follow}(\textsl{factor}) = \{ \aquoted{*}, \aquoted{/}, \aquoted{+}, \aquoted{-}, \$, \aquoted{)} \}\).
+      \eox
 \end{enumerate}
 
 \noindent
-Das letzte Beispiel zeigt, dass die Berechnung des Prädikats $\textsl{nullable}()$ 
-und die Berechnung der Mengen $\textsl{First}(\textsl{a})$ und $\textsl{Follow}(\textsl{a})$ für eine syntaktische
-Variable $\textsl{a}$ eng miteinander verbunden sind.  
-Es sei
+The last example demonstrates that the computation of the \(\textsl{nullable}()\) predicate and the computation of the sets \(\textsl{First}(\textsl{a})\) and \(\textsl{Follow}(\textsl{a})\) for a syntactic variable \(\textsl{a}\) are closely interconnected. Suppose we have a grammar rule:
 \\[0.2cm]
 \hspace*{1.3cm}
- $\textsl{a} \rightarrow Y_1 Y_2 \cdots Y_k$ 
+ \(\textsl{a} \rightarrow Y_1 Y_2 \cdots Y_k\)
 \\[0.2cm]
-eine Grammatik-Regel.
-Dann bestehen zwischen dem Prädikat $\texttt{nullable}()$ und den beiden Funktionen
-$\textsl{First}()$ und $\textsl{Follow}()$ die folgenden Beziehungen:
+Then the following relationships exist between the \(\textsl{nullable}()\) predicate and the \(\textsl{First}()\) and \(\textsl{Follow}()\) functions:
 \begin{enumerate}
-\item $\forall t \in T: \neg\, \textsl{nullable}(t)$.
-\item $k = 0 \Rightarrow \textsl{nullable}(\textsl{a})$.
-\item $\bigl(\forall i \in \{1, \cdots, k\}: \textsl{nullable}(Y_i)\bigr) \Rightarrow
-       \textsl{nullable}(\textsl{a})$.
+\item \(\forall t \in T: \neg\, \textsl{nullable}(t)\).
+\item \(k = 0 \Rightarrow \textsl{nullable}(\textsl{a})\).
+\item \(\bigl(\forall i \in \{1, \cdots, k\}: \textsl{nullable}(Y_i)\bigr) \Rightarrow
+       \textsl{nullable}(\textsl{a})\).
 
-      Setzen wir hier $k=0$ so sehen wir, dass 2.~ein Spezialfall von 3.~ist.
-\item $\textsl{First}(Y_1) \subseteq \textsl{First}(\textsl{a})$.
-\item $\bigl(\forall j \in \{1,\cdots,i-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow
-       \textsl{First}(Y_i) \subseteq \textsl{First}(\textsl{a})$.
+      Setting \(k=0\) here, we see that 2.~is a special case of 3.
+\item \(\textsl{First}(Y_1) \subseteq \textsl{First}(\textsl{a})\).
+\item \(\bigl(\forall j \in \{1,\cdots,i-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow
+       \textsl{First}(Y_i) \subseteq \textsl{First}(\textsl{a})\).
 
-       Setzen wir oben $i=1$, so sehen wir, dass 4.~ein Spezialfall von 5.~ist.
-\item $\textsl{Follow}(\textsl{a}) \subseteq \textsl{Follow}(Y_k)$.
-\item $\bigl(\forall j \in \{i+1, \cdots, k\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
-       \textsl{Follow}(\textsl{a}) \subseteq \textsl{Follow}(Y_i)$.
+       Setting \(i=1\) above, we see that 4.~is a special case of 5.
+\item \(\textsl{Follow}(\textsl{a}) \subseteq \textsl{Follow}(Y_k)\).
+\item \(\bigl(\forall j \in \{i+1, \cdots, k\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
+       \textsl{Follow}(\textsl{a}) \subseteq \textsl{Follow}(Y_i)\).
 
-      Setzen wir hier $i=k$ so sehen wir, dass 6.~ein Spezialfall von 7.~ist.
-\item $\forall i \in \{1,\cdots,k-1\}:\textsl{First}(Y_{i+1}) \subseteq \textsl{Follow}(Y_i)$.
-\item $\bigl(\forall j \in \{i+1, \cdots, l-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
-       \textsl{First}(Y_l) \subseteq \textsl{Follow}(Y_i)$.
+      Setting \(i=k\) here, we see that 6.~is a special case of 7.
+\item \(\forall i \in \{1,\cdots,k-1\}:\textsl{First}(Y_{i+1}) \subseteq \textsl{Follow}(Y_i)\).
+\item \(\bigl(\forall j \in \{i+1, \cdots, l-1\}: \textsl{nullable}(Y_j)\bigr) \Rightarrow 
+       \textsl{First}(Y_l) \subseteq \textsl{Follow}(Y_i)\).
 
-      Setzen wir hier $l=i+1$ so sehen wir, dass 8.~ein Spezialfall von 9.~ist.
+      Setting \(l=i+1\) here, we see that 8.~is a special case of 9.
 \end{enumerate}
-Mit Hilfe dieser Beziehungen können $\textsl{nullable}()$, $\textsl{First}()$ und
-$\textsl{Follow}()$ iterativ über eine Fixpunkt-Iteration berechnet werden:  
+Using these relationships, \(\textsl{nullable}()\), \(\textsl{First}()\), and \(\textsl{Follow}()\) can be computed iteratively through a fixpoint iteration:
 \begin{enumerate}
-\item Zunächst werden die Funktionen $\textsl{First}(\textsl{a})$ und
-      $\textsl{Follow}(\textsl{a})$ für jede syntaktische Variable $\textsl{a}$ mit der leeren Menge initialisiert.
-      Das Prädikat $\textsl{nullable}(\textsl{a})$ wird für jede syntaktische Variable auf $\texttt{false}$
-      gesetzt.
-\item Anschließend werden die oben angegebenen Regeln so lange angewendet, wie sich durch die
-      Anwendung Änderungen ergeben. 
+\item Initially, the functions \(\textsl{First}(\textsl{a})\) and \(\textsl{Follow}(\textsl{a})\) for each syntactic variable \(\textsl{a}\) are initialized with the empty set. The predicate \(\textsl{nullable}(\textsl{a})\) is set to \(\texttt{false}\) for each syntactic variable.
+\item Subsequently, the rules outlined above are applied repeatedly until no further changes occur from their application.
 \end{enumerate}
 
-\subsection{Die Berechnung der Funktion \textsl{action}}
-Als Letztes spezifizieren wir, wie die Funktion $\textsl{action}(\mathcal{M},t)$ für eine Menge von
-markierten Regeln $\mathcal{M}$ und ein Token $t$ berechnet wird.  
-Bei der Definition von $\textsl{action}(\mathcal{M},t)$ unterscheiden wir vier Fälle.
+\subsection{Computing the Function \textsl{action}}
+Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is computed for a set of marked rules \(\mathcal{M}\) and a token \(t\). When defining \(\textsl{action}(\mathcal{M},t)\), we distinguish four cases.
 \begin{enumerate}
-\item Falls $\mathcal{M}$ eine markierte Regel der Form $a \rightarrow \beta \bullet t\, \delta$
-      enthält und $t \not= \symbol{36}$ ist, dann setzen wir
+\item If \(\mathcal{M}\) contains a marked rule of the form \(a \rightarrow \beta \bullet t\, \delta\) and \(t \neq \symbol{36}\), then we set
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle$,
+      \(\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle\),
       \\[0.2cm]
-      denn in diesem Fall versucht der Parser ein $a$ mit Hilfe der Regel $a \rightarrow \beta\, t \delta$
-      zu erkennen und hat von der rechten Seite dieser Regel bereits $\beta$ erkannt.
-      Ist nun das nächste Token im Eingabe-String tatsächlich das Token $t$, so kann der Parser
-      dieses $t$ lesen und geht dabei von dem Zustand $a \rightarrow \beta \bullet t\, \delta$ in den Zustand 
-      $a \rightarrow \beta\, t \bullet \delta$ über, der von der Funktion $\textsl{goto}(\mathcal{M},t)$
-      berechnet wird.  Insgesamt haben wir also
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle
-         \quad \mbox{falls} \quad (a \rightarrow \beta \bullet t\, \delta) \in \mathcal{M}
-      $ und $t \not= \symbol{36}$.
-\item Falls $\mathcal{M}$ eine markierte Regel der Form $a \rightarrow \beta \bullet$ enthält
-      und wenn zusätzlich $t \in \textsl{Follow}(a)$ gilt, dann setzen wir
+      because in this case the parser is trying to recognize an \(a\) using the rule \(a \rightarrow \beta\, t \delta\)
+      and has already recognized \(\beta\). If the next token in the input string is indeed the token  
+      \(t\), the parser can read this \(t\) and transitions from the state \(a \rightarrow \beta \bullet t\,
+      \delta\) to the state  
+      \(a \rightarrow \beta\, t \bullet \delta\), which is computed by the function \(\textsl{goto}(\mathcal{M},t)\). So, we have
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$,
-      \\[0.2cm]
-      denn in diesem Fall versucht der Parser ein $a$ mit Hilfe der Regel $a \rightarrow \beta$
-      zu erkennen und hat bereits $\beta$ erkannt. Ist nun das nächste Token im Eingabe-String das Token
-      $t$ und ist darüber hinaus $t$ ein Token, dass auf $a$ folgen kann, gilt also 
-      $t \in \textsl{Follow}(a)$, so kann der Parser die Regel $a \rightarrow \beta$ anwenden und den
-      Symbol-Stack mit dieser Regel reduzieren.  Wir haben dann
+      \(\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle
+         \quad \text{if} \quad (a \rightarrow \beta \bullet t\, \delta) \in \mathcal{M}
+      \) and \(t \neq \symbol{36}\).
+\item If \(\mathcal{M}\) contains a marked rule of the form \(a \rightarrow \beta \bullet\) and additionally \(t \in \textsl{Follow}(a)\), then we set
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$
-      \quad falls 
-      $(a \rightarrow \beta\bullet) \in \mathcal{M}$, $a \not= \widehat{s}$ 
-      und $t \in \textsl{Follow}(a)$ gilt.
-\item Falls $\mathcal{M}$ die markierte Regel $\widehat{s} \rightarrow s \bullet \symbol{36}$ enthält und
-      wir den zu parsenden String vollständig gelesen haben, setzen wir
+      \(\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle\),
+      \\[0.2cm]
+      because in this case the parser is trying to recognize an \(a\) using the rule \(a \rightarrow \beta\)
+      and has already recognized \(\beta\). If the next token in the input string is the token \(t\) and \(t\)
+      is a token that can follow \(a\), i.e., \(t \in \textsl{Follow}(a)\), then the parser can apply the rule
+      \(a \rightarrow \beta\) and reduce the symbol stack with this rule. Therefore, 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$,
-      \\[0.2cm]
-      denn in diesem Fall versucht der Parser, $\widehat{s}$ mit Hilfe der Regel $\widehat{s} \rightarrow s\,\symbol{36}$
-      zu erkennen und hat also bereits $s$ erkannt. Ist nun das nächste Token im Eingabe-String 
-      das Datei-Ende-Zeichen \symbol{36}, 
-      so liegt der zu parsende String in der durch die Grammatik $G$ spezifizierten Sprache
-      $L(G)$.  Wir haben daher
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$,
-      \quad falls $(\widehat{s} \rightarrow s\bullet\symbol{36}) \in \mathcal{M}$.
-\item In den restlichen Fällen setzen wir
+      \(\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle\)
+      \quad if 
+      \((a \rightarrow \beta\bullet) \in \mathcal{M}\), \(a \neq \widehat{s}\) 
+      and \(t \in \textsl{Follow}(a)\).
+\item If \(\mathcal{M}\) contains the marked rule \(\widehat{s} \rightarrow s \bullet \symbol{36}\) and
+      we have completely read the string to be parsed, we set
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathcal{M},t) := \texttt{error}$.
+      \(\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}\),
+      \\[0.2cm]
+      because in this case the parser is trying to recognize \(\widehat{s}\) using the rule \(\widehat{s} \rightarrow s\,\symbol{36}\)
+      and has already recognized \(s\). If the next token in the input string 
+      is the end-of-file character \symbol{36}, 
+      then the string being parsed belongs to the language specified by the grammar \(G\), 
+      \(L(G)\). Therefore, we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}\),
+      \quad if \((\widehat{s} \rightarrow s\bullet\symbol{36}) \in \mathcal{M}\).
+\item In all other cases, we set
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\textsl{action}(\mathcal{M},t) := \texttt{error}\).
 \end{enumerate}
-Zwischen den ersten beiden Regeln kann es Konflikte geben.  
-Wir unterscheiden zwischen zwei Arten von Konflikten.
+Conflicts can arise between the first two rules. We distinguish between two types of conflicts.
 \begin{enumerate}
-\item Ein \textsl{Shift-Reduce-Konflikt} tritt auf, wenn sowohl der erste Fall als auch der zweite Fall
-      vorliegt.   In diesem Fall enthält die Menge $\mathcal{M}$ also zum einen eine markierte Regel
-      der Form
+\item A \textsl{Shift-Reduce Conflict} occurs when both the first and second cases apply. In this situation,
+      the set \(\mathcal{M}\) contains, on one hand, a marked rule of the form 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $a \rightarrow \beta \bullet t\, \gamma$,
+      \(a \rightarrow \beta \bullet t\, \gamma\),
       \\[0.2cm]
-      zum anderen enthält $\mathcal{M}$ eine Regel der Form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $c \rightarrow \delta \bullet$ \quad mit $t \in \textsl{Follow}(c)$.
-      \\[0.2cm]
-      Wenn dann das nächste Token den Wert $t$ hat, ist nicht klar, ob dieses Token auf den Symbol-Stack 
-      geschoben und der Parser in einen Zustand mit der markierten Regel 
-      $a \rightarrow \beta\, t \bullet \gamma$ übergehen soll, oder ob stattdessen der Symbol-Stack mit 
-      der Regel $c \rightarrow \delta$ reduziert werden muss.
-\item Ein \textsl{Reduce-Reduce-Konflikt} liegt vor, wenn die Menge $\mathcal{M}$ zwei verschiedene
-      markierte Regeln der Form
+      and on the other hand, \(\mathcal{M}\) contains a rule of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $c_1 \rightarrow \gamma_1 \bullet$ \quad  und \quad $c_2 \rightarrow \gamma_2 \bullet$
+      \(c \rightarrow \delta \bullet\) \quad with \(t \in \textsl{Follow}(c)\).
       \\[0.2cm]
-      enthält und wenn gleichzeitig $t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)$ ist,
-      denn dann ist nicht klar, welche
-      der beiden Regeln der Parser anwenden soll, wenn das nächste zu lesende Token den Wert $t$ hat.
+      If the next token is \(t\), it is unclear whether this token should be pushed onto the symbol stack and
+      the parser transition to a state with the marked rule  
+      \(a \rightarrow \beta\, t \bullet \gamma\), or whether the symbol stack should be reduced using the rule
+      \(c \rightarrow \delta\) instead. 
+\item A \textsl{Reduce-Reduce Conflict} exists if the set \(\mathcal{M}\) contains two different marked rules of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(c_1 \rightarrow \gamma_1 \bullet\) \quad  and \quad \(c_2 \rightarrow \gamma_2 \bullet\)
+      \\[0.2cm]
+      and if at the same time \(t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)\), because then it is not clear which
+      of the two rules the parser should apply when the next token to be read is \(t\).
 \end{enumerate}
-Falls einer dieser beiden Konflikte auftritt, dann sagen wir, dass die Grammatik keine
-SLR-Grammatik \index{SLR-Grammatik} ist.  Eine solche Grammatik kann mit Hilfe eines SLR-Parsers nicht geparst
-werden.  Wir werden später noch Beispiele für die beiden Arten von Konflikten angeben, aber
-zunächst wollen wir eine Grammatik untersuchen, bei der keine Konflikte auftreten und wollen für
-diese Grammatik die Funktionen $\textsl{goto}()$ und $\textsl{action}()$ auch tatsächlich
-berechnen.  Wir nehmen als Grundlage die  in Abbildung
-\ref{fig:Expr.grammar} gezeigte Grammatik.
-Da die syntaktische Variable \textsl{expr} auf der rechten Seite von
-Grammatik-Regeln auftritt, definieren wir \textsl{start} als neues Start-Symbol und fügen
-in der Grammatik die Regel
+
+If either of these conflicts occurs, we say that the grammar is not an SLR grammar\index{SLR grammar}. Such a
+grammar cannot be parsed using an SLR parser. We will later provide examples of both types of conflicts, but
+first, we want to examine a grammar where no conflicts occur and actually compute the functions
+\(\textsl{goto}()\) and \(\textsl{action}()\) for it. We use the grammar shown in Figure \ref{fig:Expr.grammar}
+as a basis. 
+
+Since the syntactic variable \textsl{expr} appears on the right side of grammar rules, we define \textsl{start}
+as a new start symbol and add the rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{start} \rightarrow \textsl{expr}\; \symbol{36}$
+\(\textsl{start} \rightarrow \textsl{expr}\; \symbol{36}\)
 \\[0.2cm]
-ein.  Dieser Schritt entspricht dem früher diskutierten \blue{Augmentieren} der Grammatik.
-Als erstes berechnen wir die Menge der Zustände $Q$.  Wir hatten dafür oben die
-folgende Formel angegeben:
-\\[0.2cm]
-\hspace*{1.3cm}
-$Q := \bigl\{ \mathcal{M} \in 2^\Gamma \mid \textsl{closure}(\mathcal{M}) = \mathcal{M} \bigr\}$.
-\\[0.2cm]
-Diese Menge enthält allerdings auch Zustände, die von dem Start-Zustand über die Funktion
-$\textsl{goto}()$ gar nicht erreicht werden können.  Wir berechnen daher nur die Zustände,
-die sich auch tatsächlich vom Start-Zustand mit Hilfe der Funktion $\textsl{goto}()$
-erreichen lassen.  Damit die Rechnung nicht zu unübersichtlich
-wird, führen wir die folgenden Abkürzungen ein:
+to the grammar. This step corresponds to the previously discussed process of \textcolor{blue}{augmenting} the grammar.
+
+First, we compute the set of states \(Q\). We had previously provided the following formula for this:
 \\[0.2cm]
 \hspace*{1.3cm}
-$s := \textsl{start},\; e := \textsl{expr},\; p := \textsl{product},\; 
-   f := \textsl{factor}$ und $N := \textsc{Number}$. 
+\(Q := \bigl\{ \mathcal{M} \in 2^\Gamma \mid \textsl{closure}(\mathcal{M}) = \mathcal{M} \bigr\}\).
 \\[0.2cm]
-Wir beginnen mit dem Start-Zustand: 
+However, this set also contains states that cannot be reached from the start state via the function
+\(\textsl{goto}()\). Therefore, we only compute the states that can actually be reached from the start state
+using the function \(\textsl{goto}()\). To avoid making the calculation too complicated, we introduce the
+following abbreviations: 
+\\[0.2cm]
+\hspace*{1.3cm}
+\(s := \textsl{start},\; e := \textsl{expr},\; p := \textsl{product},\; 
+   f := \textsl{factor}\) and \(N := \textsc{Number}\). 
+\\[0.2cm]
+We begin with the start state:
 \begin{enumerate}
 \item $ 
 \begin{array}[t]{lcrl}
@@ -889,8 +828,8 @@ s_{15} & := & \textsl{goto}(s_{8}, p) \\
 \end{array}
 $
 \end{enumerate}
-Weitere Rechnungen führen nicht mehr auf neue Zustände.  Berechnen wir beispielsweise
-$\textsl{goto}(s_8, \aquoted{(})$, so finden wir
+Further calculations do not yield any new states. For instance, when we compute \(\textsl{goto}(s_8,
+\aquoted{()})\), we find: 
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
@@ -910,54 +849,51 @@ $
 \end{array}
 $
 \\[0.2cm]
-Damit ist die Menge der Zustände des Shift-Reduce-Parsers durch
+Therefore, the set of states for the Shift-Reduce parser is given by
 \\[0.2cm]
 \hspace*{1.3cm}
-$ Q := \{ s_0, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_8, s_9, s_{10}, s_{11}, s_{12}, s_{13}, s_{14}, s_{15} \} $
+\( Q := \{ s_0, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_8, s_9, s_{10}, s_{11}, s_{12}, s_{13}, s_{14}, s_{15} \} \)
 \\[0.2cm]
-gegeben.  Wir untersuchen als nächstes, ob es Konflikte gibt und betrachten exemplarisch die 
-Menge $s_{15}$.  Aufgrund der markierten Regel 
-\\[0.2cm]
-\hspace*{1.3cm}
-$ p \rightarrow p \bullet \aquoted{*} f $
-\\[0.2cm]
-muss im Zustand $s_{15}$ geshiftet werden, wenn das nächste Token den Wert $\aquoted{*}$ hat.
-Auf der anderen Seite beinhaltet der Zustand $s_{15}$ die Regel
+Next, we investigate whether there are any conflicts, and we look specifically at the set \(s_{15}\). Due to
+the marked rule  
 \\[0.2cm]
 \hspace*{1.3cm}
-$ e \rightarrow e \aquoted{+} p \bullet. $
+\( p \rightarrow p \bullet \aquoted{*} f \)
 \\[0.2cm]
-Diese Regel sagt, dass der Symbol-Stack mit der Grammatik-Regel $e \rightarrow e \aquoted{+} p$ reduziert
-werden muss, falls in der Eingabe ein Zeichen aus der Menge $\textsl{Follow}(e)$ auftritt.
-Falls nun $\saquoted{*} \in \textsl{Follow}(e)$ liegen würde, so hätten wir einen Shift-Reduce-Konflikt.
-Es gilt aber 
+a shift must occur in state \(s_{15}\) if the next token is \(\aquoted{*}\). On the other hand, the state
+\(s_{15}\) includes the rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-$ \textsl{Follow}(e) = \{ \aquoted{+}, \aquoted{-}, \aquoted{)} ,\aquoted{\symbol{36}} \} $,
+\( e \rightarrow e \aquoted{+} p \bullet. \)
 \\[0.2cm]
-und daraus folgt $\saquoted{*} \not\in \textsl{Follow}(e)$, so dass hier kein Shift-Reduce-Konflikt
-vorliegt.  Eine Untersuchung der anderen Mengen zeigt, dass dort ebenfalls keine Shift-Reduce- oder
-Reduce-Reduce-Konflikte auftreten.
+This rule indicates that the symbol stack must be reduced with the grammar rule \(e \rightarrow e \aquoted{+}
+p\) if a character from the set \(\textsl{Follow}(e)\) appears in the input. If \(\saquoted{*}\) were in
+\(\textsl{Follow}(e)\), then we would have a Shift-Reduce conflict. However, 
+\\[0.2cm]
+\hspace*{1.3cm}
+\( \textsl{Follow}(e) = \{ \aquoted{+}, \aquoted{-}, \aquoted{)} ,\aquoted{\symbol{36}} \} \),
+\\[0.2cm]
+and therefore \(\saquoted{*} \not\in \textsl{Follow}(e)\), so there is no Shift-Reduce conflict here. An
+examination of the other sets shows that there are also no Shift-Reduce or Reduce-Reduce conflicts in any of them.
 
-Als nächstes berechnen wir die Funktion $\textsl{action}$.  Wir betrachten exemplarisch
-zwei Fälle.
+Next, we calculate the \(\textsl{action}\) function. We consider two cases as examples.
 \begin{enumerate}
-\item Als erstes berechnen wir $\textsl{action}(s_1, \aquoted{+})$.  Es gilt
+\item First, we compute \(\textsl{action}(s_1, \aquoted{+})\). It holds that
       \\[0.2cm]
       \hspace*{1.3cm}
-      $ 
+      \( 
       \begin{array}[t]{lcl}
       \textsl{action}(s_1, \aquoted{+}) & = & 
             \textsl{action}(\{p \rightarrow f \bullet\}, \aquoted{+}) \\
       & = & \langle \textsl{reduce}, p \rightarrow f \rangle,
       \end{array}
-      $
+      \)
 \\[0.2cm]
-      denn wir haben $\saquoted{+} \in \textsl{Follow}(p)$.
-\item Als nächstes berechnen wir  $\textsl{action}(s_4, \aquoted{+})$.  Es gilt
+      since we have \(\saquoted{+} \in \textsl{Follow}(p)\).
+\item Next, we compute \(\textsl{action}(s_4, \aquoted{+})\). It holds that
       \\[0.2cm]
-\hspace*{1.3cm}
-$ 
+      \hspace*{1.3cm}
+      \( 
       \begin{array}[t]{lcl}
       \textsl{action}(s_4, \aquoted{+}) & = & 
             \textsl{action}(\{ s \rightarrow e \bullet\,\symbol{36},\;
@@ -966,25 +902,23 @@ $
       & = & \langle \textsl{shift}, \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p\}) \rangle \\
       & = & \langle \textsl{shift}, s_8 \rangle.
       \end{array}
-      $
+      \)
 \\[0.2cm]
 \end{enumerate}
-Würden wir diese Rechnungen fortführen, so würden wir die Tabelle \ref{tab:action} erhalten, denn 
-wir haben die Namen der Zustände so gewählt, dass diese mit den Namen der entsprechenden Zustände
-in den Tabellen \ref{tab:action} und \ref{tab:goto} übereinstimmen.
+If we were to continue these calculations, we would obtain Table \ref{tab:action}, as we have chosen the names
+of the states to match those of the corresponding states in Tables \ref{tab:action} and \ref{tab:goto}. 
 
-\exercise
-Abbildung \ref{fig:BoolExpr.grammar} zeigt eine Grammatik für aussagenlogische Formeln in konjunktiver 
-Normalform.  
+\exerciseEng
+Figure \ref{fig:BoolExpr.grammar} shows a grammar for propositional formulas in conjunctive normal form.  
 \begin{enumerate}[(a)]
-\item Geben Sie die Mengen $\textsl{First}(v)$ für alle syntaktischen Variablem $v$ an.
-\item Geben Sie die Mengen $\textsl{Follow}(v)$ für alle syntaktischen Variablem $v$ an.
-\item Berechnen Sie die Menge der SLR-Zustände.
-\item Geben Sie Funktion $\textsl{action}$ an.
-\item Geben Sie die Funktion $\textsl{goto}$ an.  
+\item Provide the sets \(\textsl{First}(v)\) for all syntactic variables \(v\).
+\item Provide the sets \(\textsl{Follow}(v)\) for all syntactic variables \(v\).
+\item Calculate the set of SLR states.
+\item Specify the function \(\textsl{action}\).
+\item Specify the function \(\textsl{goto}\).  
 \end{enumerate}
-Kürzen Sie die Namen der syntaktischen Variablen und Terminale mit $s$, $c$, $d$, $l$ und $I$
-ab, wobei $s$ für das neu eingeführte Start-Symbol steht.  \eox
+Abbreviate the names of the syntactic variables and terminals with \(s\), \(c\), \(d\), \(l\), and \(I\), where
+\(s\) stands for the newly introduced start symbol.  \eox 
 
 \begin{figure}[htbp]
   \begin{center}    
@@ -1006,20 +940,12 @@ ab, wobei $s$ für das neu eingeführte Start-Symbol steht.  \eox
   \caption{Eine Grammatik für Boole'sche Ausdrücke in konjunktiver Normalform.}
   \label{fig:BoolExpr.grammar}
 \end{figure}
-
-
-\subsection{Shift-Reduce- und Reduce-Reduce-Konflikte}
-In diesem Abschnitt untersuchen wir Shift-Reduce- und Reduce-Reduce-Konflikte genauer und betrachten
-dazu zwei Beispiele.  Das erste Beispiel zeigt einen Shift-Reduce-Konflikt.
-Die in Abbildung \ref{fig:shift-reduce-conflict.grammar} gezeigte Grammatik ist mehrdeutig, denn sie
-legt nicht fest, ob der Operator $\saquoted{+}$ stärker oder schwächer bindet als der Operator
-$\saquoted{*}$:  Interpretieren wir das Nicht-Terminal $N$ als eine Abküzung für \textsc{Number},
-so können wir mit dieser Grammatik den Ausdruck $1 + 2 * 3$ sowohl als
+\subsection{Shift/Reduce and Reduce/Reduce Conflicts}
+In this section, we examine shift-reduce and reduce-reduce conflicts in more detail and consider two examples. The first example shows a shift-reduce conflict. 
+The grammar shown in Figure \ref{fig:shift-reduce-conflict.grammar} is ambiguous because it does not specify whether the operator \(\saquoted{+}\) binds stronger or weaker than the operator \(\saquoted{*}\). If we interpret the non-terminal \(N\) as an abbreviation for \textsc{Number}, this grammar allows us to interpret the expression \(1 + 2 * 3\) either as 
 \\[0.2cm]
 \hspace*{1.3cm}
-$(1 + 2) * 3$ \quad als auch als \quad $1 + (2 *3)$ \quad 
-\\
-lesen.  
+\((1 + 2) * 3\) \quad or as \quad \(1 + (2 * 3)\).
 
 \begin{figure}[htbp]
   \begin{center}    
@@ -1039,27 +965,27 @@ lesen.
   \vspace*{-0.3cm}
 
   \end{center}
-  \caption{Eine Grammatik mit Shift-Reduce-Konflikten.}
+  \caption{A grammar with shift/reduce conflicts.}
   \label{fig:shift-reduce-conflict.grammar}
 \end{figure}
-
-Wir berechnen zunächst den Start-Zustand $s_0$.
+\noindent
+First, we calculate the start state \(s_0\):
 \\[0.2cm]
 \hspace*{1.3cm}
-$\begin{array}[t]{lcl}
+\(\begin{array}[t]{lcl}
  s_0 & = & \textsl{closure}\bigl( \{ s \rightarrow \bullet\, e\,\symbol{36} \}\bigr) \\[0.1cm]
      & = & \bigl\{ s \rightarrow \bullet\, e\,\symbol{36},\;
-                   e \rightarrow \bullet\, e \aquoted{+} e,\;
-                   e \rightarrow \bullet\, e \aquoted{*} e,\;
+                   e \rightarrow \bullet\, e \saquoted{+} e,\;
+                   e \rightarrow \bullet\, e \saquoted{*} e,\;
                    e \rightarrow \bullet\, N\;
             \bigr\}.
  \end{array}
-$
+\)
 \\[0.2cm] 
-Als nächstes berechnen wir $s_1 := \textsl{goto}(s_0, e)$:
+Next, we calculate \(s_1 := \textsl{goto}(s_0, e)\):
 \\[0.2cm]
 \hspace*{1.3cm}
-$\begin{array}[t]{lcl}
+\(\begin{array}[t]{lcl}
   s_1 & = & \textsl{goto}(s_0, e)  \\
       & = & \textsl{closure}\bigl(\{  
                    s \rightarrow e \bullet\,\symbol{36}\;
@@ -1071,65 +997,62 @@ $\begin{array}[t]{lcl}
                e \rightarrow e \bullet \saquoted{*}\; e \;
             \} 
 \end{array}
-$
+\)
 \\[0.2cm]
-Nun berechnen wir $s_2 := \textsl{goto}(s_1, \saquoted{+})$:\\[0.2cm]
+Now we calculate \(s_2 := \textsl{goto}(s_1, \saquoted{+})\):
+\\[0.2cm]
 \hspace*{1.3cm}
-$
+\(
 \begin{array}[t]{lcl}
   s_2 & = & \textsl{goto}(s_1, \saquoted{+})  \\
-      & = & \textsl{closure}\bigl(\{ e \rightarrow e \aquoted{+} \bullet e,\; \}\bigr) \\
+      & = & \textsl{closure}\bigl(\{ e \rightarrow e \saquoted{+} \bullet e,\; \}\bigr) \\
       & = & \{ e \rightarrow e \;\saquoted{+} \bullet e,\;
-               e \rightarrow \bullet\, e \aquoted{+} e,\;
-               e \rightarrow \bullet\, e \aquoted{*} e,\;
+               e \rightarrow \bullet\, e \saquoted{+} e,\;
+               e \rightarrow \bullet\, e \saquoted{*} e,\;
                e \rightarrow \bullet\, N\;
             \}
 \end{array}
-$
+\)
 \\[0.2cm] 
-Als nächstes berechnen wir $s_3 := \textsl{goto}(s_2, e)$:
+Next, we calculate \(s_3 := \textsl{goto}(s_2, e)\):
 \\[0.2cm]
 \hspace*{1.3cm}
-$ 
+\(
 \begin{array}[t]{lcl}
   s_3 & = & \textsl{goto}(s_2, e)  \\
       & = & \textsl{closure}\bigl(\{  
-               e \rightarrow e \aquoted{+} e \bullet,\;
+               e \rightarrow e \saquoted{+} e \bullet,\;
                e \rightarrow e \bullet \saquoted{+}\; e,\;
                e \rightarrow e \bullet \saquoted{*}\; e \}\bigr) \\
-      & = & \{ e \rightarrow e \aquoted{+} e \bullet,\;
+      & = & \{ e \rightarrow e \saquoted{+} e \bullet,\;
                e \rightarrow e \bullet \saquoted{+}\; e,\;
                e \rightarrow e \bullet \saquoted{*}\; e \;
             \}
 \end{array}
-$
+\)
 \\[0.2cm]
-Hier tritt bei der Berechnung von $\textsl{action}(s_3, \saquoted{*})$ ein Shift-Reduce-Konflikt auf,
-denn einerseits verlangt die markierte Regel 
-\\[0.2cm]
-\hspace*{1.3cm}
-$e \rightarrow e \bullet \saquoted{*}\; e$, 
-\\[0.2cm]
-dass das Token $\saquoted{*}$ auf den Stack geschoben wird, andererseits haben wir
+Here, a shift-reduce conflict arises during the calculation of \(\textsl{action}(s_3, \saquoted{*})\),
+because on one hand, the marked rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{Follow}(e) = \{ \;\saquoted{+}, \;\saquoted{*}, \;\saquoted{\symbol{36}}\; \}$, 
+\(e \rightarrow e \bullet \saquoted{*}\; e\), 
 \\[0.2cm]
-so dass, falls das nächste zu lesende Token den Wert $\saquoted{*}$ hat, der Symbol-Stack mit der
-Regel 
+demands that the token \(\saquoted{*}\) be pushed onto the stack, but on the other hand, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$e \rightarrow e \aquoted{+} e\, \bullet$,
+\(\textsl{Follow}(e) = \{ \;\saquoted{+}, \;\saquoted{*}, \;\saquoted{\symbol{36}}\; \}\), 
 \\[0.2cm]
-reduziert werden sollte.  
+so that, if the next token to be read has the value \(\saquoted{*}\), the symbol stack should be reduced with the rule 
+\\[0.2cm]
+\hspace*{1.3cm}
+\(e \rightarrow e \saquoted{+} e\, \bullet\).
 \vspace*{0.3cm}
 
 \noindent
-\textbf{Bemerkung}: Es ist nicht weiter verwunderlich, dass wir bei der oben angegebenen
-Grammatik einen Konflikt gefunden haben, denn diese Grammatik ist nicht eindeutig.
-Demgegenüber kann gezeigt werden, dass jede SLR-Grammatik eindeutig sein muss.  Folglich
-ist eine mehrdeutige Grammatik niemals eine SLR-Grammatik.  Die Umkehrung dieser Aussage gilt
-jedoch nicht.  Dies werden wir im nächsten Beispiel sehen.
+\textbf{Remark}: It is not surprising that we found a conflict in the grammar specified above, as this grammar
+is ambiguous. On the other hand, it can be shown that every SLR grammar must be unambiguous. Consequently, an
+ambiguous grammar is never an SLR grammar. However, the converse of this statement is not true, as we will see
+in the next example. 
 \eox
 
 
@@ -1143,8 +1066,8 @@ jedoch nicht.  Dies werden wir im nächsten Beispiel sehen.
   \begin{eqnarray*}
   s & \rightarrow & a \aquoted{x} a \aquoted{y}  \\ 
     & \mid        & b \aquoted{y} b \aquoted{x}  \\[0.1cm]
-  a & \rightarrow & \varepsilon                \\[0.1cm]
-  b & \rightarrow & \varepsilon                
+  a & \rightarrow & \lambda                \\[0.1cm]
+  b & \rightarrow & \lambda                
   \end{eqnarray*}
   \vspace*{-0.5cm}
 
@@ -1152,23 +1075,19 @@ jedoch nicht.  Dies werden wir im nächsten Beispiel sehen.
   \vspace*{-0.3cm}
 
   \end{center}
-  \caption{Eine Grammatik mit einem Reduce-Reduce-Konflikt.}
+  \caption{A grammar containing a reduce/reduce conflict.}
   \label{fig:reduce-reduce-conflict.grammar}
 \end{figure}
 
-Wir untersuchen als nächstes eine Grammatik, die keine SLR-Grammatik ist, weil
-Reduce-Reduce-Konflikte auftreten.  
-Wir betrachten dazu die in Abbildung \ref{fig:reduce-reduce-conflict.grammar}
-gezeigte Grammatik.   Diese Grammatik ist eindeutig, denn es gilt
+Next, we examine a grammar that is not an SLR grammar because it contains reduce-reduce conflicts. 
+We consider the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar}. This grammar is unambiguous, as we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $L(s) = \{\; \saquoted{xy}, \;\saquoted{yx} \;\}$
 \\[0.2cm]
-und der String \aquoted{xy} lässt sich nur mit der Regel $s \rightarrow  a \aquoted{x} a \aquoted{y}$
-herleiten, während sich der String \aquoted{yx} nur mit der Regel 
-$s \rightarrow b \aquoted{y} b \aquoted{x}$ erzeugen lässt.
-Um zu zeigen, dass diese Grammatik Shift-Reduce-Konflikte enthält,
-berechnen wir den Start-Zustand eines SLR-Parsers für diese Grammatik.
+and the string \aquoted{xy} can only be derived using the rule $s \rightarrow  a \aquoted{x} a \aquoted{y}$, while the string \aquoted{yx} can only be generated using the rule 
+$s \rightarrow b \aquoted{y} b \aquoted{x}$.
+To demonstrate that this grammar contains shift-reduce conflicts, we calculate the start state of an SLR parser for this grammar.
 \\[0.2cm]
 $\hspace*{1.3cm}
 \begin{array}[t]{lcl}
@@ -1176,37 +1095,36 @@ $\hspace*{1.3cm}
      & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
                    s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
                    s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
-                   a \rightarrow \bullet\, \varepsilon, \;
-                   b \rightarrow \bullet\, \varepsilon \;
+                   a \rightarrow \bullet\, \lambda, \;
+                   b \rightarrow \bullet\, \lambda \;
             \bigr\} \\
      & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
                    s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
                    s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
-                   a \rightarrow \varepsilon \bullet, \;
-                   b \rightarrow \varepsilon \bullet \;
+                   a \rightarrow \lambda \bullet, \;
+                   b \rightarrow \lambda \bullet \;
             \bigr\},
  \end{array}
 $
 \\[0.2cm] 
-denn $a \rightarrow \bullet\, \varepsilon$ ist dasselbe wie $a \rightarrow \varepsilon \bullet$.
-In diesem Zustand gibt es einen Reduce-Reduce-Konflikt zwischen den beiden markierten Regeln
+since $a \rightarrow \bullet\, \lambda$ is the same as $a \rightarrow \lambda \bullet$.
+In this state, there is a reduce-reduce conflict between the two marked rules
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \varepsilon \bullet \quad \mbox{und} \quad b \rightarrow \varepsilon \bullet$.
+$a \rightarrow \lambda \bullet \quad \mbox{and} \quad b \rightarrow \lambda\; \bullet$.
 \\[0.2cm]
-Dieser Konflikt tritt bei der Berechnung von 
+This conflict arises when calculating 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{action}(s_0, \aquoted{x})$
 \\[0.2cm]
-auf, denn wir haben 
+because we have 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{Follow}(a) = \bigl\{ \saquoted{x}, \saquoted{y} \bigr\} = \textsl{Follow}(b)$.
 \\[0.2cm]
-und damit ist dann nicht klar, mit welcher dieser Regeln der Parser die Eingabe im Zustand $s_0$
-reduzieren soll, wenn das nächste gelesene Token den Wert $\saquoted{x}$ hat, denn dieses Token ist
-sowohl ein Element der Menge $\textsl{Follow}(a)$ als auch der Menge $\textsl{Follow}(b)$.
+Thus, it is unclear which of these rules the parser should use to reduce the input in state $s_0$ when the next token read has the value $\saquoted{x}$, as this token is
+both an element of the set $\textsl{Follow}(a)$ and the set $\textsl{Follow}(b)$.
 
 % Es ist interessant zu bemerken, dass die obige Grammatik die $LL(1)$-Eigenschaft hat, denn es gilt
 % \\[0.2cm]
@@ -1229,7 +1147,7 @@ sowohl ein Element der Menge $\textsl{Follow}(a)$ als auch der Menge $\textsl{Fo
 As part of the resources provided with this lecture,  the file
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/ANTLR4-Python/SLR-Parser-Generator/SLR-Table-Generator.ipynb}{Formal-Languages/blob/master/ANTLR4-Python/SLR-Parser-Generator/SLR-Table-Generator.ipynb}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-9/SLR-Table-Generator.ipynb}{Formal-Languages/blob/master/Python/Chapter-9/SLR-Table-Generator.ipynb}
 \\[0.2cm]
 contains a \textsl{Python} program that checks whether a given grammar is an SLR grammar.  This program
 computes the states as well as the action table of a given grammar. \eox
@@ -1239,7 +1157,7 @@ The github directory containing supplementary files for this lecture contains th
 programming language \texttt{C} at
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/ANTLR4-Python/SLR-Parser-Generator/Examples/c-grammar.g}{Formal-Languages/blob/master/ANTLR4-Python/SLR-Parser-Generator/Examples/c-grammar.g}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-9/Examples/c-grammar.g}{Formal-Languages/blob/master/Python/Chapter-9/Examples/c-grammar.g}
 \\[0.2cm]
 This grammar is not an SLR-grammar.  Use the SLR-table generator 
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/ANTLR4-Python/SLR-Parser-Generator/SLR-Table-Generator.ipynb}{SLR-Table-Genarator.ipynb}
@@ -1265,13 +1183,13 @@ $
      & = & \bigl\{ \widehat{s} \rightarrow \bullet\,\, s\,\symbol{36},\;
                    s \rightarrow \bullet\,\, a \aquoted{x} a \aquoted{y},\;
                    s \rightarrow \bullet\,\, b \aquoted{y} b \aquoted{x},\;
-                   a \rightarrow \varepsilon \bullet, \;
-                   b \rightarrow \varepsilon \bullet \;
+                   a \rightarrow \lambda \bullet, \;
+                   b \rightarrow \lambda \bullet \;
             \bigr\}
  \end{array}$
 \\[0.2cm]
-kommen die markierten Regeln $a \rightarrow \varepsilon \bullet$ und $b \rightarrow
-\varepsilon\bullet$ von der Berechnung des Abschlusses der Regeln 
+kommen die markierten Regeln $a \rightarrow \lambda \bullet$ und $b \rightarrow
+\lambda\bullet$ von der Berechnung des Abschlusses der Regeln 
 \\[0.2cm]
 \hspace*{1.3cm}
 $s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y} \quad \mbox{und} \quad 
@@ -1284,9 +1202,9 @@ berücksichtigen wir den \blue{Kontext}, in dem die syntaktische Variable auftauc
 Funktion $\textsl{action}(s_0, \saquoted{x})$ und $\textsl{action}(s_0, \saquoted{y})$ wie folgt definieren:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_0, \saquoted{x}) = \langle \texttt{reduce}, a \rightarrow \varepsilon \rangle$
+$\textsl{action}(s_0, \saquoted{x}) = \langle \texttt{reduce}, a \rightarrow \lambda \rangle$
 \quad \mbox{und} \quad 
-$\textsl{action}(s_0, \saquoted{y}) = \langle \texttt{reduce}, b \rightarrow \varepsilon \rangle$. 
+$\textsl{action}(s_0, \saquoted{y}) = \langle \texttt{reduce}, b \rightarrow \lambda \rangle$. 
 \\[0.2cm]
 Durch diese Definition wird der Reduce-Reduce-Konflikt gelöst.  Die zentrale Idee ist,
 bei der Berechnung des Abschlusses den Kontext, in dem eine Regel auftritt, mit einzubeziehen.
@@ -1372,9 +1290,9 @@ etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}$.
 der Folge-Token hinzu gekommen.  Der Kontext, in dem das $c$ auftritt, das mit der Regel
 $c \rightarrow \gamma$ erkannt werden soll, ist zunächst durch den String $\delta$ gegeben,
 der in der Regel $a \rightarrow \beta \bullet c\, \delta:L$ auf das $c$ folgt.
-Möglicherweise leitet $\delta$  den leeren String $\varepsilon$ ab.  In diesen Fall  
+Möglicherweise leitet $\delta$  den leeren String $\lambda$ ab.  In diesen Fall  
 spielen auch die Folge-Token aus der Menge $L$ eine Rolle, denn falls
-$\delta \Rightarrow^* \varepsilon$ gilt, kann auf das $c$ auch ein Folge-Token $t$ aus der
+$\delta \Rightarrow^* \lambda$ gilt, kann auf das $c$ auch ein Folge-Token $t$ aus der
 Menge $L$ folgen. \hspace*{\fill} $\Box$
 \vspace*{0.1cm}
 
@@ -1420,13 +1338,13 @@ markierten Regeln der Fall ist.
 \textbf{Bemerkung}: Der Ausdruck $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}$
 sieht komplizierter aus, als er tatsächlich ist.  Wollen wir diesen Ausdruck berechnen, so
 ist es zweckmäßig eine Fallunterscheidung danach durchzuführen, ob $\delta$ den leeren
-String $\varepsilon$ ableiten kann oder nicht, denn es gilt
+String $\lambda$ ableiten kann oder nicht, denn es gilt
 \\[0.2cm]
 \hspace*{1.3cm}
 $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\} = 
 \left\{
 \begin{array}{ll}
-  \textsl{First}(\delta) \cup L  & \mbox{falls $\delta \Rightarrow^* \varepsilon$;}  \\
+  \textsl{First}(\delta) \cup L  & \mbox{falls $\delta \Rightarrow^* \lambda$;}  \\
   \textsl{First}(\delta)         & \mbox{sonst.}  
 \end{array}
 \right.
@@ -1597,7 +1515,7 @@ wieder auf und berechnen zunächst die Menge aller Zustände.
 \end{enumerate}
 Als nächstes untersuchen wir, ob es bei den Zuständen Konflikte gibt.
 Beim Start-Zustand $s_0$ hatten wir im letzten Abschnitt einen Reduce-Reduce-Konflikt zwischen den
-beiden Regeln $a \rightarrow \varepsilon$ und $b \rightarrow \varepsilon$ gefunden, weil 
+beiden Regeln $a \rightarrow \lambda$ und $b \rightarrow \lambda$ gefunden, weil 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{Follow}(a) \cap \textsl{Follow}(b) = \{ \saquoted{x}, \saquoted{y} \} \not= \{\}$
@@ -1877,8 +1795,8 @@ gesehen, dass die Grammatik
 \\[0.2cm]
 \hspace*{1.3cm}
 $s \;\rightarrow\; a \aquoted{x} a \aquoted{y} \mid b \aquoted{y} b \aquoted{x}$, \quad
-$a \;\rightarrow\;\varepsilon$, \quad
-$b \;\rightarrow\; \varepsilon$
+$a \;\rightarrow\;\lambda$, \quad
+$b \;\rightarrow\; \lambda$
 \\[0.2cm]
 keine SLR-Grammatik ist.  Später hatten wir gesehen, dass diese Grammatik von einem
 kanonischen LR-Parser geparst werden kann.  Wir zeigen nun, dass diese Grammatik auch von

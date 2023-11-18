@@ -163,12 +163,12 @@ A shift-reduce parser uses two stacks:
 \item \textsl{States} is a stack of states from the set $Q$:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{States} \in \textsl{Stack}\langle Q \rangle$.
+      $\textsl{States} \in \textsl{Stack}[Q]$.
 \item \textsl{Symbols} is a stack of grammar symbols, i.e.~this stack contains both terminals and syntactical
       variables:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{Symbols} \in \textsl{Stack}\langle T \cup V \rangle$.
+      $\textsl{Symbols} \in \textsl{Stack}[T \cup V]$.
 \end{enumerate}
 In order to simplify the exposition of shift-reduce parsing we assume that the set $T$ of terminals contains
 the special symbol ``\textsc{Eof}'' (short for \blue{e}nd \blue{o}f \blue{f}ile).
@@ -178,7 +178,7 @@ In order to understand how a shift-reduce parser works we introduce the notion o
 \blue{parser configuration}\index{parser configuration}.  A parser configuration is a triple of the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$\langle\textsl{States}, \textsl{Symbols}, \textsl{Tokens} \rangle$
+$(\textsl{States}, \textsl{Symbols}, \textsl{Tokens})$
 \\[0.2cm]
 where \textsl{States} and \textsl{Symbols} are the aforementioned stacks of states and grammar symbols, while
 \textsl{Tokens} is the rest of the 
@@ -536,16 +536,16 @@ $s_{15}$ &              &                  &                 \\
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                 ]
-    r1 = ('E', ('E', '+', 'P'))
-    r2 = ('E', ('E', '-', 'P'))
-    r3 = ('E', ('P'))
+    r1 = ('e', ('e', '+', 'p'))
+    r2 = ('e', ('e', '-', 'p'))
+    r3 = ('e', ('p'))
     
-    r4 = ('P', ('P', '*', 'F'))
-    r5 = ('P', ('P', '/', 'F'))
-    r6 = ('P', ('F'))
+    r4 = ('p', ('p', '*', 'f'))
+    r5 = ('p', ('p', '/', 'f'))
+    r6 = ('p', ('f'))
     
-    r7 = ('F', ('(', 'E', ')'))
-    r8 = ('F', ('int',))               
+    r7 = ('f', ('(', 'e', ')'))
+    r8 = ('f', ('NUMBER',))               
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Grammar rules coded in \textsl{Python}.}
@@ -566,22 +566,22 @@ $s_{15}$ &              &                  &                 \\
                 ]
     gotoTable   := {};
 
-    gotoTable["s0", "E"] := "s4";
-    gotoTable["s0", "P"] := "s3";
-    gotoTable["s0", "F"] := "s1";
+    gotoTable["s0", "e"] := "s4";
+    gotoTable["s0", "p"] := "s3";
+    gotoTable["s0", "f"] := "s1";
     
-    gotoTable["s5", "E"] := "s6";
-    gotoTable["s5", "P"] := "s3";
-    gotoTable["s5", "F"] := "s1";
+    gotoTable["s5", "e"] := "s6";
+    gotoTable["s5", "p"] := "s3";
+    gotoTable["s5", "f"] := "s1";
     
-    gotoTable["s8", "P"] := "s15";
-    gotoTable["s8", "F"] := "s1";
+    gotoTable["s8", "p"] := "s15";
+    gotoTable["s8", "f"] := "s1";
     
-    gotoTable["s9", "P"] := "s10";
+    gotoTable["s9", "p"] := "s10";
     gotoTable["s9", "F"] := "s1";
     
-    gotoTable["s11", "F"] := "s14";
-    gotoTable["s12", "F"] := "s13";
+    gotoTable["s11", "f"] := "s14";
+    gotoTable["s12", "f"] := "s13";
 \end{Verbatim}
 \vspace*{-0.3cm}
 \caption{Goto table coded in \textsc{Python}.}
@@ -602,45 +602,45 @@ $s_{15}$ &              &                  &                 \\
                 ]
 actionTable = {}
 
-actionTable['s0', '('  ] = ('shift', 's5');  actionTable['s8', '('  ] = ('shift', 's5')   
-actionTable['s0', 'int'] = ('shift', 's2');  actionTable['s8', 'int'] = ('shift', 's2')   
+actionTable['s0', '('     ] = ('shift', 's5');  actionTable['s8', '('     ] = ('shift', 's5')   
+actionTable['s0', 'NUMBER'] = ('shift', 's2');  actionTable['s8', 'NUMBER'] = ('shift', 's2')   
                                                                                          
-actionTable['s1', 'EOF'] = ('reduce', r6);   actionTable['s9', '('  ] = ('shift', 's5')   
-actionTable['s1', '+'  ] = ('reduce', r6);   actionTable['s9', 'int'] = ('shift', 's2')   
-actionTable['s1', '-'  ] = ('reduce', r6);                                                
-actionTable['s1', '*'  ] = ('reduce', r6);   actionTable['s10', 'EOF'] = ('reduce', r2)   
-actionTable['s1', '/'  ] = ('reduce', r6);   actionTable['s10', '+' ] = ('reduce', r2)    
-actionTable['s1', ')'  ] = ('reduce', r6);   actionTable['s10', '-' ] = ('reduce', r2)    
-                                             actionTable['s10', '*' ] = ('shift', 's12')
-actionTable['s2', 'EOF'] = ('reduce', r8);   actionTable['s10', '/' ] = ('shift', 's11')  
-actionTable['s2', '+'  ] = ('reduce', r8);   actionTable['s10', ')' ] = ('reduce', r2)    
-actionTable['s2', '-'  ] = ('reduce', r8);                                                
-actionTable['s2', '*'  ] = ('reduce', r8);   actionTable['s11', '('  ] = ('shift', 's5')  
-actionTable['s2', '/'  ] = ('reduce', r8);   actionTable['s11', 'int'] = ('shift', 's2')  
-actionTable['s2', ')'  ] = ('reduce', r8);                                                
-                                             actionTable['s12', '('  ] = ('shift', 's5')  
-actionTable['s3', 'EOF'] = ('reduce', r3);   actionTable['s12', 'int'] = ('shift', 's2')  
-actionTable['s3', '+'  ] = ('reduce', r3);                                                
-actionTable['s3', '-'  ] = ('reduce', r3);   actionTable['s13', 'EOF'] = ('reduce', r4)   
-actionTable['s3', '*'  ] = ('shift', 's12'); actionTable['s13', '+'  ] = ('reduce', r4)   
-actionTable['s3', '/'  ] = ('shift', 's11'); actionTable['s13', '-'  ] = ('reduce', r4)   
-actionTable['s3', ')'  ] = ('reduce', r3);   actionTable['s13', '*'  ] = ('reduce', r4)   
-                                             actionTable['s13', '/'  ] = ('reduce', r4)   
-actionTable['s4', 'EOF'] = 'accept';         actionTable['s13', ')'  ] = ('reduce', r4)   
-actionTable['s4', '+'  ] = ('shift', 's8');                                               
-actionTable['s4', '-'  ] = ('shift', 's9');  actionTable['s14', 'EOF'] = ('reduce', r5)   
-                                             actionTable['s14', '+'  ] = ('reduce', r5)   
-actionTable['s5', '('  ] = ('shift', 's5');  actionTable['s14', '-'  ] = ('reduce', r5)   
-actionTable['s5', 'int'] = ('shift', 's2');  actionTable['s14', '*'  ] = ('reduce', r5)   
-                                             actionTable['s14', '/'  ] = ('reduce', r5)   
-actionTable['s6', '+'  ] = ('shift', 's8');  actionTable['s14', ')'  ] = ('reduce', r5)   
-actionTable['s6', '-'  ] = ('shift', 's9');                                               
-actionTable['s6', ')'  ] = ('shift', 's7');  actionTable['s15', 'EOF'] = ('reduce', r1)   
-                                             actionTable['s15', '+'  ] = ('reduce', r1)   
-actionTable['s7', 'EOF'] = ('reduce', r7);   actionTable['s15', '-'  ] = ('reduce', r1)   
-actionTable['s7', '+'  ] = ('reduce', r7);   actionTable['s15', '*'  ] = ('shift', 's12') 
-actionTable['s7', '-'  ] = ('reduce', r7);   actionTable['s15', '/'  ] = ('shift', 's11') 
-actionTable['s7', '*'  ] = ('reduce', r7);   actionTable['s15', ')'  ] = ('reduce', r1)   
+actionTable['s1', 'EOF'] = ('reduce', r6);      actionTable['s9', '('     ] = ('shift', 's5')   
+actionTable['s1', '+'  ] = ('reduce', r6);      actionTable['s9', 'NUMBER'] = ('shift', 's2')   
+actionTable['s1', '-'  ] = ('reduce', r6);                                                   
+actionTable['s1', '*'  ] = ('reduce', r6);      actionTable['s10', 'EOF'] = ('reduce', r2)   
+actionTable['s1', '/'  ] = ('reduce', r6);      actionTable['s10', '+'  ] = ('reduce', r2)    
+actionTable['s1', ')'  ] = ('reduce', r6);      actionTable['s10', '-'  ] = ('reduce', r2)    
+                                                actionTable['s10', '*'  ] = ('shift', 's12')
+actionTable['s2', 'EOF'] = ('reduce', r8);      actionTable['s10', '/'  ] = ('shift', 's11')  
+actionTable['s2', '+'  ] = ('reduce', r8);      actionTable['s10', ')'  ] = ('reduce', r2)    
+actionTable['s2', '-'  ] = ('reduce', r8);                                                   
+actionTable['s2', '*'  ] = ('reduce', r8);      actionTable['s11', '('     ] = ('shift', 's5')  
+actionTable['s2', '/'  ] = ('reduce', r8);      actionTable['s11', 'NUMBER'] = ('shift', 's2')  
+actionTable['s2', ')'  ] = ('reduce', r8);                                                   
+                                                actionTable['s12', '('     ] = ('shift', 's5')  
+actionTable['s3', 'EOF'] = ('reduce', r3);      actionTable['s12', 'NUMBER'] = ('shift', 's2')  
+actionTable['s3', '+'  ] = ('reduce', r3);                                                   
+actionTable['s3', '-'  ] = ('reduce', r3);      actionTable['s13', 'EOF'] = ('reduce', r4)   
+actionTable['s3', '*'  ] = ('shift', 's12');    actionTable['s13', '+'  ] = ('reduce', r4)   
+actionTable['s3', '/'  ] = ('shift', 's11');    actionTable['s13', '-'  ] = ('reduce', r4)   
+actionTable['s3', ')'  ] = ('reduce', r3);      actionTable['s13', '*'  ] = ('reduce', r4)   
+                                                actionTable['s13', '/'  ] = ('reduce', r4)   
+actionTable['s4', 'EOF'] = 'accept';            actionTable['s13', ')'  ] = ('reduce', r4)   
+actionTable['s4', '+'  ] = ('shift', 's8');                                                  
+actionTable['s4', '-'  ] = ('shift', 's9');     actionTable['s14', 'EOF'] = ('reduce', r5)   
+                                                actionTable['s14', '+'  ] = ('reduce', r5)   
+actionTable['s5', '('     ] = ('shift', 's5');  actionTable['s14', '-'  ] = ('reduce', r5)   
+actionTable['s5', 'NUMBER'] = ('shift', 's2');  actionTable['s14', '*'  ] = ('reduce', r5)   
+                                                actionTable['s14', '/'  ] = ('reduce', r5)   
+actionTable['s6', '+'  ] = ('shift', 's8');     actionTable['s14', ')'  ] = ('reduce', r5)   
+actionTable['s6', '-'  ] = ('shift', 's9');                                                  
+actionTable['s6', ')'  ] = ('shift', 's7');     actionTable['s15', 'EOF'] = ('reduce', r1)   
+                                                actionTable['s15', '+'  ] = ('reduce', r1)   
+actionTable['s7', 'EOF'] = ('reduce', r7);      actionTable['s15', '-'  ] = ('reduce', r1)   
+actionTable['s7', '+'  ] = ('reduce', r7);      actionTable['s15', '*'  ] = ('shift', 's12') 
+actionTable['s7', '-'  ] = ('reduce', r7);      actionTable['s15', '/'  ] = ('shift', 's11') 
+actionTable['s7', '*'  ] = ('reduce', r7);      actionTable['s15', ')'  ] = ('reduce', r1)   
 actionTable['s7', '/'  ] = ('reduce', r7);
 actionTable['s7', ')'  ] = ('reduce', r7);
 \end{Verbatim}
