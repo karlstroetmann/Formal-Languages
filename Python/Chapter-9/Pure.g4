@@ -1,4 +1,4 @@
-grammar Grammar;
+grammar Pure;
 
 start: grmrl+;
 
@@ -11,9 +11,9 @@ item : VARIABLE
      | LITERAL
      ;
 
-VARIABLE: [a-z][a-z_]*;
-TOKEN   : [A-Z][A-Z_]*;
+VARIABLE: [a-z][a-zA-Z_]*;
+TOKEN   : [A-Z][a-zA-Z_]*;
 LITERAL : '\'' ~('\'')+ '\'';
         
-WS      : [ \t\n\r]     -> skip ;
-COMMENT : '//' ~('\n')* -> skip ;
+WS      : [ \t\n\r]     -> skip;
+COMMENT : '//' ~('\n')* -> skip;
