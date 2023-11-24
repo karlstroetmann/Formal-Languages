@@ -34,9 +34,9 @@ Unfortunately, the original English literature \cite{knuth:65} uses the rather m
 The marked rule \(a \rightarrow \beta \bullet \gamma\) indicates that the parser is trying to parse an \(a\)
 with the rule \(a \rightarrow \beta \gamma\), having already seen \(\beta\) and is next attempting to recognize
 \(\gamma\). The symbol \(\bullet\) thus marks the part of the right side of the rule that we have
-already read.  Now the idea is to represent the states of an SLR parser as \blue{sets of marked rules}. To illustrate
+already read.  Now the idea is to represent a state of an SLR parser as a \blue{set of marked rules}. To illustrate
 this idea, let's consider a specific example: we start with the grammar for arithmetic expressions shown in
-Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}, extending this grammar by a new start symbol
+Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}. We extend this grammar by a new start symbol
 \(\widehat{s}\) and the rule 
 \\[0.2cm]
 \hspace*{1.3cm} \(\widehat{s} \rightarrow  \textsl{expr}\;\symbol{36}\)
@@ -73,7 +73,9 @@ in the start state, because at the beginning we cannot yet know which rule we wi
 \hspace*{1.3cm}
  \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\) 
 \\[0.2cm]
-to the start state, we see that we might need to read a \textsl{product} next. Therefore, the start state also contains the following marked rules:  
+to the start state, we see that we might need to read a \textsl{product} next.  
+Therefore, the start state also contains the following marked rules\footnote{In order to be more concise, we
+drop the empty string $\lambda$ in the following rules.}:  
 \begin{enumerate}
 \item[4.] \(\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{*} \textsl{factor}\),
 \item[5.] \(\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{/} \textsl{factor}\),
@@ -106,7 +108,7 @@ is formalized in the concept of the \textcolor{blue}{closure} of a set of marked
         is a grammar rule of the underlying grammar \(G\), then the marked rule 
         \\[0.2cm]
         \hspace*{1.3cm}
-        \(c \rightarrow \bullet \gamma\)
+        \(c \rightarrow \bullet\; \gamma\)
         \\[0.2cm]
         is also an element of the set \(\mathcal{K}\). Formally, this is written as follows:
         \\[0.2cm]
@@ -114,7 +116,7 @@ is formalized in the concept of the \textcolor{blue}{closure} of a set of marked
         \((a \rightarrow \beta \bullet c\, \delta) \in \mathcal{K} 
          \;\wedge\; 
          (c \rightarrow \gamma) \in R
-         \;\Rightarrow\; (c \rightarrow \bullet \gamma) \in \mathcal{K}
+         \;\Rightarrow\; (c \rightarrow \bullet\; \gamma) \in \mathcal{K}
         \)
   \end{enumerate}
   The set \(\mathcal{K}\) defined in this way is uniquely determined and is referred to as \(\textsl{closure}(\mathcal{M})\) \index{\(\textsl{closure}(\mathcal{M})\)} in the following. \eox
@@ -137,7 +139,7 @@ For a given set \(\mathcal{M}\) of marked rules, the computation of \(\mathcal{K
       within the set \(\mathcal{K}\), where \(c\) is a syntactic variable. Subsequently, for all rules of the form \(c \rightarrow \gamma\), add the new marked rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(c \rightarrow \bullet\gamma\)
+      \(c \rightarrow \bullet\;\gamma\)
       \\[0.2cm]
       into the set \(\mathcal{K}\). Repeat this step until no new rules are found.
 \end{enumerate}
@@ -194,7 +196,6 @@ and a new token \(\symbol{36}\) to the grammar
  \Bigl\langle V \cup \{ \widehat{s} \}, T \cup \{\symbol{36}\}, R \cup \{ \widehat{s} \rightarrow s\, \symbol{36} \}, \widehat{s} \Bigr\rangle
 \).
 \\[0.2cm]
-The token \(\symbol{36}\) represents the end of the input.
 We refer to the grammar \(\widehat{G}\) as the \blue{augmented grammar}.\index{augmented grammar}
 The use of the augmented grammar enables the following definition of the start state.
 We set:
@@ -211,8 +212,9 @@ Next, we construct the function \(\textsl{goto}()\). The definition is as follow
 \).
 \\[0.2cm]
 To understand this definition, assume that the parser is in a state where it
-tries to parse an \(a\) using the rule \(a \rightarrow \beta\, c\, \delta\) and that the substring \(\beta\) has already been recognized. This state is described by the marked rule
-\\[0.2cm]
+tries to parse an \(a\) using the rule \(a \rightarrow \beta\, c\, \delta\) and, furthermore, assume that the substring \(\beta\)
+has already been recognized. This state is described by the marked rule 
+\\[-0.2cm]
 \hspace*{1.3cm}
 \(a \rightarrow \beta \bullet c\, \delta\)
 \\[0.2cm]
@@ -263,7 +265,7 @@ We write \(\textsl{nullable}(\textsl{a})\) if the variable \(\textsl{a}\) is $\l
 \eox
 \end{Definition}
 
-\examples
+\examplesEng
 \begin{enumerate}[(a)]
 \item In the grammar shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2},
       the variables \textsl{exprRest} and \textsl{productRest} are \(\lambda\)-generating.
@@ -396,11 +398,10 @@ proper fixpoint iteration in this example
 
 \begin{Definition}[\(\textsl{Follow}()\)]
 Let \(G = \langle V, T, R, s \rangle\) be a context-free grammar and \(\textsl{a} \in V\).
-In computing \(\textsl{Follow}(\textsl{a})\), the grammar is first modified
-by adding the symbol \(\$\) as a new symbol to the set \(T\) of terminals.  This symbols signifies the end of input.
-To the variables, the new symbol \(\widehat{s}\) is added, which is also
-the new start symbol of the grammar. To the set \(R\) of rules,
-we add the following new rule:
+In computing \(\textsl{Follow}(\textsl{a})\), the grammar is first \blue{augmented}
+by adding the symbol \(\$\) as a new symbol to the set \(T\) of terminals and adding
+the new symbol \(\widehat{s}\) to the variables.  This symbol is also the new start symbol of the grammar. To the set \(R\) of rules,
+we add the following new rule: 
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\widehat{s} \rightarrow s\; \$\).
@@ -410,8 +411,8 @@ Furthermore, we define
 \hspace*{1.3cm}
  \(\widehat{T} := T \cup \{ \$ \}\).
 \\[0.2cm]
-We refer to the thus modified grammar \(\widehat{G} = \langle V, \widehat{T}, R, \widehat{s} \rangle\) as the
-\textit{augmented} grammar. 
+We refer to the thus modified grammar \(\widehat{G} = \langle V, \widehat{T}, R, \widehat{s}\, \rangle\) as the
+\textit{augmented} grammar\index{augmented grammar}. 
 Then we define \(\textsl{Follow}(\textsl{a})\) as the set of all tokens \(t\) that can follow the variable \(\textsl{a}\) in a derivation:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -590,8 +591,8 @@ Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is compu
 \end{enumerate}
 Conflicts can arise between the first two rules. We distinguish between two types of conflicts.
 \begin{enumerate}
-\item A \textsl{Shift-Reduce Conflict} occurs when both the first and second cases apply. In this situation,
-      the set \(\mathcal{M}\) contains, on one hand, a marked rule of the form 
+\item A \blue{shift-reduce conflict}\index{shift-reduce conflict} occurs when both the first and second cases
+      apply. In this situation, the set \(\mathcal{M}\) contains, on one hand, a marked rule of the form 
       \\[0.2cm]
       \hspace*{1.3cm}
       \(a \rightarrow \beta \bullet t\, \gamma\),
@@ -605,7 +606,7 @@ Conflicts can arise between the first two rules. We distinguish between two type
       the parser transition to a state with the marked rule  
       \(a \rightarrow \beta\, t \bullet \gamma\), or whether the symbol stack should be reduced using the rule
       \(c \rightarrow \delta\) instead. 
-\item A \textsl{Reduce-Reduce Conflict} exists if the set \(\mathcal{M}\) contains two different marked rules of the form
+\item A \blue{reduce-reduce conflict}\index{reduce-reduce conflict} exists if the set \(\mathcal{M}\) contains two different marked rules of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \(c_1 \rightarrow \gamma_1 \bullet\) \quad  and \quad \(c_2 \rightarrow \gamma_2 \bullet\)
@@ -617,7 +618,7 @@ Conflicts can arise between the first two rules. We distinguish between two type
 If either of these conflicts occurs, we say that the grammar is not an SLR grammar\index{SLR grammar}. Such a
 grammar cannot be parsed using an SLR parser. We will later provide examples of both types of conflicts, but
 first, we want to examine a grammar where no conflicts occur and actually compute the functions
-\(\textsl{goto}()\) and \(\textsl{action}()\) for it. We use the grammar shown in Figure \ref{fig:Expr.grammar}
+\(\textsl{goto}()\) and \(\textsl{action}()\) for it. We use the grammar for arithmetic expressions that is shown in Figure \ref{fig:Expr.grammar}
 as a basis. 
 
 Since the syntactic variable \textsl{expr} appears on the right side of grammar rules, we define \textsl{start}
@@ -635,12 +636,12 @@ First, we compute the set of states \(Q\). We had previously provided the follow
 \\[0.2cm]
 However, this set also contains states that cannot be reached from the start state via the function
 \(\textsl{goto}()\). Therefore, we only compute the states that can actually be reached from the start state
-using the function \(\textsl{goto}()\). To avoid making the calculation too complicated, we introduce the
+using the function \(\textsl{goto}()\). To avoid making the calculation too wordy, we introduce the
 following abbreviations: 
 \\[0.2cm]
 \hspace*{1.3cm}
 \(s := \textsl{start},\; e := \textsl{expr},\; p := \textsl{product},\; 
-   f := \textsl{factor}\) and \(N := \textsc{Number}\). 
+   f := \textsl{factor}\), and \(N := \textsc{Number}\). 
 \\[0.2cm]
 We begin with the start state:
 \begin{enumerate}
@@ -828,8 +829,7 @@ s_{15} & := & \textsl{goto}(s_{8}, p) \\
 \end{array}
 $
 \end{enumerate}
-Further calculations do not yield any new states. For instance, when we compute \(\textsl{goto}(s_8,
-\aquoted{()})\), we find: 
+Further calculations do not yield any new states. For instance, when we compute \(\textsl{goto}(s_8,\aquoted{(})\), we find: 
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
@@ -937,7 +937,7 @@ Abbreviate the names of the syntactic variables and terminals with \(s\), \(c\),
 
   \end{minipage}}}
   \end{center}
-  \caption{Eine Grammatik für Boole'sche Ausdrücke in konjunktiver Normalform.}
+  \caption{A grammar for Boolean expression in conjunctive normal form.}
   \label{fig:BoolExpr.grammar}
 \end{figure}
 \subsection{Shift/Reduce and Reduce/Reduce Conflicts}
@@ -969,7 +969,7 @@ The grammar shown in Figure \ref{fig:shift-reduce-conflict.grammar} is ambiguous
   \label{fig:shift-reduce-conflict.grammar}
 \end{figure}
 \noindent
-First, we calculate the start state \(s_0\):
+We augment the grammar and calculate the start state \(s_0\):
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\begin{array}[t]{lcl}
@@ -988,7 +988,7 @@ Next, we calculate \(s_1 := \textsl{goto}(s_0, e)\):
 \(\begin{array}[t]{lcl}
   s_1 & = & \textsl{goto}(s_0, e)  \\
       & = & \textsl{closure}\bigl(\{  
-                   s \rightarrow e \bullet\,\symbol{36}\;
+                   s \rightarrow e \bullet\,\symbol{36},\;
                    e \rightarrow e \bullet \saquoted{+}\; e,\;
                    e \rightarrow e \bullet \saquoted{*}\; e \;
             \}\bigr) \\
@@ -1037,7 +1037,7 @@ because on one hand, the marked rule
 \hspace*{1.3cm}
 \(e \rightarrow e \bullet \saquoted{*}\; e\), 
 \\[0.2cm]
-demands that the token \(\saquoted{*}\) be pushed onto the stack, but on the other hand, we have
+demands that the token \(\saquoted{*}\) is pushed onto the stack, but on the other hand, we have
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\textsl{Follow}(e) = \{ \;\saquoted{+}, \;\saquoted{*}, \;\saquoted{\symbol{36}}\; \}\), 
@@ -1172,138 +1172,120 @@ This rule has to be removed, too.  Furthermore, you have to rename the variable 
 hand side of this rule to $b$ everywhere.
 \eox
 
-\section{Kanonische LR-Parser}
-Der Reduce-Reduce-Konflikt, der in der in Abbildung \ref{fig:reduce-reduce-conflict.grammar}
-gezeigten Grammatik auftritt, kann wie folgt gelöst werden:  In dem Zustand
+\section{Canonical LR Parsers}
+The reduce-reduce conflict that occurs in the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} can be resolved as follows: In the state
 \\[0.2cm]
 \hspace*{1.3cm}
-$
-\begin{array}[t]{lcl}
+$\begin{array}{lcl}
  s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\,\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\,\, a \aquoted{x} a \aquoted{y},\;
-                   s \rightarrow \bullet\,\, b \aquoted{y} b \aquoted{x},\;
+     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
+                   s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
                    a \rightarrow \lambda \bullet, \;
                    b \rightarrow \lambda \bullet \;
             \bigr\}
- \end{array}$
+\end{array}
+$
 \\[0.2cm]
-kommen die markierten Regeln $a \rightarrow \lambda \bullet$ und $b \rightarrow
-\lambda\bullet$ von der Berechnung des Abschlusses der Regeln 
+the marked rules $a \rightarrow \lambda \bullet$ and $b \rightarrow \lambda\bullet$ arise from the closure calculation of the rules 
 \\[0.2cm]
 \hspace*{1.3cm}
-$s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y} \quad \mbox{und} \quad 
+$s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y} \quad \text{and} \quad 
  s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x}$.
 \\[0.2cm]
-Bei der ersten Regel ist klar, dass auf das erste $a$ ein $\saquoted{x}$ folgen muss, bei der zweiten Regel
-sehen wir, dass auf das erste $b$ ein $\saquoted{y}$ folgt.  Diese Information geht über die Information
-hinaus, die in den Mengen $\textsl{Follow}(a)$ bzw.~$\textsl{Follow}(b)$ enthalten ist, denn jetzt
-berücksichtigen wir den \blue{Kontext}, in dem die syntaktische Variable auftaucht.  Damit können wir die
-Funktion $\textsl{action}(s_0, \saquoted{x})$ und $\textsl{action}(s_0, \saquoted{y})$ wie folgt definieren:
+For the first rule, it is clear that the first $a$ must be followed by a $\saquoted{x}$, and for the second rule, we see that the first $b$ must be followed by a $\saquoted{y}$. This information goes beyond what is contained in the sets $\textsl{Follow}(a)$ and $\textsl{Follow}(b)$, as we now consider the \textcolor{blue}{context} in which the syntactic variable appears. This allows us to define the function $\textsl{action}(s_0, \saquoted{x})$ and $\textsl{action}(s_0, \saquoted{y})$ as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{action}(s_0, \saquoted{x}) = \langle \texttt{reduce}, a \rightarrow \lambda \rangle$
-\quad \mbox{und} \quad 
+\quad \text{and} \quad 
 $\textsl{action}(s_0, \saquoted{y}) = \langle \texttt{reduce}, b \rightarrow \lambda \rangle$. 
 \\[0.2cm]
-Durch diese Definition wird der Reduce-Reduce-Konflikt gelöst.  Die zentrale Idee ist,
-bei der Berechnung des Abschlusses den Kontext, in dem eine Regel auftritt, mit einzubeziehen.
-Dazu erweitern wir zunächst die Definition einer markierten Regel.
+This definition resolves the reduce-reduce conflict. The central idea is to include the context in which a rule
+appears in the closure calculation. To do this, we expand the definition of a marked rule next.
 
-\begin{Definition}[erweiterte markierte Regel]
-  Eine \blue{erweiterte markierte Regel} \index{erweiterte markierte Regel} (abgekürzt: \blue{e.m.R.}) \index{e.m.R.}
-  einer Grammatik 
-  $G = \langle V, T, R, s \rangle$ ist ein Quadrupel 
+\begin{Definition}[Extended Marked Rule] \hspace*{\fill}\linebreak
+  An \textcolor{blue}{extended marked rule} \index{extended marked rule} (abbreviated: \textcolor{blue}{e.m.R.}) \index{e.m.R.}
+  of a grammar 
+  $G = \langle V, T, R, s \rangle$ is a quadruple 
   \\[0.2cm]
   \hspace*{1.3cm}
   $\langle a, \beta, \gamma, L \rangle$,
   \\[0.2cm]
-  wobei gilt:
+  where:
   \begin{enumerate}
   \item $(a \rightarrow \beta \gamma) \in R$.
   \item $L \subseteq T$.
   \end{enumerate}
-  Wir schreiben die erweiterte markierte Regel $\langle a, \beta, \gamma, L \rangle$ als
+  We write the extended marked rule $\langle a, \beta, \gamma, L \rangle$ as
   \\[0.2cm]
   \hspace*{1.3cm}
   $a \rightarrow \beta \bullet \gamma: L$.
   \\[0.2cm]
-  Falls $L$ nur aus einem Element $t$ besteht, falls also $L = \{ t \}$ gilt,
-  so lassen wir die Mengen-Klammern weg und schreiben die Regel als
+  If $L$ consists of only one element $t$, that is if $L = \{ t \}$,
+  we omit the set brackets and write the rule as
   \\[0.2cm]
   \hspace*{1.3cm}
-  $a \rightarrow \beta \bullet \gamma:t$. \qed 
+  $a \rightarrow \beta \bullet \gamma:t$. \eox
 \end{Definition}
 
 \noindent
-Anschaulich interpretieren wir die e.m.R. $a \rightarrow \beta \bullet \gamma: L$ als einen Zustand,
-in dem folgendes gilt:
-\begin{enumerate}
-\item Der Parser versucht, ein $a$ mit Hilfe der Grammatik-Regel $a \rightarrow \beta \gamma$ zu
-      erkennen.
-\item Dabei wurde bereits $\beta$ erkannt.  Damit die Regel $a \rightarrow \beta \gamma$
-      angewendet werden kann, muss nun  $\gamma$ erkannt werden.
-\item Wir wissen zusätzlich, dass auf die syntaktische Variable $a$ ein Token aus der Menge $L$
-      folgen muss.
+Intuitively, we interpret the e.m.R. $a \rightarrow \beta \bullet \gamma: L$ as a state in which the following applies:
+\begin{enumerate}[(a)]
+\item The parser attempts to recognize an $a$ using the grammar rule $a \rightarrow \beta \gamma$.
+\item So far, $\beta$ has been recognized. For the rule $a \rightarrow \beta \gamma$ to be applied, $\gamma$ must now be recognized.
+\item Additionally, we know that a token from the set $L$ must follow the syntactic variable $a$.
 
-      Die Menge $L$ bezeichnen wir daher als die Menge der \blue{Folge-Token}.
+      Therefore, we refer to the set $L$ as the set of \textcolor{blue}{Follow Tokens}.
 \end{enumerate}
 
-Mit erweiterten markierten Regeln arbeitet es sich ganz ähnlich wie mit markierten Regeln, allerdings
-müssen wir die Definitionen der Funktionen $\textsl{closure}$, $\textsl{goto}$ und $\textsl{action}$
-etwas modifizieren.  Wir beginnen mit der Funktion $\textsl{closure}$.
+Working with extended marked rules is quite similar to working with marked rules, however, we need to modify the definitions of the functions $\textsl{closure}$, $\textsl{goto}$, and $\textsl{action}$ slightly. We begin with the function $\textsl{closure}$.
 
 \begin{Definition}[$\textsl{closure}(\mathcal{M})$]
-  Es sei $\mathcal{M}$ eine Menge erweiterter markierter Regeln.  Dann definieren wir den
-  \blue{Abschluss} von $\mathcal{M}$
-  als die kleinste Menge $\mathcal{K}$ markierter Regeln, für die folgendes gilt:
+  Let $\mathcal{M}$ be a set of extended marked rules. We define the \textcolor{blue}{closure} of $\mathcal{M}$
+  as the smallest set $\mathcal{K}$ of marked rules for which the following holds:
   \begin{enumerate}
   \item $\mathcal{M} \subseteq \mathcal{K}$,
 
-        der Abschluss umfasst also die ursprüngliche Regel-Menge.
-  \item Ist einerseits
+        thus the closure encompasses the original set of rules.
+  \item On one hand, if
         \\[0.2cm]
         \hspace*{1.3cm}
         $a \rightarrow \beta \bullet c\, \delta: L$
         \\[0.2cm]
-        eine e.m.R.~aus der Menge $\mathcal{K}$, wobei $c$ eine syntaktische
-        Variable ist, und ist andererseits
+        is an e.m.R.~from the set $\mathcal{K}$, where $c$ is a syntactic
+        variable, and on the other hand, if
         \\[0.2cm]
         \hspace*{1.3cm}
         $c \rightarrow \gamma$
         \\[0.2cm]
-        eine Grammatik-Regel der zu Grunde liegenden Grammatik $G$, so ist auch die e.m.R.
+        is a grammar rule of the underlying grammar $G$, then the e.m.R.
         \\[0.2cm]
         \hspace*{1.3cm}
         $c \rightarrow \bullet\, \gamma: \bigcup \{ \textsl{First}(\delta\, t) \mid t \in L \}$
         \\[0.2cm]
-        ein Element der Menge $\mathcal{K}$.  Die Funktion $\textsl{First}(\alpha)$ berechnet dabei für
-        einen String $\alpha \in (T \cup V)^*$ die Menge aller Token $t$, mit denen ein String
-        beginnen kann, der von $\alpha$ abgeleitet worden ist.
+        is also an element of the set $\mathcal{K}$. The function $\textsl{First}(\alpha)$ computes for
+        a string $\alpha \in (T \cup V)^*$ the set of all tokens $t$ with which a string
+        that has been derived from $\alpha$ can begin.
   \end{enumerate}
-  Die so definierte eindeutig bestimmte Menge $\mathcal{K}$ wird wieder mit
-  $\textsl{closure}(\mathcal{M})$ bezeichnet. \qed
+  The uniquely determined set $\mathcal{K}$ defined in this way is again denoted by
+  $\textsl{closure}(\mathcal{M})$. \eox
 \end{Definition}
 
 \noindent
-\textbf{Bemerkung}:  Gegenüber der alten Definition ist nur die Berechnung der Menge
-der Folge-Token hinzu gekommen.  Der Kontext, in dem das $c$ auftritt, das mit der Regel
-$c \rightarrow \gamma$ erkannt werden soll, ist zunächst durch den String $\delta$ gegeben,
-der in der Regel $a \rightarrow \beta \bullet c\, \delta:L$ auf das $c$ folgt.
-Möglicherweise leitet $\delta$  den leeren String $\lambda$ ab.  In diesen Fall  
-spielen auch die Folge-Token aus der Menge $L$ eine Rolle, denn falls
-$\delta \Rightarrow^* \lambda$ gilt, kann auf das $c$ auch ein Folge-Token $t$ aus der
-Menge $L$ folgen. \hspace*{\fill} $\Box$
+\textbf{Remark}: Compared to the old definition, only the computation of the set of follow tokens has been
+added. The context in which the variable $c$, to be recognized by the rule $c \rightarrow \gamma$, appears is initially
+given by the string $\delta$ that follows $c$ in the rule $a \rightarrow \beta \bullet c\, \delta:L$.  Now it is
+possible that $\delta$ derives the empty string $\lambda$. In this case, the follow tokens from the set $L$
+also play a role, because if $\delta \Rightarrow^* \lambda$ is true, then a follow token $t$ from the set $L$
+can also follow the $c$. \eox 
 \vspace*{0.1cm}
 
-Für eine gegebene e.m.R.-Menge $\mathcal{M}$ kann die Berechnung von 
-$\mathcal{K} := \textsl{closure}(\mathcal{M})$ iterativ erfolgen.  Abbildung \ref{fig:closure} zeigt die
-Berechnung von $\textsl{closure}(\mathcal{M})$.  Der wesentliche Unterschied gegenüber der
-früheren Berechnung von $\textsl{closure}()$ ist, dass wir bei den e.m.R.s, die wir für
-eine Variable $c$ mit in $\textsl{closure}(\mathcal{M})$ aufnehmen, bei der Menge der
-Folge-Token den Kontext berücksichtigen, in dem $c$ auftritt.
-Dadurch gelingt es,  die Zustände des Parsers präziser zu beschreiben, als dies bei
-markierten Regeln der Fall ist.
+For a given set of e.m.R.s $\mathcal{M}$, the computation of $\mathcal{K} := \textsl{closure}(\mathcal{M})$ can
+be done iteratively. Figure \ref{fig:closure} shows the computation of $\textsl{closure}(\mathcal{M})$. The
+main difference compared to the earlier computation of $\textsl{closure}()$ is that in the e.m.R.s that we
+include for a variable $c$ in $\textsl{closure}(\mathcal{M})$, we consider the context in which $c$ appears in
+the set of Follow Tokens. This makes it possible to describe the states of the parser more precisely than with
+marked rules. 
 
 \begin{figure}[!ht]
 \centering
@@ -1329,101 +1311,95 @@ markierten Regeln der Fall ist.
 \end{Verbatim}
 % $
 \vspace*{-0.3cm}
-\caption{Berechnung von $\textsl{closure}(\mathcal{M})$}
+\caption{The computation of $\textsl{closure}(\mathcal{M})$.}
 \label{fig:closure}
 \end{figure}
 \vspace*{0.2cm}
 
 \noindent
-\textbf{Bemerkung}: Der Ausdruck $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}$
-sieht komplizierter aus, als er tatsächlich ist.  Wollen wir diesen Ausdruck berechnen, so
-ist es zweckmäßig eine Fallunterscheidung danach durchzuführen, ob $\delta$ den leeren
-String $\lambda$ ableiten kann oder nicht, denn es gilt
+\textbf{Remark}: The expression $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}$
+looks more complicated than it actually is. To compute this expression,
+it is useful to make a distinction based on whether $\delta$ can derive the empty
+string $\lambda$ or not, because it holds that
 \\[0.2cm]
 \hspace*{1.3cm}
 $\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\} = 
 \left\{
 \begin{array}{ll}
-  \textsl{First}(\delta) \cup L  & \mbox{falls $\delta \Rightarrow^* \lambda$;}  \\
-  \textsl{First}(\delta)         & \mbox{sonst.}  
+  \textsl{First}(\delta) \cup L  & \mbox{if $\delta \Rightarrow^* \lambda$;}  \\
+  \textsl{First}(\delta)         & \mbox{otherwise.}  
 \end{array}
 \right.
 $
 \\[0.2cm]
-Die Berechnung von $\textsl{goto}(\mathcal{M},t)$ für eine Menge $\mathcal{M}$ von erweiterten Regeln und
-ein Zeichen $x$ ändert sich gegenüber der Berechnung im Falle einfacher markierter Regeln
-nur durch das Anfügen der Menge von \blue{Folge-Tokens}, die aber selbst unverändert bleibt:
+The computation of $\textsl{goto}(\mathcal{M},t)$ for a set $\mathcal{M}$ of extended rules and
+a symbol $x$ changes from the computation in the case of simple marked rules
+only by appending the set of \textcolor{blue}{follow tokens}, which itself remains unchanged:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{ 
    a \rightarrow \beta\, x \bullet \delta:L \mid (a \rightarrow \beta \bullet x\, \delta:L) \in \mathcal{M} 
    \bigr\} \Bigr)$. 
 \\[0.2cm]
-Ähnlich wie bei der Theorie der SLR-Parser augmentieren wir unsere Grammatik $G$, indem wir
-der Menge der Variable eine neue Start-Variable $\widehat{s}$ und der Menge der Regeln die
-neue Regel $\widehat{s} \rightarrow s$ hinzufügen.  Weiter fügen wir den Token das Symbol
-\symbol{36} hinzu.  Dann hat der Start-Zustand die  Form
+Similar to the theory of SLR parsers, we augment our grammar $G$ by adding
+a new start variable $\widehat{s}$ to the set of variables and the
+new rule $\widehat{s} \rightarrow s$ to the set of rules. Further, we add the symbol
+\symbol{36} to the tokens. Then the start state has the form
 \\[0.2cm]
 \hspace*{1.3cm}
 $q_0 := \textsl{closure}\bigr(\bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36}\bigr\}\bigr)$,
 \\[0.2cm]
-denn auf das Start-Symbol muss das Datei-Ende ``\symbol{36}'' folgen.
-Als letztes zeigen wir, wie die Definition der Funktion $\textsl{action}()$ geändert werden muss.
-Wir spezifizieren die Berechnung dieser Funktion durch die folgenden bedingten Gleichungen.
+because the file end symbol ``\symbol{36}'' must follow the start symbol.
+Finally, we show how the definition of the function $\textsl{action}()$ must be changed.
+We specify the computation of this function through the following conditional equations.
 \begin{enumerate}
-\item $(a \rightarrow \beta \bullet t\, \delta:L) \in \mathcal{M} \;\Longrightarrow\;
+\item $(a \rightarrow \beta \bullet t\, \delta:L) \in \mathcal{M} \;\Rightarrow\;
        \textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle$. 
 \item $(a \rightarrow \beta \bullet:L) \in \mathcal{M} \;\wedge\; a \not= \widehat{s}
-       \;\wedge\; t \in L \;\Longrightarrow\;
+       \;\wedge\; t \in L \;\Rightarrow\;
        \textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$. 
-\item $(\widehat{s} \rightarrow s \bullet:\symbol{36}) \in \mathcal{M} \;\Longrightarrow\;
+\item $(\widehat{s} \rightarrow s \bullet:\symbol{36}) \in \mathcal{M} \;\Rightarrow\;
        \textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$. 
-\item Sonst: \quad $\textsl{action}(\mathcal{M},t) := \texttt{error}$. 
+\item Otherwise: \quad $\textsl{action}(\mathcal{M},t) := \texttt{error}$. 
 \end{enumerate}
-Falls es bei diesen Gleichungen zu einem Konflikt kommt, weil gleichzeitig die Bedingung
-der ersten Gleichung als auch die Bedingung der zweiten Gleichung erfüllt ist, so sprechen
-wir wieder von einem \blue{Shift-Reduce-Konflikt}.  
-Ein Shift-Reduce-Konflikt liegt also bei der Berechnung von
-$\textsl{action}(\mathcal{M},t)$ dann vor, wenn es zwei e.m.R.s 
+If a conflict occurs in these equations, because both the condition
+of the first equation and the condition of the second equation are met, then we speak
+again of a \textcolor{blue}{shift-reduce conflict}\index{shift-reduce conflict}.  
+A shift-reduce conflict thus occurs in the computation of
+$\textsl{action}(\mathcal{M},t)$ when there are two e.m.R.s 
 \\[0.2cm]
 \hspace*{1.3cm}
-$(a \rightarrow \beta \bullet t\, \delta:L_1) \in \mathcal{M}$ \quad \mbox{und} \quad 
-$(c \rightarrow \gamma\bullet :L_2) \in \mathcal{M} \quad \mbox{mit}\; t \in L_2$
+$(a \rightarrow \beta \bullet t\, \delta:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
+$(c \rightarrow \gamma\bullet :L_2) \in \mathcal{M} \quad \mbox{with}\; t \in L_2$
 \\[0.2cm]
-gibt, denn dann ist nicht klar, ob im Zustand $\mathcal{M}$ das Token $t$ auf den Stack geschoben werden
-soll, oder ob stattdessen der Symbol-Stack mit der Regel $c \rightarrow \gamma$ reduziert werden muss.
+because then it is unclear whether in state $\mathcal{M}$ the token $t$ should be pushed onto the stack,
+or whether instead the symbol stack should be reduced with the rule $c \rightarrow \gamma$.
 \vspace*{0.2cm}
 
 \noindent
-\textbf{Bemerkung}:  Gegenüber einem SLR-Parser ist die Möglichkeit von
-Shift-Reduce-Konflikten verringert, denn  bei einem SLR-Parser liegt bereits dann ein
-Shift-Reduce-Konflikt vor, wenn $t \in \textsl{Follow}(c)$ gilt und die Menge $L_2$ ist in der Regel kleiner als die
-Menge $\textsl{Follow}(c)$.  \eox 
+\textbf{Remark}: Compared to an SLR parser, the possibility of shift-reduce conflicts is reduced, because in an
+SLR parser, a shift-reduce conflict already occurs if $t \in \textsl{Follow}(c)$ and the set $L_2$ is usually
+smaller than the set $\textsl{Follow}(c)$. \eox  
 \vspace*{0.3cm}
 
-Ein \blue{Reduce-Reduce-Konflikt} liegt vor, wenn es zwei e.m.R.s 
+A \textcolor{blue}{reduce-reduce conflict}\index{reduce-reduce conflict} occurs when there are two e.m.R.s 
 \\[0.2cm]
 \hspace*{1.3cm}
-$(a \rightarrow \beta\, \bullet:L_1) \in \mathcal{M}$ \quad \mbox{und} \quad 
-$(c \rightarrow \delta\, \bullet:L_2) \in \mathcal{M}$ \quad \mbox{mit} \quad $L_1 \cap L_2 \not= \{\}$
+$(a \rightarrow \beta\, \bullet:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
+$(c \rightarrow \delta\, \bullet:L_2) \in \mathcal{M}$ \quad \mbox{with} \quad $L_1 \cap L_2 \not= \{\}$
 \\[0.2cm]
-gibt, denn dann ist nicht klar, mit welcher dieser beiden Regeln der Symbol-Stack reduziert werden soll,
-wenn das nächste Token ein Element der Schnittmenge $L_1 \cap L_2$ ist.
+because then it is unclear which of these two rules should be used to reduce the symbol stack when the next
+token is an element of the intersection $L_1 \cap L_2$. 
 \vspace*{0.2cm}
 
 \noindent
-\textbf{Bemerkung}:  Gegenüber einem SLR-Parser ist die Möglichkeit von
-Reduce-Reduce-Konflikten verringert, denn  bei einem SLR-Parser liegt bereits dann ein
-Reduce-Reduce-Konflikt vor, wenn es ein $t$ in der Menge
- $\textsl{Follow}(a) \cap \textsl{Follow}(c)$ gibt und die $\textsl{Follow}$-Mengen sind oft größer als die Mengen
-$L_1$ und $L_2$.  \eox
+\textbf{Remark}: Compared to an SLR parser, the possibility of reduce-reduce conflicts is reduced, because in
+an SLR parser, a reduce-reduce conflict already occurs if there exists a $t$ in the set $\textsl{Follow}(a)
+\cap \textsl{Follow}(c)$ and the $\textsl{Follow}$ sets are often larger than the sets $L_1$ and $L_2$. \eox 
 \vspace*{0.3cm}
 
-
-\example
-Wir greifen das Beispiel der in Abbildung \ref{fig:reduce-reduce-conflict.grammar} gezeigten Grammatik
-wieder auf und berechnen zunächst die Menge aller Zustände.  
-
+\exampleEng
+We revisit the example of the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} and first calculate the set of all states.
 \begin{enumerate}
 \item $\begin{array}[t]{lcl}
         s_0 & := & \textsl{closure}\Bigl(\bigl\{\widehat{s} \rightarrow \bullet\, s:\symbol{36} \bigr\}\Bigr) \\
@@ -1513,35 +1489,32 @@ wieder auf und berechnen zunächst die Menge aller Zustände.
        \end{array}
        $
 \end{enumerate}
-Als nächstes untersuchen wir, ob es bei den Zuständen Konflikte gibt.
-Beim Start-Zustand $s_0$ hatten wir im letzten Abschnitt einen Reduce-Reduce-Konflikt zwischen den
-beiden Regeln $a \rightarrow \lambda$ und $b \rightarrow \lambda$ gefunden, weil 
+Next, we examine whether there are any conflicts in the states. In the last section, we found a Reduce-Reduce
+conflict in the start state $s_0$ between the two rules $a \rightarrow \lambda$ and $b \rightarrow \lambda$,
+because  
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{Follow}(a) \cap \textsl{Follow}(b) = \{ \saquoted{x}, \saquoted{y} \} \not= \{\}$
 \\[0.2cm]
-gilt.  Dieser Konflikt ist nun verschwunden, denn zwischen den e.m.R.s
+holds. This conflict has now disappeared, as there is no conflict between the e.m.R.s
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \bullet\,: \saquoted{x}$ \quad \mbox{und} \quad 
+$a \rightarrow \bullet\,: \saquoted{x}$ \quad \mbox{and} \quad 
 $b \rightarrow \bullet\,: \saquoted{y}$
 \\[0.2cm]
-gibt es wegen $\saquoted{x} \not= \saquoted{y}$ keinen Konflikt.  Es ist leicht zu sehen, dass auch bei den
-anderen Zustände keine Konflikte auftreten.
+due to $\saquoted{x} \not= \saquoted{y}$. It is easy to see that no conflicts arise in the other states either.
 
-
-\exercise
-Berechnen Sie die Menge der Zustände eines LR-Parsers für die folgende Grammatik:
+\exerciseEng
+Calculate the set of states for an LR parser for the following grammar:
   \begin{eqnarray*}
-  e & \rightarrow & e \aquoted{+} p           \\
+  e & \rightarrow & e \text{\aquoted{+}} p           \\
     & \mid        & p                        \\[0.2cm]
-  p & \rightarrow & p \aquoted{*} f           \\
+  p & \rightarrow & p \text{\aquoted{*}} f           \\
     & \mid        & f                        \\[0.2cm]
-  f & \rightarrow & \saquoted{(} e \aquoted{)} \\
+  f & \rightarrow & \text{\saquoted{(}} e \text{\aquoted{)}} \\
     & \mid        & \textsl{Number}             
   \end{eqnarray*}
-Untersuchen Sie außerdem, ob es bei dieser Grammatik Shift-Reduce-Konflikte oder
-Reduce-Reduce-Konflikte gibt.
+Additionally, investigate whether this grammar has shift-reduce conflicts or reduce-reduce conflicts.
 \vspace*{0.2cm}
 
 \remarkEng
@@ -1562,24 +1535,21 @@ His theory is described in the paper
 
 
 \section{LALR-Parser}
-Die Zahl der Zustände eines LR-Parsers ist oft erheblich größer als die Zahl der Zustände, die ein
-SLR-Parser derselben Grammatik hätte.  Beispielsweise kommt ein SLR-Parser für die
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar.g}{\texttt{C}-Grammatik} 
-mit 349 Zuständen aus.  Da die Sprache \texttt{C} keine SLR-Sprache ist, gibt es beim Erzeugen
-einer SLR-Parse-Tabelle für \texttt{C} allerdings eine Reihe von 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-slr-table.txt}{Konflikten},
-so dass ein SLR-Parser für die Sprache \texttt{C} nicht funktioniert.  Demgegenüber kommt ein
-LR-Parser für die Sprache \texttt{C} auf 1572 Zustände, wie Sie 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-lr-table.txt}{hier}
-sehen können.  In den siebziger Jahren, als der zur Verfügung stehende
-Haupt-Speicher der meisten Rechner noch bescheidener dimensioniert war, als dies heute
-der Fall ist, hatten LR-Parser daher eine für die Praxis problematische
-Größe.  Eine genaue Analyse der Menge der Zustände von LR-Parsern zeigte, dass es oft möglich ist, 
-bestimmte Zustände zusammen zu fassen.  Dadurch kann die Menge der Zustände in den meisten Fällen
-deutlich verkleinert werden.  Wir illustrieren das Konzept an einem Beispiel und betrachten die in
-Abbildung \ref{fig:dragon-book.grammar} gezeigte Grammatik, die ich dem \blue{Drachenbuch}
-\cite{aho:2006} entnommen habe.  (Das ``Drachenbuch'' ist das Standardwerk im Bereich Compilerbau.)
-
+The number of states in an LR parser is often significantly larger than the number of states in an
+SLR parser for the same grammar. For instance, an SLR parser for the 
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar.g}{\texttt{C} grammar} 
+manages with 349 states. However, since the language \texttt{C} is not an SLR language, creating
+an SLR parse table for \texttt{C} results in a number of 
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-slr-table.txt}{conflicts},
+so that an SLR parser for the language \texttt{C} does not work. In contrast, an
+LR parser for the language \texttt{C} has 1572 states, as you can see 
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/SetlX/Examples/c-grammar-lr-table.txt}{here}.
+In the seventies, when the available main memory of most computers was still modestly sized compared to today,
+LR parsers therefore had a size that was problematic in practice. A detailed analysis of the set of states of LR parsers showed that it is often possible to 
+combine certain states. This can significantly reduce the number of states in most cases.
+We illustrate the concept with an example and consider the grammar shown in
+Figure \ref{fig:dragon-book.grammar}, which I have taken from the \blue{Dragon Book}
+\cite{aho:2006}. (The ``Dragon Book'' is the standard work in the field of compiler construction.)
 
 \begin{figure}[htbp]
   \begin{center}    
@@ -1607,69 +1577,65 @@ Abbildung \ref{fig:dragon-book.grammar} gezeigte Grammatik, die ich dem \blue{Dr
 \begin{figure}[!ht]
 \centering
       \epsfig{file=Abbildungen/cc-LR.eps, scale=0.5}
-      \caption{LR-Goto-Graph für die Grammatik aus Abbildung \ref{fig:dragon-book.grammar}.}
+      \caption{LR-goto-graph for the grammar of Figure \ref{fig:dragon-book.grammar}.}
   \label{fig:cc-LR.eps}
 \end{figure}
 
-
-Abbildung \ref{fig:cc-LR.eps} zeigt den sogenannten \blue{LR-Goto-Graphen} für diese Grammatik.
-Die Knoten dieses Graphen sind die Zustände.  
-Betrachten wir den LR-Goto-Graphen, so stellen wir fest, dass die Zustände $s_6$ und
-$s_3$ sich nur in den Mengen der Folge-Token unterscheiden, denn es gilt einerseits
+Figure \ref{fig:cc-LR.eps} shows the so-called \blue{LR-goto-graph} for this grammar.
+The nodes of this graph are the states.  
+Looking at the LR-goto-graph, we find that the states $s_6$ and
+$s_3$ differ only in the sets of follow tokens, as on one hand, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_6 = \Bigl\{ s \rightarrow \saquoted{x} \bullet c: \saquoted{\symbol{36}}, 
-                 c \rightarrow \bullet\, \aquoted{x} c:  \saquoted{\symbol{36}},
-                 c \rightarrow \bullet\, \aquoted{y}:    \saquoted{\symbol{36}}
+$s_6 = \Bigl\{ s \rightarrow \text{\saquoted{x}} \bullet c: \text{\saquoted{\symbol{36}}}, 
+                 c \rightarrow \bullet\, \text{\aquoted{x}} c:  \text{\saquoted{\symbol{36}}},
+                 c \rightarrow \bullet\, \text{\aquoted{y}}:    \text{\saquoted{\symbol{36}}}
        \Bigr\}$, 
 \\[0.2cm]
-und andererseits haben wir
+and on the other hand, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_3 = \Bigl\{ s \rightarrow \saquoted{x} \bullet c: \{ \saquoted{x}, \saquoted{y} \}, 
-                 c \rightarrow \bullet\, \aquoted{x} c:  \{ \saquoted{x}, \saquoted{y} \},
-                 c \rightarrow \bullet\, \aquoted{y}:    \{ \saquoted{x}, \saquoted{y} \}  
+$s_3 = \Bigl\{ s \rightarrow \text{\saquoted{x}} \bullet c: \{ \text{\saquoted{x}}, \text{\saquoted{y}} \}, 
+                 c \rightarrow \bullet\, \text{\aquoted{x}} c:  \{ \text{\saquoted{x}}, \text{\saquoted{y}} \},
+                 c \rightarrow \bullet\, \text{\aquoted{y}}:    \{ \text{\saquoted{x}}, \text{\saquoted{y}} \}  
        \Bigr\}$.
 \\[0.2cm]
-Offenbar entsteht die Menge $s_3$ aus der Menge $s_6$ indem überall $\saquoted{\symbol{36}}$
-durch die Menge $\{ \saquoted{x}, \saquoted{y}\}$ ersetzt wird.  Genauso kann die Menge $s_7$ in $s_4$
-und $s_9$ in $s_8$ überführt werden.  Die entscheidende Erkenntnis ist nun, dass die
-Funktion $\textsl{goto}()$ unter dieser Art von Transformation invariant ist, denn bei der
-Definition dieser Funktion spielt die Menge der Folge-Token keine Rolle.  So sehen wir zum
-Beispiel, dass einerseits
+Clearly, the set $s_3$ is derived from the set $s_6$ by replacing everywhere $\text{\saquoted{\symbol{36}}}$
+with the set $\{ \text{\saquoted{x}}, \text{\saquoted{y}}\}$. Similarly, the set $s_7$ can be transformed into $s_4$,
+and $s_9$ into $s_8$. The crucial realization is that the
+function $\textsl{goto}()$ is invariant under this kind of transformation, because in the
+definition of this function, the set of follow tokens is irrelevant. For example, we see that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{goto}(s_3, c) = s_8$ \quad und \quad 
+$\textsl{goto}(s_3, c) = s_8$ \quad and \quad 
 $\textsl{goto}(s_6, c) = s_9$ 
 \\[0.2cm]
-gilt und dass andererseits der Zustand $s_9$ in den Zustand $s_8$ übergeht, wenn wir
-überall in $s_9$ das Terminal $\saquoted{\symbol{36}}$ durch die Menge 
- $\{ \saquoted{x}, \saquoted{y}\}$ ersetzen.  Definieren wir den \blue{Kern}
-einer Menge von erweiterten markierten Regeln dadurch, dass wir in jeder Regel die Menge
-der Folgetoken wegstreichen, und fassen dann Zustände mit demselben Kern zusammen, so
-erhalten wir den in 
-Abbildung \ref{fig:cc-LALR.eps} gezeigten Goto-Graphen.
+hold and that, on the other hand, the state $s_9$ changes into the state $s_8$ when we
+replace everywhere in $s_9$ the terminal $\text{\saquoted{\symbol{36}}}$ with the set 
+ $\{ \text{\saquoted{x}}, \text{\saquoted{y}}\}$. If we define the \blue{core}
+of a set of extended marked rules by omitting the set of follow tokens in each rule, and then combine states with the same core, we
+obtain the goto-graph shown in Figure \ref{fig:cc-LALR.eps}.
+
 
 \begin{figure}[!ht]
 \centering
   \hspace*{-0.6cm} \epsfig{file=Abbildungen/cc-LALR, scale=0.5}
-  \caption{Der LALR-Goto-Graph für die Grammatik aus Abbildung \ref{fig:dragon-book.grammar}.}
+  \caption{The LALR-goto-graph for the grammar from Figure \ref{fig:dragon-book.grammar}.}
   \label{fig:cc-LALR.eps}
 \end{figure}
 
-Um die Beobachtungen, die wir bei der Betrachtung der in Abbildung
-\ref{fig:dragon-book.grammar} gezeigten Grammatik gemacht gaben, verallgemeinern und formalisieren zu
-können, definieren wir ein Funktion 
-$\textsl{core}()$, die den Kern einer Menge von e.m.R.s berechnet und damit diese Menge in
-eine Menge markierter Regeln überführt: 
+To generalize and formalize the observations made while examining the grammar shown in Figure 
+\ref{fig:dragon-book.grammar}, we define a function 
+$\textsl{core}()$, which calculates the core of a set of e.m.R.s (extended marked rules) and thus transforms this set into 
+a set of marked rules:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{core}(\mathcal{M}) := 
    \{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \bullet \gamma:L) \in \mathcal{M} \}$. 
 \\[0.2cm]
-Die Funktion $\textsl{core}()$ entfernt also einfach die Menge der Folge-Tokens von den e.m.R.s.
-Wir hatten die Funktion $\textsl{goto}()$ für eine Menge $\mathcal{M}$ von erweiterten
-markierten Regeln und ein Symbol $x$ durch
+Thus, the function $\textsl{core}()$ simply removes the set of follow tokens from the e.m.R.s.
+We had defined the function $\textsl{goto}()$ for a set $\mathcal{M}$ of extended
+marked rules and a symbol $x$ as
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{ 
@@ -1677,9 +1643,9 @@ $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{
  \bigr\} \Bigr)
 $.
 \\[0.2cm]
-definiert.  Offenbar spielt die Menge der Folge-Token bei der Berechnung von
-$\textsl{goto}(\mathcal{M}, x)$ keine Rolle, formal gilt für zwei e.m.R.-Mengen
-$\mathcal{M}_1$ und $\mathcal{M}_2$ und ein Symbol $x$ die Formel:
+Clearly, the set of follow tokens plays no role in the calculation of
+$\textsl{goto}(\mathcal{M}, x)$, formally for two e.m.R.-sets
+$\mathcal{M}_1$ and $\mathcal{M}_2$ and a symbol $x$, the formula holds:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{core}(\mathcal{M}_1) = \textsl{core}(\mathcal{M}_2) \;\Rightarrow\;
@@ -1688,9 +1654,9 @@ $\textsl{core}(\mathcal{M}_1) = \textsl{core}(\mathcal{M}_2) \;\Rightarrow\;
 $.
 \vspace*{0.2cm}
 
-Für zwei e.m.R.-Mengen $\mathcal{M}$ und $\mathcal{N}$, die
-den gleichen Kern haben, definieren wir die \blue{erweiterte Vereinigung}  
-$\mathcal{M} \uplus \mathcal{N}$ von $\mathcal{M}$ und $\mathcal{N}$ als
+For two sets of e.m.R.s (extended marked rules) $\mathcal{M}$ and $\mathcal{N}$ that
+have the same core, we define the \blue{extended union}  
+$\mathcal{M} \uplus \mathcal{N}$ of $\mathcal{M}$ and $\mathcal{N}$ as
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mathcal{M} \uplus \mathcal{N} := 
@@ -1700,31 +1666,31 @@ $\mathcal{M} \uplus \mathcal{N} :=
    \}
 $.
 \\[0.2cm] 
-Diese Definition verallgemeinern wir zu einer Operation $\biguplus$, 
-die auf einer Menge von Mengen von e.m.R.s definiert ist: Ist $\frak{I}$
-eine Menge von Mengen von e.m.R.s, die alle den gleichen Kern haben, gilt also
-\[ \frak{I} = \{ \mathcal{M}_1, \cdots, \mathcal{M}_k \} \quad \mbox{mit} \quad
+We generalize this definition to an operation $\biguplus$, 
+defined on a set of sets of e.m.R.s: If $\frak{I}$
+is a set of sets of e.m.R.s, all having the same core, i.e.,
+\[ \frak{I} = \{ \mathcal{M}_1, \cdots, \mathcal{M}_k \} \quad \mbox{with} \quad
    \textsl{core}(\mathcal{M}_i) = \textsl{core}(\mathcal{M}_j) \quad 
-   \mbox{für alle $i,j\in\{1,\cdots,k\}$,} 
+   \mbox{for all $i,j\in\{1,\cdots,k\}$,} 
 \]
-so definieren wir
+then we define
 \[ \biguplus \frak{I} := \mathcal{M}_1 \uplus \cdots \uplus \mathcal{M}_k. 
 \]
-Es sei nun $\Delta$ die Menge aller Zustände eines LR-Parsers.  Dann ist die Menge der Zustände des
-entsprechenden LALR-Parsers durch die erweiterte Vereinigung der Menge aller der Teilmengen 
-von $\Delta$ gegeben, deren Elemente den gleichen Kern haben:
+Let $\Delta$ be the set of all states of an LR parser. Then, the set of states of the
+corresponding LALR parser is given by the extended union of all subsets 
+of $\Delta$ whose elements have the same core:
 \[ \frak{Q} := \left\{ \biguplus \frak{I} \mid \frak{I} \in 2^\Delta \wedge 
       \forall \mathcal{M},\mathcal{N} \in \frak{I}: \textsl{core}(\mathcal{M}) = \textsl{core}(\mathcal{N}) 
-      \wedge \mbox{und $\frak{I}$ maximal} 
+      \wedge \mbox{and $\frak{I}$ is maximal} 
    \right\}. 
 \]
-Die Forderung ``$\frak{I}$ maximal'' drückt in der obigen Definition aus, dass in $\frak{I}$ tatsächlich
-\underline{alle} Mengen aus $\Delta$ zusamengefasst sind, die den selben Kern haben.
-Die so definierte Menge $\frak{Q}$ ist die Menge der LALR-Zustände.  
+The requirement ``$\frak{I}$ maximal'' in the above definition expresses that in $\frak{I}$, indeed
+\underline{all} sets from $\Delta$ are combined that have the same core.
+The thus defined set $\frak{Q}$ is the set of LALR states.
 
-Als nächstes überlegen wir, wie sich die Berechnung von $\textsl{goto}(\mathcal{M},X)$
-ändern muss, wenn $\mathcal{M}$ ein Element der Menge $\frak{Q}$ der LALR-Zustände ist.  
-Zur Berechnung von $\textsl{goto}(\mathcal{M},X)$ berechnen wir zunächst die Menge
+Next, we consider how the computation of $\textsl{goto}(\mathcal{M},X)$
+must change if $\mathcal{M}$ is an element of the set $\frak{Q}$ of LALR states.  
+To compute $\textsl{goto}(\mathcal{M},X)$, we first calculate the set
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{closure}\Bigl( \bigl\{  
@@ -1732,10 +1698,10 @@ $\textsl{closure}\Bigl( \bigl\{
   \bigr\} \Bigr)
 $.
 \\[0.2cm]
-Das Problem ist, dass diese Menge im Allgemeinen kein Element der Menge $\frak{Q}$ ist,
-denn die Zustände in $\frak{Q}$ entstehen ja durch die Zusammenfassung mehrerer LR-Zustände.
-Die Zustände, die bei der Berechnung von $\frak{Q}$ zusammengefasst werden, haben aber alle den selben
-Kern.  Daher enthält die  Menge
+The problem is that this set is generally not an element of the set $\frak{Q}$,
+as the states in $\frak{Q}$ arise from the combination of several LR states.
+However, the states that are combined in the computation of $\frak{Q}$ all have the same
+core. Therefore, the set
 \\[0.2cm]
 \hspace*{1.3cm}
 $\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
@@ -1745,8 +1711,8 @@ $\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
   \Bigr\}
 $
 \\[0.2cm]
-genau ein Element und dieses Element ist der Wert von $\textsl{goto}(\mathcal{M}, X)$.  Folglich
-können wir  
+contains exactly one element and this element is the value of $\textsl{goto}(\mathcal{M}, X)$. Thus,
+we can set
 \\[0.2cm]
 \hspace*{1.3cm}
 $\ds\textsl{goto}(\mathcal{M}, X) := \textsl{arb}\Bigl(\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
@@ -1756,53 +1722,50 @@ $\ds\textsl{goto}(\mathcal{M}, X) := \textsl{arb}\Bigl(\Bigl\{ q \in \frak{Q} \m
   \Bigr\} \Bigr)
 $
 \\[0.2cm]
-setzen.  Die hier verwendete Funktion $\textsl{arb}()$ dient dazu, ein beliebiges Element aus einer Menge
-zu extrahieren.  Da die Menge, aus der hier das Element extrahiert wird, genau ein Element enthält, ist
-$\textsl{goto}(\mathcal{M}, x)$ wohldefiniert.
-Die Berechnung des Ausdrucks $\textsl{action}(\mathcal{M}, t)$ ändert sich gegenüber der Berechnung für
-einen LR-Parser nicht. 
+The function $\textsl{arb}()$ used here serves to extract an arbitrary element from a set.
+Since the set from which the element is extracted contains exactly one element, 
+$\textsl{goto}(\mathcal{M}, x)$ is well-defined.
+The computation of the expression $\textsl{action}(\mathcal{M}, t)$ does not change compared to the computation for
+an LR parser.
 
-\section{Vergleich von SLR-, LR- und LALR-Parsern}
-Wir wollen nun die verschiedenen Methoden, mit denen wir in diesem Kapitel
-Shift-Reduce-Parser konstruiert haben, vergleichen.  Wir nennen eine Sprache $\mathcal{L}$
-eine \blue{SLR-Sprache}, wenn $\mathcal{L}$ von einem SLR-Parser erkannt werden kann.
-Die Begriffe \blue{kanonische LR-Sprache} und \blue{LALR-Sprache} werden analog definiert.
- Zwischen diesen Sprachen bestehen die folgende Beziehungen:
+\section{Comparison of SLR, LR, and LALR Parsers}
+We now want to compare the different methods with which we have constructed Shift-Reduce parsers in this
+chapter. We call a language $\mathcal{L}$ 
+an \blue{SLR language} if $\mathcal{L}$ can be recognized by an SLR parser.
+The terms \blue{canonical LR language} and \blue{LALR language} are defined analogously.
+The following relationships exist between these languages:
 \\[0.2cm]
 \hspace*{1.3cm}
-\blue{SLR-Sprache} $\subsetneq$ \blue{LALR-Sprache} $\subsetneq$ \blue{kanonische LR-Sprache} 
+\blue{SLR language} $\subsetneq$ \blue{LALR language} $\subsetneq$ \blue{canonical LR language} 
 \hspace*{\fill} $(\star)$
 \\[0.2cm]
-Diese Inklusionen sind leicht zu verstehen:  Bei der Definition der LR-Parser hatten wir
-zu den markierten Regeln  Mengen von Folge-Token hinzugefügt.  Dadurch war
-es möglich, in bestimmten Fällen Shift-Reduce- und Reduce-Reduce-Konflikte zu vermeiden.
-Da die Zustands-Mengen der kanonischen LR-Parser unter Umständen sehr groß werden können,
-hatten wir dann wieder solche Mengen von erweiterten markierten Regeln zusammengefasst,
-die den gleichen Kern haben.  So hatten wir die LALR-Parser
-erhalten.  Durch die Zusammenfassung von Regel-Menge können wir
-uns allerdings in bestimmten Fällen Reduce-Reduce-Konflikte einhandeln, so dass die 
-Menge der LALR-Sprachen eine Untermenge der kanonischen LR-Sprachen ist.
+These inclusions are easy to understand: In defining the LR parsers, we
+added sets of follow tokens to the marked rules. This made it
+possible to avoid Shift-Reduce and Reduce-Reduce conflicts in certain cases.
+As the state sets of canonical LR parsers can become very large,
+we then combined sets of extended marked rules that have the same core. This is how we
+obtained the LALR parsers. However, by combining rule sets, we can
+in some cases introduce Reduce-Reduce conflicts, so the 
+set of LALR languages is a subset of the canonical LR languages.
 
-Wir werden in den folgenden Unterabschnitten zeigen, dass die Inklusionen in $(\star)$ echt sind.  
+We will show in the following subsections that the inclusions in $(\star)$ are proper.
 
-\subsection{\blue{SLR-Sprache} $\subsetneq$ \blue{LALR-Sprache}}
-Die Zustände eines LALR-Parsers enthalten gegenüber den Zuständen eines SLR-Parsers noch
-Mengen von Folge-Token.  Damit sind LALR-Parser mindestens genauso mächtig wie SLR-Parser.
-Wir zeigen nun, dass LALR-Parser tatsächlich mächtiger als SLR-Parser sind.  Um diese
-Behauptung zu belegen, präsentieren wir eine Grammatik, für die es zwar einen LALR-Parser,
-aber keinen SLR-Parser gibt.  Wir hatten auf Seite \pageref{fig:reduce-reduce-conflict.grammar}
-gesehen, dass die Grammatik
+\subsection{\blue{SLR Language} $\subsetneq$ \blue{LALR Language}}
+The states of an LALR parser, as compared to those of an SLR parser, include sets of follow tokens. This makes LALR parsers at least as powerful as SLR parsers. We will now demonstrate that LALR parsers are indeed more powerful than SLR parsers. To support this claim, we present a grammar for which there exists an LALR parser, but no SLR parser. We had seen on page \pageref{fig:reduce-reduce-conflict.grammar} that the grammar
 \\[0.2cm]
 \hspace*{1.3cm}
-$s \;\rightarrow\; a \aquoted{x} a \aquoted{y} \mid b \aquoted{y} b \aquoted{x}$, \quad
-$a \;\rightarrow\;\lambda$, \quad
+$s \;\rightarrow\; a \text{\aquoted{x}} a \text{\aquoted{y}} \mid b \text{\aquoted{y}} b \text{\aquoted{x}}$
+\\
+\hspace*{1.3cm}
+$a \;\rightarrow\;\lambda$ \quad
+\\
+\hspace*{1.3cm}
 $b \;\rightarrow\; \lambda$
 \\[0.2cm]
-keine SLR-Grammatik ist.  Später hatten wir gesehen, dass diese Grammatik von einem
-kanonischen LR-Parser geparst werden kann.  Wir zeigen nun, dass diese Grammatik auch von
-einem LALR-Parser geparst werden kann.  Dazu berechnen wir die Menge der LALR-Zustände.
-Dazu ist zunächst die Menge der kanonischen LR-Zustände zu berechnen.  Diese Berechnung
-hatten wir bereits früher durchgeführt und dabei die folgenden Zustände erhalten:
+is not an SLR grammar. Later, we saw that this grammar can be parsed by a
+canonical LR parser. We will now show that this grammar can also be parsed by
+an LALR parser. To do this, we calculate the set of LALR states.
+This requires first calculating the set of canonical LR states. We had already carried out this calculation earlier and obtained the following states:
 \begin{enumerate}
 \item $s_0  = \bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36},
                      s \rightarrow \bullet\, a \saquoted{x} a \saquoted{y}:\symbol{36},
@@ -1827,20 +1790,15 @@ hatten wir bereits früher durchgeführt und dabei die folgenden Zustände erhalten
 \item $s_8 = \bigl\{ s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36} \bigr\}$,
 \item $s_9 = \bigl\{ s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36} \bigr\}$.
 \end{enumerate}
-Wir stellen fest, dass die Kerne aller hier aufgelisteten Zustände verschieden sind.
-Damit stimmt bei dieser Grammatik die Menge der Zustände des LALR-Parser mit der Menge der
-Zustände des kanonischen LR-Parsers überein.  Daraus folgt, dass es auch bei
-den LALR-Zuständen keine Konflikte gibt, denn beim Übergang von kanonischen LR-Parsern zu
-LALR-Parsern haben wir lediglich Zustände mit gleichem Kern zusammengefasst, die
-Definition der Funktionen $\textsl{goto}()$ und $\textsl{action}()$ blieb unverändert.
-
-\subsection{\blue{LALR-Sprache} $\subsetneq$ \blue{kanonische LR-Sprache}}
-Wir hatten LALR-Parser dadurch definiert, dass wir verschiedene Zustände eines kanonischen LR-Parsers
-zusammengefasst haben.  Damit ist klar, dass kanonische LR-Parser mindestens so mächtig
-sind wie LALR-Parser.  Um zu zeigen, dass kanonische LR-Parser tatsächlich mächtiger sind
-als LALR-Parser, benötigen wir eine Grammatik, für die sich zwar ein kanonischer LR-Parser,
-aber kein LALR-Parser erzeugen lässt.  Abbildung \ref{fig:lr-but-notlalr.g} zeigt eine
-solche Grammatik, die ich dem Drachenbuch entnommen habe.
+We observe that the cores of all the states listed here are different.
+Therefore, for this grammar, the set of states of the LALR parser coincides with the set of
+states of the canonical LR parser. This implies that there are no conflicts in the
+LALR states, because in the transition from canonical LR parsers to
+LALR parsers, we have only combined states with the same core, and the
+definition of the functions $\textsl{goto}()$ and $\textsl{action}()$ remained unchanged.
+ 
+\subsection{\blue{LALR Language} $\subsetneq$ \blue{Canonical LR Language}}
+We defined LALR parsers by combining different states of a canonical LR parser. Therefore, it is clear that canonical LR parsers are at least as powerful as LALR parsers. To demonstrate that canonical LR parsers are indeed more powerful than LALR parsers, we need a grammar for which a canonical LR parser can be generated, but not an LALR parser. Figure \ref{fig:lr-but-notlalr.g} shows such a grammar, which I have taken from the Dragon Book.
 
 \begin{figure}[htbp]
   \begin{center}    
@@ -1863,12 +1821,12 @@ solche Grammatik, die ich dem Drachenbuch entnommen habe.
   \vspace*{-0.3cm}
 
   \end{center}
-  \caption{Eine kanonische LR-Grammatik, die keine LALR-Grammatik ist.}
+  \caption{A canonical LR grammar that is not an LALR grammar.}
   \label{fig:lr-but-notlalr.g}
 \end{figure}
 
-Wir berechnen zunächst die Menge der Zustände eines kanonischen LR-Parsers für diese
-Grammatik.  Wir erhalten dabei die folgenden Mengen von erweiterten markierten Regeln:
+We first calculate the set of states for a canonical LR parser for this grammar. We obtain the following sets
+of extended marked rules: 
 \begin{enumerate}
 \item $s_0 = \textsl{closure}(\widehat{s} \rightarrow \bullet\, \;s: \symbol{36}) =
        \{
@@ -1920,75 +1878,48 @@ Grammatik.  Wir erhalten dabei die folgenden Mengen von erweiterten markierten R
 \item $s_{13} = \textsl{goto}(s_{12}, \aquoted{y}) =
                 \{ s \rightarrow \saquoted{w} b \saquoted{y} \bullet: \symbol{36} \}$.
 \end{enumerate}
-Die einzigen Zustände, bei denen es Konflikte geben könnte, sind die Mengen $s_4$ und
-$s_5$, denn hier sind prinzipiell sowohl Reduktionen mit der Regel
+The only states where conflicts could occur are the sets $s_4$ and $s_5$, as in these states, reductions with both rules
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \saquoted{x}$ \quad als auch mit \quad
+$a \rightarrow \saquoted{x}$ \quad and \quad
 $b \rightarrow \saquoted{x}$
 \\[0.2cm]
-möglich.  Da allerdings die Mengen der Folge-Token einen leeren Durchschnitt haben, gibt
-es tatsächlich keinen Konflikt und die Grammatik ist eine kanonische LR-Grammatik.
+are potentially possible. However, since the sets of follow tokens have an empty intersection, there is actually no conflict, and the grammar is a canonical LR grammar.
 
-Wir berechnen als nächstes die LALR-Zustände der oben angegebenen Grammatik.  Die einzigen
-Zustände, die einen gemeinsamen Kern haben, sind die beiden Zustände $s_4$ und $s_5$, denn
-es gilt
+Next, we calculate the LALR states for the grammar mentioned above. The only states that have a common core are $s_4$ and $s_5$, as
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{core}(s_4) = \{ a \rightarrow \saquoted{x} \bullet,\;
                 b \rightarrow \saquoted{x} \bullet \} = \textsl{core}(s_5)$.
 \\[0.2cm]
-Bei der Berechnung der LALR-Zustände werden diese beiden Zustände zu einem Zustand
-$s_{\{4,5\}}$ zusammengefasst.  Dieser neue Zustand hat die Form
+In calculating the LALR states, these two states are combined into one state $s_{\{4,5\}}$. This new state takes the form
 \\[0.2cm]
 \hspace*{1.3cm}
 $s_{\{4,5\}} = \bigl\{ A \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saquoted{z} \},\;
                        B \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saquoted{z} \} \bigr\}$.
 \\[0.2cm]
-Hier gibt es offensichtlich  einen Reduce-Reduce-Konflikt, denn einerseits haben wir
+Here, there is obviously a reduce-reduce conflict, as on one hand we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\textsl{reduce}, A \rightarrow \saquoted{x})$,
 \\[0.2cm]
-andererseits gilt aber auch
+but on the other hand, it also holds that
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\textsl{reduce}, B \rightarrow \saquoted{x})$.
 
-\exercise
-Es sei $G = \langle V, T, R, s \rangle$ eine LR-Grammatik und $\mathcal{N}$ sei die Menge der
-LALR-Zustände der Grammatik.  überlegen Sie, warum es in der Menge $\mathcal{N}$ keine
-Shift-Reduce-Konflikte geben kann.  \eox
-
+\exerciseEng
+Let $G = \langle V, T, R, s \rangle$ be an LR grammar and $\mathcal{N}$ be the set of LALR states of the grammar. Explain why there can be no shift-reduce conflicts in the set $\mathcal{N}$. \eox
 
 \paragraph{Historical Notes}
 The theory of LALR parsing is due to Franklin L.~DeRemer \cite{deRemer:71}.  At the time of its
 invention,  the space savings of LALR parsing in comparison to LR parsing were crucial.  
 
+\subsection{Evaluation of the Different Methods}
+In practice, SLR parsers are not sufficient, as there are a number of practically relevant language constructs for which no SLR parser can be generated. Canonical LR parsers are much more powerful but often require significantly more states. LALR parsers represent a compromise here: on the one hand, LALR languages are almost as expressive as canonical LR languages, but on the other hand, the memory requirements of LALR parsers are in the same order of magnitude as those of SLR parsers. For example, the SLR parse table for the \texttt{C} language has a total of 349 states, the corresponding LR parse table has 1572 states, while the LALR parser manages with 350 states, thus only one state more than the SLR parser.  
+In the main memories typically available today, however, canonical LR parsers can usually be accommodated without difficulty, so there is actually no compelling reason to use an LALR parser instead of an LR parser.  
 
-\subsection{Bewertung der verschiedenen Methoden}
-Für die Praxis sind SLR-Parser nicht ausreichend, denn es gibt eine Reihe praktisch
-relevanter Sprach-Konstrukte, für die sich kein SLR-Parser erzeugen lässt.  Kanonische
-LR-Parser sind wesentlich mächtiger, benötigen allerdings oft deutlich mehr Zustände. 
-Hier stellen LALR-Parser einen Kompromiss dar:  Einerseits sind LALR-Sprachen fast so
-ausdrucksstark  wie kanonische LR-Sprachen, andererseits liegt der Speicherbedarf von
-LALR-Parsern in der gleichen Größenordnung wie der Speicherbedarf von SLR-Parsern.  Beispielsweise
-hat die SLR-Parse-Tabelle für die Sprache \texttt{C} insgesamt 349 Zustände, die entsprechende
-LR-Parse-Tabelle kommt auf 1572 Zustände, während der LALR-Parser mit 350 Zuständen auskommt und damit nur
-einen Zustand mehr als der SLR-Parser hat.  
-In den heute in der Regel zur Verfügung stehenden Hauptspeichern lassen sich allerdings
-auch kanonische LR-Parser meist mühelos unterbringen, so dass es eigentlich keinen zwingenden
-Grund mehr gibt, statt eines LR-Parsers einen LALR-Parser einzusetzen.  
-
-Andererseits wird niemand einen LALR-Parser oder einen kanonischen LR-Parser von Hand
-programmieren wollen.  Stattdessen werden Sie später einen Parser-Generator wie \textsl{Bison}
-oder \textsl{JavaCup} einsetzen, der Ihnen einen  Parser generiert.  Das Werkzeug Bison
-ist ein Parser-Generator für \texttt{C}, \texttt{C++} und bietet auch eine, allerdings leider noch
-experimentelle, Unterstützung für \textsl{Java},
-während \textsl{JavaCup} auf die Sprache \textsl{Java} beschränkt ist.  Falls Sie
-\textsl{JavaCup} benutzen, haben Sie keine Wahl, denn dieses Werkzeug erzeugt immer einen
-LALR-Parser.  Bei \href{http://www.gnu.org/software/bison/manual/bison.html}{\textsl{Bison}} ist es
-ab der Version 3.0  auch möglich, einen LR-Parser zu erzeugen.
+On the other hand, no one will want to program an LALR parser or a canonical LR parser by hand. Instead, you will later use a parser generator like \textsl{Bison} or \textsl{JavaCup}, which generates a parser for you. Bison is a parser generator for \texttt{C}, \texttt{C++} and also offers, albeit still experimental, support for \textsl{Java}, while \textsl{JavaCup} is limited to the language \textsl{Java}. If you use \textsl{JavaCup}, you have no choice, as this tool always generates an LALR parser. With \href{http://www.gnu.org/software/bison/manual/bison.html}{\textsl{Bison}}, from version 3.0, it is also possible to generate an LR parser.
 
 
 
