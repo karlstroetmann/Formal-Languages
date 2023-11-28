@@ -206,7 +206,7 @@ grammar is implemented in \textsc{Ply}.  We discuss it line by line.
       \hspace*{1.3cm}
       \texttt{"$v$ : $X_1$ $\cdots$ $X_n$"}
       \\[0.2cm]
-      It is very \red{\underline{im}p\underline{ortant}} to note that the character ``\texttt{:}'' has to be
+      It is very \red{\underline{im}p\underline{ortant}} that the character ``\texttt{:}'' is
       surrounded by space characters.  Otherwise, the parser generator does not work but rather generates error
       messages that are difficult to understand. 
 
@@ -270,18 +270,13 @@ grammar is implemented in \textsc{Ply}.  We discuss it line by line.
 Figure \ref{fig:Symbolic-Calculator.ipynb:yacc2} on page \pageref{fig:Symbolic-Calculator.ipynb:yacc2}
 is discussed next.
 \begin{enumerate}
-\item Line 1 -- 7 shows the function \texttt{p\_error} which is used to print error messages in the case that
+\item Line 1 -- 5 shows the function \texttt{p\_error} which is used to print error messages in the case that
       the input can not be parsed because of a syntax error.  The argument \texttt{p} is the token $t$ that
       caused the entry $\texttt{action}(s, t)$ in the action table to be undefined.
       If the syntax error happens at the end of the input, \texttt{p} has the value \texttt{None}.
-
-      In an industrial application, the parser would also print both the line and column numbers of the
-      offending token, but in order to keep this example small, this is not done here.  The column number can
-      be retrieved as the attribute \texttt{pl.lexer.lexpos}.
 \item Line 7 generates the parser.
       \begin{enumerate}[(a)]
-      \item The first argument \texttt{write\_tables} has to be set to \texttt{False} to prevent an
-            obscure bug from happening.
+      \item The first argument \texttt{write\_tables} has to be set to \texttt{False} to prevent an obscure bug.
       \item The argument \texttt{debug} has to be set to \texttt{True} if we want to dump the parse table
             to the disk.  The parse table is then written to the file \texttt{parser.out}.
       \end{enumerate}
@@ -294,8 +289,8 @@ is discussed next.
 \end{enumerate}
 
 
-\section{Shift/Reduce and Reduce/Reduce Conflicts}
-In this section we show how shift/reduce and reduce/reduce conflicts are dealt with in \textsc{Ply}.
+\section{Shift-Reduce and Reduce-Reduce Conflicts}
+In this section we show how shift-reduce and reduce-reduce conflicts are dealt with in \textsc{Ply}.
 Figure \ref{fig:Conflicts.ipynb} on page \pageref{fig:Conflicts.ipynb} shows a grammar for arithmetical
 expressions that is ambiguous because it does not specify the precedence of the different arithmetical
 operators.  
@@ -313,10 +308,7 @@ operators.
                   commandchars  = \\\{\}
                 ]
     expr : expr '+' expr
-         | expr '-' expr
          | expr '*' expr
-         | expr '/' expr
-         | '(' expr ')'
          | NUMBER      
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -333,7 +325,7 @@ This grammar does not specify whether the string
   (2 * 3)}''. 
 \\[0.2cm]
 Since every LALR is unambiguous, but the grammar shown in Figure \ref{fig:Conflicts.ipynb} is ambiguous,  it
-has to have shift/reduce or reduce/reduce conflicts.  This grammar is part of the jupyter notebook 
+has to have shift-reduce or reduce-reduce conflicts.  This grammar is part of the jupyter notebook 
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Ply/Conflicts.ipynb}{Formal-Languages/tree/master/Ply/Conflicts.ipynb}.
@@ -350,29 +342,20 @@ has to have shift/reduce or reduce/reduce conflicts.  This grammar is part of th
                   xrightmargin  = 0.8cm,
                   commandchars  = \\\{\}
                 ]
-    state 10
+    state 5
     
-        (2) expr -> expr - expr .
+        (1) expr -> expr + expr .
         (1) expr -> expr . + expr
-        (2) expr -> expr . - expr
-        (3) expr -> expr . * expr
-        (4) expr -> expr . / expr
+        (2) expr -> expr . * expr
     
       ! shift/reduce conflict for + resolved as shift
-      ! shift/reduce conflict for - resolved as shift
       ! shift/reduce conflict for * resolved as shift
-      ! shift/reduce conflict for / resolved as shift
-        $end            reduce using rule 2 (expr -> expr - expr .)
-        )               reduce using rule 2 (expr -> expr - expr .)
-        +               shift and go to state 4
-        -               shift and go to state 5
-        *               shift and go to state 6
-        /               shift and go to state 7
+        $end            reduce using rule 1 (expr -> expr + expr .)
+        +               shift and go to state 3
+        *               shift and go to state 4
     
-      ! +               [ reduce using rule 2 (expr -> expr - expr .) ]
-      ! -               [ reduce using rule 2 (expr -> expr - expr .) ]
-      ! *               [ reduce using rule 2 (expr -> expr - expr .) ]
-      ! /               [ reduce using rule 2 (expr -> expr - expr .) ]
+      ! +               [ reduce using rule 1 (expr -> expr + expr .) ]
+      ! *               [ reduce using rule 1 (expr -> expr + expr .) ]
 \end{Verbatim} 
 \vspace*{-0.3cm}
 \caption{An excerpt from the file \texttt{parse.out}.}
@@ -382,46 +365,70 @@ has to have shift/reduce or reduce/reduce conflicts.  This grammar is part of th
 When we try to generate a parser for this grammar using \textsc{Ply}s \texttt{yacc} command we get the message
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{WARNING: 16 shift/reduce conflicts}.
+\texttt{WARNING: 4 shift/reduce conflicts}.
 \\[0.2cm]
 The file \texttt{parser.out} that is generated by \textsc{Ply} shows how these conflicts are resolved.
 This file contains the LALR states created by the parser generator and for every state the possible actions are
-shown.  Given the grammar shown above, \textsc{Ply} creates 14 different states.  There are conflicts in 4 of
+shown.  Given the grammar shown above, \textsc{Ply} creates 6 different states.  There are conflicts in two of
 these states.  Figure \ref{fig:Conflicts.ipynb:state10} on page \pageref{fig:Conflicts.ipynb:state10} shows state
-number 10 and its actions.   We see that there are 4 shift/reduce conflicts in this state.  Unfortunately,
+number 5 and its actions.   We see that there are 2 shift-reduce conflicts in this state.  Unfortunately,
 \textsc{Ply} only prints the marked rules defining these states, but it does not show the follow sets of these
 rules.  We see that \textsc{Ply} resolves all conflicts in favour of shifting.  The exclamation marks in the
-beginning of the line 20 -- 23 are to be interpreted as negations and show those reduce actions that would have
-been possible in state 10, but are discarded in favour of the shift actions shown in line 15 -- 18.
-Of course, in this example the shift action in line 15 is wrong because then the string
+beginning of the line 13 and 14 are to be interpreted as negations and show those reduce actions that would have
+been possible in state 5, but are discarded in favour of the shift actions shown in line 10 and 11.
+Of course, in this example the shift action in line 10 is wrong because then the string
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{1 - 2 + 3}
+\texttt{1 * 2 + 3}
 \\[0.2cm]
-is interpreted as \texttt{1 - (2 + 3)} and not as \texttt{(1 - 2) + 3}.
+is interpreted as \texttt{1 * (2 + 3)} and not as \texttt{(1 * 2) + 3}.
 \FloatBarrier
 
 
 \section{Operator Precedence Declarations \label{section:operator-precedence}}
-It is possible to resolve shift/reduce conflicts using \blue{operator precedence declarations}.
-For the grammar shown previously we can add the following \blue{operator precedence declarations}:
+\begin{figure}[!ht]
+
+  \begin{center}    
+  \framebox{
+  \framebox{
+    \begin{minipage}[t]{9cm}    
+  \begin{eqnarray*}
+  \textsl{expr}    & \rightarrow & \;\textsl{expr} \quoted{+} \textsl{expr}  \\
+                   & \mid        & \;\textsl{expr} \quoted{-} \textsl{expr}  \\
+                   & \mid        & \;\textsl{expr} \quoted{*} \textsl{expr}  \\
+                   & \mid        & \;\textsl{expr} \quoted{/} \textsl{expr}  \\
+                   & \mid        & \;\textsl{expr} \quoted{\^} \textsl{expr}  \\
+                   & \mid        & \quoted{(} \textsl{expr} \quoted{)}       \\
+                   & \mid        & \;\textsc{Number}                            
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+  \end{minipage}}}
+  \end{center}
+  \caption{A grammar for a arithmetical expressions.}
+  \label{fig:grammar-resolved.g}
+\end{figure}
+It is possible to resolve shift-reduce conflicts using \blue{operator precedence declarations}.
+For example, for the grammar for arithmetical expressions shown in Figure \ref{fig:grammar-resolved.g}
+on page \pageref{fig:grammar-resolved.g} we can use the following \blue{operator precedence declarations}:
 \begin{verbatim}
-    precedence = (
-        ('left', '+', '-'),
-        ('left', '*', '/') )
+    precedence = ( ('left', '+', '-'),
+                   ('left', '*', '/'),
+                   ('right', '^')
+                 )
 \end{verbatim}
 This declaration specifies that the operators ``\texttt{+}'' and ``\texttt{-}'' have a lower precedence than
 the operators  ``\texttt{*}'' and ``\texttt{/}''.  Furthermore, it specifies that all these operators associate
-to the left.  Operators can also be specified as being \blue{right associative} using the keyword ``\texttt{right}''.
+to the left.  The operator ``\texttt{\^}'' has the highest precedence and associates to the right as specified
+by the keyword ``\texttt{right}''.
 The jupyter notebook
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Ply/Conflicts-Resolved.ipynb}{Formal-Languages/tree/master/Ply/Conflicts-Resolved.ipynb}.
 \\[0.2cm]
-shows how this precedence declaration is used.  When we run this notebook, \textsc{Ply} doesn't give us a
+shows this grammar.  When we run this notebook, \textsc{Ply} doesn't give us a
 warning about any conflicts.  If we inspect the generated file \texttt{parse.out}, the action table for the
-state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:state10} on page
-\pageref{fig:Conflicts-Resolved.ipynb:state10}.
+state number 11 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:state11} on page
+\pageref{fig:Conflicts-Resolved.ipynb:state11}.
 
 \begin{figure}[!ht]
 \centering
@@ -433,14 +440,15 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
                   xleftmargin   = 0.8cm,
                   xrightmargin  = 0.8cm,
                   commandchars  = \\\{\}
-                ]
-    state 10
+                  ]
+    state 11
     
         (2) expr -> expr - expr .
         (1) expr -> expr . + expr
         (2) expr -> expr . - expr
         (3) expr -> expr . * expr
         (4) expr -> expr . / expr
+        (5) expr -> expr . ^ expr
     
         +               reduce using rule 2 (expr -> expr - expr .)
         -               reduce using rule 2 (expr -> expr - expr .)
@@ -448,22 +456,24 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
         )               reduce using rule 2 (expr -> expr - expr .)
         *               shift and go to state 6
         /               shift and go to state 7
+        ^               shift and go to state 8
     
       ! *               [ reduce using rule 2 (expr -> expr - expr .) ]
       ! /               [ reduce using rule 2 (expr -> expr - expr .) ]
+      ! ^               [ reduce using rule 2 (expr -> expr - expr .) ]
       ! +               [ shift and go to state 4 ]
-      ! -               [ shift and go to state 5 ]
+      ! -               [ shift and go to state 5 ]                  
 \end{Verbatim} 
 \vspace*{-0.3cm}
 \caption{An excerpt from the file \texttt{parse.out} when conflicts are resolved.}
-\label{fig:Conflicts-Resolved.ipynb:state10}
+\label{fig:Conflicts-Resolved.ipynb:state11}
 \end{figure} %$
 
 \begin{enumerate}
 \item Since the operators ``\texttt{+}'' and ``\texttt{-}'' have the same precedence, we have 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathtt{state 10}, \squoted{+}) = 
+      $\textsl{action}(\mathtt{state 11}, \squoted{+}) = 
        \langle \textsl{reduce}, \textsl{expr} \rightarrow \textsl{expr} \quoted{-} \textsl{expr} \rangle
       $
       \\[0.2cm]
@@ -472,7 +482,7 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
 \item Since the operator ``\texttt{-}'' is left associative, we have 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathtt{state 10}, \squoted{-}) = 
+      $\textsl{action}(\mathtt{state 11}, \squoted{-}) = 
        \langle \textsl{reduce}, \textsl{expr} \rightarrow \textsl{expr} \quoted{-} \textsl{expr} \rangle
       $
       \\[0.2cm]
@@ -481,7 +491,7 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
       ``\texttt{-}'', we have  
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathtt{state 10}, \squoted{*}) = 
+      $\textsl{action}(\mathtt{state 11}, \squoted{*}) = 
        \langle \textsl{shift}, \mathtt{state6} \rangle
       $
       \\[0.2cm]
@@ -490,7 +500,7 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
       ``\texttt{-}'', we have  
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\textsl{action}(\mathtt{state 10}, \squoted{/}) = 
+      $\textsl{action}(\mathtt{state 11}, \squoted{/}) = 
        \langle \textsl{shift}, \mathtt{state7} \rangle
       $
       \\[0.2cm]
@@ -499,7 +509,7 @@ state number 10 has the form shown in Figure \ref{fig:Conflicts-Resolved.ipynb:s
 \FloatBarrier
 
 \noindent
-Next, we explain in detail how \textsc{Ply} uses operator precedence relations to resolve shift/reduce conflicts.
+Next, we explain in detail how \textsc{Ply} uses operator precedence relations to resolve shift-reduce conflicts.
 \begin{enumerate}
 \item First, \textsc{Ply} assigns a precedence level to every grammar rule.  This precedence level is the
       precedence level of the last operator symbol occurring in the grammar rule.  Most of the times, there is just
@@ -519,6 +529,8 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
           \hline
           $\textsl{expr} \rightarrow \textsl{expr} \quoted{/} \textsl{expr}$ & 2          \\
           \hline
+          $\textsl{expr} \rightarrow \textsl{expr} \quoted{\^} \textsl{expr}$ & 3          \\
+          \hline
           $\textsl{expr} \rightarrow \quoted{(} \textsl{expr} \quoted{)}$ & --- \\
           \hline
           $\textsl{expr} \rightarrow \textsc{Number}$ & --- \\
@@ -534,7 +546,7 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
       $r_1 = (a \rightarrow \beta \bullet o \;\delta:L_1)$ \quad and \quad
       $r_2 = (c \rightarrow \gamma \bullet : L_2)$ \quad where \quad $o \in L_2$,
       \\[0.2cm]
-      then there is a shift/reduce conflict when 
+      then there is a shift-reduce conflict when 
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(s, o)$
@@ -565,19 +577,22 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             \begin{array}[t]{llcll}
             \bigl\{ 
             & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{+} \textsl{expr}: \{\symbol{36},
-                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/} \}, 
+                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} \}, 
             & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{-} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{*} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\ 
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{/} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{\^} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \squoted{+} \textsl{expr} \;\bullet: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/} 
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} 
                                              \} 
             & \bigr\}.
             \end{array}
@@ -609,19 +624,22 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             \begin{array}[t]{llcll}
             \bigl\{ 
             & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{+} \textsl{expr}: \{\symbol{36},
-                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/} \}, 
+                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} \}, 
             & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{-} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{*} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\ 
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{/} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{\^} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \squoted{*} \textsl{expr} \;\bullet: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/} 
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} 
                                              \}
             & \bigr\}.
             \end{array}
@@ -656,19 +674,22 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             \begin{array}[t]{llcll}
             \bigl\{ 
             & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{+} \textsl{expr}: \{\symbol{36},
-                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/} \}, 
+                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} \}, 
             & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{-} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{*} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\ 
               & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{/} \textsl{expr}: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}  \},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{\^} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
               & \\
               & \textsl{expr} & \rightarrow & \textsl{expr} \squoted{-} \textsl{expr} \;\bullet: \{\symbol{36},
-                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/} 
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} 
                                              \}
             & \bigr\}.
             \end{array}
@@ -700,11 +721,29 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             The state of the parser is then as follows:
             \\[0.2cm]
             \hspace*{1.3cm}
-            $\bigl\{ 
-             \textsl{expr}  \rightarrow \textsl{expr} \bullet \quoted{\texttt{\symbol{94}}} \textsl{expr}:
-             \{\symbol{36},\quoted{\texttt{\symbol{94}}} \},\;  \textsl{expr} \rightarrow  \textsl{expr}
-             \squoted{\texttt{\symbol{94}}} \textsl{expr} \;\bullet: \{\symbol{36},\quoted{\texttt{\symbol{94}}}\}
-            \bigr\}.
+            $ 
+            \begin{array}[t]{llcll}
+            \bigl\{ 
+            & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{+} \textsl{expr}: \{\symbol{36},
+                                            \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} \}, 
+            & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{-} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{*} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\ 
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{/} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \bullet \squoted{\^} \textsl{expr}: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^}  \},
+              & \\
+              & \textsl{expr} & \rightarrow & \textsl{expr} \squoted{\^} \textsl{expr} \;\bullet: \{\symbol{36},
+                                              \squoted{+}, \squoted{-} \squoted{*}, \squoted{/}, \squoted{\^} 
+                                             \}
+            & \bigr\}.
+            \end{array}
             $
             \\[0.2cm]
             Here the token  \quoted{\texttt{\symbol{94}}} has to be shifted
@@ -729,16 +768,16 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
             %$
             Once the string ``\texttt{1 < 1}'' has been read and the next token is the operator ``\texttt{<}''
             the parser recognizes that there is an error.  Therefore, \textsc{Ply} will resolve this
-            shift/reduce conflict by putting an error entry into the action table.
+            shift-reduce conflict by putting an error entry into the action table.
       \item $p(o)$ is undefined or $p(r_2)$ is undefined.
 
-            In this case there is a shift/reduce conflict and \textsc{Ply} prints a warning message when
+            In this case there is a shift-reduce conflict and \textsc{Ply} prints a warning message when
             generating the parser.  The conflict is then resolved in favour of shifting.
       \end{enumerate}
 \end{enumerate}
 
 
-\section{Resolving Shift/Reduce and Reduce/Reduce Conflicts}
+\section{Resolving Shift-Reduce and Reduce-Reduce Conflicts}
 We start our discussion by categorizing conflicts with respect to their origin.
 \begin{enumerate}
 \item \emph{Mehrdeutigkeits-Konflikte} sind Konflikte, die ihre Ursache in einer Mehrdeutigkeit
@@ -751,7 +790,7 @@ We start our discussion by categorizing conflicts with respect to their origin.
       Wir hatten damals bereits gesehen, dass wir das Problem durch die Einführung von
       Operator-Präzedenzen lösen können.  Falls dies nicht möglich ist, dann bleibt nur das
       Umschreiben der Grammatik.
-\item \emph{Look-Ahead-Konflikte} sind Reduce/Reduce-Konflikte, bei denen die Grammatik zwar
+\item \emph{Look-Ahead-Konflikte} sind Reduce-Reduce-Konflikte, bei denen die Grammatik zwar
       einerseits eindeutig ist, für die aber andererseits
       ein Look-Ahead von einem Token nicht ausreichend ist um den Konflikt zu lösen.
 \item \emph{Mysteriöse Konflikte} entstehen erst beim Übergang von den LR-Zuständen zu den LALR-Zuständen 
@@ -803,7 +842,7 @@ so finden wir unter anderem den folgenden Zustand:
 \hspace*{1.3cm}
 $\{ b \rightarrow \;\squoted{X} \bullet: \squoted{U},\; c \rightarrow \;\squoted{X} \bullet: \squoted{U} \}$.
 \\[0.2cm]
-Da die Menge der Folge-Token für beide Regeln gleich sind, haben wir hier einen Reduce/Reduce-Konflikt.
+Da die Menge der Folge-Token für beide Regeln gleich sind, haben wir hier einen Reduce-Reduce-Konflikt.
 Dieser Konflikt hat seine Ursache darin, dass der Parser mit einem Look-Ahead von nur einem Token nicht
 entscheiden kann, ob ein $\squoted{X}$ als ein $b$ oder als ein $c$ zu interpretieren ist, denn dies
 entscheidet sich erst, wenn das auf $\squoted{U}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
@@ -874,8 +913,8 @@ Abbildung
 im Netz finden.
 
 
-\subsection{Mysterious Reduce/Reduce Conflicts}
-A conflict is called a  \blue{mysterious reduce/reduce conflict} if the conflict results from the merger of
+\subsection{Mysterious Reduce-Reduce Conflicts}
+A conflict is called a  \blue{mysterious reduce-reduce conflict} if the conflict results from the merger of
 states that happens when we go from an LR parsing table to an LALR parsing table.  The grammar in Figure
 \ref{fig:Mysterious-Conflicts.ipynb} on page \pageref{fig:Mysterious-Conflicts.ipynb} is the same as the
 grammar shown in Figure \ref{fig:lr-but-notlalr.g} on page \pageref{fig:lr-but-notlalr.g} in the previous
@@ -903,7 +942,7 @@ if we use \textsc{Ply} to generate the states for this grammar.
     b : X
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{A grammar that generates a mysterious reduce/reduce conflict.}
+\caption{A grammar that generates a mysterious reduce-reduce conflict.}
 \label{fig:Mysterious-Conflicts.ipynb}
 \end{figure}
 \vspace*{0.3cm}
@@ -921,7 +960,7 @@ $\bigl\{ a \rightarrow X \bullet:\{\saquoted{y}, \saquoted{z} \},
          b \rightarrow X \bullet:\{\saquoted{y}, \saquoted{z} \}
 \bigr\}$
 \\[0.2cm]
-and obviously has a reduce/reduce conflict if the next token is either \saquoted{y} or \saquoted{z}.
+and obviously has a reduce-reduce conflict if the next token is either \saquoted{y} or \saquoted{z}.
 
 \begin{figure}[!ht]
 \centering
@@ -951,7 +990,7 @@ and obviously has a reduce/reduce conflict if the next token is either \saquoted
         z               reduce using rule 5 (a -> X .)
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{A grammar that generates a mysterious reduce/reduce conflict.}
+\caption{A grammar that generates a mysterious reduce-reduce conflict.}
 \label{fig:Mysterious-Conflicts.parser.out}
 \end{figure}
 \vspace*{0.3cm}
@@ -960,9 +999,9 @@ Interestingly, \textsc{Ply} does not merge these states and is therefore able to
 conflicts.  On the other hand, \textsc{Ply} claims to generate LALR tables.  Therefore, I have have written an
 email to \href{https://en.wikipedia.org/wiki/David_M._Beazley}{David Beazley} asking whether this behaviour is
 a feature or a bug.  He has classified this example as an ``\emph{interesting curiosity}''.
-\pagebreak
 
-\exercise
+
+\exerciseEng
 Use \textsc{Ply} to implement a \textsl{Python} parser that is able to evaluate formulas from propositional logic.
 The language should support the operators ``\texttt{<->}'' (equivalence), ``\texttt{->}'' (implication),
 ``\texttt{|}'' (disjunction), ``\texttt{\&}'' (conjunction), and 
