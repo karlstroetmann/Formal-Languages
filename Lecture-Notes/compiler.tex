@@ -1,42 +1,24 @@
-\chapter{Entwicklung eines einfachen Compilers} 
-In diesem Kapitel konstruieren wir einen Compiler, der ein Fragment der Sprache \mytt{C}
-in \textsl{Java}-Assembler übersetzt.  
-Das von dem Compiler übersetzte Fragment der Sprache \mytt{C} bezeichnen wir als
-\blue{\textsl{Integer}-\mytt{C}}, \index{\textsl{Integer}-\mytt{C}}
-denn es steht dort nur der Datentyp \mytt{int} zur Verfügung.
-Zwar wäre es problemlos möglich, auch weitere Datentypen zu unterstützen, allerdings würde der Mehraufwand dann
-in keinem guten Verhältnis zum didaktischen Nutzen des Beispiels mehr stehen.
+\chapter{Development of a Simple Compiler}
+In this chapter, we construct a compiler that translates a fragment of the \mytt{C} language into \textsl{Java} assembler. The fragment of the \mytt{C} language translated by the compiler is referred to as \blue{\textsl{Integer}-\mytt{C}}, \index{\textsl{Integer}-\mytt{C}} because only the data type \mytt{int} is available. Although it would be feasible to support additional data types, the extra effort would no longer be proportionate to the educational benefit of the example.
 
-Ein Compiler besteht prinzipiell aus den folgenden Komponenten:
+A compiler essentially consists of the following components:
 \begin{enumerate}
-\item Der Scanner liest die zu übersetzende Datei ein und zerlegt diese in eine Folge von Token.
-      
-      Wir werden unseren Scanner mit Hilfe des Werkzeugs \textsc{Ply} entwickeln.
-\item Der Parser liest die Folge von Token und produziert als Ergebnis einen abstrakten Syntax-Baum.
-
-      Wir werden bei der Erstellung des Parsers ebenfalls \textsc{Ply} verwenden.
-\item Der Typ-Checker überprüft den abstrakten Syntax-Baum auf Typ-Fehler.
-
-      Da die von uns übersetzte Sprache nur einen einzelnen Datentyp enthält, erübrigt
-      sich diese Phase für den von uns entwickelten Compiler.
-\item In realen Compilern erfolgt nun eine \emph{Optimierungsphase}, die wir aus Zeitgründen aber nicht mehr 
-      betrachten können.
-\item Der Code-Generator übersetzt schließlich den Parse-Baum in eine Folge von
-      Assembler-Befehlen, die der Syntax von \textsl{Jasmin} entsprechen.  
-\item Das dabei entstehende Assembler-Programm können wir mit \textsl{Jasmin} in Java-Bytecode übersetzen.
-\item Der Java-Bytecode kann mit Hilfe des Befehls \mytt{java} ausgeführt werden.  
+\item The scanner reads the file to be translated and breaks it down into a sequence of tokens. We will develop our scanner using the \textsc{Ply} tool.
+\item The parser reads the sequence of tokens and produces an abstract syntax tree as a result. We will also use \textsc{Ply} for the creation of the parser.
+\item The type-checker checks the abstract syntax tree for type errors. Since the language we translate contains only a single data type, this phase is superfluous for our compiler.
+\item In real compilers, an \emph{optimization phase} follows, which we cannot cover due to time constraints.
+\item The code generator then translates the parse tree into a sequence of assembler commands that conform to the syntax of \textsl{Jasmin}.
+\item The resulting assembler program can be translated into Java bytecode using \textsl{Jasmin}.
+\item The Java bytecode can be executed using the \mytt{java} command.
 \end{enumerate}
-Bei Compilern, deren Zielcode ein \textsc{Risc}-Assembler-Programm ist, wird normalerweise zunächst auch ein
-Code erzeugt, der dem 
-\textsc{Jvm}-Code ähnelt.  Ein solcher Code wird als \emph{Zwischen-Code} bezeichnet.  Es bleibt
-dann die Aufgabe eines sogenannten \emph{Backends}, daraus ein Assembler-Programm für eine gegebene
-Prozessor-Architektur zur erzeugen.  Die schwierigste Aufgabe besteht hier darin, für die
-verwendeten Variablen eine Register-Zuordnung zu finden, bei der möglichst viele Variablen in
-Registern vorgehalten werden können.  
-Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung nicht behandeln.
+In compilers whose target code is a \textsc{Risc} assembler program, a code similar to \textsc{Jvm} code is
+usually generated first. Such a code is referred to as \emph{intermediate code}. It then remains the task of a
+so-called \emph{backend} to generate an assembler program for a given processor architecture. The most
+challenging task here is to find a register allocation for the used variables, where as many variables as
+possible can be held in registers. Due to time constraints, we cannot address the topic of register allocation
+in this lecture.
 
-\section{Die Programmiersprache \textsl{Integer}-\mytt{C}}
-
+\section{The Programming Language \textsl{Integer}-\mytt{C}}
 \begin{figure}[!ht]
   \begin{center}
   \begin{minipage}[t]{12.5cm}
@@ -64,40 +46,23 @@ Aus Zeitgründen können wir das Thema der Register-Zuordnung in dieser Vorlesung 
 
   \end{minipage}
   \end{center}
-  \caption{Eine \textsc{Ebnf}-Grammatik für \textsl{Integer}-\textsc{C}}
+  \caption{An \textsc{Ebnf} grammar for \textsl{Integer}-\textsc{C}}
 \label{fig:compiler.ebnf}
 \end{figure}
 
 \noindent
-Wir stellen nun die Sprache \textsl{Integer}-\mytt{C} vor, die unser Compiler übersetzen
-soll.  In diesem Zusammenhang sprechen wir auch von der \emph{Quellsprache} unseres Compilers.
-Abbildung \ref{fig:compiler.ebnf} auf Seite \pageref{fig:compiler.ebnf} zeigt die Grammatik der Quellsprache in 
-erweiterter Backus-Naur-Form (\textsc{Ebnf}). 
-Die Grammatik für \textsl{Integer}-\mytt{C} verwendet die folgenden Terminale:
+We now introduce the language \textsl{Integer}-\texttt{C}, which our compiler is intended to translate. In this context, we also refer to it as the \emph{source language} of our compiler. Figure \ref{fig:compiler.ebnf} on page \pageref{fig:compiler.ebnf} shows the grammar of the source language in Extended Backus-Naur Form (\textsc{Ebnf}). The grammar for \textsl{Integer}-\texttt{C} uses the following terminals:
 \begin{enumerate}
-\item \textsc{Id} ist eine Abkürzung für \blue{Identifier} und steht für eine Folge von Ziffern, Buchstaben und
-      dem Unterstrich, die mit einem Buchstaben beginnt.  Eine \textsc{Id} bezeichnet entweder eine Variable oder
-      den Namen einer Funktion.
-\item \textsc{Number} steht für eine Folge von Ziffern, die als Dezimalzahl interpretiert wird.
-\item Daneben haben wir eine Reihe von Operatoren wie z.B.~\quoted{+},\quoted{-}, etc., sowie Schlüsselwörter
-      wie beispielsweise \squoted{if}, \squoted{else} und \squoted{while}.
+\item \textsc{Id} is an abbreviation for \blue{Identifier} and represents a sequence of digits, letters, and underscores that begins with a letter. An \textsc{Id} designates either a variable or the name of a function.
+\item \textsc{Number} stands for a sequence of digits interpreted as a decimal number.
+\item In addition, there are a number of operators such as \texttt{"+"}, \texttt{"-"}, etc., as well as keywords like \texttt{"if"}, \texttt{"else"}, and \texttt{"while"}.
 \end{enumerate}
-Nach der oben angegebenen Grammatik ist ein Programm eine Liste von Funktionen.
-Eine Funktion besteht aus der Deklaration der Signatur, worauf in geschweiften Klammern
-eine Liste von Deklarationen (\textsl{decl}) und Befehlen (\textsl{stmt}) folgt.  
-Der Aufbau der einzelnen Befehle ist dann
-ähnlich wie bei der Sprache \textsc{Sl}, für die wir im Kapitel \ref{chapter:interpreter}
-einen Interpreter entwickelt haben.
-Die in Abbildung \ref{fig:compiler.ebnf} gezeigte Grammatik ist mehrdeutig:
+According to the grammar provided above, a program is a list of functions. A function consists of the declaration of its signature, followed by a list of declarations (\textsl{decl}) and commands (\textsl{stmt}) enclosed in curly braces. The structure of the individual commands is then similar to that of the language \textsc{Sl}, for which we have developed an interpreter in Chapter \ref{chapter:interpreter}. The grammar shown in Figure \ref{fig:compiler.ebnf} is ambiguous:
 \begin{enumerate}
-\item Die Grammatik hat das \emph{Dangling-Else-Problem}.
-
-      Dieses Problem haben wir bereits im Kapitel \ref{chapter:bottom-up} im Rahmen einer Aufgabe diskutiert.
-      Wir werden das Problem bei dem Parser, den wir nun vorstellen, durch die Verwendung von
-      Operator-Präzedenzen lösen. 
-\item Für die bei arithmetischen und Boole'schen Ausdrücken verwendeten Operatoren
-      müssen Präzedenzen festgelegt werden, um die Mehrdeutigkeiten bei der Interpretation dieser Ausdrücke
-      aufzulösen. 
+\item The grammar has the \emph{Dangling-Else Problem}. We have already discussed this problem in Chapter
+      \ref{chapter:bottom-up} as part of an exercise. We will solve this problem via operator precedences. 
+\item For the operators used in arithmetic and Boolean expressions, precedences must be set to resolve
+      ambiguities in the interpretation of these expressions. 
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -126,18 +91,21 @@ Die in Abbildung \ref{fig:compiler.ebnf} gezeigte Grammatik ist mehrdeutig:
     }
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Ein einfaches \textsc{Integer}-\mytt{C}-Programm zur Berechnung der Summe $\sum\limits_{i=1}^{6 \cdot 6} i$.}
+\caption{A simple \textsc{Integer}-\mytt{C} program to compute the sum
+  $\displaystyle \sum\limits_{i=1}^{6 \cdot 6} i$.}
 \label{fig:sum.c}
 \end{figure}
 
 \noindent
-Abbildung \ref{fig:sum.c} zeigt ein einfaches \textsc{Integer}-\mytt{C}-Programm.  Die Funktion
-$\textsl{sum}(n)$ berechnet die Summe
- $\sum\limits_{i=1}^n i$
-und die Funktion $\textsl{main}()$ ruft die Funktion \mytt{sum} mit dem Argument $6 \cdot 6$ auf.
-Die in dem Programm verwendete Funktion \mytt{println} gibt ihr Argument gefolgt von einem
-Zeilenumbruch aus.  Wir gehen hier davon aus, dass diese Funktion vordefiniert ist.
-\pagebreak
+Figure \ref{fig:sum.c} shows a simple \textsc{Integer}-\texttt{C} program. The function $\textsl{sum}(n)$
+calculates the sum 
+\\[0.2cm]
+\hspace*{1.3cm}
+$\displaystyle\sum\limits_{i=1}^n i$
+\\[0.2cm]
+ and the function $\textsl{main}()$ calls the function \texttt{sum}
+with the argument $6 \cdot 6$. The function \texttt{println} used in the program outputs its argument followed
+by a newline. We assume that this function is predefined. 
 
 \section{Developing the  Scanner and the Parser}
 We construct both the scanner and the parser using  \textsl{Ply}.
@@ -534,7 +502,6 @@ defined.  The grammar rules for statements are as follows:
 \noindent
 Figure \ref{fig:Compiler.ipynb-4} on page \pageref{fig:Compiler.ipynb-4} shows how Boolean expressions are
 defined.  The grammar rules are as follows:
-\pagebreak
 
 \begin{verbatim}
         bool_expr : bool_expr '||' bool_expr
@@ -604,7 +571,6 @@ defined.  The grammar rules are as follows:
 \noindent
 Figure \ref{fig:Compiler.ipynb-5} on page \pageref{fig:Compiler.ipynb-5} shows how arithmetic expressions
 are defined.  The grammar rules are as follows:
-\pagebreak
 
 \begin{verbatim}
         expr : expr '+' expr
@@ -680,7 +646,6 @@ In this case \mytt{p.value} is the part of the input string corresponding to thi
 \caption{Grammar for Integer-\texttt{C}, part 6.}
 \label{fig:Compiler.ipynb-6}
 \end{figure}
-\pagebreak
 
 \exerciseEng
 Extend the parser that is available at
