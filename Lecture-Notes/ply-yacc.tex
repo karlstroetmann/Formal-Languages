@@ -76,9 +76,16 @@ no need for further discussions here.
     literals = ['+', '-', '*', '/', '(', ')', ';']
     
     t_ignore  = ' \t'
-    
+
+    def t_newline(t):
+        r'\n+'
+        t.lexer.lineno += t.value.count('\n')
+        
     def t_error(t):
-        print(f"Illegal character '{t.value[0]}'")
+        c = t.value[0]
+        n = t.lexer.lexpos
+        l = t.lexer.lineno
+        print(f"Illegal character '{c}' at character number {n} in line {l}.")
         t.lexer.skip(1)
     
     lexer = lex.lex()
