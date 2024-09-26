@@ -788,25 +788,25 @@ Next, we explain in detail how \textsc{Ply} uses operator precedence relations t
 We start our discussion by categorizing conflicts with respect to their origin.
 \begin{enumerate}
 \item \emph{Mehrdeutigkeits-Konflikte} sind Konflikte, die ihre Ursache in einer Mehrdeutigkeit
-      der zu Grunde liegenden Grammatik haben.  Solche Konflikte weisen damit auf ein tatsächliches
-      Problem der Grammatik hin.  Wir hatten ein Beispiel für solche Konflikte gesehen, als wir in
+      der zu Grunde liegenden Grammatik haben.  Solche Konflikte weisen damit auf ein tats\"achliches
+      Problem der Grammatik hin.  Wir hatten ein Beispiel f\"ur solche Konflikte gesehen, als wir in
       Abbildung \ref{fig:Conflicts.ipynb} 
-      versucht hatten, die Syntax arithmetischer Ausdrücke ohne die syntaktischen
+      versucht hatten, die Syntax arithmetischer Ausdr\"ucke ohne die syntaktischen
       Kategorien \textsl{product} und \textsl{factor} zu beschreiben.
 
-      Wir hatten damals bereits gesehen, dass wir das Problem durch die Einführung von
-      Operator-Präzedenzen lösen können.  Falls dies nicht möglich ist, dann bleibt nur das
+      Wir hatten damals bereits gesehen, dass wir das Problem durch die Einf\"uhrung von
+      Operator-Pr\"azedenzen l\"osen k\"onnen.  Falls dies nicht m\"oglich ist, dann bleibt nur das
       Umschreiben der Grammatik.
 \item \emph{Look-Ahead-Konflikte} sind Reduce-Reduce-Konflikte, bei denen die Grammatik zwar
-      einerseits eindeutig ist, für die aber andererseits
-      ein Look-Ahead von einem Token nicht ausreichend ist um den Konflikt zu lösen.
-\item \emph{Mysteriöse Konflikte} entstehen erst beim Übergang von den LR-Zuständen zu den LALR-Zuständen 
-      durch das Zusammenfassen von Zuständen mit dem gleichen Kern.  Diese Konflikte treten also
+      einerseits eindeutig ist, f\"ur die aber andererseits
+      ein Look-Ahead von einem Token nicht ausreichend ist um den Konflikt zu l\"osen.
+\item \emph{Mysteri\"ose Konflikte} entstehen erst beim \"Ubergang von den LR-Zust\"anden zu den LALR-Zust\"anden 
+      durch das Zusammenfassen von Zust\"anden mit dem gleichen Kern.  Diese Konflikte treten also
       genau dann auf, wenn das Konzept einer LALR-Grammatik nicht ausreichend ist um die Syntax der
       zu parsenden Sprache zu beschreiben.
 \end{enumerate}
-Wir betrachten die letzten beiden Fälle nun im Detail und zeigen Wege auf, wie die Konflikte gelöst
-werden können.
+Wir betrachten die letzten beiden F\"alle nun im Detail und zeigen Wege auf, wie die Konflikte gel\"ost
+werden k\"onnen.
 
 \subsection{Look-Ahead-Konflikte}
 Ein Look-Ahead-Konflikt liegt dann vor, wenn die Grammatik zwar eindeutig ist, aber ein Look-Ahead von einem
@@ -843,13 +843,13 @@ die zwar eindeutig ist, aber nicht die LR(1)-Eigenschaft hat und damit erst rech
 \end{figure}
 
 
-Berechnen wir die LR-Zustände dieser Grammatik,
+Berechnen wir die LR-Zust\"ande dieser Grammatik,
 so finden wir unter anderem den folgenden Zustand:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\{ b \rightarrow \;\squoted{X} \bullet: \squoted{U},\; c \rightarrow \;\squoted{X} \bullet: \squoted{U} \}$.
 \\[0.2cm]
-Da die Menge der Folge-Token für beide Regeln gleich sind, haben wir hier einen Reduce-Reduce-Konflikt.
+Da die Menge der Folge-Token f\"ur beide Regeln gleich sind, haben wir hier einen Reduce-Reduce-Konflikt.
 Dieser Konflikt hat seine Ursache darin, dass der Parser mit einem Look-Ahead von nur einem Token nicht
 entscheiden kann, ob ein $\squoted{X}$ als ein $b$ oder als ein $c$ zu interpretieren ist, denn dies
 entscheidet sich erst, wenn das auf $\squoted{U}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
@@ -884,15 +884,15 @@ und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
     c : 'X' 'U'
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Eine zu Abbildung \ref{fig:lr-conflict.g} äquivalente LR(1)-Grammatik.}
+\caption{Eine zu Abbildung \ref{fig:lr-conflict.g} \"aquivalente LR(1)-Grammatik.}
 \label{fig:lr-conflict-resolved.g}
 \end{figure}
 
-Das Problem bei dieser Grammatik ist, dass sie versucht, abhängig vom Kontext ein $\squoted{X}$ wahlweise
-als ein $b$ oder als ein $c$ zu interpretieren.  Es ist offensichtlich, wie das Problem gelöst werden
+Das Problem bei dieser Grammatik ist, dass sie versucht, abh\"angig vom Kontext ein $\squoted{X}$ wahlweise
+als ein $b$ oder als ein $c$ zu interpretieren.  Es ist offensichtlich, wie das Problem gel\"ost werden
 kann:  Wenn der Kontext ``\texttt{U}'', der sowohl auf $b$ als auch auf $c$ folgt, mit in
-die Regeln für $b$ und $c$ aufgenommen wird, dann verschwindet der Konflikt, denn dann hat der
-Zustand, in dem früher der Konflikt auftrat, die Form
+die Regeln f\"ur $b$ und $c$ aufgenommen wird, dann verschwindet der Konflikt, denn dann hat der
+Zustand, in dem fr\"uher der Konflikt auftrat, die Form
 \\[0.2cm]
 \hspace*{1.3cm}
 $\{ b \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{V},\; 
@@ -900,13 +900,13 @@ $\{ b \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{V},\;
 \}
 $.
 \\[0.2cm]  
-Hier entscheidet sich nun anhand des nächsten Tokens, mit welcher Regel wir in diesem Zustand
-reduzieren müssen:  Ist das nächste Token ein $\squoted{V}$, so reduzieren wir mit der Regel
+Hier entscheidet sich nun anhand des n\"achsten Tokens, mit welcher Regel wir in diesem Zustand
+reduzieren m\"ussen:  Ist das n\"achste Token ein $\squoted{V}$, so reduzieren wir mit der Regel
 \\[0.2cm]
 \hspace*{1.3cm}
 $b \rightarrow \;\squoted{X} \squoted{U}$,
 \\[0.2cm]
-ist das nächste Token hingegen der Buchstabe $\squoted{W}$, so nehmen wir stattdessen die Regel
+ist das n\"achste Token hingegen der Buchstabe $\squoted{W}$, so nehmen wir stattdessen die Regel
 \\[0.2cm]
 \hspace*{1.3cm}
 $c \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{W}$.

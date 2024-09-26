@@ -1,15 +1,8 @@
 \chapter{Introduction and Motivation}
 This lecture explores the theory of formal languages and delves into various applications, with a focus on the
-development of scanners, parsers, interpreters, and compilers. We also introduce several specialized tools
-designed to aid in the creation of these components, specifically: 
-\begin{enumerate}
-\item \blue{\textsc{Ply}}: \index{\textsc{Ply}} A tool for generating parsers using the programming language
-      \textsl{Python}. 
-\item \blue{\textsc{Antlr}}: \index{\textsc{Antlr}} A versatile tool capable of generating parsers for multiple
-       programming languages, including \textsl{Python} and \textsl{Java}. 
-\end{enumerate}
-These tools are categorized as \blue{program generators}. They accept language descriptions as input and output
-parsers accordingly. 
+development of scanners, parsers, interpreters, and compilers. We also introduce a tool designed to aid in the
+creation of these components, specifically we will introduce
+\blue{\textsc{Ply}}, which can be used both as a scanner generator and as a parser generator.
 
 \section{Basic Definitions}
 The cornerstone of this lecture is the concept of a \href{http://en.wikipedia.org/wiki/Formal_language}{\emph{formal language}}, \index{formal language} essentially defined as a set of strings characterized by precise mathematical criteria. To establish this concept, we first introduce some foundational definitions.
@@ -20,7 +13,7 @@ An \blue{alphabet} \( \Sigma \) \index{alphabet} is a finite, non-empty set of \
 \hspace*{1.3cm}
 \( \Sigma = \{ c_1, \cdots, c_n \} \).
 \\[0.2cm]
-The term \blue{symbol} \index{symbol} is occasionally used interchangeably with character.
+The term \blue{symbol} \index{symbol} is occasionally used interchangeably with the term \blue{character}.
 \qed
 \end{Definition}
 
@@ -31,12 +24,114 @@ The term \blue{symbol} \index{symbol} is occasionally used interchangeably with 
 \item \( \Sigma_{\textsc{\scriptsize Ascii}} = \{ 0, 1, \cdots, 127 \} \) is known as the
       \href{http://en.wikipedia.org/wiki/ASCII}{\textsc{Ascii}-Alphabet}. \index{\textsc{Ascii}-Alphabet} Here,
       numbers correspond to letters, digits, punctuation marks, and control characters. For instance, the set
-      \( \{ 65, \cdots, 90 \} \) maps to the letters \( \{ \mathtt{A}, \cdots, \mathtt{Z} \} \).
-\item \( \Sigma_{\textsc{\scriptsize Unicode}} = \{ 0, 1, \cdots, 1\,114\,111 \} \) represents the
+      of number \( \{ 65, \cdots, 90 \} \) represents the letters \( \{ \mathtt{A}, \cdots, \mathtt{Z} \} \):
+      The number $65$ represents the letter ``\texttt{A}'', the number $66$ represents the letter
+      ``\texttt{B}'', and the number $90$ represents the letter ``\texttt{Z}''.
+      Table \ref{tab:ascii_table} on the next page shows the complete \textsc{Ascii} code.  Note that the first 32 codes are
+      non-printable control codes, for example the number $10$ encodes a line feed control symbol, while the
+      number $13$ encodes a carriage return.
+      
+\item \( \Sigma_{\textsc{\scriptsize Unicode}} = \{ 0, 1, \cdots, 154\,998 \} \) represents the
       \href{https://en.wikipedia.org/wiki/Unicode}{\textsc{Unicode}-Alphabet}. \index{\textsc{Unicode}-Alphabet}
-      This extensive set accommodates a wide array of characters, including various scripts, symbols, and even emojis. 
+      This extensive set accommodates a wide array of characters, including various scripts, symbols, and even
+      emojis.  Table \ref{tab:chinese_table} shows the Unicode encoding of 120 Chinese characters.
 \eox
 \end{enumerate}
+
+\begin{table}[!th]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \textbf{Character} & \textbf{Code} & \textbf{Character} & \textbf{Code} & \textbf{Character} & \textbf{Code} \\
+        \hline        \hline
+        \texttt{NUL} & 0 & \texttt{SOH} & 1 & \texttt{STX} & 2 \\
+        \texttt{ETX} & 3 & \texttt{EOT} & 4 & \texttt{ENQ} & 5 \\
+        \texttt{ACK} & 6 & \texttt{BEL} & 7 & \texttt{BS} & 8 \\
+        \texttt{TAB} & 9 & \texttt{LF} & 10 & \texttt{VT} & 11 \\
+        \texttt{FF} & 12 & \texttt{CR} & 13 & \texttt{SO} & 14 \\
+        \texttt{SI} & 15 & \texttt{DLE} & 16 & \texttt{DC1} & 17 \\
+        \texttt{DC2} & 18 & \texttt{DC3} & 19 & \texttt{DC4} & 20 \\
+        \texttt{NAK} & 21 & \texttt{SYN} & 22 & \texttt{ETB} & 23 \\
+        \texttt{CAN} & 24 & \texttt{EM} & 25 & \texttt{SUB} & 26 \\
+        \texttt{ESC} & 27 & \texttt{FS} & 28 & \texttt{GS} & 29 \\
+        \texttt{RS} & 30 & \texttt{US} & 31 & \texttt{Space} & 32 \\
+        \texttt{!} & 33 & \texttt{"} & 34 & \texttt{\#} & 35 \\
+        \texttt{\$} & 36 & \texttt{\%} & 37 & \texttt{\&} & 38 \\
+        \texttt{\textquotesingle} & 39 & \texttt{(} & 40 & \texttt{)} & 41 \\
+        \texttt{*} & 42 & \texttt{+} & 43 & \texttt{,} & 44 \\
+        \texttt{-} & 45 & \texttt{.} & 46 & \texttt{/} & 47 \\
+        \texttt{0} & 48 & \texttt{1} & 49 & \texttt{2} & 50 \\
+        \texttt{3} & 51 & \texttt{4} & 52 & \texttt{5} & 53 \\
+        \texttt{6} & 54 & \texttt{7} & 55 & \texttt{8} & 56 \\
+        \texttt{9} & 57 & \texttt{:} & 58 & \texttt{;} & 59 \\
+        \texttt{<} & 60 & \texttt{=} & 61 & \texttt{>} & 62 \\
+        \texttt{?} & 63 & \texttt{@} & 64 & \texttt{A} & 65 \\
+        \texttt{B} & 66 & \texttt{C} & 67 & \texttt{D} & 68 \\
+        \texttt{E} & 69 & \texttt{F} & 70 & \texttt{G} & 71 \\
+        \texttt{H} & 72 & \texttt{I} & 73 & \texttt{J} & 74 \\
+        \texttt{K} & 75 & \texttt{L} & 76 & \texttt{M} & 77 \\
+        \texttt{N} & 78 & \texttt{O} & 79 & \texttt{P} & 80 \\
+        \texttt{Q} & 81 & \texttt{R} & 82 & \texttt{S} & 83 \\
+        \texttt{T} & 84 & \texttt{U} & 85 & \texttt{V} & 86 \\
+        \texttt{W} & 87 & \texttt{X} & 88 & \texttt{Y} & 89 \\
+        \texttt{Z} & 90 & \texttt{[} & 91 & \texttt{\textbackslash} & 92 \\
+        \texttt{]} & 93 & \texttt{\^} & 94 & \texttt{\_} & 95 \\
+        \texttt{\`} & 96 & \texttt{a} & 97 & \texttt{b} & 98 \\
+        \texttt{c} & 99 & \texttt{d} & 100 & \texttt{e} & 101 \\
+        \texttt{f} & 102 & \texttt{g} & 103 & \texttt{h} & 104 \\
+        \texttt{i} & 105 & \texttt{j} & 106 & \texttt{k} & 107 \\
+        \texttt{l} & 108 & \texttt{m} & 109 & \texttt{n} & 110 \\
+        \texttt{o} & 111 & \texttt{p} & 112 & \texttt{q} & 113 \\
+        \texttt{r} & 114 & \texttt{s} & 115 & \texttt{t} & 116 \\
+        \texttt{u} & 117 & \texttt{v} & 118 & \texttt{w} & 119 \\
+        \texttt{x} & 120 & \texttt{y} & 121 & \texttt{z} & 122 \\
+        \texttt{\{} & 123 & \texttt{|} & 124 & \texttt{\}} & 125 \\
+        \texttt{\textasciitilde} & 126 & \texttt{DEL} & 127 &  & \\
+        \hline
+    \end{tabular}
+    \caption{\textsc{Ascii} Encoding Table}
+    \label{tab:ascii_table}
+\end{table}
+
+\begin{CJK}{UTF8}{gbsn} % Start the Chinese environment with simplified Chinese font
+
+\begin{table}[!th]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+    \textbf{Glyph} & \textbf{Unicode} & \textbf{Glyph} & \textbf{Unicode} & \textbf{Glyph} & \textbf{Unicode} \\
+      \hline
+    一 & U+4E00 & 二 & U+4E8C & 三 & U+4E09 & 四 & U+56DB \\
+    五 & U+4E94 & 六 & U+516D & 七 & U+4E03 & 八 & U+516B \\
+    九 & U+4E5D & 十 & U+5341 & 人 & U+4EBA & 大 & U+5927 \\
+    天 & U+5929 & 地 & U+5730 & 日 & U+65E5 & 月 & U+6708 \\
+    山 & U+5C71 & 水 & U+6C34 & 火 & U+706B & 木 & U+6728 \\
+    金 & U+91D1 & 土 & U+571F & 子 & U+5B50 & 女 & U+5973 \\
+    中 & U+4E2D & 国 & U+56FD & 王 & U+738B & 民 & U+6C11 \\
+    学 & U+5B66 & 文 & U+6587 & 本 & U+672C & 书 & U+4E66 \\
+    爱 & U+7231 & 家 & U+5BB6 & 友 & U+53CB & 生 & U+751F \\
+    父 & U+7236 & 母 & U+6BCD & 男 & U+7537 & 女 & U+5973 \\
+    花 & U+82B1 & 草 & U+8349 & 狗 & U+72D7 & 猫 & U+732B \\
+    鸟 & U+9E1F & 鱼 & U+9C7C & 风 & U+98CE & 雨 & U+96E8 \\
+    云 & U+4E91 & 雪 & U+96EA & 电 & U+7535 & 光 & U+5149 \\
+    车 & U+8F66 & 船 & U+8239 & 米 & U+7C73 & 茶 & U+8336 \\
+    饭 & U+996D & 面 & U+9762 & 东 & U+4E1C & 西 & U+897F \\
+    南 & U+5357 & 北 & U+5317 & 左 & U+5DE6 & 右 & U+53F3 \\
+    高 & U+9AD8 & 矮 & U+77EE & 长 & U+957F & 短 & U+77ED \\
+    快 & U+5FEB & 慢 & U+6162 & 早 & U+65E9 & 晚 & U+665A \\
+    你 & U+4F60 & 好 & U+597D & 谢 & U+8C22 & 是 & U+662F \\
+    不 & U+4E0D & 我 & U+6211 & 他 & U+4ED6 & 她 & U+5979 \\
+    它 & U+5B83 & 很 & U+5F88 & 要 & U+8981 & 有 & U+6709 \\
+    吃 & U+5403 & 喝 & U+559D & 看 & U+770B & 听 & U+542C \\
+    走 & U+8D70 & 跑 & U+8DD1 & 跳 & U+8DF3 & 说 & U+8BF4 \\
+    问 & U+95EE & 答 & U+7B54 & 学 & U+5B66 & 校 & U+6821 \\
+    老 & U+8001 & 师 & U+5E08 & 生 & U+751F & 书 & U+4E66 \\
+    \hline
+    \end{tabular}
+    \caption{\textsc{Unicode} Encoding of some Chinese Characters}
+    \label{tab:chinese_table}
+\end{table}
+\end{CJK}
 
 \begin{Definition}[Strings]
 For a given alphabet \( \Sigma \), a \blue{string} \index{string} is a sequence of characters selected from \( \Sigma \). In formal language theory, these sequences are written without brackets or separating commas. Thus, for \( c_1, \cdots, c_n \in \Sigma \), we write
@@ -48,6 +143,13 @@ The empty string is represented by \( \lambda \), \index{\( \lambda \)} so \( \l
 The set of all possible strings formed from the alphabet \( \Sigma \) is denoted as \( \Sigma^* \). \index{\( \Sigma^* \)} Strings are often enclosed in quotation marks for emphasis.
 \qed
 \end{Definition}
+\vspace*{\fill}
+
+\pagebreak
+
+\vspace*{\fill}
+
+\pagebreak
 
 \examplesEng
 \begin{enumerate}[(a)]
