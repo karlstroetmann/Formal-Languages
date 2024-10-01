@@ -4,4 +4,6 @@ conda install -y -c conda-forge python=3.12 jupyter notebook
 conda install -y -c conda-forge ply
 conda install -y -c conda-forge graphviz
 conda install -y -c conda-forge python-graphviz
+pip install mypy
+pip install nb-mypy
 
