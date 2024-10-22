@@ -1372,7 +1372,7 @@ returns a state of $Q$.  Our goal is to find a deterministic finite state machin
 \hspace*{1.3cm}
 $F^- = \langle Q^-, \Sigma, \delta^-, q_0, A^- \rangle$,
 \\[0.2cm]
-which accepts the same language as  $F$, so 
+which accepts the same language as  $F$, so we have 
 \\[0.2cm]
 \hspace*{1.3cm}
 $L(F^-) = L(F)$
@@ -1395,8 +1395,6 @@ and then $\delta^*(q,w)$ is defined by induction on $w$ as follows:
 \item $\delta^*(q, \varepsilon) := q$ \quad for all $q \in Q$.
 \item $\delta^*(q, cw) := \delta^*(\delta(q, c), v)$ \quad for all $q \in Q$, $c \in \Sigma$, and $v \in \Sigma^*$.
 \end{enumerate}
-Since the function $\delta^*$ is a generalization of the function $\delta$, in
-the future we will not distinguish in the notation between $\delta$ and $\delta^*$ and write $\delta$ for both functions. 
 
 Obviously, in a finite state machine 
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ we can remove all the states $p \in Q$ which are not
@@ -1404,10 +1402,9 @@ $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ we can remove all the states $p 
 a string $w \in \Sigma^*$ is given, such that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\delta(q_0, w) = p$
+$\delta^*(q_0, w) = p$
 \\[0.2cm]
-holds.  In the following we assume that all states of the \textsc{Fsm} $F$ can be reached
-from the start state. 
+holds.  In the following we assume that all states of the \textsc{Fsm} $F$ are reachable. 
 
 
 \begin{figure}[!ht]
@@ -1429,10 +1426,10 @@ Assume $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ is a deterministic finite
 Two states $p_1,p_2 \in Q$ are called \blue{separable} \index{separable} if and only if there exists a string 
 $s \in \Sigma^*$ such that either
 \begin{enumerate}
-\item $\delta(p_1,s) \in    A$ and $\delta(p_2,s) \notin A$ or
-\item $\delta(p_1,s) \notin A$ and $\delta(p_2,s) \in    A$
+\item $\delta^*(p_1,s) \in    A$ and $\delta^*(p_2,s) \notin A$ or
+\item $\delta^*(p_1,s) \notin A$ and $\delta^*(p_2,s) \in    A$
 \end{enumerate}
-holds.  In this case, the string $s$ \blue{separates} \index{separates} $p_1$ and $p_2$. \qed
+holds.  In this case, the string $s$ \blue{separates} \index{separates} the states $p_1$ and $p_2$. \qed
 \end{Definition}
 If two states $p_1$ and $p_2$ are separable, then it is obvious that theses states must not be identified.
 We define an equivalence relation $\sim$ on the set $Q$ of all states by setting
@@ -1449,10 +1446,10 @@ function $\delta$ in a way that the new version of $\delta$ will return $p_1$ in
 version of $\delta$ had returned $p_2$. 
 
 
-The question remains how we can determine which states are distinguishable.
+The question remains how we can determine which states are separable.
 One possibility is to create a set $V$ with pairs of states.  We add the pair $\langle p, q \rangle$ to the set
-$V$ if we have discovered that $p$ and $q$ are distinguishable.  We recognize $p$ and $q$ as distinguishable if
-there is a letter $c\in\Sigma$ and two states $s$ and $t$ that are already known to be distinguishable such that 
+$V$ if we have discovered that $p$ and $q$ are separable.  We recognize $p$ and $q$ as separable if
+there is a letter $c\in\Sigma$ and two states $s$ and $t$ that are already known to be separable such that 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\delta(p,c) = s$, \quad $\delta(q,c) = t$, \quad and \quad $\langle s, t \rangle \in V$
@@ -1473,7 +1470,7 @@ holds. This idea leads to an algorithm that uses two steps:
       \hspace*{1.3cm}
       $V = A \times (Q \backslash A) \cup (Q \backslash A) \times A$.
 \item As long as we find a new pair $\pair(p,q) \in Q \times Q$ for which there is a letter $c$ such that the
-      states $\delta(p,c)$ and $\delta(q,c)$ are already distinguishable, we add this pair to the set $V$:  
+      states $\delta(p,c)$ and $\delta(q,c)$ are already separable, we add this pair to the set $V$:  
       \\[0.2cm]
       \hspace*{1.3cm} 
       \texttt{while $\exists \pair(p,q) \in Q \times Q: \exists c \in \Sigma:\langle\delta(p,c),
@@ -1484,20 +1481,20 @@ holds. This idea leads to an algorithm that uses two steps:
       \hspace*{2.3cm}
       \texttt{$V$ := $V \cup \{\, \pair(p,q),\, \pair(q,p)\, \}$;} \\
 \end{enumerate}
-If we have found all pairs $\pair(p,q)$ of distinguishable states, then we can identify all states $p$ and $q$
-which are not distinguishable and therefore $\langle p, q \rangle \not\in V$.   The \textsc{Fsm} constructed in
+If we have found all pairs $\pair(p,q)$ of separable states, then we can identify all states $p$ and $q$
+which are not separable and therefore $\langle p, q \rangle \not\in V$.   The \textsc{Fsm} constructed in
 this way is, in fact, minimal.  
 
 \exerciseEng
 We consider the  \textsc{Fsm} shown in figure \ref{fig:nicht-gleichwertig.dot} and apply the algorithm
 described above to this \textsc{Fsm}. 
 We use a table for this.  The columns and rows of this table are numbered with the different states.  If we
-have recognized in the first step that the states $i$ and $j$ are distinguishable, we insert a $1$ in this
+have recognized in the first step that the states $i$ and $j$ are separable, we insert a $1$ in this
 table in the $i$-th row and the $j$-th column. 
 Furthermore, since the states $i$ and $j$ can also be distinguished from the states $j$ and $i$, we also insert
 a $1$ in the $j$-th row and the $i$-th column. 
 \begin{enumerate}
-\item In the first step we recognize that the two accepting states $q_3$ and $q_4$ are distinguishable from all non-accepting states.
+\item In the first step we recognize that the two accepting states $q_3$ and $q_4$ are separable from all non-accepting states.
       So the pairs 
       $\pair(q_0,q_3)$,
       $\pair(q_0,q_4)$,
@@ -1505,7 +1502,7 @@ a $1$ in the $j$-th row and the $i$-th column.
       $\pair(q_1,q_4)$,
       $\pair(q_2,q_3)$ and
       $\pair(q_2,q_4)$
-      are distinguishable. So the table now has the following configuration:
+      are separable. So the table now has the following configuration:
       \begin{center}        
       \begin{tabular}[t]{|l||l|l|l|l|l|}
       \hline
@@ -1524,12 +1521,12 @@ a $1$ in the $j$-th row and the $i$-th column.
       \hline
       \end{tabular}
       \end{center}
-\item Next we see that the states $q_0$ and $q_1$ are distinguishable because
+\item Next we see that the states $q_0$ and $q_1$ are separable because
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta(q_0,a) = q_1$, \quad $\delta(q_1,a) = q_3$ \quad and \quad $q_1 \not\sim q_3$.
       \\[0.2cm]
-      Also we see that the states $q_0$ and $q_2$ are distinguishable, because
+      Also we see that the states $q_0$ and $q_2$ are separable, because
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta(q_0,b) = q_2$, \quad $\delta(q_2,b) = q_4$ \quad and \quad $q_2 \not\sim q_4$.
@@ -1553,23 +1550,23 @@ a $1$ in the $j$-th row and the $i$-th column.
       \hline
       \end{tabular}
       \end{center}
-\item Now we do not find any more pairs of distinguishable states, because if we take a look at the pair $\pair(q_1,q_2)$ we can see that
+\item Now we do not find any more pairs of separable states, because if we take a look at the pair $\pair(q_1,q_2)$ we can see that
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta(q_1,\texttt{a}) = q_3$ \quad and \quad $\delta(q_2,\texttt{a}) = q_4$, 
       \\[0.2cm]
-      but because the states $q_3$ and $q_4$ are not distinguishable so far, this does not yield a new
-      distinguishable pair.  Neither does 
+      but because the states $q_3$ and $q_4$ are not separable so far, this does not yield a new
+      separable pair.  Neither does 
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta(q_1,\texttt{b}) = q_3$ \quad and \quad $\delta(q_2,\texttt{b}) = q_4$
       \\[0.2cm]
-      yield a new distinguishable pair.  At this point, the two states $q_3$ and $q_4$ remain.  We find
+      yield a new separable pair.  At this point, the two states $q_3$ and $q_4$ remain.  We find
       \\[0.2cm]
       \hspace*{1.3cm}
       $\delta(q_3,c) = q_1$ \quad and \quad $\delta(q_4,c) = q_2$ \quad for all $c \in \{\texttt{a}, \texttt{b}\}$
       \\[0.2cm]
-      and because the states $q_1$ and $q_2$ are not yet known to be distinguishable, we have not found any new distinguishable states.
+      and because the states $q_1$ and $q_2$ are not yet known to be separable, we have not found any new separable states.
       So we can read the equivalent states from the table, it holds that:
       \begin{enumerate}
       \item $q_1 \sim q_2$
@@ -1600,8 +1597,8 @@ $L\bigl(a \cdot (b \cdot a)^*\bigr)$.  Perform the following steps:
 \subsection{Implementation}
 The \textsl{Jupyter notebook} 
 \\[0.2cm]
-\hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/DFA-2-RegExp.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Minimize.ipynb}
+\hspace*{0.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize.ipynb}
 \\[0.2cm]
 contains a program that takes a deterministic \textsc{Fsm} $F$ and returns an equivalent \textsc{Fsm} that has
 the minimum number of states.
