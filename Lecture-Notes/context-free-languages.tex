@@ -348,32 +348,6 @@ Next, we prove that any string \( w \) derived from \( \textsl{s} \) belongs to 
 \end{enumerate}
 
 \exerciseEng
-We define for $w \in \Sigma^*$ and $c \in \Sigma$ the function
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{count}(w,c)$.
-\\[0.2cm]
-The function counts how many times the letter $c$ occurs in the word $w$.  The definition is done by induction
-on the string $w$.
-\begin{enumerate}
-\item[B.C.:] $w = \lambda$.  
-
-            We set
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\textsl{count}(\lambda, c) := 0$.
-\item[I.S.:] $w = dv$ with $d \in \Sigma$ and $v \in \Sigma^*$.  
-
-            Then $\textsl{count}(dv,c)$ is defined by case distinction:
-            \\[0.2cm]
-            \hspace*{1.3cm}
-            $\textsl{count}(dv,c) := \left\{
-             \begin{array}[c]{llr}
-               \textsl{count}(v,c) + 1 & \mbox{if $c = d$};    \\
-               \textsl{count}(v,c) & \mbox{falls $c \not= d$}. \\
-             \end{array}\right.
-            $ \eox
-\end{enumerate}
 We define $\Sigma = \{ \squoted{A}, \squoted{B} \}$ and define the language $L$ as the
 set of words $w\in\Sigma^*$ in which the letters \squoted{A} and \squoted{B} occur with the
 same frequency:
@@ -993,7 +967,7 @@ There are two ways to deal with this kind of problem:
       (abbreviated as \textsc{Ebnf}-grammar).   Theoretically, the expressive power of
       \textsc{Ebnf} grammars is the same as the expressive power of context-free grammars.
       In practice, however, it turns out that the construction of top-down parsers for
-      \textsc{Ebnf} grammars is easier, because in an \textsc{Ebnf} grammar the left recursion can be replaced
+      \textsc{Ebnf} grammars is easier, because in an \textsc{Ebnf} grammar the left recursion can often be replaced
       by iteration. 
 \end{enumerate}
 In the rest of this chapter we will discuss these two procedures in more detail using the grammar for
@@ -1167,7 +1141,6 @@ interpreted as follows:
       \\[0.2cm]
       where $\textsl{op} \in \{ \quoted{$\cdot$}, \quoted{/} \}$ holds. 
 \end{enumerate}
-\pagebreak
 
 \exerciseEng \label{exercise:regexp}
 \begin{enumerate}[(a)]
@@ -1203,6 +1176,23 @@ interpreted as follows:
 
 
 \subsection{Implementing a Top Down Parser in \textsl{Python}}
+\noindent
+Now we are ready to implement a parser for recognizing arithmetic expressions.
+We will use the grammar that is shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
+Before we can implement the parser, we need a scanner.  We will use a hand-coded scanner that is shown in
+Figure \ref{fig:Top-Down-Parser:scanner.ipynb} on page \pageref{fig:Top-Down-Parser:scanner.ipynb}.
+The function \texttt{tokenize} implemented in this scanner receives a string \texttt{s} as argument and returns
+a list of tokens.  The string \texttt{s} is supposed to represent an arithmetical expression. 
+In order to understand the implementation, you need to know the following:
+\begin{enumerate}[(a)]
+\item We need to set the flag \texttt{re.VERBOSE} in our call of the function \texttt{findall}
+      below because otherwise we are not able to format the regular expression \texttt{lexSpec} the way 
+      we have done it.  In prticular, we would not be able to use comment inside the regular expression
+      and we would not be able to format the regular expression using white space.
+\item The regular expression \texttt{lexSpec} contains 3 alternatives: white space, numbers, and operator symbols.
+      White space is removed, while everything else is collected in the list \texttt{result}.
+      Furthermore, the empty string that occurs at the end has to be removed in the same way as white space.
+\end{enumerate}
 
 
 \begin{figure}[!ht]
@@ -1215,28 +1205,17 @@ interpreted as follows:
                 xleftmargin   = 0.0cm,
                 xrightmargin  = 0.0cm
               ]{python3}
-    import re
-    
-    def tokenize(s):
-        lexSpec = r'''([ \t]+)        |  # blanks and tabs
-                      ([1-9][0-9]*|0) |  # number
-                      ([()])          |  # parentheses 
-                      ([-+*/])        |  # arithmetical operators
-                      (.)                # unrecognized character
+    def tokenize(s: str) -> list[str]:
+        lexSpec = r'''[ \t]+        |  # blanks and tabs
+                      [1-9][0-9]*|0 |  # numbers
+                      [-+*/()]      |  # arithmetical operators and parentheses
                    '''
         tokenList = re.findall(lexSpec, s, re.VERBOSE)
         result    = []
-        for ws, number, parenthesis, operator, error in tokenList:
-            if ws:        # skip blanks and tabs
-                pass
-            if number:
-                result += [ number ]
-            if parenthesis:
-                result += [ parenthesis ]
-            if operator:
-                result += [ operator ]
-            if error:
-                result += [ f'ERROR({error})']
+        for token in tokenList:
+            if token == '' or token[0] in [' ', '\t']:        # skip blanks and tabs
+                continue
+            result += [ token ]
         return result
 \end{minted}
 \vspace*{-0.3cm}
@@ -1308,22 +1287,6 @@ interpreted as follows:
 
 
 \noindent
-Now we are ready to implement a parser for recognizing arithmetic expressions.
-We will use the grammar that is shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
-Before we can implement the parser, we need a scanner.  We will use a hand-coded scanner that is shown in
-Figure \ref{fig:Top-Down-Parser:scanner.ipynb} on page \pageref{fig:Top-Down-Parser:scanner.ipynb}.
-The function \texttt{tokenize} implemented in this scanner receives a string \texttt{s} as argument and returns
-a list of tokens.  The string \texttt{s} is supposed to represent an arithmetical expression. 
-In order to understand the implementation, you need to know the following:
-\begin{enumerate}[(a)]
-\item We need to set the flag \texttt{re.VERBOSE} in our call of the function \texttt{findall}
-      below because otherwise we are not able to format the regular expression \texttt{lexSpec} the way 
-      we have done it.
-\item The regular expression \texttt{lexSpec} contains 5 parenthesized groups.  Therefore,
-      \texttt{findall} returns a list of 5-tuples where the 5 components correspond to the 5
-      groups of the regular expression.  As the 5 groups are non-overlapping, exactly one of the 5 components
-      will be a non-empty string.
-\end{enumerate}
 Figure \ref{fig:Top-Down-Parser.ipynb} on page
 \pageref{fig:Top-Down-Parser.ipynb} shows an implementation of a recursive descent parser in
 \textsc{Python}. 
@@ -1371,7 +1334,7 @@ Figure \ref{fig:Top-Down-Parser.ipynb} on page
       \verb|[9, [')', '*', 2]]|.
       \\[0.2cm]
       Here, the part \verb|['(', 1, '+', 2, ')', '*', 3]| has been parsed and evaluated as
-      the number $9$ and \verb|[')', '*', 2]| is the list of tokens that have not yet been
+      the number $9$ and \\ \verb|[')', '*', 2]| is the list of tokens that have not yet been
       processed.
 
       In order to parse an arithmetic expression, the function first parses a
@@ -1588,7 +1551,7 @@ a nested tuple that represents a regular expression.
 
 \paragraph{Historical Notes} The language \textsc{Algol} \cite{backus:1959,naur:1960} was the first
 programming language with a syntax that was based on an \textsc{Ebnf} grammar.  
-
+\pagebreak
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
