@@ -1,0 +1,1217 @@
+\chapter{Using \textsc{Ply} as a Parser Generator  \label{chapter:ply}}
+Most\footnote{The programming language \texttt{C++} is a noteable exception.} modern programming languages can
+be parsed using a so called \textsc{Lalr}-Parser.  While we will discuss the theory of \textsc{Lalr} languages
+later, this chapter introduces the parser generator \href{https://www.dabeaz.com/ply/}{\textsc{Ply}}, which can be used to
+generate a parser for any language that has an \textsc{Lalr} grammar.  In Chapter \ref{chapter:ply-lex} we have already
+seen how \textsc{Ply} can be used to generate a scanner.  This chapter focuses on the parser-generating aspect
+of \textsc{Ply}.   If you haven't done so already, you can install \textsc{Ply} via \texttt{anaconda} as follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{pip install ply}
+\\[0.2cm]
+In this chapter, we will discuss three example that use \textsc{Ply} as a parser generator.
+\begin{enumerate}
+\item First, we implement a symbolic calculator using \textsc{Ply}.
+\item In our second example, we develop a program for symbolic differentiation.
+      This example shows how \textsc{Ply} can be used to construct an abstract syntax tree.
+\item In our final example we create an interpreter for a language that is a small fragment of the
+      programming language \texttt{C}.
+\end{enumerate}
+
+
+\section{A Symbolic Calculator}
+Figure \ref{fig:calculator.g} on page \pageref{fig:calculator.g} shows the grammar of a simple 
+\blue{symbolic calculator}, i.e.~a calculator that supports the use of variables.  
+
+\begin{figure}[!ht]
+
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+  \begin{eqnarray*}
+  \textsl{stmnt}   & \rightarrow & \;\textsc{Identifier} \quoted{:=} \textsl{expr} \quoted{;}\\
+                   & \mid        & \;\textsl{expr} \quoted{;}                   \\[0.2cm]
+  \textsl{expr}    & \rightarrow & \;\textsl{expr} \quoted{+} \textsl{product}  \\
+                   & \mid        & \;\textsl{expr} \quoted{-} \textsl{product}  \\
+                   & \mid        & \;\textsl{product}                           \\[0.2cm]
+  \textsl{product} & \rightarrow & \;\textsl{product} \quoted{*} \textsl{factor}\\
+                   & \mid        & \;\textsl{product} \quoted{/} \textsl{factor}\\
+                   & \mid        & \;\textsl{factor}                            \\[0.2cm]
+  \textsl{factor}  & \rightarrow &   \quoted{(} \textsl{expr} \quoted{)}        \\
+                   & \mid        & \;\textsc{Number}                            \\
+                   & \mid        & \;\textsc{Identifier}                        
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+  \end{minipage}}}
+  \end{center}
+  \caption{A grammar for a symbolic calculator.}
+  \label{fig:calculator.g}
+\end{figure}
+
+In order to generate a symbolic calculator that is based on this grammar we first need to implement a scanner.
+Figure \ref{fig:Symbolic-Calculator.ipynb:lex} shows how to specify an appropriate scanner with \textsc{Ply}.
+As we have discussed scanner generation with \textsc{Ply} at length in Chapter \ref{chapter:ply-lex} there is
+no need for further discussions here.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+    import ply.lex as lex
+    
+    tokens = [ 'NUMBER', 'IDENTIFIER', 'ASSIGN' ]
+    
+    def t_NUMBER(t):
+        r'0|[1-9][0-9]*(\.[0-9]+)?([eE][+-]?([1-9][0-9]*))?'
+        t.value = float(t.value)
+        return t
+    
+    def t_IDENTIFIER(t):
+        r'[a-zA-Z][a-zA-Z0-9_]*'
+        return t
+    
+    def t_ASSIGN_OP(t):
+        r':='
+        return t
+    
+    literals = ['+', '-', '*', '/', '(', ')', ';']
+    
+    t_ignore  = ' \t'
+
+    def t_newline(t):
+        r'\n+'
+        t.lexer.lineno += t.value.count('\n')
+        
+    def t_error(t):
+        c = t.value[0]
+        n = t.lexer.lexpos
+        l = t.lexer.lineno
+        print(f"Illegal character '{c}' at character number {n} in line {l}.")
+        t.lexer.skip(1)
+    
+    lexer = lex.lex()
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A scanner for the symbolic calculator.}
+\label{fig:Symbolic-Calculator.ipynb:lex}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+    import ply.yacc as yacc
+    
+    start = 'stmnt'
+    
+    def p_stmnt_assign(p):
+        "stmnt : IDENTIFIER ASSIGN expr ';'"
+        Names2Values[p[1]] = p[3]
+    
+    def p_stmnt_expr(p):
+        "stmnt : expr ';'"
+        print(p[1])
+    
+    def p_expr_plus(p):
+        "expr : expr '+' prod"
+        p[0] = p[1] + p[3]
+        
+    def p_expr_minus(p):
+        "expr : expr '-' prod"
+        p[0] = p[1] - p[3]
+        
+    def p_expr_prod(p):
+        "expr : prod"
+        p[0] = p[1]
+    
+    def p_prod_mult(p):
+        "prod : prod '*' factor"
+        p[0] = p[1] * p[3]
+        
+    def p_prod_div(p):
+        "prod : prod '/' factor"
+        p[0] = p[1] / p[3]
+        
+    def p_prod_factor(p):
+        "prod : factor"
+        p[0] = p[1]
+    
+    def p_factor_group(p):
+        "factor : '(' expr ')'"
+        p[0] = p[2]
+    
+    def p_factor_number(p):
+        "factor : NUMBER"
+        p[0] = p[1]
+    
+    def p_factor_id(p):
+        "factor : IDENTIFIER"
+        p[0] = Names2Values.get(p[1], float('nan'))
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A parser for the symbolic calculator, part \texttt{I}.}
+\label{fig:Symbolic-Calculator.ipynb:yacc}
+\end{figure}
+
+Figure \ref{fig:Symbolic-Calculator.ipynb:yacc} on page \pageref{fig:Symbolic-Calculator.ipynb:yacc} shows how the
+grammar is implemented in \textsc{Ply}.  We discuss it line by line.
+\begin{enumerate}
+\item Line 1 imports the module \texttt{ply.yacc}.  This module contains the function \texttt{ply.yacc.yacc}
+      which is responsible for computing the parse table. The name \blue{yacc} is a homage to the Unix tool
+      \href{https://en.wikipedia.org/wiki/Yacc}{\textsc{Yacc}}, which is a popular parser generator for the language
+      \texttt{C} and, furthermore, is part of the standard utilities of the Unix operating system.
+\item Line 3 specifies that the syntactical variable \texttt{stmnt} is the \blue{start symbol} of the grammar.
+\item Line 5 -- 7 define the function \texttt{p\_stmnt\_assign} which implements the grammar rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{stmnt} \rightarrow \textsc{Identifier} \quoted{:=} \textsl{expr}$.
+      \\[0.2cm]
+      Note that this grammar rule itself is represented by the \blue{document string} of the function
+      \texttt{p\_stmnt\_assign}.  In general, if
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $v \rightarrow \alpha$
+      \\[0.2cm]
+      is a grammar rule, then this grammar rule is represented by a function that has the name
+      \texttt{p\_$v$\_$s$}.  Here, the prefix ``\texttt{p\_}'' specifies that the function implements 
+      a grammar rule (the \texttt{p} is short for \blue{parser}), $v$ should\footnote{
+        This is just a convention. Technically, $v$ can be any string that is a valid \textsl{Python}
+        identifier.
+      }
+      be the name of the variable
+      defined by this grammar rule, and $s$ is a string chosen by the user to distinguish between different
+      grammar rules for the same variable.  Of course, $s$ has to be chosen in a way such that the string
+      \texttt{p\_$v$\_$s$} is a legal \textsl{Python} identifier.
+
+      The function always takes one argument \texttt{p}.  This argument is a sequence of objects that can be
+      indexed with array notation. If the grammar rule defining $v$ has the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $v \rightarrow X_1 \cdots X_n$,
+      \\[0.2cm]
+      then this sequence has a length of $n+1$.  If $X_i$ is a token, then \texttt{p[$i$]} is the property
+      with name \texttt{value} that is associated with this token.  Often, this value is just a string, but it
+      can also be a number.  If $X_i$ is a variable, then  \texttt{p[$i$]} is the value that is returned
+      when $X_i$ is recognized.  The value associated with the variable $v$ is stored in the location
+      \texttt{p[0]}.  In the grammar rule shown in line 5--7, we have not assigned any value to \texttt{p[0]} and
+      therefore there is no value associated with the syntactical variable \texttt{stmnt} that is defined by
+      this grammar rule.
+
+      \underline{\textbf{Note:}} Line 6 shows how a grammar rule is represented for \textsc{Ply}.
+      A grammar rule of the form 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $v \rightarrow X_1 \cdots X_n$
+      \\[0.2cm]
+      is represented as the string:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{"$v$ : $X_1$ $\cdots$ $X_n$"}
+      \\[0.2cm]
+      It is very \red{\underline{im}p\underline{ortant}} that the character ``\texttt{:}'' is
+      surrounded by space characters.  Otherwise, the parser generator does not work but rather generates error
+      messages that are difficult to understand. 
+
+      The function \texttt{p\_stmnt\_assign} has the task of evaluating the expression that is on the right
+      hand side of the assignment operator ``\texttt{:=}''.  The result of this evaluation is then stored in the
+      dictionary \texttt{Names2Values}.  The key that is used is the name of the identifier to the left of the
+      assignment operator.
+\item The function in line 9 -- 11 implements the grammar rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{stmnt} \rightarrow \textsl{expr} \quoted{;}$.
+      \\[0.2cm]
+      The rule is implemented by evaluating the expression and then printing it.
+\item The function \texttt{p\_expr\_plus} implements the grammar rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{prod}$.
+      \\[0.2cm]
+      It is implemented by evaluating the expression to the left of the operator ``\texttt{+}'', which is
+      stored in \texttt{p[1]}, and the product to the right of this operator, which is stored in \texttt{p[3]},
+      and then adding the corresponding values.  Finally, the resulting sum is stored in \texttt{p[0]} so that
+      it is available later as the value of the expression that has been parsed.
+
+      The remaining functions are similar to the ones that are discussed above.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+    def p_error(p):
+        if p:
+            print(f'Syntax error at {p.value} in line {p.lexer.lineno}.')
+        else:
+            print('Syntax error at end of input.')
+        
+    parser = yacc.yacc()
+
+    Names2Values = {}
+    
+    def main():
+        while True:
+            s = input('calc > ')
+            if s == '':
+                break
+            yacc.parse(s)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A parser for the symbolic calculator, part \texttt{II}.}
+\label{fig:Symbolic-Calculator.ipynb:yacc2}
+\end{figure}
+\FloatBarrier
+
+\noindent
+Figure \ref{fig:Symbolic-Calculator.ipynb:yacc2} on page \pageref{fig:Symbolic-Calculator.ipynb:yacc2}
+is discussed next.
+\begin{enumerate}
+\item Line 1 -- 5 shows the function \texttt{p\_error} which is used to print error messages in the case that
+      the input can not be parsed because of a syntax error.  The argument \texttt{p} is the token $t$ that
+      caused the entry $\texttt{action}(s, t)$ in the action table to be undefined.
+      If the syntax error happens at the end of the input, \texttt{p} has the value \texttt{None}.
+\item Line 7 generates the parser.
+\item Line 9 initializes the dictionary \texttt{Names2Values}.  For every identifier $x$ defined interactively,
+      \texttt{Names2Values[$x$]} is the value associated with $x$.
+\item The function \texttt{main} is used as a driver for the parser.  It reads a string \texttt{s}
+      from the command line and tries to parse \texttt{s} using the function \texttt{yacc.parse}.
+      The function \texttt{yacc.parse} is generated behind the scenes when the function \texttt{yacc.yacc} is
+      invoked in line 7. 
+\end{enumerate}
+
+The Jupyter notebook \texttt{01-Calculator}, which is available at
+\\[0.2cm]
+\hspace*{0.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator.ipynb}
+\\[0.2cm]
+implements the symbolic calculator discussed in this section.
+
+\section{Symbolic Differentiation}
+Our next example shows how we can compute an abstract syntax tree with the help of \textsc{Ply}.
+The Jupyter notebook \texttt{02-Differentiator}, which is available at
+\\[0.2cm]
+\hspace*{0.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/02-Differentiator.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/02-Differentiator.ipynb}
+\\[0.2cm]
+implements a parser that generates an abstract syntax tree, which can then be used for symbolic
+differentiation.
+\pagebreak
+
+\section{Implementing a Simple Interpreter  \label{chapter:interpreter}}
+Figure \ref{fig:Pure.g} show the grammar of a simple programming language.  In this section, we will develop an
+interpreter for this language.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    program
+        : /* epsilon */
+        | stmnt program
+        
+    stmnt 
+        : IF '(' bool_expr ')' stmnt                 
+        | WHILE '(' bool_expr ')' stmnt
+        | '{' stmnt_list '}' 
+        | ID ':=' expr ';'  
+        | expr ';'       
+    
+    bool_expr 
+        : expr '==' expr     
+        | expr '!=' expr     
+        | expr '<=' expr     
+        | expr '>=' expr     
+        | expr '<'  expr      
+        | expr '>'  expr     
+     
+    expr: expr '+' product                 
+        | expr '-' product
+        | product
+                  
+    product
+        : product '*' factor               
+        | product '/' factor 
+        | factor
+    
+    factor
+        : '(' expr ')' 
+        | NUMBER
+        | ID
+        | ID '(' expr_list ')'
+    
+    expr_list
+        :
+        | expr ',' ne_expr_list
+    
+    ne_expr_list
+        : expr
+        | expr ',' ne_expr_list
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{A grammar for a simple programming language.}
+\label{fig:Pure.g}
+\end{figure}
+
+The statements of the language that we want to implement include assignments, function calls,
+\texttt{if} statements, and \texttt{while} loops.  The language supports boolean expression that can be build
+with the help of the comparison operators
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{==}, \texttt{!=}, \texttt{<=}, \texttt{>=}, \texttt{<}, and \texttt{>}.
+\\[0.2cm]
+Arithmetic expression can use the arithmetic operators 
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{+}, \texttt{+}, \texttt{-}, \texttt{*}, and \texttt{/}.
+\\[0.2cm]
+In the base case, arithmetic expressions are build from numbers, variables, and function calls.
+Although the language supports the calling of predefined functions like \texttt{read} and \texttt{print},
+it does not support user defined functions.
+
+Figure \ref{fig:sum.sl} shows
+an example program that conforms to this grammar. This program first reads a number
+which is stored in the variable \texttt{n}. Subsequently, the sum
+\\[0.2cm]
+\hspace*{1.3cm}
+$\ds s := \sum\limits_{\mbox{$\normalsize i=1$}}^{\mbox{$\normalsize n^2$}} \mbox{\Large $i$}$
+\\[0.2cm]
+is computed using a \texttt{while} loop.  Finally, the sum is printed.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    n := read();
+    s := 0;
+    i := 0;
+    while (i < n * n) {
+        i := i + 1;
+        s := s + i;
+    }
+    print(s);
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{A program to compute the sum $\sum\limits_{i=0}^{n^2} i$.}
+\label{fig:sum.sl}
+\end{figure}
+\FloatBarrier
+
+Similar to our program for symbolic differentiation, we will represent the individual commands as
+nested tuples. The program shown in Figure \ref{fig:sum.sl} is represented by the nested tuple displayed in
+Figure \ref{fig:sum.ast}. This nested tuple is nothing other than the abstract syntax tree
+corresponding to the original program. Note that lists of commands are represented as nested tuples
+that start with a ``\texttt{.}''.
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    ('.',            
+        ('read', 'n'),
+        (':=', 's', 0),
+        (':=', 'i', 0),
+        ('while', ('<',  'i', ('*', 'n', 'n')),
+            ('.',
+                (':=', 'i', ('+', 'i', 1)),
+                (':=', 's', ('+', 's', 'i'))
+            )    
+        ),
+        ('print', 's')
+    )
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{A nested tuple that represents the program from Figure \ref{fig:sum.sl}.}
+\label{fig:sum.ast}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.3cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    tokens = [ 'NUMBER',    # r'0|[1-9][0-9]*'
+               'ID',        # r'[a-zA-Z][a-zA-Z0-9_]*'
+               'ASSIGN',    # r':='
+               'EQ',        # r'=='
+               'NE',        # r'!='
+               'LE',        # r'<='
+               'GE',        # r'>='
+               'IF',        # r'if'
+               'WHILE'      # r'while'
+              ]
+    
+    def t_COMMENT(t):
+        r'(/\*(.|\n)*?\*/)|(//.*)'
+        t.lexer.lineno += t.value.count('\n')
+        pass
+    
+    def t_NUMBER(t):
+        r'0|[1-9][0-9]*'
+        t.value = int(t.value)
+        return t
+    
+    t_ASSIGN = r':='
+    t_EQ     = r'=='
+    t_NE     = r'!='
+    t_LE     = r'<='
+    t_GE     = r'>='
+    
+    Keywords = { 'if': 'IF', 'while': 'WHILE' }
+    
+    def t_ID(t):
+        r'[a-zA-Z][a-zA-Z0-9_]*'
+        t.type = Keywords.get(t.value, 'ID')
+        return t
+    
+    literals = ['+', '-', '*', '/', '%', '(', ')', '{', '}', ';', '<', '>', ',']
+    
+    t_ignore  = ' \t\r'
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Implementation of the scanner.}
+\label{fig:Interpreter-Scanner}
+\end{figure}
+
+Figure \ref{fig:Interpreter-Scanner} on \pageref{fig:Interpreter-Scanner} show the implementation of the
+scanner. The scanner primarily differentiates between variables (token \textsc{Id}) and numbers (token
+\textsc{Number}).  Variables start with an uppercase or lowercase letter, followed by additional digits and 
+the underscore. Furthermore, there are operator symbols for the comparison operators
+``\texttt{==}'', ``\texttt{!=}'', ``\texttt{<=}'', ``\texttt{>=}'', ``\texttt{<}'', and ``\texttt{>}'',
+for the arithmetic operators ``\texttt{+}'',  ``\texttt{-}'',  ``\texttt{*}'',  ``\texttt{/}'', the parentheses
+``\texttt{(}'' and ``\texttt{)}'',  and for the assignment operator ``\texttt{:=}''.  Note that only those operators names 
+that consist of more than two characters have to be declared as tokens, since the other symbols can be declared
+as \texttt{literals}.  Finally, the language is equipped with two keywords ``\texttt{if}'' and ``\texttt{while}''.
+The scanner is pretty standard, but there are two things worth mentioning.
+\begin{enumerate}
+\item The scanner removes white space and comments.  The language supports two kinds of comments:
+      \begin{enumerate}
+      \item The language supports multiline comments, i.e.~text surrounded by ``\texttt{/*}'' ``\texttt{*/}''.
+            These comments have the form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{/* ... */}
+            \\[0.2cm]
+            where ``\texttt{...}'' denotes arbitrary text not containing the substring ``\texttt{*/}''.
+
+            We have to uses used the so-called \emph{non-greedy} version of the
+            Kleene operator ``\texttt{*}'' in the specification of multiline comments. The non-greedy version of the
+            operator ``\texttt{*}'' is written as ``\texttt{*?}'' and matches as little as possible. Therefore, the
+            regular expression 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \verb$/\*(.|\n)*?\*/$ %$
+            \\[0.2cm]
+            represents a string that starts with the character sequence ``\texttt{/*}'', ends with the
+            character sequence ``\texttt{*/}'', and is as short as possible. This ensures that in a line like
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{/* Hugo */ i := i + 1; /* Anton */}
+            \\[0.2cm]
+            two separate comments are recognized.
+      \item Furthermore, the language supports one line comments that start with the character sequence ``\texttt{//}''
+            and extend to the end of the line.
+      \end{enumerate}
+      Note that the symbol \textsc{Comment} is not declared as a token.  The reason is that it won't appear in the grammar
+      rules later, as comments are discarded by the scanner.
+\item The treatment of keywords requires special care.  Since both ``\texttt{if}'' and ``\texttt{while}'' have
+      the same syntactical form as variables, the function \texttt{t\_ID} recognizes them.  This is done with
+      the help of the dictionary \texttt{Keywords}.  If \texttt{t\_ID} finds a string of characters, it first
+      checks, whether this string has an associated token value in the dictionary \texttt{Keywords}.  If there
+      is a value associated with the string, the string is a keyword and the corresponding token is returned.
+      On the other hand, if the string is not stored in the dictionary \texttt{Keywords}, the function
+      \texttt{get} returns the token \textsc{Id} as a default. 
+\end{enumerate}
+
+
+\noindent
+The figures \ref{fig:Interpreter-Parser-1}, \ref{fig:Interpreter-Parser-2}, \ref{fig:Interpreter-Parser-3}, and
+\ref{fig:Interpreter-Parser-4} show the implementation of the parser using  \textsc{Ply}.
+\ref{fig:Interpreter-Parser-1} on page \pageref{fig:Interpreter-Parser-1} implements the following grammar rules:
+
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    program
+        : /* epsilon */
+        | stmnt program
+        
+    stmnt 
+        : IF '(' bool_expr ')' stmnt                 
+        | WHILE '(' bool_expr ')' stmnt
+        | '{' stmnt_list '}' 
+        | ID ':=' expr ';'  
+        | expr ';'       
+\end{Verbatim}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.3cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def p_program_one(p):
+        "program : stmnt_list"
+        p[0] = p[1]
+    
+    def p_stmnt_list_empty(p):
+        "stmnt_list : "
+        p[0] = ('.',)
+    
+    def p_stmnt_list_more(p):
+        "stmnt_list : stmnt stmnt_list"
+        p[0] = ('.', p[1]) + p[2][1:]
+    
+    def p_stmnt_if(p):
+        "stmnt : IF '(' bool_expr ')' stmnt"
+        p[0] = ('if', p[3], p[5])   
+    
+    def p_stmnt_while(p):
+        "stmnt : WHILE '(' bool_expr ')' stmnt"
+        p[0] = ('while', p[3], p[5])
+        
+    def p_stmnt_block(p):
+        "stmnt : '{' stmnt_list '}'"
+        p[0] = p[2]
+        
+    def p_stmnt_assign(p):
+        "stmnt : ID ASSIGN expr ';'"
+        p[0] = (':=', p[1], p[3])
+       
+    def p_stmnt_expr(p):
+        "stmnt : expr ';'"
+        p[0] = p[1]
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Specification of statements.}
+\label{fig:Interpreter-Parser-1}
+\end{figure}
+
+
+The start symbol of the grammar is the variable \texttt{program}.
+When parsing this variable, the parser returns a nested tuple of statements.
+The first element of this tuple is a dot ``\texttt{.}''.
+
+The syntactic variable \texttt{stmnt} describes the various commands that 
+are supported in our simple language.
+\begin{enumerate}[(a)]
+\item A conditional test has the syntax:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{if}\; \texttt{(}\; b\; \texttt{)}\; \textsl{stmnt}\; $
+      \\[0.2cm]
+      Here, $b$ is an expression that evaluates to \texttt{True} or \texttt{False}
+      and \texttt{stmnt} is a statement that is executed if
+      $b$ evaluates to \texttt{True}.
+      This command is represented by the nested tuple
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(\texttt{'if'}, b, \textsl{stmnt})$.
+      \\[0.2cm]
+      Here, $b$ is a nested tuple representing the Boolean expression.
+\item A loop has the syntax:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{while}\; \texttt{(}\; b\; \texttt{)}\;  \textsl{stmnt}$.
+      \\[0.2cm]
+      Here, $b$ is an expression that evaluates to \texttt{True} or \texttt{False}
+      and \texttt{stmnt} is a statement that is executed as long as
+      $b$ evaluates to \texttt{True}.
+      This statement is represented by the nested tuple
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(\texttt{'while'}, b, \textsl{stmnt})$.
+\item A block statement is a list of statements that is surrounded by curly braces.
+\item The simplest commands are the assignments. These have the form:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $v \;\texttt{:=}\; e \texttt{;}$
+      \\[0.2cm]
+      Here, $v$ is a variable and $e$ is an arithmetic expression.
+      An assignment is represented by the nested tuple
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(\texttt{':='}, v, e)$.
+\item Furthermore, every expression is a statement if it is followed by a semicolon.
+      The reason to allow this is that some expressions have side effects.  Syntactically,
+      the string ``\texttt{print(1+2)}'' is an expression as it is a function call.
+      By writing it as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{print(1+2);}
+      \\[0.2cm]
+      we can execute it as a statement.
+\end{enumerate}
+\pagebreak
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.3cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def p_bool_expr_eq(p):
+        "bool_expr : expr EQ expr"
+        p[0] = ('==', p[1], p[3])
+    
+    def p_bool_expr_ne(p):
+        "bool_expr : expr NE expr"
+        p[0] = ('!=', p[1], p[3])
+    
+    def p_bool_expr_le(p):
+        "bool_expr : expr LE expr"
+        p[0] = ('<=', p[1], p[3])
+        
+    def p_bool_expr_ge(p):
+        "bool_expr : expr GE expr"
+        p[0] = ('>=', p[1], p[3])
+        
+    def p_bool_expr_lt(p):
+        "bool_expr : expr '<' expr"
+        p[0] = ('<', p[1], p[3])
+    
+    def p_bool_expr_gt(p):
+        "bool_expr : expr '>' expr"
+        p[0] = ('>', p[1], p[3])
+    
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Specification of boolean expressions.}
+\label{fig:Interpreter-Parser-2}
+\end{figure}
+
+Figure \ref{fig:Interpreter-Parser-2} shows the parsing of boolean expressions.  It implements the following
+grammar rule.
+
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    bool_expr 
+        : expr '==' expr     
+        | expr '!=' expr     
+        | expr '<=' expr     
+        | expr '>=' expr     
+        | expr '<'  expr      
+        | expr '>'  expr     
+\end{Verbatim}
+
+The syntactic variable \texttt{boolExpr} describes an expression that takes a Boolean value.
+\begin{enumerate}
+\item An expression of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $l \;\texttt{==}\; r $
+      \\[0.2cm]
+      tests whether the evaluations of $l$ and $r$ yield the same values.
+      This expression is represented by the nested tuple
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(\texttt{'=='}, l, r)$.
+\item The other cases are similar.
+\end{enumerate}
+\pagebreak
+
+Figure \ref{fig:Interpreter-Parser-3} on page \pageref{fig:Interpreter-Parser-3} implements the following
+grammar rules:
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    expr: expr '+' product                 
+        | expr '-' product
+        | product
+                  
+    product
+        : product '*' factor               
+        | product '/' factor
+        | product '%' factor 
+        | factor
+    
+    factor
+        : '(' expr ')' 
+        | NUMBER
+        | ID
+        | ID '(' expr_list ')'
+\end{Verbatim}
+To understand the code shown in Figure \ref{fig:Interpreter-Parser-3} we have to understand the following:
+\begin{enumerate}
+\item An arithmetic expression of the form $a + b$ is represented as a triple of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('+', x, y)}
+      \\[0.2cm]
+      where \texttt{x} and \texttt{y} are the tuples corresponding to the abstract syntax trees of $a$ and $b$,
+      respectively. 
+\item Arithmetic expressions using the operators ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{\%}''
+      are represented analogously.
+\item An parenthesized expression, i.e.~an expression of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $(e)$
+      \\[0.2cm]
+      is represented by the abstract tree that represents $e$.  Therefore, the parentheses are just used for
+      grouping and do not appear in the abstract syntax tree.
+\item A number is represented by itself.
+\item A variable is represented by its name, i.e.~the variable \texttt{x} is represented by the string
+      ``\texttt{x}''.
+\item A function call of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $f(a_1, \cdots a_n)$
+      \\[0.2cm]
+      is represented by the tuple
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('call', $f$, $a_1$, $\cdots$, $a_n$)}.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.3cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def p_expr_plus(p):
+        "expr : expr '+' product"
+        p[0] = ('+', p[1], p[3])
+        
+    def p_expr_minus(p):
+        "expr : expr '-' product"
+        p[0] = ('-', p[1], p[3])
+    
+    def p_expr_product(p):
+        "expr : product"
+        p[0] = p[1]
+        
+    def p_product_times(p):
+        "product : product '*' expr"
+        p[0] = ('*', p[1], p[3])
+        
+    def p_product_divide(p):
+        "product : product '/' expr"
+        p[0] = ('/', p[1], p[3])
+    
+    def p_product_modulo(p):
+        "product : product '%' factor"
+        p[0] = ('%', p[1], p[3])
+    
+    def p_product_factor(p):
+        "product : factor"
+        p[0] = p[1]
+    
+    def p_factor_paren(p):
+        "factor : '(' expr ')'"
+        p[0] = p[2]
+    
+    def p_factor_number(p):
+        "factor : NUMBER"
+        p[0] = p[1]
+    
+    def p_factor_id(p):
+        "factor : ID"
+        p[0] = p[1]
+    
+    def p_factor_fct_call(p):
+        "factor : ID '(' expr_list ')'"
+        p[0] = ('call', p[1]) + p[3][1:]
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Specification of arithmetic expressions.}
+\label{fig:Interpreter-Parser-3}
+\end{figure}
+\pagebreak
+\vspace*{\fill}
+\pagebreak
+
+Figure \ref{fig:Interpreter-Parser-4} on page \pageref{fig:Interpreter-Parser-4} implements the following
+grammar rules:
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                ]
+    expr_list
+        :
+        | expr ',' ne_expr_list
+    
+    ne_expr_list
+        : expr
+        | expr ',' ne_expr_list
+\end{Verbatim}
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.3cm,
+                  xleftmargin   = 0.3cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def p_expr_list_empty(p):
+        "expr_list : "
+        p[0] = ('.',)
+        
+    def p_expr_list_one(p):
+        "expr_list : expr"
+        p[0] = ('.', p[1])     
+    
+    def p_expr_list_more(p):
+        "expr_list : expr ',' ne_expr_list"
+        p[0] = ('.', p[1]) + p[3][1:]     
+    
+    def p_ne_expr_list_one(p):
+        "ne_expr_list : expr"
+        p[0] = ('.', p[1]) 
+        
+    def p_ne_expr_list_more(p):
+        "ne_expr_list : expr ',' ne_expr_list"
+        p[0] = ('.', p[1]) + p[3][1:] 
+\end{Verbatim}
+\vspace*{-0.3cm} %\$
+\caption{Specification of lists of expressions.}
+\label{fig:Interpreter-Parser-4}
+\end{figure}
+
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def main(file):
+        with open(file, 'r') as handle:
+            program = handle.read() 
+        stmnt = yacc.parse(program)
+        Values = {}
+        execute(stmnt, Values)
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{Specification of the function \texttt{main}.}
+\label{fig:Interpreter.ipynb:main}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def execute(stmnt: NestedTuple, Values: dict[str, Number]) -> None:
+        match stmnt:
+            case ('.', *SL):
+                execute_tuple(tuple(SL), Values)
+            case (':=', var, value):
+                Values[var] = evaluate(value, Values)
+            case ('call', 'print', expr):
+                print(evaluate(expr, Values))
+            case ('if', test, stmnt):
+                if evaluate_bool(test, Values):
+                    execute(stmnt, Values)
+            case ('while', test, stmnt):
+                while evaluate_bool(test, Values):
+                    execute(stmnt, Values)
+            case _:
+                assert False, f'{stmnt} unexpected'
+
+    def execute_tuple(Statement_List, Values={}):
+        for stmnt in Statement_List:
+            execute(stmnt, Values)
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The function \texttt{execute}.}
+\label{fig:Interpreter.ipynb:execute}
+\end{figure}
+
+Figure \ref{fig:Interpreter.ipynb:main} shows the function \texttt{main}, which receives the name of a
+file containing a program in our simple programming language as input. This program is parsed and
+thus transformed into a tuple of statements. The function \texttt{execute} executes this tuple.  In order to do
+so, it needs to know the values of all variables.  Theses are stored in the dictionary \texttt{Values}, which
+initially is empty.  Every time a variable is assigned, the variable will and the corresponding value will be
+stored in this dictionary.
+
+Figure \ref{fig:Interpreter.ipynb:execute} shows the implementation of the function \texttt{execute}. This
+implementation consists mainly of a large case distinction based on the type of command to be executed.
+\begin{enumerate}
+\item First, we check if \texttt{stmnt} is a list of statements. A statement is a list of statements
+      if the first element of the tuple representing this statement is the string \texttt{'.'}.
+
+      In this case, the statements following the string \texttt{'.'} are executed via the auxiliary function
+      \texttt{execute\_tuple}. 
+\item If the statement is an assignment of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{(':=', var, value)}
+      \\[0.2cm]   
+      then the value of the expression \texttt{value} is computed using the function \texttt{evaluate}.
+      This value is then stored in the dictionary \texttt{Values} under the key \texttt{var}.
+\item If the statement is an expression statement of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('print', expr)}
+      \\[0.2cm]
+      then the expression \texttt{expr} is first evaluated using the function \texttt{evaluate}.
+      The resulting value is then printed.
+\item If the command is of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('if', test, stmnt)}
+      \\[0.2cm]
+      then \texttt{test} is a nested tuple representing a Boolean expression, while \texttt{stmnt} is a statement.
+      In this case, the expression \texttt{test} is first evaluated using the function \texttt{evaluate}.
+      If this evaluation yields the value \texttt{True}, then \texttt{stmnt} is executed.
+\item If the command is of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('while', test, stmnt)}
+      \\[0.2cm]
+      then \texttt{test} is a Boolean expression and \texttt{stmnt} is a statement.
+      In this case, the expression \texttt{test} is first evaluated using the function \texttt{evaluate}.
+      If this evaluation yields the value \texttt{True}, then \texttt{stmnt} is executed.
+      Then the expression \texttt{test} is evaluated again. If the result is
+      \texttt{False}, then the execution of the while loop finishes.  Otherwise,
+      \texttt{stmnt} is executed as long as the evaluation of \texttt{test}
+      yields \texttt{True}.
+\end{enumerate}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def evaluate_bool(expr, Values):
+        match expr:
+            case ('==', lhs, rhs):
+                return evaluate(lhs, Values) == evaluate(rhs, Values)
+            case ('!=', lhs, rhs):
+                return evaluate(lhs, Values) != evaluate(rhs, Values)
+            case ('<=', lhs, rhs):
+                return evaluate(lhs, Values) <= evaluate(rhs, Values)
+            case ('>=', lhs, rhs):
+                return evaluate(lhs, Values) >= evaluate(rhs, Values)
+            case ('<', lhs, rhs):
+                return evaluate(lhs, Values) <  evaluate(rhs, Values)
+            case ('>', lhs, rhs):
+                return evaluate(lhs, Values) >  evaluate(rhs, Values)
+            case _:
+                assert False, f'{expr} unexpected'
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The evaluation of boolean expressions.}
+\label{fig:Interpreter.ipynb:evaluate_bool}
+\end{figure}
+
+Figure \ref{fig:Interpreter.ipynb:evaluate_bool} shows the implementation of the function \texttt{evaluate\_bool}.
+This function receives a boolean expression and a dictionary storing the current values of the variables as input.
+\begin{enumerate}[(a)]
+\item If the expression to be evaluated is a Boolean expression of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('==', lhs, rhs)}
+      \\[0.2cm]
+      we recursively evaluate the expressions \texttt{lhs} and \texttt{rhs} and return \texttt{True} if and only if
+      both expressions yield the same value.
+\item If the expression to be evaluated is a Boolean expression of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('<', lhs, rhs)}
+      \\[0.2cm]
+      we recursively evaluate the expressions \texttt{lhs} and \texttt{rhs} and return \texttt{True} if and only if
+      the value obtained from the evaluation of \texttt{lhs} is less than the
+      value obtained from the evaluation of \texttt{rhs}.
+
+      The remaining cases are similar.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  firstnumber   = 1,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                ]
+    def evaluate(expr, Values):
+        match expr:
+            case int():
+                return expr
+            case str():
+                return Values[expr] 
+            case ('call', 'read'):
+                return int(input('Please enter a natural number: '))
+            case ('+', lhs, rhs):
+                return evaluate(lhs, Values) + evaluate(rhs, Values)
+            case ('-', lhs, rhs):
+                return evaluate(lhs, Values) - evaluate(rhs, Values)
+            case ('*', lhs, rhs):
+                return evaluate(lhs, Values) * evaluate(rhs, Values)
+            case ('/', lhs, rhs):
+                return evaluate(lhs, Values) / evaluate(rhs, Values)
+            case ('%', lhs, rhs):
+                return evaluate(lhs, Values) % evaluate(rhs, Values)
+            case _:
+                assert False, f'{expr} unexpected'
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The evaluation of arithmetic expressions.}
+\label{fig:Interpreter.ipynb:evaluate}
+\end{figure}
+
+Figure \ref{fig:Interpreter.ipynb:evaluate} shows the implementation of the function \texttt{evaluate}.
+This function receives an arithmetic expression and a dictionary storing the
+values of the variables as input.
+\begin{enumerate}[(a)]
+\item If the expression to be evaluated is a number, we return this number as the result.
+\item If the expression to be evaluated is a variable, we look up the value of this
+      variable in the dictionary \texttt{Values} and return this value as the result.
+\item If the expression to be evaluated is a call to the function \texttt{read},
+      we prompt the user to enter a natural number. We then convert the string entered by the user into an integer.
+\item If the expression to be evaluated is a sum of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('+', lhs, rhs)}
+      \\[0.2cm]
+      we recursively evaluate the expressions \texttt{lhs} and \texttt{rhs} and return the sum of these
+      values. 
+\item The evaluation of the arithmetic operators \texttt{'-'}, \texttt{'*'}, and \texttt{'/'}
+      is analogous to the evaluation of the operator \texttt{'+'}.
+\end{enumerate}
+\FloatBarrier
+
+\noindent
+The Jupyter notebook \texttt{03-Interpreter.ipynb}, which is available at
+\\[0.2cm]
+\hspace*{0.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/03-Interpreter.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/03-Interpreter.ipynb}
+\\[0.2cm]
+implements an interpreter.
+
+\exerciseEng
+\begin{enumerate}[(a)]
+\item Add \texttt{for} loops to the interpreter.
+\item Expand the interpreter to include logical operators
+      ``\texttt{\&\&}'' for logical \emph{and}, ``\texttt{||}'' for logical \emph{or},
+      and ``\texttt{!}'' for \emph{negation}. The operator ``\texttt{!}'' should bind the
+      strongest and the operator ``\texttt{||}'' should bind weakest.
+\item Enhance the interpreter to allow for user-defined functions.
+      \begin{enumerate}
+      \item A function should only have access to its parameters and those variables that
+            are defined locally inside the function.  
+      \item A function should always return a value using a \texttt{return} statement.
+            In order to facilitate that a function can contain multiple \texttt{return}
+            statements and that a \texttt{return} statement can occur
+            anywhere in the function,  use an \blue{exception} to communicate the
+            return value and to transfer the control flow out of the function.
+      \end{enumerate}
+\end{enumerate}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages"
+%%% End: 
