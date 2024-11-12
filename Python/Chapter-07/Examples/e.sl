@@ -6,7 +6,7 @@ function factorial(n) {
 }
 
 function e(n) {
-    sum := 1;
+    sum := 1.0;
     for (i := 1; i <= n; i := i + 1) {
 	sum := sum + 1.0 / factorial(i);
     }
