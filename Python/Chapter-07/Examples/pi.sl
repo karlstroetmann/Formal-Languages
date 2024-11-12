@@ -1,11 +1,11 @@
 /* computing pi via a strange series */
 function computePi(n) {
-    pi := 0;
-    f  := 1;
+    pi := 0.0;
+    f  := 1.0;
     for (k := 0; k <= n; k := k + 1) {
-        k8 := 8 * k;
-        pi := pi + (4 / (k8 + 1) - 2 / (k8 + 4) - 1 / (k8 + 5) - 1 / (k8 + 6)) / f;
-        f := f * 16;
+        k8 := 8.0 * k;
+        pi := pi + (4.0 / (k8 + 1.0) - 2.0 / (k8 + 4.0) - 1.0 / (k8 + 5.0) - 1.0 / (k8 + 6.0)) / f;
+        f := f * 16.0;
         print(pi);
     }
     return pi;
