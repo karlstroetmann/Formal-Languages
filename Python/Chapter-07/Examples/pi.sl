@@ -11,5 +11,5 @@ function computePi(n) {
     return pi;
 }
 
-print(computePi(20));
+print("The number pi is: ", computePi(20));
 
