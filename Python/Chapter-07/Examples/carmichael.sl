@@ -40,7 +40,7 @@ function is_carmichael(n) {
 }
 
 carmichaels := { n : n in {2 .. 10_000} | is_carmichael(n) == 1 };
-print(carmichaels);
+print("The Carmichael numbers less than 10,000 are ", carmichaels);
 
 function factors(n) {
     result := { 2 .. 1 }; // empty set
@@ -54,4 +54,4 @@ function factors(n) {
     return result;
 }
 
-print({ factors(n) : n in carmichaels });
+print("The factors of these numbers are: ", { factors(n) : n in carmichaels });

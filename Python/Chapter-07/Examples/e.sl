@@ -15,5 +15,4 @@ function e(n) {
     return sum;
 }
 
-n := read();
-print(e(n));
+print("Euler's number is: ", e(20));

@@ -6,4 +6,4 @@ function sum(n) {
     }
     return s;
 }
-print(sum(n));
+print("1 + 2 + ... + ", n, "*", n, " = ", sum(n));

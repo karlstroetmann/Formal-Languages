@@ -32,7 +32,7 @@ This chapter is structured as follows:
 \begin{enumerate}[(a)]
 \item First, we sketch the theory of Earley's algorithm.
 \item Next, we show how this algorithm can be implemented in \textsl{Python}.
-%\item Anschlie�end beweisen wir die Korrektheit und Vollst\"andigkeit des Algorithmus.
+%\item Anschließend beweisen wir die Korrektheit und Vollst\"andigkeit des Algorithmus.
 %\item Zum Abschluss des Kapitels untersuchen wir die Komplexit\"at.
 \end{enumerate}
 
@@ -173,7 +173,7 @@ $G = \langle V, \Sigma, R, s \rangle$ Earley's algorithm works as follows:
       If the grammar $G$ has  $\varepsilon$-rules, i.e.~if it has rules with empty right hand side of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      $C \rightarrow \lambda$,
+      $c \rightarrow \lambda$,
       \\[0.2cm]
       then it might happen that after applying prediction in the set $Q_i$ we can apply immediately apply
       completion in $Q_i$.  In this case prediction and completion have to be iterated until no further Earley
@@ -183,22 +183,17 @@ $G = \langle V, \Sigma, R, s \rangle$ Earley's algorithm works as follows:
       the string $w = x_1 \cdots x_n$ is an element of $L(G)$.
 \end{enumerate}
   
-\example
-Abbildung \ref{fig:expr-small} zeigt eine vereinfachte Grammatik f\"ur arithmetische
-Ausdr\"ucke, die nur aus den Zahlen ``1'', ``2'' und ``3'' und den beiden Operator-Symbolen
-``\texttt{+}'' und ``\texttt{*}'' aufgebaut ist.  Die Menge $T$ der Terminale dieser
-Grammatik ist also durch
+\exampleEng
+Figure \ref{fig:expr-small} shows a simplified grammar for arithmetic expressions, consisting only of the
+numbers “1”, “2”, and “3” and the two operator symbols “\texttt{+}” and “\texttt{*}”. The set $T$ of terminals
+for this grammar is therefore given by
 \\[0.2cm]
 \hspace*{1.3cm}
- $T = \{ \quoted{1}, \quoted{2}, \quoted{3}, \quoted{+}, \quoted{*} \}$
+ $T = \{ \quoted{1}, \quoted{2}, \quoted{3}, \quoted{+}, \quoted{*} \}$.
 \\[0.2cm]
-gegeben.
-Wir zeigen, wie sich der String
-``\texttt{1+2*3}'' mit dieser Grammatik und dem Algorithmus von Earley parsen l\"asst.
-In der folgenden Darstellung werden wir die syntaktische Variable \texttt{expr} mit
-dem Buchstaben $E$ abk\"urzen, f\"ur \texttt{prod} schreiben wir $P$ und f\"ur \texttt{fact} verwenden wir die
-Abk\"urzung $F$.
-
+We demonstrate how the string “\texttt{1+2*3}” can be parsed using this grammar and Earley’s algorithm. In the
+following representation, we will abbreviate the syntactic variable \texttt{expr} with the letter $e$, write 
+$p$ for \texttt{prod}, and use $f$ as an abbreviation for \texttt{fact}. 
 
 \begin{figure}[!ht]
 \centering
@@ -230,175 +225,149 @@ Abk\"urzung $F$.
 
 
 \begin{enumerate}
-\item Wir initialisieren $Q_0$ als
+\item We initialize $Q_0$ as
       \\[0.2cm]
       \hspace*{1.3cm}
-      $Q_0 = \{ \pair(\widehat{S} \rightarrow \bullet\, E, 0) \}$. 
+      $Q_0 = \{ \pair(\widehat{s} \rightarrow \bullet\, e, 0) \}$. 
       \\[0.2cm]
-      Die Mengen $Q_1$, $Q_2$, $Q_3$, $Q_4$ und $Q_5$ sind zun\"achst alle leer.
-      Wenden wir die Vervollst\"andigungs-Operation auf $Q_0$ an, so finden wir keine neuen
-      Earley-Objekte.
+      The set $Q_1$, $Q_2$, $Q_3$, $Q_4$ und $Q_5$ are initially empty,  If we apply the completion operation
+      to the set $Q_0$, we find no new Earley objects.
 
-      Anschlie{\ss}end wenden wir die Vorhersage-Operation auf das Earley-Objekt 
-      $\pair(\widehat{S} \rightarrow \bullet\, E, 0)$ an.  Dadurch werden der Menge $Q_0$ 
-      zun\"achst die beiden Earley-Objekte 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(E \rightarrow \bullet\; E \squoted{+} P, 0)$ 
-      \quad und \quad
-      $\pair(E \rightarrow \bullet\; P, 0)$ 
-      \\[0.2cm]
-      hinzugef\"ugt.  Auf das Earley-Objekt $\pair(E \rightarrow \bullet\, P, 0)$ 
-      k\"onnen wir die Vorhersage-Operation ein weiteres Mal anwenden und erhalten dann die beiden
-      neuen Earley-Objekte
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(P \rightarrow \bullet\; P \squoted{*} F, 0)$ 
-      \quad und\quad 
-      $\pair(P \rightarrow \bullet\; F, 0)$. 
-      \\[0.2cm]
-      Wenden wir auf das Earley-Objekt $\pair(P \rightarrow \bullet\; F, 0)$
-      die Vorhersage-Operation an, so erhalten wir schie{\ss}lich noch die folgenden Earley-Objekte in $Q_0$:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(F \rightarrow \bullet \squoted{1}, 0)$, \quad 
-      $\pair(F \rightarrow \bullet \squoted{2}, 0)$, \quad und \quad
-      $\pair(F \rightarrow \bullet \squoted{3}, 0)$. 
-      \\[0.2cm]
-      Insgesamt enth\"alt $Q_0$ nun die folgenden Earley-Objekte:
+      Next, we apply the prediction operation to the Earley object  
+      $\pair(\widehat{S} \rightarrow \bullet\, e, 0)$. This initially adds the following two Earley objects to
+      the set $Q_0$: 
+      \[
+        \pair(e \rightarrow \bullet\; e \squoted{+} p, 0) 
+        \quad \text{and} \quad 
+        \pair(e \rightarrow \bullet\; p, 0)
+      \]  
+      We can apply the prediction operation once more to the Earley object $\pair(e \rightarrow \bullet\, p, 0)$,
+      which results in two new Earley objects:   
+      \[
+        \pair(p \rightarrow \bullet\; p \squoted{*} f, 0) 
+        \quad \text{and} \quad 
+        \pair(p \rightarrow \bullet\; f, 0)
+      \]  
+      Applying the prediction operation to the Earley object $\pair(p \rightarrow \bullet\; f, 0)$, we finally
+      add the following Earley objects to $Q_0$:   
+      \[
+        \pair(f \rightarrow \bullet \squoted{1}, 0), \quad 
+        \pair(f \rightarrow \bullet \squoted{2}, 0), \quad \text{and} \quad 
+        \pair(f \rightarrow \bullet \squoted{3}, 0)
+      \]  
+      In total, $Q_0$ now contains the following Earley objects:  
       \begin{enumerate}
-      \item $\pair(\widehat{S} \rightarrow \bullet\; E, 0)$,
-      \item $\pair(E \rightarrow \bullet\; E \squoted{+} P, 0)$
-      \item $\pair(E \rightarrow \bullet\; P, 0)$,
-      \item $\pair(P \rightarrow \bullet\; P \squoted{*} F, 0)$,
-      \item $\pair(P \rightarrow \bullet\; F, 0)$,
-      \item $\pair(F \rightarrow \bullet \squoted{1}, 0)$,
-      \item $\pair(F \rightarrow \bullet \squoted{2}, 0)$,
-      \item $\pair(F \rightarrow \bullet \squoted{3}, 0)$.
+      \item $\pair(\widehat{s} \rightarrow \bullet\; e, 0)$,
+      \item $\pair(e \rightarrow \bullet\; e \squoted{+} p, 0)$,
+      \item $\pair(e \rightarrow \bullet\; p, 0)$,
+      \item $\pair(p \rightarrow \bullet\; p \squoted{*} f, 0)$,
+      \item $\pair(p \rightarrow \bullet\; f, 0)$,
+      \item $\pair(f \rightarrow \bullet \squoted{1}, 0)$,
+      \item $\pair(f \rightarrow \bullet \squoted{2}, 0)$,
+      \item $\pair(f \rightarrow \bullet \squoted{3}, 0)$.
       \end{enumerate}
+      Next, we apply the scanning operation to $Q_0$. Since the first character of the string to be parsed is
+      “1,” the set $Q_1$ takes the following form:   
+      \[
+        Q_1 = \bigl\{ \pair(f \rightarrow \squoted{1} \bullet, 0) \bigr\}
+      \]
+\item Now, we set $i = 1$ and first apply the completion operation to $Q_1$. Based on the Earley object
+      $\pair(f \rightarrow \squoted{1} \bullet, 0)$ in $Q_1$, we look for an Earley object in $Q_0$ where the marker
+      “$\bullet$” is positioned before the variable $F$. We find the Earley object   
+       $\pair(p \rightarrow \bullet\; f, 0)$. Therefore, we add the following Earley object to $Q_1$:   
+       \[
+         \pair(p \rightarrow f \;\bullet, 0)
+       \]  
+       We can then apply the completion operation again. After repeated applications, $Q_1$ contains the
+       following Earley objects:  
+       \begin{enumerate}
+       \item $\pair(p \rightarrow f \;\bullet, 0)$, 
+       \item $\pair(p \rightarrow p\;\bullet \squoted{*} f, 0)$, 
+       \item $\pair(e \rightarrow p \; \bullet, 0)$,
+       \item $\pair(e \rightarrow e\;\bullet \squoted{+} p, 0)$,
+       \item $\pair(\widehat{s} \rightarrow e\;\bullet, 0)$.
+       \end{enumerate}  
+       Next, we apply the prediction operation to these Earley objects. However, since the marker “$\bullet$” in
+       none of the Earley objects in $Q_i$ precedes a variable, no new Earley objects are generated.   
 
-      Jetzt wenden wir die Lese-Operation auf $Q_0$ an.  Da das erste Zeichen des zu parsenden Strings eine
-      ``1'' ist, hat die Menge  $Q_1$ danach die folgende Form:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $Q_1 = \bigl\{ \pair(F \rightarrow \squoted{1} \bullet, 0) \bigr\}$.
-\item Nun setzen wir $i= 1$ und wenden zun\"achst auf $Q_1$ die Vervollst\"andigungs-Operation an.
-      Aufgrund des Earley-Objekts $\pair(F \rightarrow \squoted{1} \bullet, 0) $ in $Q_1$
-      suchen wir in $Q_0$ ein Earley-Objekt, bei dem die Markierung ``$\bullet$'' vor der Variablen
-      $F$ steht.  Wir finden das Earley-Objekt
-      $\pair(P \rightarrow \bullet\; F, 0)$.  Daher f\"ugen wir nun
-      $Q_1$ das Earley-Objekt
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(P \rightarrow F \;\bullet, 0)$ 
-      \\[0.2cm]
-      hinzu.  Hierauf k\"onnen wir wieder die
-      Vervollst\"andigungs-Operation anwenden und finden (nach mehrmaliger Anwendung) f\"ur $Q_1$ insgesamt die folgenden Earley-Objekte:
-      \begin{enumerate}
-      \item $\pair(P \rightarrow F \;\bullet, 0)$, 
-      \item $\pair(P \rightarrow  P\;\bullet \squoted{*} F, 0)$, 
-      \item $\pair(E \rightarrow P \; \bullet, 0)$,
-      \item $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$,
-      \item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$.
-      \end{enumerate}
-      
-      Als n\"achstes wenden wir auf diese Earley-Objekte die Vorhersage-Operation an.  Da das
-      Markierungs-Zeichen ``$\bullet$'' aber in keinem der in $Q_i$ auftretenden Earley-Objekte vor einer 
-      Variablen steht, ergeben sich hierbei keine neuen Earley-Objekte.
+       Finally, we apply the scanning operation to $Q_1$. Since the character “\texttt{+}” is at position 2 in
+       the string “\texttt{1+2*3}” and $Q_1$ contains the Earley object   
+       \[
+         \pair(e \rightarrow e\;\bullet \squoted{+} p, 0),
+       \]  
+       we add the following Earley object to $Q_2$:  
+       \[
+         \pair(e \rightarrow e \squoted{+}\bullet\; p, 0)
+       \]  
+\item Next, we set $i = 2$ and first apply the completion operation to $Q_2$. At this point, we have  
+      \[
+        Q_2 = \{ \pair(e \rightarrow e \squoted{+}\bullet\; p, 0) \}.
+      \]  
+      Since the marker “$\bullet$” in the only Earley object present here is not at the end of the grammar rule,
+      the completion operation does not yield any new Earley objects in this step.   
 
-      Als letztes wenden wir die Lese-Operation auf $Q_1$ an.  Da in dem String
-      ``\texttt{1+2*3}'' das Zeichen ``\texttt{+}'' an der Position 2 liegt ist und $Q_1$ das Earley-Objekt 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$
-      \\[0.2cm]
-      enth\"alt, f\"ugen wir in $Q_2$  das Earley-Objekt
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(E \rightarrow E \squoted{+}\bullet\; P, 0)$
-      \\[0.2cm]
-      ein.
-\item Nun setzen wir $i= 2$ und wenden zun\"achst auf $Q_2$ die Vervollst\"andigungs-Operation
-      an.  Zu diesem Zeitpunkt gilt
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $Q_2 = \{ \pair(E \rightarrow E \squoted{+}\bullet\; P, 0) \}$.
-      \\[0.2cm]
-      Da in dem einzigen Earley-Objekt, das hier auftritt, das Markierungs-Zeichen ``$\bullet$''
-      nicht am Ende der Grammatik-Regel steht, finden wir durch die Vervollst\"andigungs-Operation in
-      diesem Schritt keine       neuen Earley-Objekte. 
-
-      Als n\"achstes wenden wir auf $Q_2$ die Vorhersage-Operation an.  Da das Markierungs-Zeichen
-      vor der Variablen $P$ steht, finden wir zun\"achst die beiden Earley-Objekte
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(P \rightarrow \bullet\; F, 2)$ \quad und \quad
-      $\pair(P \rightarrow \bullet\; P \squoted{*} F, 2)$.
-      \\[0.2cm]
-      Da in dem ersten Earley-Objekt das Markierungs-Zeichen vor der Variablen $F$ steht, kann 
-      die Vorhersage-Operation ein weiteres 
-      Mal angewendet werden und wir finden noch die folgenden Earley-Objekte:
+      Next, we apply the prediction operation to $Q_2$. Since the marker precedes the variable $p$, we first
+      find the following two Earley objects:   
+      \[
+        \pair(p \rightarrow \bullet\; f, 2) \quad \text{and} \quad \pair(p \rightarrow \bullet\; p \squoted{*} f, 2).
+      \]  
+      Since in the first Earley object the marker precedes the variable $f$, the prediction operation can be
+      applied once more, yielding the following additional Earley objects:   
       \begin{enumerate}
-      \item $\pair(F \rightarrow \bullet \squoted{1}, 2)$, 
-      \item $\pair(F \rightarrow \bullet \squoted{2}, 2)$,
-      \item $\pair(F \rightarrow \bullet \squoted{3}, 2)$.
-      \end{enumerate}
-
-      Als letztes wenden wir die Lese-Operation auf $Q_2$ an.  Da das dritte Zeichen in dem zu lesenden
-      String ``\texttt{1+2*3}'' die Ziffer ``2'' ist, hat $Q_3$ nun die Form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $Q_3 = \{ \pair(F \rightarrow \squoted{2}\bullet, 2) \}$.
-\item Wir setzen $i = 3$ und wenden auf $Q_3$ die Vervollst\"andigungs-Operation an.
-      Dadurch f\"ugen wir 
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\pair(P \rightarrow F \;\bullet, 2)$ 
-      \\[0.2cm]
-      in $Q_3$ ein.  Hier k\"onnen wir ein weiteres Mal die Vervollst\"andigungs-Operation anwenden. 
-      Durch iterierte Anwendung der Vervollst\"andigungs-Operation erhalten wir zus\"atzlich die folgenden 
-      Earley-Objekte:
+      \item $\pair(f \rightarrow \bullet \squoted{1}, 2)$, 
+      \item $\pair(f \rightarrow \bullet \squoted{2}, 2)$,
+      \item $\pair(f \rightarrow \bullet \squoted{3}, 2)$.
+      \end{enumerate}  
+      Finally, we apply the scanning operation to $Q_2$. Since the third character of the string
+      “\texttt{1+2*3}” is the digit “2,” $Q_3$ now takes the form   
+      \[
+        Q_3 = \{ \pair(f \rightarrow \squoted{2}\bullet, 2) \}.
+      \]
+\item We set $i = 3$ and apply the completion operation to $Q_3$. This adds  
+      \[
+        \pair(p \rightarrow f \;\bullet, 2)
+      \]  
+      to $Q_3$. Here, we can apply the completion operation once more. Through iterative application of the
+      completion operation, we additionally obtain the following Earley objects:   
       \begin{enumerate}
-      \item $\pair(P \rightarrow P \bullet \squoted{*} F, 2)$,
-      \item $\pair(E \rightarrow E \squoted{+} P\;\bullet, 0)$,
-      \item $\pair(E \rightarrow E\;\bullet \squoted{+} P, 0)$
-      \item $\pair(\widehat{S} \rightarrow E\;\bullet, 0)$.
-      \end{enumerate}
-      Als letztes wenden wir die Lese-Operation an.  Da der n\"achste zu lesende Buchstabe das Zeichen
-      ``\texttt{*}'' ist, erhalten wir
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $Q_4 = \{ \pair(P \rightarrow P \squoted{*} \bullet\, F, 2) \}$.
-\item Wir setzen $i= 4$.  Die Vervollst\"andigungs-Operation liefert keine neuen Earley-Objekte.
-      Die Vorhersage-Operation liefert folgende Earley-Objekte:
+      \item $\pair(p \rightarrow p \bullet \squoted{*} f, 2)$,
+      \item $\pair(e \rightarrow e \squoted{+} p\;\bullet, 0)$,
+      \item $\pair(e \rightarrow e\;\bullet \squoted{+} p, 0)$,
+      \item $\pair(\widehat{s} \rightarrow e\;\bullet, 0)$.
+      \end{enumerate}  
+      Finally, we apply the scanning operation. Since the next character to be read is the symbol “\texttt{*},”
+      we get   
+      \[
+        Q_4 = \{ \pair(p \rightarrow p \squoted{*} \bullet\, f, 2) \}.
+      \] 
+\item We set $i = 4$. The completion operation does not yield any new Earley objects. The prediction operation
+      provides the following Earley objects:   
       \begin{enumerate}
-      \item $\pair(F \rightarrow \bullet \squoted{1}, 4)$, 
-      \item $\pair(F \rightarrow \bullet \squoted{2}, 4)$,
-      \item $\pair(F \rightarrow \bullet \squoted{3}, 4)$.
-      \end{enumerate}
-      Da das n\"achste Zeichen die Ziffer ``3'' ist, liefert die Lese-Operation f\"ur $Q_5$:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $Q_5 = \pair(F \rightarrow \squoted{3}\bullet, 4) \}$.
-\item Wir setzen $i=5$.  Die Vervollst\"andigungs-Operation liefert nacheinander die folgenden
-      Earley-Objekte:
+      \item $\pair(f \rightarrow \bullet \squoted{1}, 4)$, 
+      \item $\pair(f \rightarrow \bullet \squoted{2}, 4)$,
+      \item $\pair(f \rightarrow \bullet \squoted{3}, 4)$.
+      \end{enumerate}  
+      Since the next character is the digit “3,” the scanning operation for $Q_5$ results in:  
+      \[
+        Q_5 = \{ \pair(f \rightarrow \squoted{3}\bullet, 4) \}.
+      \]
+\item We set $i = 5$. The completion operation sequentially provides the following Earley objects:
       \begin{enumerate}
-      \item $\pair(P \rightarrow P \squoted{*} F\;\bullet, 2)$,
-      \item $\pair(E \rightarrow E \squoted{+} P\;\bullet, 0)$,
-      \item $\pair(P \rightarrow  P \;\bullet\squoted{*} F, 2)$,
-      \item $\pair(E \rightarrow E \;\bullet\squoted{+} P, 0)$ 
-      \item $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$.
+      \item $\pair(p \rightarrow p \squoted{*} f\;\bullet, 2)$,
+      \item $\pair(e \rightarrow e \squoted{+} p\;\bullet, 0)$,
+      \item $\pair(p \rightarrow  p \;\bullet\squoted{*} f, 2)$,
+      \item $\pair(e \rightarrow e \;\bullet\squoted{+} p, 0)$ 
+      \item $\pair(\widehat{s} \rightarrow  e\;\bullet, 0)$.
       \end{enumerate}
 \end{enumerate}
-Da die Menge $Q_5$ das Earley-Objekt $\pair(\widehat{S} \rightarrow  E\;\bullet, 0)$ enth\"alt,
-k\"onnen wir schlie{\ss}en, dass der String ``\texttt{1+2*3}'' tats\"achlich in der von der Grammatik erzeugten
-Sprache liegt.
-\vspace*{0.3cm}
+Since the set $Q_5$ contains the Earley object $\pair(\widehat{s} \rightarrow e\;\bullet, 0)$, we can conclude
+that the string “\texttt{1+2*3}” indeed belongs to the language generated by the given grammar. 
 
-\exercise
-Zeigen Sie, dass der String ``\texttt{1*2+3}'' in der Sprache der Grammatik liegt, die in 
-Abbildung \ref{fig:expr-small} gezeigt wird.  Benutzen Sie dazu den von Earley
-angegebenen Algorithmus.
+
+\exerciseEng
+Use Earley's algorithm to show that the string “\texttt{1*2+3}” belongs to the language of the grammar shown in Figure
+\ref{fig:expr-small}. \eox
+
 
 \section{Implementing Earley's Algorithm in \textsl{Python}}
 The \textsl{Jupyter} notebook
@@ -410,13 +379,13 @@ contains an implementation of Earley's algorithm.
 
 \section{Check Your Understandig}
 \begin{enumerate}[(a)]
-\item Was ist ein Earley-Objekt und wie werden die Komponenten eines Earley-Objekts interpretiert?
-\item Wie funktioniert die Lese-Operation beim Algorithmus von Earley?
-\item Wie funktioniert die Vorhersage-Operation beim Algorithmus von Earley?
-\item Wie funktioniert die Vervollst\"andigungs-Operation beim Algorithmus von Earley?
-\item Skizzieren Sie den Algorithmus von Earley f\"ur den Fall, dass die Grammatik keine $\varepsilon$-Regeln enth\"alt.
-\item Welche Komplexit\"at hat der Algorithmus von Earley im allgemeinen Fall?
-\item Welche Komplexit\"at hat der Algorithmus von Earley in dem Fall, dass die Grammatik eindeutig ist?
+\item How is an Earley object defined, and how are the components of an Earley object interpreted?
+\item How does the scanning operation work in Earley's algorithm?
+\item How does the prediction operation work in Earley's algorithm?
+\item How does the completion operation work in Earley's algorithm?
+\item Outline Earley's algorithm for the case where the grammar contains no $\varepsilon$-rules.
+\item What is the complexity of Earley's algorithm in the general case?
+\item What is the complexity of Earley's algorithm in the case that the grammar is not ambiguous?
 \end{enumerate}
 
 

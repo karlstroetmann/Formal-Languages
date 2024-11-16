@@ -31,4 +31,4 @@ function solveRecursive(x) {
     return solveRecursive(cos(x));
 }
 x := solveRecursive(x);
-print(x);
+print("The solution of the equation cos(x) = x is ", x, ".");

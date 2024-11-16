@@ -6,5 +6,5 @@ function factorial(n) {
 }
 
 for (i := 2; i <= 25; i := i + 1) {
-    print(factorial(i));
+    print(i, "! = ", factorial(i));
 }
