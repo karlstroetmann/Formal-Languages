@@ -8,4 +8,13 @@ function power(S) {
     return P + { A + { x } : A in P };
 }
 
-print("The power set of the set ", {1..3}, " is: ", power({1 .. 3}), ".");
+function printPower(n) {
+    P := power({1 .. n});
+    print("The power set of the set ", {1..3}, " is: ");
+    print(P);
+    print("It has ", len(P), " elements.");
+    return 1;  // every functions has to return a value.
+}
+
+printPower(4);
+
