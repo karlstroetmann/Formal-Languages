@@ -1,7 +1,5 @@
-expr: expr '+' expr
-    | expr '-' expr
-    | expr '*' expr
-    | expr '/' expr
-    | '(' expr ')'
-    | NUMBER
-    ;
+e : e '+' e
+  | e '*' e
+  | '(' e ')'
+  | N
+  ;
