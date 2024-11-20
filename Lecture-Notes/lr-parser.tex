@@ -901,7 +901,7 @@ If we were to continue these calculations, we would obtain Table \ref{tab:action
 of the states to match those of the corresponding states in Tables \ref{tab:action} and \ref{tab:goto}. 
 
 \exerciseEng
-Figure \ref{fig:BoolExpr.grammar} shows a grammar for propositional formulas in conjunctive normal form.  
+Figure \ref{fig:BoolExpr.grammar} shows a grammar for boolean expressions.  
 \begin{enumerate}[(a)]
 \item Provide the sets \(\textsl{First}(v)\) for all syntactic variables \(v\).
 \item Provide the sets \(\textsl{Follow}(v)\) for all syntactic variables \(v\).
@@ -909,8 +909,8 @@ Figure \ref{fig:BoolExpr.grammar} shows a grammar for propositional formulas in 
 \item Specify the function \(\textsl{action}\).
 \item Specify the function \(\textsl{goto}\).  
 \end{enumerate}
-Abbreviate the names of the syntactic variables and terminals with \(s\), \(c\), \(d\), \(l\), and \(I\), where
-\(s\) stands for the newly introduced start symbol.  \eox 
+Abbreviate the names of the syntactic variables and tokens with \(b\), \(c\), \(s\), and \(I\).
+\eox 
 
 \begin{figure}[htbp]
   \begin{center}    
@@ -918,11 +918,12 @@ Abbreviate the names of the syntactic variables and terminals with \(s\), \(c\),
   \framebox{
   \begin{minipage}[t]{9.5cm}
   \begin{eqnarray*}
-  \textsl{cnf}         & \rightarrow & \;\textsl{cnf} \;\;\mathquoted{\wedge}\; \textsl{disjunction}      \\
-                       & \mid        & \;\textsl{disjunction}                                    \\[0.2cm]
-  \textsl{disjunction} & \rightarrow & \;\textsl{disjunction} \;\;\mathquoted{\vee}\; \textsl{literal}    \\
-                       & \mid        & \;\textsl{literal}                                        \\[0.2cm]
-  \textsl{literal}     & \rightarrow & \mathquoted{\neg}\;\; \textsc{Identifier}                          \\
+  \textsl{bool}        & \rightarrow & \;\textsl{bool} \;\;\mathquoted{\vee}\; \textsl{conjunction}     \\
+                       & \mid        & \;\textsl{conjunction}                                           \\[0.2cm]
+  \textsl{disjunction} & \rightarrow & \;\textsl{conjunction} \;\;\mathquoted{\wedge}\; \textsl{simple}   \\
+                       & \mid        & \;\textsl{simple}                                                \\[0.2cm]
+  \textsl{simple}      & \rightarrow & \mathquoted{(}\; \textsl{bool} \;\mathquoted{)}                    \\
+                       & \mid        & \mathquoted{\neg}\;\; \textsc{Identifier}                          \\
                        & \mid        & \;\textsc{Identifier}  
   \end{eqnarray*}
   \vspace*{-0.5cm}
@@ -932,6 +933,8 @@ Abbreviate the names of the syntactic variables and terminals with \(s\), \(c\),
   \caption{A grammar for Boolean expression in conjunctive normal form.}
   \label{fig:BoolExpr.grammar}
 \end{figure}
+\pagebreak
+
 \subsection{Shift/Reduce and Reduce/Reduce Conflicts}
 In this section, we examine shift-reduce and reduce-reduce conflicts in more detail and consider two examples. The first example shows a shift-reduce conflict. 
 The grammar shown in Figure \ref{fig:shift-reduce-conflict.grammar} is ambiguous because it does not specify whether the operator \(\saquoted{+}\) binds stronger or weaker than the operator \(\saquoted{*}\). If we interpret the non-terminal \(N\) as an abbreviation for \textsc{Number}, this grammar allows us to interpret the expression \(1 + 2 * 3\) either as 
@@ -1023,7 +1026,7 @@ Next, we calculate \(s_3 := \textsl{goto}(s_2, e)\):
 \end{array}
 \)
 \\[0.2cm]
-Here, a shift-reduce conflict arises during the calculation of \(\textsl{action}(s_3, \saquoted{*})\),
+Here, a shift-reduce conflict arises when calculating \(\textsl{action}(s_3, \saquoted{*})\),
 because on one hand, the marked rule 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1143,26 +1146,7 @@ As part of the resources provided with this lecture,  the file
 \\[0.2cm]
 contains a \textsl{Python} program that checks whether a given grammar is an SLR grammar.  This program
 computes the states as well as the action table of a given grammar. \eox
-
-\exerciseEng
-The github directory containing supplementary files for this lecture contains the grammar for the
-programming language \texttt{C} at
-\\[0.2cm]
-\hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-09/Examples/c-grammar.g}{Formal-Languages/blob/master/Python/Chapter-09/Examples/c-grammar.g}
-\\[0.2cm]
-This grammar is not an SLR-grammar.  Use the SLR-table generator 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/ANTLR4-Python/SLR-Parser-Generator/SLR-Table-Generator.ipynb}{SLR-Table-Genarator.ipynb}
-to investigate the conflicts that arise.  Transform the grammar into an SLR grammar by making a small number of changes.
-It is sufficient to remove three rules.  After removing those rules, there will be one useless rule left which
-is of the form
-\\[0.2cm]
-\hspace*{1.3cm}
-$a \rightarrow b$.
-\\[0.2cm]
-This rule has to be removed, too.  Furthermore, you have to rename the variable $a$ occurring on the left
-hand side of this rule to $b$ everywhere.
-\eox
+\pagebreak
 
 \section{Canonical LR Parsers}
 The reduce-reduce conflict that occurs in the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} can be resolved as follows: In the state
@@ -1686,8 +1670,7 @@ To compute $\textsl{goto}(\mathcal{M},X)$, we first calculate the set
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{closure}\Bigl( \bigl\{  
-  A \rightarrow \alpha X \bullet \beta:L \mid (A \rightarrow \alpha \bullet X \beta:L) \in \mathcal{M} 
-  \bigr\} \Bigr)
+  a \rightarrow \alpha X \bullet \beta:L \mid (a \rightarrow \alpha \bullet X \beta:L) \in \mathcal{M} \bigr\} \Bigr)
 $.
 \\[0.2cm]
 The problem is that this set is generally not an element of the set $\frak{Q}$,
