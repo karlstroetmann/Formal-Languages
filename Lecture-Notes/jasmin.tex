@@ -1,7 +1,8 @@
 \chapter{Assembler}
 A compiler translates programs written in a high level language like \texttt{C} or
 \textsl{Java} into some low level representation.  This low level representation can be
-either machine code or some form of assembler code.  For the programming language \textsl{Java},
+either machine code or some form of assembler code.  For the programming language
+\href{https://en.wikipedia.org/wiki/Java_(programming_language)}{\textsl{Java}}, 
 the command \texttt{javac} compiles a program written in \textsl{Java} into
 \textsl{Java} byte code.  This byte code is then executed using the 
 \href{http://en.wikipedia.org/wiki/Java_virtual_machine}{\textsl{Java} virtual machine}
@@ -24,7 +25,41 @@ You can download \textsl{Jasmin} at
 command  \texttt{java} just like any other ``\texttt{.class}''-file.  
 This chapter will discuss the syntax and semantics of \textsl{Jasmin} assembler code.
 
+By the way, \textsl{Java} isn't the only programming language that is translated into \textsl{Java} Byte code.
+Here is a list of some of the better knwon programming languages that use the \textsc{Jvm} architecture.
+\begin{enumerate}
+\item \href{https://kotlinlang.org}{Kotlin} is  
+      developed by \href{https://www.jetbrains.com/}{JetBrains}. It is is fully interoperable with \textsl{Java}
+      and compiles to \textsc{Jvm} bytecode. It is widely used in
+      \href{https://en.wikipedia.org/wiki/Android_(operating_system)}{Android} development as a replacement for 
+      \textsl{Java}.
 
+      As of the $28^\mathrm{th}$ of November 2024, \textsl{Kotlin} occupies the $20^{\mathrm{th}}$ place in the
+      \href{https://www.tiobe.com/tiobe-index/}{Tiobe index}. 
+\item \href{https://www.scala-lang.org}{Scala} 
+       blends functional and object-oriented programming paradigms. Scala compiles to \textsc{Jvm} bytecode
+       and is often used for concurrent and distributed applications.
+
+       Currently, \textsl{Scala} occupies the $30^{th}$ place in the
+       \href{https://www.tiobe.com/tiobe-index/}{Tiobe index}.       
+\item \href{https://groovy-lang.org}{Groovy} is a dynamic scripting language that is easy to learn for
+      \textsl{Java} programmers because its syntax is close to \textsl{Java}. It is often used in scripting,
+      configuration, and in build systems like \href{https://gradle.org}{Gradle}. 
+\item \href{https://clojure.org}{Clojure}
+      is a modern Lisp dialect designed for functional programming.
+      It compiles to \textsc{Jvm} bytecode and supports concurrency.
+\item \href{https://www.jruby.org}{JRuby}
+      is a \textsc{Jvm}-based version of the \href{https://www.ruby-lang.org}{Ruby} programming language.
+      It is fully compatible with \textsl{Ruby} but additionally support the use \textsl{Java} libraries.
+\item \href{https://www.jython.org}{Jython} 
+      is a \textsc{Jvm}-based version of \href{https://www.python.org}{Python} version 2.7.
+\item \href{https://github.com/Frege}{Frege}
+      is a version of the pure functional language \href{https://www.haskell.org}{Haskell} that compiles to
+      \textsc{Jvm} bytecode.  
+\end{enumerate}
+The main reason these languages compile to the \textsc{Jvm} is to take advantage of \textsl{Java}'s rich library ecosystem.
+Another reason is the fact that compiling a language to the \textsc{Jvm} makes this language available for all those
+hardware platforms that support \textsl{Java}.
 
 \section{Introduction into \textsc{Jasmin} Assembler}
 
@@ -62,6 +97,7 @@ This chapter will discuss the syntax and semantics of \textsl{Jasmin} assembler 
 \label{fig:Hello.jas}
 \end{figure}
 
+\noindent
 To get used to the syntax of \textsl{Jasmin} assembler, we start with a small program that prints the
 string
 \\[0.2cm]
@@ -88,10 +124,10 @@ We discuss this program line by line.
       Observe that the character ``\texttt{.}'' in the class name ``\texttt{java.lang.Object}''
       has to be replaced by the character ``\texttt{/}''.  This is true even if a \textsl{Windows}
       operating system is used.
-\item Line 4 to 8 initialize the program.  This code is always the same and corresponds to a
+\item The lines 4 -- 8 initialize the program.  This code is always the same and corresponds to a
       constructor for the class \texttt{Hello}.  As this code is copied verbatim to the beginning 
       of every class file, we will not discuss it further. 
-\item Line 10 -- 17 defines the method \texttt{main} that does the actual work.
+\item The lines 10 -- 17 defines the method \texttt{main} that does the actual work.
   \begin{enumerate}[(a)]
   \item Line 10 uses the directive ``\texttt{\green{.method}}'' to declare the name of the method and its
         signature.  The string 
@@ -156,14 +192,14 @@ We discuss this program line by line.
         \\[0.2cm]
         to specify the maximal height of the
         stack.  In this case, the stack is allowed to contain a maximum of two objects.  It is easy
-        to see that we indeed do never place more than two objects onto the stack, since line
-        13 pushes the object 
+        to see that we indeed do never place more than two objects onto the stack, since the command
+        \texttt{getstatic} in line 13 pushes the object 
         \\[0.2cm]
         \hspace*{1.3cm}
         \texttt{java.lang.System.out}
         \\[0.2cm]
         onto the stack.  This is an object of class ``\texttt{java.io.PrintStream}''.
-        Then, line 14 pushes a reference to the string ``\texttt{Hello World}'' onto the stack.
+        Then, the command \texttt{ldc} in line 14 pushes a reference to the string ``\texttt{Hello World}'' onto the stack.
         The other instructions do not push anything onto the stack.
   \item Line 15 calls the method \texttt{println}, which is a method of the class
         ``\texttt{java.io.PrintStream}''.  It also specifies that \texttt{println} takes one argument of
@@ -254,7 +290,7 @@ instructions we have to discuss how the main memory is organized in the \textsc{
 \item The \blue{constant pool} contains the definitions of constants and also the addresses of
       methods in program memory.
 \end{enumerate}
-In the following, we will be mostly concerned with the stack and the heap.
+In the following, we will be mostly concerned with the stack.
 We proceed to discuss some of the assembler instructions.
 
 \subsubsection{Arithmetical and Logical Instructions}
@@ -355,10 +391,26 @@ We proceed to discuss some of the assembler instructions.
       the result are written onto the stack. 
 \item The instruction \squoted{\texttt{idiv}}
       divides the integer value that is found on the position next to the  top of the stack by the value
-      on top of the stack. 
+      on top of the stack.
+
+      \textbf{Note}: Integer division in \textsl{Java} is different from integer division in \textsl{Python}.
+      In \textsl{Python}, integer division is always rounded down (i.e.~rounded to negative infinity), while
+      integer division in \textsl{Java} rounds towards $0$.  While there is no difference for natural numbers,
+      we have $-5 \,\mathtt{/}\, 2 = -2$ in \textsl{Java}, while we have $-5 \,\mathtt{//}\, 2 = -3$ in
+      \textsl{Python}.\footnote{
+        In mathematics, integer division is defined in the same was as it is implemented in
+        \textsl{Python}.  The different implementation of this operator in \textsl{Java} is mostly a reflection
+        of the poor educational standards of the United States of America.
+      }. 
 \item The instruction \squoted{\texttt{irem}}
       computes the remainder $a \,\texttt{\%}\, b$ of the division of $a$ by $b$ where $a$ and $b$ are
       integer values found on top of the stack.
+
+      Again, it is important to note that the \textsl{Java} implementation of $a \;\texttt{\%}\; b$
+      differs from the implementation in \textsl{Java}.  For example, in \textsl{Java} we have
+      $-5 \,\mathtt{\%}\, 3 = -2$,
+      while we have $-5 \,\mathtt{\%}\, 3 = 1$
+      in \textsl{Python}.
 \item The instruction \squoted{\texttt{iand}}
       computes the bitwise ``and'' of the values on top of the stack.
 \item The instruction \squoted{\texttt{ior}}
