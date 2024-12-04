@@ -54,7 +54,7 @@ The function \mytt{compile\_expr} returns a pair.
       \mytt{.limit stack} \mytt{\textsl{sz}}
       \\[0.2cm]
       where \mytt{\textsl{sz}} is the maximum size of the stack.  Controlling the 
-      maximum height of the stack is a security feature of \textsl{Java} that prevents those exploits that
+      maximum height of the stack is a security feature of \textsl{Java} that prevents exploits that
       utilize stack overflows.
 \end{enumerate}
 In the following, we discuss the evaluation of the different arithmetic expressions one by one.
@@ -157,7 +157,7 @@ $
         & \mytt{compile\_expr}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
 \wedge  & \mytt{compile\_expr}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
 \rightarrow & \mytt{compile\_expr}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
-            \bigl\langle L1 + L2 + \mytt{[}\; \mytt{iadd} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
+            \bigl\langle L_1 + L_2 + \mytt{[}\; \mytt{iadd} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
 \end{array}$
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:iadd} on page \pageref{fig:Compiler.ipynb:compile:iadd} shows how the
@@ -452,7 +452,7 @@ $
         & \mytt{compile\_bool}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
 \wedge  & \mytt{compile\_bool}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
 \rightarrow & \mytt{compile\_bool}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
-            \bigl\langle L1 + L2 + \mytt{[}\; \mytt{iand} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
+            \bigl\langle L_1 + L_2 + \mytt{[}\; \mytt{iand} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
 \end{array}$
 \\[0.2cm]
 The translation of an expression of the form
@@ -490,7 +490,8 @@ translation of binary logical operators is implemented.
 \end{figure}
 
 It should be noted that our translation of the binary logical operators is different from
-what happens in the language \mytt{C}.  In \mytt{C}, if an expression of the form
+what happens in the language \mytt{C}.  In \mytt{C}, the evaluation of logical operators is \blue{lazy}:
+if an expression of the form
 \\[0.2cm]
 \hspace*{1.3cm}
 \textsl{lhs} \mytt{\&\&} \textsl{rhs}
@@ -498,7 +499,13 @@ what happens in the language \mytt{C}.  In \mytt{C}, if an expression of the for
 is evaluated, the evaluation is stopped as soon the evaluation of \textsl{lhs}
 returns $0$ because then there is no point to evaluate \textsl{rhs}, since if the value of \textsl{lhs} is $0$,
 the result of the expression $\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}$ is $0$, independent from the value of
-the expression \textsl{rhs}. 
+the expression \textsl{rhs}.  Similarly, if an expression of the form 
+\\[0.2cm]
+\hspace*{1.3cm}
+\textsl{lhs} \mytt{||} \textsl{rhs}
+\\[0.2cm]
+is evaluated and the evaluation of \textsl{lhs} is $1$, then the result of the evaluation of the expression
+\textsl{lhs} \mytt{||} \textsl{rhs} is $1$, regardless of the value of \textsl{rhs}.
 
 \subsubsection{Translation of Negations}
 The translation of an expression of the form $\mytt{!}\textsl{expr}$ is not as straightforward as the
@@ -1236,8 +1243,7 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
 
 \vspace*{\fill}
 \pagebreak
-\vspace*{\fill}
-\pagebreak
+
 \vspace*{\fill}
 \pagebreak
 
