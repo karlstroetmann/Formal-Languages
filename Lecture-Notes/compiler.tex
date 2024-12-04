@@ -1,22 +1,30 @@
 \chapter{Development of a Simple Compiler}
-In this chapter, we construct a compiler that translates a fragment of the \mytt{C} language into \textsl{Java} assembler. The fragment of the \mytt{C} language translated by the compiler is referred to as \blue{\textsl{Integer}-\mytt{C}}, \index{\textsl{Integer}-\mytt{C}} because only the data type \mytt{int} is available. Although it would be feasible to support additional data types, the extra effort would no longer be proportionate to the educational benefit of the example.
+In this chapter, we construct a compiler that translates a fragment of the \mytt{C} language into \textsl{Java}
+assembler. The fragment of the \mytt{C} language translated by the compiler is referred to as
+\blue{\textsl{Integer}-\mytt{C}}, \index{\textsl{Integer}-\mytt{C}} because only the data type \mytt{int} is
+available. Although it would be feasible to support additional data types, the extra effort would no longer be
+proportionate to the educational benefit of the example. 
 
 A compiler essentially consists of the following components:
 \begin{enumerate}
-\item The scanner reads the file to be translated and breaks it down into a sequence of tokens. We will develop our scanner using the \textsc{Ply} tool.
-\item The parser reads the sequence of tokens and produces an abstract syntax tree as a result. We will also use \textsc{Ply} for the creation of the parser.
-\item The type-checker checks the abstract syntax tree for type errors. Since the language we translate
-  contains only a single data type, this phase is not needed for our compiler.
-\item The code generator then translates the parse tree into a sequence of assembler commands that conform to the syntax of \textsl{Jasmin}.
-\item This can be followed by an \emph{optimization phase}.   Due to time constraints we cannot cover this topic.
+\item The scanner reads the file to be translated and breaks it down into a sequence of tokens. We will develop
+      our scanner using the \textsc{Ply} tool. 
+\item The parser reads the sequence of tokens and produces an abstract syntax tree as a result. We will 
+      use \textsc{Ply} for the creation of the parser. 
+\item The type-checker checks the abstract syntax tree for type errors. Since the language
+      \textsl{Integer}-\mytt{C} contains only a single data type, this phase is not needed for our compiler. 
+\item The code generator then translates the parse tree into a sequence of assembler commands that conform to
+      the syntax of \textsl{Jasmin}. 
+\item This can be followed by an \emph{optimization phase}.   Due to time constraints we cannot cover this
+      topic. 
 \item The resulting assembler program can be translated into Java bytecode using \textsl{Jasmin}.
-\item The Java bytecode can be executed using the \mytt{java} command.
+\item The Java bytecode is then executed by the \textsc{Jvm}, i.e.~the \textsl{Java} virtual machine.
 \end{enumerate}
 In compilers whose target code is a \textsc{Risc} assembler program, a code similar to \textsc{Jvm} code is
 usually generated first. Such a code is referred to as \emph{intermediate code}. It then remains the task of a
 so-called \emph{backend} to generate an assembler program for a given processor architecture. The most
-challenging task here is to find a register allocation for the used variables, such that as many variables as
-possible can be held in registers. Due to time constraints, we cannot address the topic of register allocation
+challenging task here is to find a register allocation for the variables, such that as many variables as
+possible can be held in registers. Due to time constraints, we cannot address the topic of register allocation 
 in this lecture.
 
 \section{The Programming Language \textsl{Integer}-\mytt{C}}
@@ -66,8 +74,7 @@ enclosed in curly braces.
 The grammar shown
 in Figure \ref{fig:compiler.ebnf} is ambiguous: 
 \begin{enumerate}
-\item The grammar has the \emph{Dangling-Else Problem}. We have already discussed this problem in Chapter
-      \ref{chapter:bottom-up} as part of an exercise. We will solve this problem via operator precedences. 
+\item The grammar has the \emph{Dangling-Else Problem}.  We will solve this problem via operator precedences. 
 \item For the operators used in arithmetic and Boolean expressions, precedences must be set to resolve
       ambiguities in the interpretation of these expressions. 
 \end{enumerate}
@@ -278,7 +285,7 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
         the chaining of comparison operators, i.e.~an expression of the form $x < y < z$ is syntactically
         invalid.
   \item The arithmetical operators ``\mytt{+}'' and ``\mytt{-}'' have a lower precedence than the
-        arithmetical operators ``\mytt{*}'' and ``\mytt{/}''. 
+        arithmetical operators ``\mytt{*}'', ``\mytt{/}'',  and ``\mytt{\%}''. 
   \end{enumerate}
 \item A \mytt{program} is a non-empty list of \mytt{function} definitions.  Therefore, it is either a single
       function definition (line 14--16) or it is a function definition followed by more function definitions
@@ -301,6 +308,11 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
 \item A \mytt{function} definition starts with the keyword \squoted{int} that is followed by the name of the
       function, an opening parenthesis, a list of the parameters of the function, a closing parenthesis,
       an opening brace, a list of declarations, a list of statements, and finally a closing brace.
+
+      The initial version of the programming language \texttt{C}, as detailed in the book
+      ``\emph{The C Programming Language}'' \cite{kernighan:1978}, required that all variable declarations
+      precede any statements, prohibiting the mixing of declarations and statements. While this limitation was
+      lifted in subsequent versions of the language, our implementation still enforces this restriction.       
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -361,6 +373,8 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
       furthermore, different parameters have to be separated by \squoted{,}.  Therefore, we have to introduce 
       the additional syntactical variable \mytt{ne\_param\_list}, which represents a non-empty parameter
       list.  The grammar rules for \mytt{param\_list} are as follows:
+      \pagebreak
+      
       \begin{verbatim}
         param_list 
              : /* epsilon */
@@ -381,7 +395,7 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
           ;
       \end{verbatim}
       Observe that with this definition a list of declarations may be empty.
-      The grammar rules for a list of declarations are simpler than the grammar rules for parameter lists
+      The grammar rules for a list of declarations are simpler than the grammar rules for a parameter list
       because every variable declaration is ended with a semicolon, while parameters are separated by commas
       and the last parameter must not be followed by a comma.
 \item The grammar rules for a list of statements are as follows:
