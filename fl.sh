@@ -7,5 +7,3 @@ conda install -y -c conda-forge python-graphviz
 pip install mypy
 pip install nb-mypy
 pip install ipynb
-
-
