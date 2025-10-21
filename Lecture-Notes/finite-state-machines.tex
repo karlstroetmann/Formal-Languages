@@ -1366,14 +1366,37 @@ for each state $q \in Q$ and each letter $c \in \Sigma$ the expression $\delta(q
 returns a state of $Q$.  Our goal is to find a \textsc{DFA}
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mathtt{Min}(F) := \bigl\langle \mathcal{Q}_\approx, \Sigma, \Delta, [q_0]_\approx, \widehat{A} \bigr\rangle$
+$\mathtt{Min}(F) := \bigl\langle \mathcal{Q}_\sim, \Sigma, \Delta, [q_0]_\sim, \widehat{A} \bigr\rangle$
 \\[0.2cm]
 which accepts the same language as  $F$, so we have 
 \\[0.2cm]
 \hspace*{1.3cm}
 $L\bigl(\mathtt{Min}(F)\bigr) = L(F)$
 \\[0.2cm]
-and for which the number of states of the set $\mathcal{q}_\approx$ is minimal.  
+and for which the number of states of the set $\mathcal{Q}_\sim$ is minimal.  You might be wondering about the
+meaning associated with $\mathcal{Q}_\sim$ and $[q_o]_\sim$:  We will introduce an equivalence relation
+$\sim$ on the set of states $Q$.  Basically, $p_1, p_2\in Q$ are \blue{equivalent} if they serve the same
+purpose in the \textsc{DFA} $F$, whatever that means.  If $p_1$ and $p_2$ are equivalent, this will be written as
+\\[0.2cm]
+\hspace*{1.3cm}
+$p_1 \sim p_2$.
+\\[0.2cm]
+Given a state $p \in Q$, the \blue{equivalence class} of $p$ w.r.t.~the relation $\sim$, written $[p]_\sim$ is the set of all states that
+are equivalent to $p$, i.e.~we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$[p]_\sim := \{ q \in Q \mid p \sim q \}$.
+\\[0.2cm]
+The new states of the \textsc{DFA} $\texttt{Min}(F)$ will be equivalence classes of the equivalence relation
+$\sim$.  Therefore we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$Q_\sim := \bigl\{ [q]_\sim \;\big|\; q \in Q \bigl\}$.
+\\[0.2cm]
+The new start state $[q_0]_\sim$ is the set of all states that are equivalent to the state $q_0$.  The formal definitions of the
+equivalence relation $\sim$, the function $\Delta: \mathcal{Q}_\sim \times \Sigma \rightarrow \mathcal{Q}_\sim$
+and the set $\widehat{A}$ will be given later.
+
 We start with the function 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1411,7 +1434,7 @@ states of the \textsc{DFA} $F =\langle Q, \Sigma, \delta, q_0, A \rangle$ are re
   \label{fig:nicht-gleichwertig.dot}
 \end{figure}
 
-In general, we can minimize an \textsc{DFA} by identifying certain states.   
+In general, we can minimize a \textsc{DFA} by identifying certain states.   
 If we look for example at the \textsc{DFA} shown in figure \ref{fig:nicht-gleichwertig.dot}, we can identify
 the states $q_1$ and $q_2$ as well as $q_3$ and $q_4$ without changing the language of the \textsc{DFA}. 
 The central idea in minimizing a \textsc{DFA} is that we compute those states which \textbf{must not} be
@@ -1437,12 +1460,7 @@ $p_1 \sim p_2$ \quad iff \quad
 $\forall s \in \Sigma^*:\bigl(\delta(p_1,s) \in A \leftrightarrow \delta(p_2,s) \in A\bigr)$.
 \\[0.2cm]
 Hence, two states $p_1$ and $p_2$ are considered to be equivalent iff they are not separable.   
-The claim is that we can identify all pairs $\langle p_1, p_2\rangle$ of equivalent states.  The
-\blue{identification} \index{identification of states} 
-of two states $p_1$ and $p_2$ is done by removing the state $p_2$ from the set $Q$ and changing the transition
-function $\delta$ in a way that the new version of $\delta$ will return $p_1$ in all those cases where the old
-version of $\delta$ had returned $p_2$. 
-
+The claim is that we can identify all pairs $\langle p_1, p_2\rangle$ of equivalent states.  
 
 The question remains how we can determine which states are separable.
 One possibility is to create a set $V$ with pairs of states.  We add the pair $\langle p, q \rangle$ to the set
@@ -1461,11 +1479,13 @@ induction.
      \\[0.2cm]
      \hspace*{1.3cm}
      $V_0 := \bigl(A \times (Q \backslash A)\bigr) \cup \bigl((Q \backslash A) \times A\bigr)$.
+     \\[0.2cm]
+     Therefore, initially only the accepting states are separable from the states that are not accepting.
 \item[I.S.:] $k \mapsto k + 1$
 
      If we have a pair $\pair(p,q) \in Q \times Q$ and a letter $c$ such that 
-     the pair  $\langle \delta(p,c), \delta(q,c) \rangle$ is already separable, then $\langle p, q \rangle$ is
-     separable, too.  THerefore we define:  
+     the pair of states  $\langle \delta(p,c), \delta(q,c) \rangle$ is already separable, then $\langle p, q \rangle$ is
+     separable, too.  Therefore we define:  
      \\[0.2cm]
      \hspace*{1.3cm}
      $V_{k+1} := V_k \cup \bigl\{ \pair(p,q) \bigm| \exists c \in \Sigma: \langle \delta(p,c), \delta(q,c) \rangle \in V_k \rangle\bigr\}$
@@ -1483,7 +1503,7 @@ $V_{K+1} = V_K$.
 We can therefore define two states $p$ and $q$ to be equivalent iff $\pair(p,q) \not\in V_K$:
 \\[0.2cm]
 \hspace*{1.3cm}
-$p \sim q \; \stackrel{def}{\Leftrightarrow} \; \pair(p,q) \not\in V_K$.
+$p \sim q \; \stackrel{\mathrm{def}}{\Longleftrightarrow} \; \pair(p,q) \not\in V_K$.
 \\[0.2cm]
 Next, for a state $p \in Q$ we define the \blue{equivalence class} of $p$ as the set
 \\[0.2cm]
