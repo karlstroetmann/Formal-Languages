@@ -2,9 +2,9 @@
 
 \begin{figure}[h] 
 \centering
-  \includegraphics[width=12.5cm]{Abbildungen/finite-state-machines.png}
-\caption{Some early finite automatons.}
-\label{fig:hieroglyphs.png}
+  \includegraphics[width=12.5cm]{Abbildungen/finite-state-machine.png}
+\caption{A finite state machine.}
+\label{fig:finite-state-machine.png}
 \end{figure}
 
 \noindent
@@ -1045,17 +1045,6 @@ expression $r$.  Then we can define $A(r)$ as follows:
 \end{enumerate}
 
 \exerciseEng
-Construct an \textsc{NFA} that accepts the language specified by the regular expression
-\\[0.2cm]
-\hspace*{1.3cm}
-$\texttt{a}^* \cdot \texttt{b}^*$.
-\\[0.2cm]
-Consider what would happen if you would identify the two states 
-$q_0$ and $q_1$ and the two states $q_2$ and $q_3$ in step 6 of the construction given above, while also
-identifying the two states $q_2$ and $q_3$ in step 4 of the construction of $A(r_1 \cdot r_2)$.
-\eox
-
-\exerciseEng
 Construct an \textsc{NFA} for the regular expression
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1095,10 +1084,15 @@ $L\bigl(r(p_1, p_2)\bigr) =
 The definition of $r(p_1, p_2)$ is done by first defining auxiliary regular expressions 
 $r^{(k)}(p_1, p_2)$ for all $k =0,\cdots,n+1$.   The regular expression $r^{(k)}(p_1, p_2)$ specifies those
 strings that take the \textsc{DFA} $F$ from the state
-$p_1$ to the state $p_2$ without visiting a state from the set
+$p_1$ to the state $p_2$ while only visiting states from the set
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q_k := \bigl\{ q_i \mid i \in \{k,\cdots,n \}  \bigl\} = \{ q_k, \cdots, q_n \}$.
+$Q_k := \bigl\{ q_i \mid i \in \{0,\cdots,k-1 \}  \bigl\}$
+\\[0.2cm]
+in between.  Observe that
+\\[0.2cm]
+\hspace*{1.3cm}
+$Q_0 = \{\}$ \quad and \quad $Q_{n+1} = \{q_0, \cdots, q_n \} = Q$
 \\[0.2cm]
 To this end we define the ternary relation
 \\[0.2cm]
@@ -1111,9 +1105,9 @@ Given two states $p, q \in Q$ and a string $w$ we have that
 $p \stackrel{w}{\mapsto}_k q$
 \\[0.2cm]
 holds iff the \textsc{DFA} $F$ switches from the state $p$ to the state $q$ when it reads the string $w$
-but on reading $w$ does not switch to a state from the set
-$Q_k$ \blue{in-between}.  Here, ``in-between'' specifies that the states $p$ and $q$ may well be elements of the set
-$Q_k$, only the states between $p$ and $q$ must not be in $Q_k$.
+but on reading $w$ only visits states from the set
+$Q_k$ \blue{in-between}.  Here, ``in-between'' specifies that the states $p$ and $q$ may well be outside of the set
+$Q_k$, only the states between $p$ and $q$ are required to be elements of $Q_k$.
 The formal definition of $p \stackrel{w}{\mapsto}_k q$ is done by induction on  $w$:
 \begin{enumerate}
 \item[B.C.:] $|w| \leq 1$.  Then there are two cases:
@@ -1130,7 +1124,7 @@ The formal definition of $p \stackrel{w}{\mapsto}_k q$ is done by induction on  
 
              Here we have:
              \hspace*{1.3cm}
-            $p \stackrel{c}{\mapsto} q \wedge q \not\in Q_k \wedge q \stackrel{v}{\mapsto}_k r
+            $p \stackrel{c}{\mapsto} q \wedge q \in Q_k \wedge q \stackrel{v}{\mapsto}_k r
               \;\Rightarrow\; p \stackrel{cv}{\mapsto}_k r$.
 \end{enumerate}
 Now we are ready to define the regular expressions $r^{(k)}(p_1, p_2)$ for all $k=0,\cdots,n+1$.
@@ -1143,7 +1137,7 @@ The definition of the regular expressions $r^{(k)}(p_1, p_2)$ is done by inducti
 \begin{enumerate}
 \item[B.C.:] $k = 0$.  
 
-  Then we have $Q_0 = Q$ and therefore the set $Q_0$ contains all states.
+  Then we have $Q_0 = \{\}$.
   Therefore, when the \textsc{DFA} switches from the state $p_1$ to the state $p_2$ it must not visit any
   states in-between.  There are two cases.
   \begin{enumerate}
@@ -1180,13 +1174,19 @@ The definition of the regular expressions $r^{(k)}(p_1, p_2)$ is done by inducti
    \end{enumerate}
 \item[I.S.:] $k \mapsto k+1$.  
 
-  When compared to the regular expression $r^{(k)}(p_1, p_2)$,
-  the regular expression  $r^{(k+1)}(p_1, p_2)$ is allowed to use the state
-  $q_k$, because $q_k$ is the only element of the set $Q_k$ that is not a member of the set $Q_{k+1}$.  
-  If the \textsc{DFA} reads a string $w$ that switches the state $p_1$ to the state $p_2$ without switching into a state
+  We have that
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $Q_{k+1} = Q_k \cup \{q_k\}$
+  \\[0.2cm]
+  Therefore, when compared to the regular expression $r^{(k)}(p_1, p_2)$,
+  the regular expression  $r^{(k+1)}(p_1, p_2)$ describes strings that cause the \textsc{DFA} to potentially
+  visit the state  $q_k$ in addition to the states from the set $Q_k$.
+  If the \textsc{DFA} reads a string $w$ that switches the state $p_1$ to the state $p_2$ while only using states
   from the set $Q_{k+1}$, then there are two cases.
   \begin{enumerate}
-  \item We already have $p_1 \stackrel{w}{\mapsto}_k p_2$.
+  \item We already have $p_1 \stackrel{w}{\mapsto}_k p_2$, i.e. the DFA uses only states from $Q_k$ and the
+        state $q_{k}$ isn't used.
   \item The string $w$ can be written as  $w = w_1 s_1\cdots s_l w_2$ where we have:
         \begin{itemize}
         \item $p_1 \stackrel{w_1}{\mapsto}_k q_k$,
@@ -1207,16 +1207,13 @@ Now we are ready to define the regular expressions $r(p_1,p_2)$ for all states $
 $r(p_1,p_2) := r^{(n+1)}(p_1,p_2)$. 
 \\[0.2cm]
 This regular expression specifies all strings that take the \textsc{DFA} from the state
-$p_1$ to the state $p_2$ without using any state from the set 
+$p_1$ to the state $p_2$ while using any state from the set 
 $Q_{n+1}$ in-between.   Since we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q_{n+1} = \bigl\{ q_i \mid i \in \{0,\cdots,n \} \wedge i \geq n+1 \bigr\} = \{\}$
+$Q_{n+1} = \bigl\{ q_o, \cdots, q_n \} = Q$
 \\[0.2cm]
-we know that $Q_{n+1}$ is empty.
-Therefore the regular expression $r^{(n+1)}(p_1,p_2)$
-does not exclude any states when switching from
-state $p_1$ to the state $p_2$.
+we can use any state in-between.
 
 In order to construct a regular expression that specifies the language accepted by a deterministic \textsc{DFA}
 $F$ we write the set $A$ of accepting states of $F$ as
@@ -1488,7 +1485,7 @@ induction.
      separable, too.  Therefore we define:  
      \\[0.2cm]
      \hspace*{1.3cm}
-     $V_{k+1} := V_k \cup \bigl\{ \pair(p,q) \bigm| \exists c \in \Sigma: \langle \delta(p,c), \delta(q,c) \rangle \in V_k \rangle\bigr\}$
+     $V_{k+1} := V_k \cup \bigl\{ \pair(p,q) \bigm| \exists c \in \Sigma: \langle \delta(p,c), \delta(q,c) \rangle \in V_k \bigr\}$
 \end{enumerate}
 The sequence $(V_k)_{k\in\mathbb{N}}$ is monotonically increasing, i.e.~we have
 \\[0.2cm]
