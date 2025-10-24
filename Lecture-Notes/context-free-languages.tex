@@ -117,7 +117,7 @@ side of any grammar rule. Terminals can be classified into two types:
 \item Operator symbols and separators, like ``\texttt{/}'' and ``\texttt{(}'', are used in their literal sense.
 \item Tokens such as \textsc{Number} or \textsc{Variable} carry associated values. For \textsc{Number}, the value is numeric; for \textsc{Variable}, it is a string representing the variable's name. To distinguish them from syntactic variables, these token types are always written in uppercase letters.
 \end{enumerate}
-Grammar rules are often expressed in a notation more compact than that introduced previously. For the given
+Grammar rules are often expressed in a notation more compact than the notation used previously. For the given
 example, the compact notation is as follows:
 
 \begin{eqnarray*}
@@ -199,13 +199,13 @@ When presenting a grammar, we typically enumerate the grammar rules and apply th
 \end{enumerate}
 
 \exampleEng
-The set of grammar rules below defines arithmetic expressions constructed from numbers, variables, and the binary operators \quoted{+}, \quoted{-}, \quoted{\(\cdot\)}, and \quoted{/}.
+The set of grammar rules below defines arithmetic expressions constructed from numbers, variables, and the binary operators \quoted{+}, \quoted{-}, \quoted{*}, and \quoted{/}.
 
 \begin{eqnarray*}
   \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
                      & \mid        & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
                      & \mid        & \textsl{product}                                \\[0.2cm]
-  \textsl{product}   & \rightarrow & \textsl{product} \quoted{\(\cdot\)} \textsl{factor} \\
+  \textsl{product}   & \rightarrow & \textsl{product} \quoted{\(*\)} \textsl{factor} \\
                      & \mid        & \textsl{product} \quoted{/} \textsl{factor}     \\
                      & \mid        & \textsl{factor}                                 \\[0.2cm]
   \textsl{factor}    & \rightarrow & \squoted{(} \textsl{arithExpr} \squoted{)}     \\
@@ -216,7 +216,7 @@ In this case, the following observations can be made:
 \begin{enumerate}
 \item The start symbol is \textsl{arithExpr}, as it is the syntactic variable on the left in the first grammar rule.
 \item \textsl{arithExpr}, \textsl{product}, and \textsl{factor} are recognized as syntactic variables because they start with a lowercase letter.
-\item The symbols \quoted{+}, \quoted{-}, \quoted{\(\cdot\)}, and \quoted{/} are identified as terminals since they are enclosed in quotes.
+\item The symbols \quoted{+}, \quoted{-}, \quoted{\(*\)}, and \quoted{/} are identified as terminals since they are enclosed in quotes.
 \item \textsc{Number} and \textsc{Variable} are terminals, indicated by their initial uppercase letters.
 \end{enumerate}
 
@@ -224,10 +224,11 @@ In this case, the following observations can be made:
 Next, we aim to identify the \blue{language} defined by a given grammar \( G \). For this purpose, we first
 define the concept of a \blue{derivation step}\index{derivation-step}. Consider the following: 
 \begin{enumerate}
-\item \( G = \langle V, T, R, S \rangle \) is a grammar,
-\item \( b \) is a syntactic variable in \( V \),
-\item \( \alpha b \gamma \) is a string composed of terminals and syntactic variables from \( (V \cup T)^* \), which includes the variable \( b \), and
-\item \( (b \rightarrow \delta) \) is a rule in \( R \).
+\item $G = \langle V, T, R, S \rangle$ is a grammar,
+\item $b$ is a syntactic variable in $V$,
+\item $\alpha b \gamma$ is a string composed of terminals and syntactic variables from $(V \cup T)^*$,
+      which includes the variable $b$, and
+\item $b \rightarrow \delta$ is a rule in \( R \).
 \end{enumerate}
 Under these conditions, the string \( \alpha b \gamma \) can undergo a derivation step to transform into the
 string \( \alpha \delta \gamma \). This process involves substituting one occurrence of the syntactic variable
@@ -237,34 +238,40 @@ step as
 \hspace*{1.3cm}
 $\alpha b \gamma \Rightarrow_G \alpha \delta \gamma$.
 \\[0.2cm]
-When the grammar \( G \) is clear from the context, we may drop the subscript \( _G \) and simply use \( \Rightarrow \) instead of \( \Rightarrow_G \). The transitive and reflexive closure of the relation \( \Rightarrow_G \) is indicated by \( \Rightarrow_G^* \). To specify that the derivation of string \( w \) from the non-terminal $b$ encompasses $n$ derivation steps, we write:
-
-We illustrate with an example:
+When the grammar \( G \) is clear from the context, we may drop the subscript \( _G \) and simply use \(
+\Rightarrow \) instead of \( \Rightarrow_G \). The transitive and reflexive closure of the relation \(
+\Rightarrow_G \) is indicated by \( \Rightarrow_G^* \). To specify that the derivation of string \( w \) from
+the non-terminal $b$ encompasses $n$ derivation steps, we write this as:
+\\[0.2cm]
+\hspace*{1.3cm}
+$b \Rightarrow^n w$
+\\[0.2cm]
+We illustrate this notation with an example:
 \begin{eqnarray*}
 \textsl{arithExpr} 
 & \Rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
 & \Rightarrow & \textsl{product} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsl{product} \quoted{$\cdot$} \textsl{factor} \quoted{+} \textsl{product} \\
-& \Rightarrow & \textsl{factor} \quoted{$\cdot$} \textsl{factor} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsl{factor} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsl{product}  \\
-& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsl{factor}   \\
-& \Rightarrow & \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}   
+& \Rightarrow & \textsl{product} \quoted{$*$} \textsl{factor} \quoted{+} \textsl{product} \\
+& \Rightarrow & \textsl{factor} \quoted{$*$} \textsl{factor} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{$*$} \textsl{factor} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{$*$} \textsc{Number} \quoted{+} \textsl{product}  \\
+& \Rightarrow & \textsc{Number} \quoted{$*$} \textsc{Number} \quoted{+} \textsl{factor}   \\
+& \Rightarrow & \textsc{Number} \quoted{$*$} \textsc{Number} \quoted{+} \textsc{Number}   
 \end{eqnarray*}
 Hence, we have demonstrated that
 \[
 \hspace*{1.3cm}
-\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}
+\textsl{arithExpr} \Rightarrow^* \textsc{Number} \quoted{$*$} \textsc{Number} \quoted{+} \textsc{Number}
 \]
 is valid. To be more precise, we could express this as
 \[
 \hspace*{1.3cm}
-\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{$\cdot$} \textsc{Number} \quoted{+} \textsc{Number}
+\textsl{arithExpr} \Rightarrow^8 \textsc{Number} \quoted{$*$} \textsc{Number} \quoted{+} \textsc{Number}
 \]
 since the derivation comprises eight steps. By substituting the terminal \textsc{Number} with distinct numerals, we demonstrate that the string
 \[
 \hspace*{1.3cm}
-2 \cdot 3 + 4
+2 * 3 + 4
 \]
 is an arithmetic expression. Generally, the language \( L(G) \) defined by a grammar \( G \) is the set of all
 strings that are exclusively composed of terminals and can be derived from the start symbol \( S \) of the
@@ -277,97 +284,97 @@ L(G) := \{ w \in T^* \mid S \Rightarrow^* w \}.
 
 \exampleEng
 The language
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-L = \{ (^n )^n \mid n \in \mathbb{N} \}
-\]
+$L = \{ (^n )^n \mid n \in \mathbb{N} \}$
+\\[0.2cm]
 is generated by the grammar
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-G = \langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \rangle,
-\]
+$G = \langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \rangle$,
+\\[0.2cm]
 where the set of rules \( R \) is defined as:
 \[
 \hspace*{1.3cm}
 \textsl{s} \rightarrow \squoted{(} \textsl{s} \squoted{)} \mid \lambda.
 \]
 
-\proofEng
-We first establish that each string \( w \) in \( L \) can be derived from the start symbol \( \textsl{s} \):
-\[
-\hspace*{1.3cm}
-\text{If } w \in L, \text{ then } \textsl{s} \Rightarrow^* w.
-\]
-Let \( w_n = (^n)^n \). We use induction on \( n \in \mathbb{N} \) to show that \( w_n \in L(G) \).
-\begin{enumerate}
-\item[\textbf{B.C.:}] \( n=0 \).
+% \proofEng
+% We first establish that each string \( w \) in \( L \) can be derived from the start symbol \( \textsl{s} \):
+% \[
+% \hspace*{1.3cm}
+% \text{If } w \in L, \text{ then } \textsl{s} \Rightarrow^* w.
+% \]
+% Let \( w_n = (^n)^n \). We use induction on \( n \in \mathbb{N} \) to show that \( w_n \in L(G) \).
+% \begin{enumerate}
+% \item[\textbf{B.C.:}] \( n=0 \).
 
-            We have \( w_0 = \lambda \). Since the grammar includes the rule \( s \rightarrow \lambda \), it follows that
-            \[
-            \hspace*{1.3cm}
-            \textsl{s} \Rightarrow \lambda,
-            \]
-            and thus \( w_0 \in L(G) \).
+%             We have \( w_0 = \lambda \). Since the grammar includes the rule \( s \rightarrow \lambda \), it follows that
+%             \[
+%             \hspace*{1.3cm}
+%             \textsl{s} \Rightarrow \lambda,
+%             \]
+%             and thus \( w_0 \in L(G) \).
 
-\item[\textbf{I.S.:}] \( n \mapsto n + 1 \).
+% \item[\textbf{I.S.:}] \( n \mapsto n + 1 \).
 
-            The string \( w_{n+1} \) has the form \( w_{n+1} = \squoted{(}w_n\squoted{)} \), where \( w_n \) is also in \( L \).
-            By the inductive hypothesis, there exists a derivation for \( w_n \):
-            \[
-            \hspace*{1.3cm}
-            \textsl{s} \Rightarrow^* w_n.
-            \]
-            Thus, we obtain the derivation
-            \[
-            \hspace*{1.3cm}
-            \textsl{s} \Rightarrow \squoted{(}\textsl{s}\squoted{)} \Rightarrow^* \squoted{(} w_n \squoted{)} = w_{n+1},
-            \]
-            which confirms \( w_{n+1} \in L(G) \).
-\end{enumerate}
-Next, we prove that any string \( w \) derived from \( \textsl{s} \) belongs to \( L \), using induction on the number \( n \) of derivation steps:
-\begin{enumerate}
-\item[\textbf{B.C.:}] \( n = 1 \).
+%             The string \( w_{n+1} \) has the form \( w_{n+1} = \squoted{(}w_n\squoted{)} \), where \( w_n \) is also in \( L \).
+%             By the inductive hypothesis, there exists a derivation for \( w_n \):
+%             \[
+%             \hspace*{1.3cm}
+%             \textsl{s} \Rightarrow^* w_n.
+%             \]
+%             Thus, we obtain the derivation
+%             \[
+%             \hspace*{1.3cm}
+%             \textsl{s} \Rightarrow \squoted{(}\textsl{s}\squoted{)} \Rightarrow^* \squoted{(} w_n \squoted{)} = w_{n+1},
+%             \]
+%             which confirms \( w_{n+1} \in L(G) \).
+% \end{enumerate}
+% Next, we prove that any string \( w \) derived from \( \textsl{s} \) belongs to \( L \), using induction on the number \( n \) of derivation steps:
+% \begin{enumerate}
+% \item[\textbf{B.C.:}] \( n = 1 \).
 
-            The sole derivation from terminals that is one step long is
-            \[
-            \hspace*{1.3cm}
-            \textsl{s} \Rightarrow \lambda.
-            \]
-            Hence, \( w = \lambda \), and since \( \lambda = (^0)^0 \) belongs to \( L \), we deduce \( w \in L \).
+%             The sole derivation from terminals that is one step long is
+%             \[
+%             \hspace*{1.3cm}
+%             \textsl{s} \Rightarrow \lambda.
+%             \]
+%             Hence, \( w = \lambda \), and since \( \lambda = (^0)^0 \) belongs to \( L \), we deduce \( w \in L \).
 
-\item[\textbf{I.S.:}] \( n \mapsto n+1 \).
+% \item[\textbf{I.S.:}] \( n \mapsto n+1 \).
 
-            For a derivation exceeding one step, it must begin as
-            \[
-            \hspace*{1.3cm}
-            \textsl{s} \Rightarrow \squoted{(} \textsl{s} \squoted{)} \Rightarrow^n w.
-            \]
-            This implies
-            \[
-            \hspace*{1.3cm}
-            w = \squoted{(}v\squoted{)} \quad \text{and} \quad \textsl{s} \Rightarrow^n v.
-            \]
-            By the inductive hypothesis, \( v \in L \). Therefore, there exists a \( k \in \mathbb{N} \) such that \( v = (^k)^k \).
-            Consequently,
-            \[
-            \hspace*{1.3cm}
-            w = \squoted{(}v\squoted{)} = ((^k)^k) = (^{k+1})^{k+1} \in L. 
-            \] \qed
-\end{enumerate}
+%             For a derivation exceeding one step, it must begin as
+%             \[
+%             \hspace*{1.3cm}
+%             \textsl{s} \Rightarrow \squoted{(} \textsl{s} \squoted{)} \Rightarrow^n w.
+%             \]
+%             This implies
+%             \[
+%             \hspace*{1.3cm}
+%             w = \squoted{(}v\squoted{)} \quad \text{and} \quad \textsl{s} \Rightarrow^n v.
+%             \]
+%             By the inductive hypothesis, \( v \in L \). Therefore, there exists a \( k \in \mathbb{N} \) such that \( v = (^k)^k \).
+%             Consequently,
+%             \[
+%             \hspace*{1.3cm}
+%             w = \squoted{(}v\squoted{)} = ((^k)^k) = (^{k+1})^{k+1} \in L. 
+%             \] \qed
+% \end{enumerate}
 
 \exerciseEng
-We define $\Sigma = \{ \squoted{A}, \squoted{B} \}$ and define the language $L$ as the
-set of words $w\in\Sigma^*$ in which the letters \squoted{A} and \squoted{B} occur with the
+We define $\Sigma = \{ \squoted{a}, \squoted{b} \}$ and define the language $L$ as the
+set of words $w\in\Sigma^*$ in which the letters \squoted{a} and \squoted{b} occur with the
 same frequency:
 \\[0.2cm]
 \hspace*{1.3cm}
-$L := \bigl\{ w \in \Sigma^* \mid \textsl{count}(w,\squoted{A}) = \textsl{count}(w,\squoted{B})\bigr\}$
+$L := \bigl\{ w \in \Sigma^* \mid \textsl{count}(w,\squoted{a}) = \textsl{count}(w,\squoted{b})\bigr\}$
 \\[0.2cm]
 Define a grammar $G$ such that $L = L(G)$.
 \eox
 
 \exerciseEng
-Define $\Sigma := \{ \squoted{A}, \squoted{B} \}$. 
+Define $\Sigma := \{ \squoted{a}, \squoted{b} \}$. 
 In the previous chapter, we have already defined the reversal of a string 
 $w = c_1 c_2 \cdots c_{n-1} c_n \in \Sigma^*$ as the string
 \\[0.2cm]
@@ -384,9 +391,9 @@ $w = w^R$
 holds true.  For example, the strings 
 \\[0.2cm]
 \hspace*{1.3cm}
-$w_1 = \mathtt{ABABA}$ \quad and \quad $w_2 = \mathtt{ABBA}$
+$w_1 = \mathtt{ababa}$ \quad and \quad $w_2 = \mathtt{abba}$
 \\[0.2cm]
-are both palindromes, while the string \texttt{ABB} is not a palindrome. The 
+are both palindromes, while the string \texttt{abb} is not a palindrome. The 
 \blue{language of palindromes} $L_\mathrm{palindrome}$ is the set of all 
 strings in $\Sigma^*$ that are palindromes, i.e.~we have
 \\[0.2cm]
@@ -395,10 +402,9 @@ $L_\mathrm{palindrome} := \bigr\{ w \in \Sigma^* \mid w = w^R \bigr\}$.
 \renewcommand{\labelenumi}{(\alph{enumi})}
 \begin{enumerate}
 \item Prove that the language $L_\mathrm{palindrome}$ is a context-free language.
-\item Prove that the language $L_\mathrm{palindrome}$ is not regular.  \eox
+\item Prove that the language $L_\mathrm{palindrome}$ is not a regular language.  \eox
 \end{enumerate}
 \renewcommand{\labelenumi}{\arabic{enumi}.}
-
  
 
 % \exerciseStar
@@ -698,8 +704,7 @@ conditions:
 If we read the leave nodes of a parse tree from left to right,  they yield a word
 that is derived from the grammar $G$.  Figure \ref{fig:parse-tree.dot} shows a
 parse tree for the word ``\texttt{2*3+4}''.  It is derived using the grammar given above for
-arithmetic expressions.  The only caveat here is that instead of the symbol ``$\cdot$'' the parse tree uses the
-symbol ``$*$''.
+arithmetic expressions.  
 
 \begin{figure}[!ht]
   \centering
@@ -737,47 +742,47 @@ expressions seems very complicated because it uses three different syntactic cat
 which describes the same language:
 \\[0.2cm]
 \hspace*{1.3cm}
-$G = \bigl\langle \{\textsl{expr}\}, \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{$\cdot$}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
+$G = \bigl\langle \{\textsl{expr}\}, \{ \textsc{Number}, \textsc{Variable}, \quoted{+}, \quoted{-}, \quoted{$*$}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
 \\[0.2cm]
 The rules $R$ are given as follows:
 \begin{eqnarray*}
   \textsl{expr} & \rightarrow & \textsl{expr} \quoted{+} \textsl{expr}  \\
                 & \mid & \textsl{expr} \quoted{-} \textsl{expr}  \\
-                & \mid & \textsl{expr} \quoted{$\cdot$} \textsl{expr}  \\
+                & \mid & \textsl{expr} \quoted{$*$} \textsl{expr}  \\
                 & \mid & \textsl{expr} \quoted{/} \textsl{expr}  \\
                 & \mid & \quoted{(} \textsl{expr} \quoted{)}     \\
                 & \mid & \textsc{Number}                         \\
                 & \mid & \textsc{Variable}                         
 \end{eqnarray*}
-In order to show that the string ``\texttt{2}$\,\cdot\,${3+4}'' is in the language generated by this grammar,
+In order to show that the string ``\texttt{2}$\,*\,${3+4}'' is in the language generated by this grammar,
 we give the following derivation:
 \begin{eqnarray*}
 \textsl{expr} & \Rightarrow & \textsl{expr} \quoted{+} \textsl{expr}                           \\
-              & \Rightarrow & \textsl{expr} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}  \\
-              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}     \\
-              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \textsl{expr}        \\
-              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \texttt{4}           
+              & \Rightarrow & \textsl{expr} \quoted{$*$} \textsl{expr} \quoted{+} \textsl{expr}  \\
+              & \Rightarrow & \texttt{2} \quoted{$*$} \textsl{expr} \quoted{+} \textsl{expr}     \\
+              & \Rightarrow & \texttt{2} \quoted{$*$} \texttt{3} \quoted{+} \textsl{expr}        \\
+              & \Rightarrow & \texttt{2} \quoted{$*$} \texttt{3} \quoted{+} \texttt{4}           
 \end{eqnarray*}
 This derivation corresponds to the abstract syntax tree shown in Fig.
 \ref{fig:abstract-syntax-tree.dot}
-is shown.  However, there is another derivation of the string ``\texttt{2$\,\cdot\,$3+4}'' with this grammar:
+is shown.  However, there is another derivation of the string ``\texttt{2$\,*\,$3+4}'' with this grammar:
 \begin{eqnarray*}
-\textsl{expr} & \Rightarrow & \textsl{expr} \quoted{$\cdot$} \textsl{expr}                           \\
-              & \Rightarrow & \textsl{expr} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}  \\
-              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \textsl{expr} \quoted{+} \textsl{expr}     \\
-              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \textsl{expr}        \\
-              & \Rightarrow & \texttt{2} \quoted{$\cdot$} \texttt{3} \quoted{+} \texttt{4}           
+\textsl{expr} & \Rightarrow & \textsl{expr} \quoted{$*$} \textsl{expr}                           \\
+              & \Rightarrow & \textsl{expr} \quoted{$*$} \textsl{expr} \quoted{+} \textsl{expr}  \\
+              & \Rightarrow & \texttt{2} \quoted{$*$} \textsl{expr} \quoted{+} \textsl{expr}     \\
+              & \Rightarrow & \texttt{2} \quoted{$*$} \texttt{3} \quoted{+} \textsl{expr}        \\
+              & \Rightarrow & \texttt{2} \quoted{$*$} \texttt{3} \quoted{+} \texttt{4}           
 \end{eqnarray*}
 This derivation corresponds to the abstract syntax tree shown in Fig.
 \ref{fig:abstract-syntax-tree-prod.dot}.
-In this derivation, the string ``\texttt{2$\,\cdot\,$3+4}'' is apparently taken to be a product,
-which contradicts the convention that the operator ``\texttt{$\cdot$}'' binds stronger than the operator
+In this derivation, the string ``\texttt{2$\,*\,$3+4}'' is apparently taken to be a product,
+which contradicts the convention that the operator ``\texttt{$*$}'' binds stronger than the operator
 ``\texttt{+}''.  If we were to evaluate the string using the last syntax tree, we would
 obviously get the wrong result! 
 \begin{figure}[!ht]
   \centering
       \epsfig{file=Abbildungen/abstract-syntax-tree-prod.eps, scale=0.6}
-  \caption{Another abstract syntax tree for the string ``\texttt{2$\,\cdot\,$3+4}''. Here ``$\cdot$'' is
+  \caption{Another abstract syntax tree for the string ``\texttt{2$\,*\,$3+4}''. Here ``$*$'' is
     denoted as ``\texttt{*}''.}
   \label{fig:abstract-syntax-tree-prod.dot}
 \end{figure}
@@ -972,17 +977,17 @@ There are two ways to deal with this kind of problem:
 \item We can rewrite the grammar so that it no longer is left-recursive.
 \item A simpler method is to extend the notion of a context-free grammar.
       We will use the notion of a so called \blue{extended Backus Naur form} grammar
-      (abbreviated as \textsc{Ebnf}-grammar).   Theoretically, the expressive power of
-      \textsc{Ebnf} grammars is the same as the expressive power of context-free grammars.
+      (abbreviated as \textsc{EBNF}-grammar).   Theoretically, the expressive power of
+      \textsc{EBNF} grammars is the same as the expressive power of context-free grammars.
       In practice, however, it turns out that the construction of top-down parsers for
-      \textsc{Ebnf} grammars is easier, because in an \textsc{Ebnf} grammar the left recursion can often be replaced
+      \textsc{EBNF} grammars is easier, because in an \textsc{EBNF} grammar the left recursion can often be replaced
       by iteration. 
 \end{enumerate}
 In the rest of this chapter we will discuss these two procedures in more detail using the grammar for
 arithmetic expressions as an example.  
 
 
-\subsection{Rewriting a  Grammar to Eliminate Left Recursion \label{left-recursion}}
+\subsection{Rewriting a  Grammar to Eliminate Left Recursion \label{left-recursion}$^*$}
 In the following, assume that a grammar $G = \langle V, T, R, S \rangle$ is given, $a \in V$ is a syntactic
 variable and the Greek letters $\beta$ and $\gamma$ stand for any strings consisting of syntactic variables and
 tokens, i.e.~we have $\beta, \gamma \in (V \cup T)^*$.  If  $a$ is defined by the two rules
@@ -1183,7 +1188,7 @@ interpreted as follows:
 \end{enumerate}
 
 
-\subsection{Implementing a Top Down Parser in \textsl{Python}}
+\subsection{Implementing a Top Down Parser in \textsl{Python}$^*$}
 \noindent
 Now we are ready to implement a parser for recognizing arithmetic expressions.
 We will use the grammar that is shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
@@ -1418,19 +1423,13 @@ a nested tuple that represents a regular expression.
 \eox
 
 \subsection{Implementing a Recursive Descent Parser that Uses an \textsc{EBNF} Grammar}
-The previous solution to parse an arithmetical expression was not completely
-satisfying:  The reason is that we did not really fix the problem of left recursion but rather cured the
-symptoms.  The underlying reason for left recursion is that context free grammars are not that convenient to
-describe the structure of programming languages since a description of this structure needs both
-recursion and iteration, but context-free grammars provide no direct way to describe iteration.
-Rather, they simulate iteration via recursion.  Let us therefore improve the convenience of context-free
+In this section, we improve the convenience of context-free
 languages by admitting the regular expression operators \squoted{*}, \squoted{|}, and \squoted{?} on
 the right hand side of grammar rules.  The meaning of these operators is the same as when these operators are used in 
 the regular expressions of the programming language \textsl{Python}.  Furthermore, the right hand side of a
 grammar rule can be structured using parentheses.  These new type of grammars are known as
 \href{http://en.wikipedia.org/wiki/Extended_Backus_Naur_Form}{\emph{extended Backus Naur form}}
-\index{\textsc{Ebnf}-Grammar} grammars, which is abbreviated as \textsc{Ebnf} grammars.
-
+\index{\textsc{EBNF}-Grammar} grammars, which is abbreviated as \textsc{EBNF} grammars.
 
 
 \begin{figure}[htbp]
@@ -1449,16 +1448,16 @@ grammar rule can be structured using parentheses.  These new type of grammars ar
 
   \end{minipage} \hspace*{1.cm}}}
   \end{center}
-  \caption{\textsc{Ebnf} grammar for arithmetical expressions.}
+  \caption{\textsc{EBNF} grammar for arithmetical expressions.}
   \label{fig:arith-expr-ebnf}
 \end{figure}
 
-It can be shown that the languages described by \textsc{Ebnf} grammars are still context-free
+It can be shown that the languages described by \textsc{EBNF} grammars are still context-free
 languages.  Therefore, these operators do not change the expressive power of context-free 
 grammars. 
-However, it is often much more \underline{convenient} to describe a language using an \textsc{Ebnf}
+However, it is often much more \underline{convenient} to describe a language using an \textsc{EBNF}
 grammar rather than using a context-free grammar.  Figure \ref{fig:arith-expr-ebnf}
-displays an \textsc{Ebnf} grammar for arithmetical expressions.  
+displays an \textsc{EBNF} grammar for arithmetical expressions.  
 
 Obviously, the grammar in Figure \ref{fig:arith-expr-ebnf}  is
 more concise than the context-free grammar shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
@@ -1549,13 +1548,13 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser that implem
 \end{figure}
 
 \exerciseEng
-In Exercise 21 on page \pageref{exercise:regexp} you have developed an \textsc{Ebnf} grammar for regular
-expressions.  Implement a top down parser for this grammar.  The resulting grammar should return
+Develop an \textsc{EBNF} grammar for regular
+expressions and implement a top down parser for this grammar.  The resulting grammar should return
 a nested tuple that represents a regular expression.
 \eox
 
 \paragraph{Historical Notes} The language \textsc{Algol} \cite{backus:1959,naur:1960} was the first
-programming language with a syntax that was based on an \textsc{Ebnf} grammar.  
+programming language with a syntax that was based on an \textsc{EBNF} grammar.  
 \pagebreak
 \vspace*{\fill}
 
@@ -1568,11 +1567,12 @@ programming language with a syntax that was based on an \textsc{Ebnf} grammar.
 \item What is the definition of a \blue{parse tree}?
 \item How do we transform a parse tree into an \blue{abstract syntax tree}?
 \item What are ambiguous grammars?  
-\item How can a context free grammar that contains left recursion be transformed into an equivalent grammar
-      that does not contain left recursion.
-\item How does a top-down parser work? 
-\item Why do we have to eliminate left recursion from a grammar in order to build a top-down parser?
-\item Define the notion of an \textsc{Ebnf} grammar.
+% \item How can a context free grammar that contains left recursion be transformed into an equivalent grammar
+%       that does not contain left recursion.
+% \item How does a top-down parser work? 
+% \item Why do we have to eliminate left recursion from a grammar in order to build a top-down parser?
+\item Define the notion of an \textsc{EBNF} grammar.
+\item Implement a top down parser for arithmetic expressions.
 \end{enumerate}
 
 %%% Local Variables: 
