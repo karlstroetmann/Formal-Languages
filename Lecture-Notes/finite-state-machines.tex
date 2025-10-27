@@ -10,86 +10,86 @@
 \noindent
 In the previous chapter we have seen how we can generate scanners from regular expressions.  In this chapter
 we learn how regular expressions can be implemented using \blue{finite state automatons},
-abbreviated as \textsc{FSA}s. There are two kinds of \textsc{FSA}s: The \blue{deterministic} ones known as
-\blue{deterministic finite automatons}, abbreviated as \textsc{DFA} 
+abbreviated as \simtextsc{FSA}s. There are two kinds of \simtextsc{FSA}s: The \blue{deterministic} ones known as
+\blue{deterministic finite automatons}, abbreviated as \simtextsc{Dfa} 
 and the non-deterministic ones known as \blue{non-deterministic finite automaton}, abbreviated as
-\textsc{NFA}s.  Although \textsc{NFA}s seem to be more powerful than \textsc{DFA}s, we will see that every
-\textsc{NFA} can be transformed into an equivalent \textsc{DFA}.  After proving this result, we show how a regular
-expression can be translated into an equivalent  \textsc{NFA}.  Finally, we show that the
-language recognized by any \textsc{DFA} can be described by an equivalent regular expression.  Therefore, the
+\simtextsc{Nfa}s.  Although \simtextsc{Nfa}s seem to be more powerful than \simtextsc{Dfa}s, we will see that every
+\simtextsc{Nfa} can be transformed into an equivalent \simtextsc{Dfa}.  After proving this result, we show how a regular
+expression can be translated into an equivalent  \simtextsc{Nfa}.  Finally, we show that the
+language recognized by any \simtextsc{Dfa} can be described by an equivalent regular expression.  Therefore, the
 central result of this chapter is the equivalence of \textsl{FA}s and regular expressions.
 In detail, the results proved in this chapter are as follows:
 \begin{enumerate}[(a)]
-\item The language described by a regular expression can be defined by a \textsc{NFA}.
-\item Every \textsc{NFA} can be transformed into an equivalent \textsc{DFA}.
-\item For every \textsc{DFA} there is an regular expression specifying the language recognized by
-      this \textsc{DFA}.
+\item The language described by a regular expression can be defined by a \simtextsc{Nfa}.
+\item Every \simtextsc{Nfa} can be transformed into an equivalent \simtextsc{Dfa}.
+\item For every \simtextsc{Dfa} there is an regular expression specifying the language recognized by
+      this \simtextsc{Dfa}.
 \end{enumerate}
 
 
 \section{Deterministic Finite Automatons}
 The finite state automatons that we are going to discuss in this chapter are used to read a string and
 to decide whether this string is an element of a given language.  Hence, the input of these 
-\textsc{DFA}s is a string, while the output is either the value \texttt{True} or the value \texttt{False}.
-The name giving feature of an \textsc{DFA} is the fact that an \textsc{DFA} only has a
-\underline{finite} number of possible states.  Reading a character causes the \textsc{DFA} to change its state.
-A \textsc{DFA} accepts its input if it has reached a so called \blue{accepting state} after reading
+\simtextsc{Dfa}s is a string, while the output is either the value \texttt{True} or the value \texttt{False}.
+The name giving feature of an \simtextsc{Dfa} is the fact that an \simtextsc{Dfa} only has a
+\underline{finite} number of possible states.  Reading a character causes the \simtextsc{Dfa} to change its state.
+A \simtextsc{Dfa} accepts its input if it has reached a so called \blue{accepting state} after reading
 all characters of the input string.  Let me explain this idea more precisely:
 \begin{enumerate}[(a)]
-\item Initially, the \textsc{DFA} is in a state that is known as the \blue{start state}. \index{start state}
-\item In every step of its computation, the \textsc{DFA} reads one character of the input string
-      $s$.  Every time a character is processed, the state of the \textsc{DFA} might change.
-\item Some states of the \textsc{DFA} are designated as \blue{accepting states}.  \index{accepting state}
-      If the \textsc{DFA} has consumed all characters of the given input string $s$ and the \textsc{DFA}
-      has reached an accepting state, then the input string $s$ is accepted and the \textsc{DFA}
-      returns \texttt{True}.  Otherwise the \textsc{DFA} returns \texttt{False} and the string $s$
+\item Initially, the \simtextsc{Dfa} is in a state that is known as the \blue{start state}. \index{start state}
+\item In every step of its computation, the \simtextsc{Dfa} reads one character of the input string
+      $s$.  Every time a character is processed, the state of the \simtextsc{Dfa} might change.
+\item Some states of the \simtextsc{Dfa} are designated as \blue{accepting states}.  \index{accepting state}
+      If the \simtextsc{Dfa} has consumed all characters of the given input string $s$ and the \simtextsc{Dfa}
+      has reached an accepting state, then the input string $s$ is accepted and the \simtextsc{Dfa}
+      returns \texttt{True}.  Otherwise the \simtextsc{Dfa} returns \texttt{False} and the string $s$
       is rejected.
 \end{enumerate}
 \begin{figure}[!ht]
   \centering
       \epsfig{file=Abbildungen/abstara.eps, scale=0.7}
-   \caption{A \textsc{DFA} to recognize the language $L(\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*)$.}
+   \caption{A \simtextsc{Dfa} to recognize the language $L(\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*)$.}
   \label{fig:abstara.dot}
 \end{figure}
 
 
 \noindent
 Finite state automatons are best presented graphically.  Figure \ref{fig:abstara.dot} depicts a simple
-\textsc{DFA} that recognizes those strings that are specified by the regular expression
+\simtextsc{Dfa} that recognizes those strings that are specified by the regular expression
 \\[0.2cm]
 \hspace*{1.3cm}
 $\texttt{a}^*\cdot\texttt{b}\cdot\texttt{a}^*$.
 \\[0.2cm]
-This \textsc{DFA} has but two states.  These states are called $0$ and $1$.
+This \simtextsc{Dfa} has but two states.  These states are called $0$ and $1$.
 \begin{enumerate}
 \item State $0$  is the start state.  In Figure \ref{fig:abstara.dot}, the start state is indicated by an arrow
       coming from the left that points to it.  
   
-      If the \textsc{DFA} is in the state $0$ and reads the character ``\texttt{a}'', then the
-      \textsc{DFA} stays in the state $0$.  This is specified in the figure by an arrow labeled with the
+      If the \simtextsc{Dfa} is in the state $0$ and reads the character ``\texttt{a}'', then the
+      \simtextsc{Dfa} stays in the state $0$.  This is specified in the figure by an arrow labeled with the
       character ``\texttt{a}'' that both starts and ends in the state $0$.  On the other hand, if the
-      character ``\texttt{b}'' is read while the \textsc{DFA} is in state 0, then the \textsc{DFA}
+      character ``\texttt{b}'' is read while the \simtextsc{Dfa} is in state 0, then the \simtextsc{Dfa}
       switches into the state $1$.  This is depicted by an arrow labeled with the character
       ``\texttt{b}'' that originates from the state $0$ and points to the state $1$.
 \item State  $1$ is an accepting state. In Figure \ref{fig:abstara.dot} this is specified by the
       fact that the state $1$ is decorated by a double circle.
 
-      If the character ``\texttt{a}'' is read while the \textsc{DFA} is in state $1$, then the
-      \textsc{DFA} does not change its state.  On the other hand, if the \textsc{DFA} reads the
+      If the character ``\texttt{a}'' is read while the \simtextsc{Dfa} is in state $1$, then the
+      \simtextsc{Dfa} does not change its state.  On the other hand, if the \simtextsc{Dfa} reads the
       character ``\texttt{b}'' while in state $1$, then the next state is undefined since there is no
       arrow originating from state $1$ that is labeled with the character ``\texttt{b}''.
 
-      In general, a \textsc{DFA} \blue{dies} \index{death of a \textsc{DFA}}
+      In general, a \simtextsc{Dfa} \blue{dies} \index{death of a \simtextsc{Dfa}}
       if it reads a character $c$ in a state $s$ such that there is no transition from $s$ when $c$ is read.
-      In this case, the \textsc{DFA} does not accept the given input string.
+      In this case, the \simtextsc{Dfa} does not accept the given input string.
 \end{enumerate}
 
 \noindent
 Formally, a \href{http://en.wikipedia.org/wiki/Finite-state_machine}{\emph{deterministic finite automaton}} 
 \index{deterministic finite automaton}
 is defined as a 5-tuple.
-\begin{Definition}[\textsc{DFA}]
-A \blue{deterministic finite automaton} (abbreviated as \textsc{DFA}\index{\textsc{DFA}}) is a 5-tuple 
+\begin{Definition}[\simtextsc{Dfa}]
+A \blue{deterministic finite automaton} (abbreviated as \simtextsc{Dfa}\index{\simtextsc{Dfa}}) is a 5-tuple 
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A\rangle$
@@ -99,16 +99,16 @@ where the components $Q$, $\Sigma$, $\delta$, $q_0$, and $A$ have the following 
 \item $Q$ is the \underline{finite} \blue{set of states}.
 \item $\Sigma$ is the \blue{input alphabet}\index{input alphabet}\index{$\Sigma$}.  Therefore, $\Sigma$ is a
       set of characters and 
-      the strings read by the \textsc{DFA} $F$ are strings from the set $\Sigma^*$.
+      the strings read by the \simtextsc{Dfa} $F$ are strings from the set $\Sigma^*$.
 \item $\delta: Q \times \Sigma \rightarrow Q \cup \{ \Omega \}$
 
       is the  \blue{transition function}\index{transition function}.  For every state $q\in Q$ and for all
-      characters $c \in \Sigma$ the expression $\delta(q,c)$ computes the new state of the \textsc{DFA} $F$
+      characters $c \in \Sigma$ the expression $\delta(q,c)$ computes the new state of the \simtextsc{Dfa} $F$
       that is reached if $F$ reads the character $c$ while in state $q$.
       If $\delta(q,c) = \Omega$, then $F$ \blue{dies} when it is in state $q$ and the next character
       is $c$. 
 
-      In the figures depicting \textsc{DFA}s transitions of the form $\delta(q, c) = \Omega$ 
+      In the figures depicting \simtextsc{Dfa}s transitions of the form $\delta(q, c) = \Omega$ 
       are not shown.
 \item $q_0 \in Q$ is the \blue{start state}. \index{start state}
 \item $A \subseteq Q$ is the set of \blue{accepting states}. \index{accepting states, set of}
@@ -117,7 +117,7 @@ where the components $Q$, $\Sigma$, $\delta$, $q_0$, and $A$ have the following 
 \end{Definition}
 
 \exampleEng
-The \textsc{DFA} that is shown in Figure  \ref{fig:abstara.dot} is formally defined as follows:
+The \simtextsc{Dfa} that is shown in Figure  \ref{fig:abstara.dot} is formally defined as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$,
@@ -135,7 +135,7 @@ where we have:
 \item $q_0 = 0$,
 \item $A = \{ 1 \}$.
 \end{enumerate}
-In order to formally define the language $L(F)$ that is accepted by a \textsc{DFA} $F$
+In order to formally define the language $L(F)$ that is accepted by a \simtextsc{Dfa} $F$
 we generalize the transition function $\delta$ to a new function
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -149,7 +149,7 @@ $\delta^*(q, w)$ is given by induction on the string $w$.
             \hspace*{1.3cm}
             $\delta^*(q, \lambda) := q$,
             \\[0.2cm]
-            because if a deterministic \textsc{DFA} does not read any character, it cannot change its state. 
+            because if a deterministic \simtextsc{Dfa} does not read any character, it cannot change its state. 
 \item[I.S.] $w = cv$ where $c \in \Sigma$ and $v  \in \Sigma^*$:  We define
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -169,7 +169,7 @@ $\delta^*(q, w)$ is given by induction on the string $w$.
 
 \begin{Definition}[Accepted Language, $L(F)$]
   \index{accepted language} \index{$L(F)$}
-  For a \textsc{DFA} $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ the \blue{language accepted by $F$} 
+  For a \simtextsc{Dfa} $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ the \blue{language accepted by $F$} 
   is called $L(F)$ and is defined as
   \\[0.2cm]
   \hspace*{1.3cm}
@@ -180,13 +180,13 @@ $\delta^*(q, w)$ is given by induction on the string $w$.
 \end{Definition}
 
 \exerciseEng
-Specify a \textsc{DFA} $F$ such that $L(F)$ is the set of all those strings $s \in \{a,b\}^*$, 
+Specify a \simtextsc{Dfa} $F$ such that $L(F)$ is the set of all those strings $s \in \{a,b\}^*$, 
 such that $s$ contains the substring  ``\texttt{aba}''.
 \eox
 
 
 \paragraph{Complete Finite State Machines}
-Occasionally it is beneficial for a \textsc{DFA} $F$ to be \blue{complete}: A \textsc{DFA}
+Occasionally it is beneficial for a \simtextsc{Dfa} $F$ to be \blue{complete}: A \simtextsc{Dfa}
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$,
@@ -198,8 +198,8 @@ undefined value $\Omega$, i.e.~we have
 $\delta(q, c) \not= \Omega$ \quad for all $q \in Q$ and $c \in \Sigma$.
 
 \begin{Proposition}
-  For every \textsc{DFA} $F$ there exists a complete \textsc{DFA}  $\widehat{F}$ that accepts
-  the same language as the \textsc{DFA}  $F$, i.e.~we have:
+  For every \simtextsc{Dfa} $F$ there exists a complete \simtextsc{Dfa}  $\widehat{F}$ that accepts
+  the same language as the \simtextsc{Dfa}  $F$, i.e.~we have:
   \\[0.2cm]
   \hspace*{1.3cm}
   $L(\widehat{F}) = L(F)$.
@@ -221,7 +221,7 @@ $\delta(q, c) = \Omega$,
 then $F$ changes into the dead state.  Once $F$ has reached a dead state, it will never leave this
 state.
 
-The formal definition of the \textsc{DFA} $\widehat{F}$ is done as follows:
+The formal definition of the \simtextsc{Dfa} $\widehat{F}$ is done as follows:
 We introduce a new state $\skull$ which serves as the \blue{dead state}.  The only requirement is that $\skull \not\in Q$.
 \begin{enumerate}
 \item $\widehat{Q} := Q \cup \{ \skull \}$,
@@ -244,7 +244,7 @@ We introduce a new state $\skull$ which serves as the \blue{dead state}.  The on
             because there is no escape from death.
       \end{enumerate}
 \end{enumerate}
-Hence the \textsc{DFA}  $\widehat{F}$ is given as follows:
+Hence the \simtextsc{Dfa}  $\widehat{F}$ is given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\widehat{F} = \langle \widehat{Q}, \Sigma, \widehat{\delta}, q_0, A \rangle$.
@@ -255,7 +255,7 @@ $\skull$ and remains in this state regardless of the rest of the input string.  
 is not an accepting state, the languages accepted by  $F$ and $\widehat{F}$ are identical. \qed 
 
 \exerciseEng
-Define a \textsc{DFA} that accepts the language specified by the regular expression 
+Define a \simtextsc{Dfa} that accepts the language specified by the regular expression 
 \\[0.2cm]
 \hspace*{1.3cm}
 $r := (\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot
@@ -264,9 +264,9 @@ $r := (\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \
 \solutionEng
 The regular expression $r$ specifies those strings $s$ from the alphabet 
 $\Sigma = \{ \mathtt{a}, \mathtt{b} \}$ such that the antepenultimate character of $s$ is the
-character ``\texttt{b}''.  In order to recognize this fact, the \textsc{DFA} has to remember the
+character ``\texttt{b}''.  In order to recognize this fact, the \simtextsc{Dfa} has to remember the
 last three characters.  As there are eight different possible combinations for the last three
-characters, the \textsc{DFA} needs to have eight states.  Let us number these states 
+characters, the \simtextsc{Dfa} needs to have eight states.  Let us number these states 
  $0$, $1$, $2$, $\cdots$, $7$.  We describe the purpose of these states in the following:
 \begin{description}
 \item[State 0:] In this state, the character ``\texttt{b}'' has not yet been seen. 
@@ -327,16 +327,16 @@ character is the character ``\texttt{b}''.  Next, we construct the transition fu
           $\delta(1, \mathtt{b}) = 3$.
 \end{enumerate}
 The remaining transitions are found in a similar way.
-Figure \ref{fig:abstarbabab.dot} on page \pageref{fig:abstarbabab.dot} shows the resulting \textsc{DFA}.
+Figure \ref{fig:abstarbabab.dot} on page \pageref{fig:abstarbabab.dot} shows the resulting \simtextsc{Dfa}.
 We still have to explain how we have chosen the start state.  When the computation starts, the
 finite state machine has not read any character.  In particular, this implies that neither of the
 last three characters is the character ``\texttt{b}''.   Hence we can use the state 0 as the start
-state of our \textsc{DFA}.
+state of our \simtextsc{Dfa}.
 
  \begin{figure}[!ht]
    \centering
        \epsfig{file=Abbildungen/abstarbabab.eps, scale=1.0}
-    \caption{A \textsc{DFA} accepting
+    \caption{A \simtextsc{Dfa} accepting
              $L\bigl((\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$.}
    \label{fig:abstarbabab.dot}
  \end{figure}
@@ -350,13 +350,13 @@ tool is available at
 
 
 \section{Non-Deterministic Finite Automatons}
-For many applications, the \textsc{DFA}s introduced in the previous section are unwieldy
+For many applications, the \simtextsc{Dfa}s introduced in the previous section are unwieldy
 because they have a large numbers of states.  For example, the regular expression to recognize the language
 \\[0.2cm]
 \hspace*{1.3cm}
 $L\bigl((\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot (\texttt{a}+\texttt{b})\bigr)$ 
 \\[0.2cm]
-needs 8 different states since the \textsc{DFA} needs to remember the last three characters that
+needs 8 different states since the \simtextsc{Dfa} needs to remember the last three characters that
 have been read and there are $2^3 = 8$ combinations of these characters.  
 It would be possible to simplify this finite state automaton if the automaton would be permitted to \emph{choose} its
 next state from a given set of states.
@@ -370,7 +370,7 @@ next state from a given set of states.
 \end{figure}
 \noindent
 Figure \ref{fig:abstarbabab-nd.dot} presents a \blue{non-deterministic finite automaton} (abbreviated as
-\textsc{NFA}) that accepts
+\simtextsc{Nfa}) that accepts
 the language specified by the regular expression
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -378,64 +378,64 @@ $(\texttt{a}+\texttt{b})^* \cdot \texttt{b} \cdot (\texttt{a}+\texttt{b}) \cdot 
 \\[0.2cm]
 This finite automaton has only 4 different states that are named $0$, $1$, $2$ and $3$.
 \begin{enumerate}
-\item $0$ is the start state.  If the \textsc{NFA} reads the letter \texttt{a} while it is in this
-      state, the \textsc{NFA} will stay in state $0$.  However, if the \textsc{NFA} reads the
+\item $0$ is the start state.  If the \simtextsc{Nfa} reads the letter \texttt{a} while it is in this
+      state, the \simtextsc{Nfa} will stay in state $0$.  However, if the \simtextsc{Nfa} reads the
       character \texttt{b}, then the finite state automaton has a \emph{choice}:  It can either stay in state
       $0$, or it might switch to the state $1$.
 \item In state $1$ the finite state automaton switches to state $2$ if it reads either the character
       \texttt{a} or the character \texttt{b}.
-\item In state $2$ the \textsc{NFA} switches to state $3$ if it reads either the character
+\item In state $2$ the \simtextsc{Nfa} switches to state $3$ if it reads either the character
       \texttt{a} or the character \texttt{b}.
 \item State  $3$ is the accepting state.  There is no transition from this state.  Hence, if the
-      \textsc{NFA} is in state 3 and there are still characters to read, then the \textsc{NFA} dies.
+      \simtextsc{Nfa} is in state 3 and there are still characters to read, then the \simtextsc{Nfa} dies.
 \end{enumerate}
 The finite state automaton in Figure \ref{fig:abstarbabab-nd.dot} is non-deterministic because it has
 to guess the next state if it is in state $0$ and reads the character ``\texttt{b}''.  Let us consider a possible
-\emph{computation} of the \textsc{NFA} when it reads the input ``\texttt{abab}'':
+\emph{computation} of the \simtextsc{Nfa} when it reads the input ``\texttt{abab}'':
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{a} 0 \comp{b} 1 \comp{a} 2 \comp{b} 3$
 \\[0.2cm]
-In this computation, the \textsc{NFA} has chosen the correct transition when reading the first
-occurrence of the character ``\texttt{b}''.  If the \textsc{NFA} had stayed in the state $0$ instead
+In this computation, the \simtextsc{Nfa} has chosen the correct transition when reading the first
+occurrence of the character ``\texttt{b}''.  If the \simtextsc{Nfa} had stayed in the state $0$ instead
 of switching into the state 1, it would have been impossible to reach the accepting state 3 later
 because then the computation would have worked out as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{a} 0 \comp{b} 0 \comp{a} 0 \comp{b} 1$
 \\[0.2cm] 
-Here, the \textsc{NFA} is in state 1 after consuming the input string ``\texttt{abab}'' and as state
-1 is not an accepting state, the \textsc{NFA} would have falsely rejected the string ``\texttt{abab}''.
+Here, the \simtextsc{Nfa} is in state 1 after consuming the input string ``\texttt{abab}'' and as state
+1 is not an accepting state, the \simtextsc{Nfa} would have falsely rejected the string ``\texttt{abab}''.
 Let us consider a different example where the input is the string ``\texttt{bbbbb}'':
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3 \comp{b} \Omega$
 \\[0.2cm]
-Here, the \textsc{NFA} has switched to early into the state 1.  In this case, the \textsc{NFA} dies
-when reading the last character ``\texttt{b}''.  If the \textsc{NFA} had stayed in state $0$ when reading the second
+Here, the \simtextsc{Nfa} has switched to early into the state 1.  In this case, the \simtextsc{Nfa} dies
+when reading the last character ``\texttt{b}''.  If the \simtextsc{Nfa} had stayed in state $0$ when reading the second
 occurrence of the character ``\texttt{b}'', then it would have correctly accepted the string
 ``\texttt{bbbbb}'' since then the computation could have been as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $0 \comp{b} 0 \comp{b} 0 \comp{b} 1 \comp{b} 2 \comp{b} 3$.
 \\[0.2cm]
-The previous examples show that in order to avoid premature death, the given non-deterministic \textsc{NFA} has
+The previous examples show that in order to avoid premature death, the given non-deterministic \simtextsc{Nfa} has
 to choose its successor state
 \href{https://www.youtube.com/watch?v=c3RN9zz77Cs}{wisely}.  
-If $F$ is a non-deterministic \textsc{NFA} and $s$ is a string such that $F$ can, when reading $s$,
+If $F$ is a non-deterministic \simtextsc{Nfa} and $s$ is a string such that $F$ can, when reading $s$,
 choose its successor so that it reaches an accepting state after having read $s$, then the string
 $s$ is an element of the language $L(F)$.
 
-It seems that the concept of an \textsc{NFA} is far more powerful than the 
-concept of a \textsc{DFA}.  After all, a \textsc{NFA} appears to have some form of clairvoyance for else it
+It seems that the concept of an \simtextsc{Nfa} is far more powerful than the 
+concept of a \simtextsc{Dfa}.  After all, a \simtextsc{Nfa} appears to have some form of clairvoyance for else it
 could not guess which states to choose.  However, we will prove in the 
-next section that both \textsl{DFA}s and \textsc{NFA}s have the same power to
-recognize languages:  Every language recognized by an \textsc{NFA} is also
-recognized by a \textsc{DFA}.  In order to prove this claim, we have to
-formalize the notion of an \textsc{NFA}.  The definition that follows is more
-general than the informal description of an \textsc{NFA}s given so far, as we will
-allow the \textsc{NFA} to also have \blue{$\varepsilon$-transitions}\index{$\varepsilon$-transition}.  An $\varepsilon$ transition
-allows the \textsc{NFA} to switch its state without reading any character.  For example, if there is
+next section that both \textsl{DFA}s and \simtextsc{Nfa}s have the same power to
+recognize languages:  Every language recognized by an \simtextsc{Nfa} is also
+recognized by a \simtextsc{Dfa}.  In order to prove this claim, we have to
+formalize the notion of an \simtextsc{Nfa}.  The definition that follows is more
+general than the informal description of an \simtextsc{Nfa}s given so far, as we will
+allow the \simtextsc{Nfa} to also have \blue{$\varepsilon$-transitions}\index{$\varepsilon$-transition}.  An $\varepsilon$ transition
+allows the \simtextsc{Nfa} to switch its state without reading any character.  For example, if there is
 an $\varepsilon$-transition from the state 1 into the state 2, we write
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -443,8 +443,8 @@ $1 \comp{\varepsilon} 2$.
 
 
 \begin{Definition}[NFA]
-A \blue{non-deterministic finite automaton} \index{\textsc{NFA}}
-(abbreviated as \blue{\textsc{NFA}}\index{NFA}) 
+A \blue{non-deterministic finite automaton} \index{\simtextsc{Nfa}}
+(abbreviated as \blue{\simtextsc{Nfa}}\index{NFA}) 
 is a  5-tupel  
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -460,7 +460,7 @@ such that the following holds:
       \hspace*{1.3cm}
       $\delta: Q \times (\Sigma \cup \{\varepsilon\}) \rightarrow 2^Q$.
       \\[0.2cm]
-      If $a \in \Sigma$, then $\delta(q, a)$ is the set of states the \textsc{NFA} can switch to
+      If $a \in \Sigma$, then $\delta(q, a)$ is the set of states the \simtextsc{Nfa} can switch to
       after reading the character $a$ in state $q$.  The set $\delta\bigl(q, \varepsilon)$ is the
       set of states that can be reached from the state $q$ without reading a character.
       
@@ -468,7 +468,7 @@ such that the following holds:
 \item $q_0 \in Q$ is the start state.
 \item $A \subseteq Q$ is the set of accepting states. 
 \end{enumerate}
-If we have $q_2 \in \delta(q_1, \varepsilon)$, then the \textsc{NFA} has an
+If we have $q_2 \in \delta(q_1, \varepsilon)$, then the \simtextsc{Nfa} has an
 \blue{$\varepsilon$-transition} from the state $q_1$ into the state $q_2$.  This is written as
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -481,7 +481,7 @@ $q_1 \stackrel{c}{\mapsto} q_2$. \qed
 \end{Definition}
 
 \exampleEng
-For the \textsc{NFA} $F$ shown in Figure \ref{fig:abstarbabab-nd.dot} on page \pageref{fig:abstarbabab-nd.dot} 
+For the \simtextsc{Nfa} $F$ shown in Figure \ref{fig:abstarbabab-nd.dot} on page \pageref{fig:abstarbabab-nd.dot} 
 we have
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -522,15 +522,15 @@ $F = \langle Q, \Sigma, \delta, 0, A\rangle$ \quad where
 \end{enumerate}
 \vspace*{0.3cm}
 
-In order to formally define how an \textsc{NFA} processes its input we introduce the notion of a
- \blue{configuration} of an \textsc{NFA}\index{configuration (of an \textsc{NFA})}.  A configuration
+In order to formally define how an \simtextsc{Nfa} processes its input we introduce the notion of a
+ \blue{configuration} of an \simtextsc{Nfa}\index{configuration (of an \simtextsc{Nfa})}.  A configuration
 is defined as a pair
 \\[0.2cm]
 \hspace*{1.3cm}
 $\pair(q, s)$
 \\[0.2cm]
 where  $q$ is a state and $s$ is a  string.  Here, $q$ is the current state of
-the \textsc{NFA} and $s$ is the part of the input that has not yet been
+the \simtextsc{Nfa} and $s$ is the part of the input that has not yet been
 consumed.  We define a binary relation
 $\leadsto$ \index{$\leadsto$} on configurations as follows:
 \\[0.2cm]
@@ -538,7 +538,7 @@ $\leadsto$ \index{$\leadsto$} on configurations as follows:
 $\pair(q_1, cs) \leadsto \pair(q_2, s)$ \quad iff \quad $q_1 \stackrel{c}{\mapsto} q_2$, \quad i.e. if $q_2 \in\delta(q_1, c)$.
 \\[0.2cm]
 Therefore, we have $\pair(q_1,cs) \leadsto \pair(q_2, s)$ if and only
-if the \textsc{NFA} transitions from the state
+if the \simtextsc{Nfa} transitions from the state
 $q_1$ into the state $q_2$ when the character $c$ is consumed.
 Furthermore, we have
 \\[0.2cm]
@@ -548,7 +548,7 @@ q_2$, \quad i.e. if $q_2 \in \delta(q_1, \varepsilon)$.
 \\[0.2cm]
 This accounts for the $\varepsilon$ transitions.  The
 \blue{reflexive-transitive closure} of the relation $\leadsto$ is written as $\leadsto^*$.
-The language accepted by an \textsc{NFA} $F$ is
+The language accepted by an \simtextsc{Nfa} $F$ is
 denoted as $L(F)$ and is defined as
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -561,7 +561,7 @@ states.  Hence, a string  $s$ is an element of the language  $L(F)$,
 iff there is an accepting state $p$ such that the configuration $\langle p, \lambda \rangle$ is reachable from the configuration $\langle q_0, s \rangle$.
 
 \exampleEng 
-The \textsc{NFA} $F$ shown in Figure \ref{fig:abstarbabab-nd.dot} accepts
+The \simtextsc{Nfa} $F$ shown in Figure \ref{fig:abstarbabab-nd.dot} accepts
 those strings $w \in \{ \mathtt{a}, \mathtt{b} \}^*$ such that the
 antepenultimate character of $w$ is  the character ``\texttt{b}'':
 \\[0.2cm]
@@ -571,16 +571,16 @@ $L(F) = \bigl\{ w \in \{ \mathtt{a}, \mathtt{b} \}^* \bigm|\; |w| \geq 3 \wedge 
 \vspace*{0.3cm}
 
 \exerciseEng
-Specify an \textsc{NFA} $F$ such that $L(F)$ is the set of those
+Specify an \simtextsc{Nfa} $F$ such that $L(F)$ is the set of those
 strings from the language  $\{a,b\}^*$ that contain the substring ``\texttt{aba}''. \eox
 
 \section{Transforming NFAs to DFAs}
-In this section we show how an \textsc{NFA} 
+In this section we show how an \simtextsc{Nfa} 
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ 
 \\[0.2cm]
-can be transformed into a \textsc{DFA} $\textsl{det}(F)$ such that both finite automatons accept the
+can be transformed into a \simtextsc{Dfa} $\textsl{det}(F)$ such that both finite automatons accept the
 same language, i.e.~we have
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -596,7 +596,7 @@ $\textsl{det}(F)$ if the set $M$ contains an accepting state of $F$.
 
 In order to present the construction of $\textsl{det}(F)$ we first have to define two auxiliary functions.
 We start with the \blue{$\varepsilon$-closure} \index{$\varepsilon$-closure} of a given state.  For every state
-$q$ of the non-deterministic \textsc{FSM} $F$ the function
+$q$ of the non-deterministic \simtextsc{FSM} $F$ the function
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{ec}: Q \rightarrow 2^Q$
@@ -617,12 +617,12 @@ transitions from the state $q$.   Formally, the set $\textsl{ec}(q)$ is computed
   \centering
  \epsfig{file=Abbildungen/ab-or-ba-star.eps, scale=0.7}
 
-   \caption{An \textsc{NFA} with $\varepsilon$-transitions.}
+   \caption{An \simtextsc{Nfa} with $\varepsilon$-transitions.}
   \label{fig:ab-or-ba-star.dot}
 \end{figure}
 
 \exampleEng
-Figure \ref{fig:ab-or-ba-star.dot} shows an \textsc{NFA} with 
+Figure \ref{fig:ab-or-ba-star.dot} shows an \simtextsc{Nfa} with 
 $\varepsilon$-transitions.   In this figure, the $\varepsilon$-transitions are shown as unlabelled arrows.
 We compute the $\varepsilon$-closure for all states:
 \begin{enumerate}
@@ -638,7 +638,7 @@ We compute the $\varepsilon$-closure for all states:
 \end{enumerate}
 
 \noindent
-In order to transform an \textsc{NFA} into a  \textsc{DFA}
+In order to transform an \simtextsc{Nfa} into a  \simtextsc{Dfa}
 $\textsl{det}(F)$ we have to extend the function $\delta:Q  \times (\Sigma \cup \{\varepsilon\}) \rightarrow 2^Q$ into the function
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -668,11 +668,11 @@ In continuation of the previous example (shown in Figure \ref{fig:ab-or-ba-star.
       $\varepsilon$-transitions are done only after the character has been read.
 \item $\widehat{\delta}(q_1, \texttt{b}) = \{q_3\}$,
 
-      because when the letter \texttt{'b'} is read in the state $q_1$ the \textsc{FSM}
+      because when the letter \texttt{'b'} is read in the state $q_1$ the \simtextsc{FSM}
       switches into the state $q_3$ and the state $q_3$ has no  $\varepsilon$-transitions.
 \item $\widehat{\delta}(q_3, \texttt{a}) = \{q_5, q_7, q_0, q_1, q_2\}$,
 
-      because when the letter \texttt{'a'} is read in the state $q_3$ the \textsc{FSM}
+      because when the letter \texttt{'a'} is read in the state $q_3$ the \simtextsc{FSM}
       switches into the state $q_5$.  From $q_5$ the states $q_7$, $q_0$, $q_1$ and $q_2$
       are reachable by $\varepsilon$-transitions. \eox
 \end{enumerate}
@@ -735,8 +735,8 @@ where the components of this tuple are defined as follows:
 \end{enumerate}
 
 \exerciseEng
-Transform the \textsc{NFA} $F$ that is shown in Figure \ref{fig:abstarbabab-nd.dot} on page
-\pageref{fig:abstarbabab-nd.dot}  into a \textsc{DFA} $\textsl{det}(F)$.  \eox
+Transform the \simtextsc{Nfa} $F$ that is shown in Figure \ref{fig:abstarbabab-nd.dot} on page
+\pageref{fig:abstarbabab-nd.dot}  into a \simtextsc{Dfa} $\textsl{det}(F)$.  \eox
 
 \solutionEng
 We start by computing the set of states.
@@ -778,8 +778,8 @@ We start by computing the set of states.
 \item $\Delta(S_7, \texttt{a}) = \Delta(\{ 0, 1, 2, 3 \}, \texttt{a}) = \{ 0, 2, 3 \} = S_6$.
 \item $\Delta(S_7, \texttt{b}) = \Delta(\{ 0, 1, 2, 3 \}, \texttt{b}) = \{ 0, 1, 2, 3 \} = S_7$.
 \end{enumerate}
-These are all possible sets of states that \textsc{FSM} $\textsl{det}(F)$ can reach.
-For a better overview let us summarize the definitions of the individual states of the deterministic \textsc{FSM}:
+These are all possible sets of states that \simtextsc{FSM} $\textsl{det}(F)$ can reach.
+For a better overview let us summarize the definitions of the individual states of the deterministic \simtextsc{FSM}:
 \\[0.2cm]
 \hspace*{1.3cm} $S_0 = \{ 0 \}$, $S_1 = \{ 0, 1 \}$, $S_2 = \{ 0, 2 \}$, $S_3 = \{ 0, 3 \}$, $S_4 = \{ 0, 1, 2 \}$, 
 \\[0.2cm]
@@ -815,10 +815,10 @@ Therefore we have now found $\textsl{det}(F)$. We have
 \hspace*{1.3cm}
 $\textsl{det}(F) := \langle \widehat{Q}, \Sigma, \Delta, S_0, \widehat{A}\rangle$.
 \\[0.2cm]
-This \textsc{DFA} is shown in Figure \ref{fig:a2.eps} on page \pageref{fig:a2.eps}.
+This \simtextsc{Dfa} is shown in Figure \ref{fig:a2.eps} on page \pageref{fig:a2.eps}.
 
 We realize that $\textsl{det}(F)$ has 8 different states. 
-The \textsc{NFA} $F$ has 4 different states
+The \simtextsc{Nfa} $F$ has 4 different states
  $Q = \{ 0, 1, 2, 3 \}$.  Hence the power set $2^Q$ has 16 elements.
 Why then has  $\textsl{det}(F)$ only 8 and not $2^4 = 16$ states?
 The reason is that we can only reach those sets of states from the start $0$
@@ -833,15 +833,15 @@ sets that do not contain $0$ are not needed as states of $\textsl{det}(F)$.
   \centering
      \vspace*{0.5cm}
       \epsfig{file=Abbildungen/a2.eps, scale=1.0}
-  \caption{The deterministic \textsc{FSM} $\textsl{det}(F)$.}
+  \caption{The deterministic \simtextsc{FSM} $\textsl{det}(F)$.}
   \label{fig:a2.eps}
 \end{figure}
 
 
 \exerciseEng
-Transform the \textsc{NFA} $F$ that is shown in Figure \ref{fig:ab-or-ba-star.dot} on page
+Transform the \simtextsc{Nfa} $F$ that is shown in Figure \ref{fig:ab-or-ba-star.dot} on page
 \pageref{fig:ab-or-ba-star.dot} 
-into an equivalent \textsc{DFA} $\textsl{det}(F)$. \eox
+into an equivalent \simtextsc{Dfa} $\textsl{det}(F)$. \eox
 
 \subsection{Implementation}
 It is straightforward to implement the theory developed so far. 
@@ -850,18 +850,18 @@ The \textsl{Jupyter notebook}
 \hspace*{0.0cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/01-NFA-2-DFA.ipynb}{https://github.com/karlstroetmann/Formal-Languages/../Python/Chapter-04-05/01-NFA-2-DFA.ipynb}
 \\[0.2cm]
-contains a program that takes a \textsc{NFA} $F$ and computes the \textsc{DFA} $\mathtt{det}(F)$.
+contains a program that takes a \simtextsc{Nfa} $F$ and computes the \simtextsc{Dfa} $\mathtt{det}(F)$.
 
 
 \section{From Regular Expression to NFAs}
-In this section we show how regular expressions can be implemented as an \textsc{NFA}.
-Given a regular expression $r$ we will construct an \textsc{NFA} $A(r)$ that accepts the
+In this section we show how regular expressions can be implemented as an \simtextsc{Nfa}.
+Given a regular expression $r$ we will construct an \simtextsc{Nfa} $A(r)$ that accepts the
 language that is described by the regular expression $r$, i.e.~we will have
 \\[0.2cm]
 \hspace*{1.3cm}
 $L\bigl(A(r)\bigr) = L(r)$.
 \\[0.2cm]
-The \textsc{NFA} $A(r)$ is defined by induction on the regular expression $r$.  The \textsc{NFA} $A(r)$ will
+The \simtextsc{Nfa} $A(r)$ is defined by induction on the regular expression $r$.  The \simtextsc{Nfa} $A(r)$ will
 have the following properties:
 \begin{enumerate}
 \item $A(r)$ does not have a transition into its start state.  
@@ -871,22 +871,22 @@ have the following properties:
 In the following we assume that $\Sigma$ is the alphabet that has been used when constructing the regular
 expression $r$.  Then we can define $A(r)$ as follows:
 \begin{enumerate}
-\item The \textsc{NFA} $A(\emptyset)$ is defined as
+\item The \simtextsc{Nfa} $A(\emptyset)$ is defined as
       \\[0.2cm]
       \hspace*{1.3cm}
       $A(\emptyset) = \bigl\langle \{ q_0, q_1 \}, \Sigma, \{\}, q_0, \{ q_1 \} \bigr\rangle$.
       \\[0.2cm]
-      Note that this \textsc{NFA} has no transitions at all.
+      Note that this \simtextsc{Nfa} has no transitions at all.
 
       \begin{figure}[!ht]
         \centering
       \epsfig{file=Abbildungen/aLeer.eps, scale=0.5}
-      \caption{The \textsc{NFA} $A(\emptyset)$.}
+      \caption{The \simtextsc{Nfa} $A(\emptyset)$.}
       \label{fig:aLeer.eps}
       \end{figure}
-      Figure \ref{fig:aLeer.eps} shows the \textsc{NFA} $A(\emptyset)$. It is obvious that we have
+      Figure \ref{fig:aLeer.eps} shows the \simtextsc{Nfa} $A(\emptyset)$. It is obvious that we have
       $L\bigl(A(\emptyset)\bigr) = \{\}$. 
-\item The \textsc{NFA} $A(\varepsilon)$ is defined as
+\item The \simtextsc{Nfa} $A(\varepsilon)$ is defined as
       \\[0.2cm]
       \hspace*{1.3cm}
       $A(\varepsilon) = \bigl\langle \{ q_0, q_1 \}, \Sigma, 
@@ -896,12 +896,12 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \begin{figure}[!ht]
         \centering
       \epsfig{file=Abbildungen/aEpsilon.eps, scale=0.5}
-      \caption{The \textsc{NFA} $A(\varepsilon)$.}
+      \caption{The \simtextsc{Nfa} $A(\varepsilon)$.}
       \label{fig:aEpsilon.eps}
       \end{figure}
-      Figure \ref{fig:aEpsilon.eps} shows the \textsc{NFA} $A(\varepsilon)$.
-      We have that $L\bigl(A(\varepsilon)\bigr) = \{\lambda\}$, i.e.~the \textsc{NFA} accepts only the empty string. 
-\item For a letter $c \in \Sigma$ the \textsc{NFA} $A(c)$ is defined as 
+      Figure \ref{fig:aEpsilon.eps} shows the \simtextsc{Nfa} $A(\varepsilon)$.
+      We have that $L\bigl(A(\varepsilon)\bigr) = \{\lambda\}$, i.e.~the \simtextsc{Nfa} accepts only the empty string. 
+\item For a letter $c \in \Sigma$ the \simtextsc{Nfa} $A(c)$ is defined as 
       \\[0.2cm]
       \hspace*{1.3cm}
       $A(c) = \bigl\langle \{ q_0, q_1 \}, \Sigma, 
@@ -910,15 +910,15 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \begin{figure}[!ht]
         \centering
       \epsfig{file=Abbildungen/aChar.eps, scale=0.5}
-      \caption{The \textsc{NFA} $A(c)$.}
+      \caption{The \simtextsc{Nfa} $A(c)$.}
       \label{fig:aChar.eps}
       \end{figure}
       Figure \ref{fig:aChar.eps} shows $A(c)$.
-      We have that $L\bigl(A(c)\bigr) = \{c\}$, i.e.~the \textsc{NFA} accepts only the character $c$. 
-\item In order to define the \textsc{NFA} $A(r_1 \cdot r_2)$ for the concatenation $r_1 \cdot r_2$ 
+      We have that $L\bigl(A(c)\bigr) = \{c\}$, i.e.~the \simtextsc{Nfa} accepts only the character $c$. 
+\item In order to define the \simtextsc{Nfa} $A(r_1 \cdot r_2)$ for the concatenation $r_1 \cdot r_2$ 
       we assume that we have already constructed finite state automatons $A(r_1)$ and $A(r_2)$
       such that $L\bigl(A(r_1)\bigr) = L(r_1)$ and $L\bigl(A(r_2)\bigr) = L(r_2)$.  Furthermore,
-      without loss of generality we assume that the states in the \textsc{NFA}s  $A(r_1)$ and $A(r_2)$ are different. 
+      without loss of generality we assume that the states in the \simtextsc{Nfa}s  $A(r_1)$ and $A(r_2)$ are different. 
       This can always be achieved by renaming the states of $A(r_2)$.
       Next, we assume that $A(r_1)$ and $A(r_2)$ have the following form:
       \begin{enumerate}
@@ -926,7 +926,7 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \item $A(r_2) = \bigl\langle Q_2, \Sigma, \delta_2, q_3, \{ q_4 \}\bigr\rangle$,
       \item $Q_1 \cap Q_2 = \{\}$.
       \end{enumerate}
-      Then we can build the \textsc{NFA} $A(r_1 \cdot r_2)$ from $A(r_1)$ and $A(r_2)$ as follows:
+      Then we can build the \simtextsc{Nfa} $A(r_1 \cdot r_2)$ from $A(r_1)$ and $A(r_2)$ as follows:
       \\[0.2cm]
       \hspace*{0.8cm}
        $A(r_1 \cdot r_2) := \bigl\langle Q_1 \cup Q_2, \Sigma, 
@@ -952,27 +952,27 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \begin{figure}[!ht]
         \centering
       \epsfig{file=Abbildungen/aConcat.eps, scale=0.8}
-      \caption{The \textsc{NFA} $A(r_1 \cdot r_2)$.}
+      \caption{The \simtextsc{Nfa} $A(r_1 \cdot r_2)$.}
       \label{fig:aConcat.eps}
       \end{figure}
-      Figure \ref{fig:aConcat.eps} shows the \textsc{NFA} $A(r_1 \cdot r_2)$.
+      Figure \ref{fig:aConcat.eps} shows the \simtextsc{Nfa} $A(r_1 \cdot r_2)$.
 
       Instead of having an $\varepsilon$-transition from $q_2$ to $q_3$ we can identify the states $q_2$ and
-      $q_3$.  The advantage is that the resulting \textsc{NFA} is smaller.
-      We will do this when creating \textsc{NFA}s by hand.  
+      $q_3$.  The advantage is that the resulting \simtextsc{Nfa} is smaller.
+      We will do this when creating \simtextsc{Nfa}s by hand.  
 
       I haven't done this identification in the definition above because both the graphical representation and 
       the implementation get more complicated if we identify these states.
-\item In order to define the \textsc{NFA} $A(r_1 + r_2)$ we assume that we have already constructed finite
+\item In order to define the \simtextsc{Nfa} $A(r_1 + r_2)$ we assume that we have already constructed finite
       state automatons $A(r_1)$ and $A(r_2)$ such that $L\bigl(A(r_1)\bigr) = L(r_1)$ and $L\bigl(A(r_2)\bigr) =
-      L(r_2)$.  Furthermore, without loss of generality we assume that the states in the \textsc{NFA}s
+      L(r_2)$.  Furthermore, without loss of generality we assume that the states in the \simtextsc{Nfa}s
       $A(r_1)$ and $A(r_2)$ are different and that $A(r_1)$ and $A(r_2)$ have the following form:
       \begin{enumerate}
       \item $A(r_1) = \bigl\langle Q_1, \Sigma, \delta_1, q_1, \{ q_3 \}\bigr\rangle$,
       \item $A(r_2) = \bigl\langle Q_2, \Sigma, \delta_2, q_2, \{ q_4 \}\bigr\rangle$,
       \item $Q_1 \cap Q_2 = \{\}$.
       \end{enumerate}
-      Then the \textsc{NFA} $A(r_1 + r_2)$ is defined as follows:
+      Then the \simtextsc{Nfa} $A(r_1 + r_2)$ is defined as follows:
       \\[0.2cm]
       \hspace*{0.8cm}
        $\bigl\langle \{ q_0, q_5 \} \cup Q_1 \cup Q_2, \Sigma, 
@@ -983,29 +983,29 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \begin{figure}[!ht]
         \centering
       \epsfig{file=Abbildungen/aPlus.eps, scale=0.5}
-      \caption{The \textsc{NFA} $A(r_1 + r_2)$.}
+      \caption{The \simtextsc{Nfa} $A(r_1 + r_2)$.}
       \label{fig:aPlus.eps}
       \end{figure}
-      Figure \ref{fig:aPlus.eps} shows the \textsc{NFA} $A(r_1 + r_2)$.
+      Figure \ref{fig:aPlus.eps} shows the \simtextsc{Nfa} $A(r_1 + r_2)$.
       In addition to the states of $A(r_1)$ and $A(r_2)$ there are two more states:
       \begin{enumerate}
-      \item $q_0$ is the start state of the \textsc{NFA} $A(r_1 + r_2)$,
-      \item $q_5$ is the only accepting state of the \textsc{NFA} $A(r_1 + r_2)$.
+      \item $q_0$ is the start state of the \simtextsc{Nfa} $A(r_1 + r_2)$,
+      \item $q_5$ is the only accepting state of the \simtextsc{Nfa} $A(r_1 + r_2)$.
       \end{enumerate}
-      In addition to the transitions of $A(r_1)$ and $A(r_2)$ the \textsc{NFA} $A(r_1+r_2)$
+      In addition to the transitions of $A(r_1)$ and $A(r_2)$ the \simtextsc{Nfa} $A(r_1+r_2)$
       has four more $\varepsilon$-transitions.
       \begin{enumerate}
       \item The new start state $q_0$ has two
-            $\varepsilon$-transitions leading to the start states $q_1$ and $q_2$ of the \textsc{NFA}s
+            $\varepsilon$-transitions leading to the start states $q_1$ and $q_2$ of the \simtextsc{Nfa}s
             $A(r_1)$ and $A(r_2)$.
-      \item Each of the accepting states $q_3$ and $q_4$ of the \textsc{NFA}s
+      \item Each of the accepting states $q_3$ and $q_4$ of the \simtextsc{Nfa}s
              $A(r_1)$ and $A(r_2)$ has an $\varepsilon$-transition to the new accepting state $q_5$.
       \end{enumerate}
-      In order to simplify this \textsc{NFA} we could identify the three states
-      $q_0$, $q_1$ and $q_2$ and the three states $q_3$, $q_4$ and $q_5$.  However, the resulting \textsc{NFA}
+      In order to simplify this \simtextsc{Nfa} we could identify the three states
+      $q_0$, $q_1$ and $q_2$ and the three states $q_3$, $q_4$ and $q_5$.  However, the resulting \simtextsc{Nfa}
       would be more difficult to understand and hence we are \underline{\red{not}} doing this when creating 
-      \textsc{NFA}s by hand.
-\item In order to define the \textsc{NFA} $A(r^*)$ we assume that we have already constructed a finite
+      \simtextsc{Nfa}s by hand.
+\item In order to define the \simtextsc{Nfa} $A(r^*)$ we assume that we have already constructed a finite
       state automaton $A(r)$ such that $L\bigl(A(r)\bigr) = L(r)$ and that $A(r)$ has the form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1023,16 +1023,16 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \begin{figure}[!ht]
         \centering
       \epsfig{file=Abbildungen/aStar.eps, scale=0.5}
-      \caption{The \textsc{NFA} $A(r^*)$.}
+      \caption{The \simtextsc{Nfa} $A(r^*)$.}
       \label{fig:aStar.eps}
       \end{figure}
-      Figure \ref{fig:aStar.eps} shows the \textsc{NFA} $A(r^*)$.
-      In comparison with $A(r)$ this \textsc{NFA} has two additional states.
+      Figure \ref{fig:aStar.eps} shows the \simtextsc{Nfa} $A(r^*)$.
+      In comparison with $A(r)$ this \simtextsc{Nfa} has two additional states.
       \begin{enumerate}
       \item $q_0$ is the start state of $A(r^*)$,
       \item $q_3$ is the only accepting state of $A(r^*)$.
       \end{enumerate}
-      The \textsc{NFA} $A(r^*)$ has four more $\varepsilon$-transitions than $A(r)$: 
+      The \simtextsc{Nfa} $A(r^*)$ has four more $\varepsilon$-transitions than $A(r)$: 
       \begin{enumerate}
       \item The new start state  $q_0$ has $\varepsilon$-transitions to the states
             $q_1$ and $q_3$.
@@ -1040,12 +1040,12 @@ expression $r$.  Then we can define $A(r)$ as follows:
       \item $q_2$ also has an $\varepsilon$-transition to the state $q_3$.
       \end{enumerate}
       \textbf{\textcolor{red}{Attention}}:  If we would identify the two states 
-      $q_0$ and $q_1$ and the two states $q_2$ and $q_3$, then the resulting \textsc{NFA} would no longer be
+      $q_0$ and $q_1$ and the two states $q_2$ and $q_3$, then the resulting \simtextsc{Nfa} would no longer be
       correct!
 \end{enumerate}
 
 \exerciseEng
-Construct an \textsc{NFA} for the regular expression
+Construct an \simtextsc{Nfa} for the regular expression
 \\[0.2cm]
 \hspace*{1.3cm}
 $(\texttt{a} + \texttt{b}) \cdot \texttt{a}^* \cdot \texttt{b}$.  
@@ -1062,19 +1062,19 @@ implements the theory discussed in this section.
 
 
 \section{Translating a \textsc{DFA} into a Regular Expression}
-In this last section we start with a \textsc{DFA} $F$ and construct a regular expression $r$
+In this last section we start with a \simtextsc{Dfa} $F$ and construct a regular expression $r$
 such that we have
 \\[0.2cm]
 \hspace*{1.3cm}
 $L(r) = L(F)$. 
 \\[0.2cm]
-We assume that the \textsc{DFA} $F$ is given as follows:
+We assume that the \simtextsc{Dfa} $F$ is given as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \bigl\langle \{ q_0, q_1, \cdots, q_n \}, \Sigma, \delta, q_0, A \bigr\rangle$.
 \\[0.2cm]
 For every pair of states $\pair(p_1,p_2) \in Q \times Q$ we define a regular expression
-$r(p_1, p_2)$ such that $r(p_1, p_2)$ describes those strings $w$ that take the \textsc{DFA} $F$ from the state
+$r(p_1, p_2)$ such that $r(p_1, p_2)$ describes those strings $w$ that take the \simtextsc{Dfa} $F$ from the state
 $p_1$ to the state $p_2$, i.e.~we have
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1083,7 +1083,7 @@ $L\bigl(r(p_1, p_2)\bigr) =
 \\[0.2cm]  
 The definition of $r(p_1, p_2)$ is done by first defining auxiliary regular expressions 
 $r^{(k)}(p_1, p_2)$ for all $k =0,\cdots,n+1$.   The regular expression $r^{(k)}(p_1, p_2)$ specifies those
-strings that take the \textsc{DFA} $F$ from the state
+strings that take the \simtextsc{Dfa} $F$ from the state
 $p_1$ to the state $p_2$ while only visiting states from the set
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1104,7 +1104,7 @@ Given two states $p, q \in Q$ and a string $w$ we have that
 \hspace*{1.3cm}
 $p \stackrel{w}{\mapsto}_k q$
 \\[0.2cm]
-holds iff the \textsc{DFA} $F$ switches from the state $p$ to the state $q$ when it reads the string $w$
+holds iff the \simtextsc{Dfa} $F$ switches from the state $p$ to the state $q$ when it reads the string $w$
 but on reading $w$ only visits states from the set
 $Q_k$ \blue{in-between}.  Here, ``in-between'' specifies that the states $p$ and $q$ may well be outside of the set
 $Q_k$, only the states between $p$ and $q$ are required to be elements of $Q_k$.
@@ -1117,7 +1117,7 @@ The formal definition of $p \stackrel{w}{\mapsto}_k q$ is done by induction on  
         because when the empty string is read we can only reach the state $p$ if we start in the state $p$.
   \item $\delta(p, c) = q \;\Rightarrow\; p \stackrel{c}{\mapsto}_k q$,
 
-        because when the \textsc{DFA} reads the character $c$ and switches from state $p$ directly
+        because when the \simtextsc{Dfa} reads the character $c$ and switches from state $p$ directly
         to the state $q$, there are no states ``inbetween''.
   \end{enumerate}
 \item[I.S.:] $w = cv$ where $|v| \geq 1$.
@@ -1138,7 +1138,7 @@ The definition of the regular expressions $r^{(k)}(p_1, p_2)$ is done by inducti
 \item[B.C.:] $k = 0$.  
 
   Then we have $Q_0 = \{\}$.
-  Therefore, when the \textsc{DFA} switches from the state $p_1$ to the state $p_2$ it must not visit any
+  Therefore, when the \simtextsc{Dfa} switches from the state $p_1$ to the state $p_2$ it must not visit any
   states in-between.  There are two cases.
   \begin{enumerate}
   \item $p_1 \not= p_2$:  Then we can have  $p_1 \stackrel{w}{\mapsto}_0 p_2$ only if $w$ contains but a
@@ -1147,7 +1147,7 @@ The definition of the regular expressions $r^{(k)}(p_1, p_2)$ is done by inducti
         \hspace*{1.3cm}
         $\{ c_1, \cdots, c_l \} := \{ c \in \Sigma \mid \delta(p_1,c) = p_2 \}$
         \\[0.2cm]
-        as the set of all letters that take the \textsc{DFA} from the state $p_1$ to the state $p_2$.
+        as the set of all letters that take the \simtextsc{Dfa} from the state $p_1$ to the state $p_2$.
         If this set is not empty we define 
         \\[0.2cm]
         \hspace*{1.3cm}
@@ -1180,9 +1180,9 @@ The definition of the regular expressions $r^{(k)}(p_1, p_2)$ is done by inducti
   $Q_{k+1} = Q_k \cup \{q_k\}$
   \\[0.2cm]
   Therefore, when compared to the regular expression $r^{(k)}(p_1, p_2)$,
-  the regular expression  $r^{(k+1)}(p_1, p_2)$ describes strings that cause the \textsc{DFA} to potentially
+  the regular expression  $r^{(k+1)}(p_1, p_2)$ describes strings that cause the \simtextsc{Dfa} to potentially
   visit the state  $q_k$ in addition to the states from the set $Q_k$.
-  If the \textsc{DFA} reads a string $w$ that switches the state $p_1$ to the state $p_2$ while only using states
+  If the \simtextsc{Dfa} reads a string $w$ that switches the state $p_1$ to the state $p_2$ while only using states
   from the set $Q_{k+1}$, then there are two cases.
   \begin{enumerate}
   \item We already have $p_1 \stackrel{w}{\mapsto}_k p_2$, i.e. the DFA uses only states from $Q_k$ and the
@@ -1206,7 +1206,7 @@ Now we are ready to define the regular expressions $r(p_1,p_2)$ for all states $
 \hspace*{1.3cm}
 $r(p_1,p_2) := r^{(n+1)}(p_1,p_2)$. 
 \\[0.2cm]
-This regular expression specifies all strings that take the \textsc{DFA} from the state
+This regular expression specifies all strings that take the \simtextsc{Dfa} from the state
 $p_1$ to the state $p_2$ while using any state from the set 
 $Q_{n+1}$ in-between.   Since we have
 \\[0.2cm]
@@ -1215,7 +1215,7 @@ $Q_{n+1} = \bigl\{ q_o, \cdots, q_n \} = Q$
 \\[0.2cm]
 we can use any state in-between.
 
-In order to construct a regular expression that specifies the language accepted by a deterministic \textsc{DFA}
+In order to construct a regular expression that specifies the language accepted by a deterministic \simtextsc{Dfa}
 $F$ we write the set $A$ of accepting states of $F$ as
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1226,17 +1226,17 @@ Then the regular expression $r(A)$ is defined as
 \hspace*{1.3cm}
 $r(A) := r(q_0, t_1) + \cdots + r(q_0, t_m)$.
 \\[0.2cm]
-This regular expression specifies those strings that take the \textsc{DFA} $F$ from its start state $q_0$ into
+This regular expression specifies those strings that take the \simtextsc{Dfa} $F$ from its start state $q_0$ into
 any of its accepting states.
 \qed
 
 
 \exerciseEng
-Take the \textsc{DFA} shown in Figure \ref{fig:abstara.dot} and construct an equivalent regular expression.
+Take the \simtextsc{Dfa} shown in Figure \ref{fig:abstara.dot} and construct an equivalent regular expression.
 
 
 \solutionEng
-The \textsc{DFA} has two states: $0$ and $1$.  We start by computing the regular expressions
+The \simtextsc{Dfa} has two states: $0$ and $1$.  We start by computing the regular expressions
 $r^{(k)}(i,j)$ for all $i,j\in\{0,1\}$ for  $k =0$, $1$, and $2$:
 \begin{enumerate}
 \item For $k = 0$ we have:
@@ -1326,9 +1326,9 @@ $r(F) = r^{(2)}(0, 1) \doteq \texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^*$.
 
 
 \exerciseEng
-Take the \textsc{DFA} shown in Figure \ref{fig:exercise-13.eps} on page
+Take the \simtextsc{Dfa} shown in Figure \ref{fig:exercise-13.eps} on page
 \pageref{fig:exercise-13.eps} and construct a regular expression specifying the same language as this
-\textsc{DFA}.
+\simtextsc{Dfa}.
 \vspace*{0.1cm}
 
 \noindent
@@ -1349,18 +1349,18 @@ The \textsl{Jupyter notebook}
 \hspace*{-0.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/05-DFA-2-RegExp.ipynb}{https://github.com/karlstroetmann/Formal-Languages/../Python/Chapter-04-05/05-DFA-2-RegExp.ipynb}
 \\[0.2cm]
-contains a program that takes a  \textsc{DFA} $F$ and computes a regular expression $r$ such that
+contains a program that takes a  \simtextsc{Dfa} $F$ and computes a regular expression $r$ such that
 $r$ specifies the language accepted by $F$, i.e.~we have $L(r) = L(F)$.
 
 \section{Minimization of Finite State Automatons}
-In this section we show how to minimize the number of states of a \textsc{DFA}
+In this section we show how to minimize the number of states of a \simtextsc{Dfa}
 \\[0.2cm]
 \hspace*{1.3cm}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$.
 \\[0.2cm]
-Without loss of generality we want to assume that the \textsc{DFA} $F$ is complete: Therefore, we assume that
+Without loss of generality we want to assume that the \simtextsc{Dfa} $F$ is complete: Therefore, we assume that
 for each state $q \in Q$ and each letter $c \in \Sigma$ the expression $\delta(q, c)$ 
-returns a state of $Q$.  Our goal is to find a \textsc{DFA}
+returns a state of $Q$.  Our goal is to find a \simtextsc{Dfa}
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mathtt{Min}(F) := \bigl\langle \mathcal{Q}_\sim, \Sigma, \Delta, [q_0]_\sim, \widehat{A} \bigr\rangle$
@@ -1373,7 +1373,7 @@ $L\bigl(\mathtt{Min}(F)\bigr) = L(F)$
 and for which the number of states of the set $\mathcal{Q}_\sim$ is minimal.  You might be wondering about the
 meaning associated with $\mathcal{Q}_\sim$ and $[q_o]_\sim$:  We will introduce an equivalence relation
 $\sim$ on the set of states $Q$.  Basically, $p_1, p_2\in Q$ are \blue{equivalent} if they serve the same
-purpose in the \textsc{DFA} $F$, whatever that means.  If $p_1$ and $p_2$ are equivalent, this will be written as
+purpose in the \simtextsc{Dfa} $F$, whatever that means.  If $p_1$ and $p_2$ are equivalent, this will be written as
 \\[0.2cm]
 \hspace*{1.3cm}
 $p_1 \sim p_2$.
@@ -1384,7 +1384,7 @@ are equivalent to $p$, i.e.~we have
 \hspace*{1.3cm}
 $[p]_\sim := \{ q \in Q \mid p \sim q \}$.
 \\[0.2cm]
-The new states of the \textsc{DFA} $\texttt{Min}(F)$ will be equivalence classes of the equivalence relation
+The new states of the \simtextsc{Dfa} $\texttt{Min}(F)$ will be equivalence classes of the equivalence relation
 $\sim$.  Therefore we have
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1400,7 +1400,7 @@ We start with the function
 $\delta^*: Q \times \Sigma^* \rightarrow Q$
 \\[0.2cm]
 which extends the function $\delta$ by accepting a string instead of a single character as its first argument.
-The function call $\delta^*(q,s)$ calculates the state $p$ which the \textsc{DFA} $F$ enters if it reads the
+The function call $\delta^*(q,s)$ calculates the state $p$ which the \simtextsc{Dfa} $F$ enters if it reads the
 string $s$ in the state $q$. As we have assumed the \textsl{DFA} F to be complete, we have that
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1421,7 +1421,7 @@ a string $w \in \Sigma^*$ is given, such that
 $\delta^*(q_0, w) = p$
 \\[0.2cm]
 holds.  It is clear that an unreachable state is usesless.  Therefore, w.l.o.g.~we assume in the following that all
-states of the \textsc{DFA} $F =\langle Q, \Sigma, \delta, q_0, A \rangle$ are reachable.  
+states of the \simtextsc{Dfa} $F =\langle Q, \Sigma, \delta, q_0, A \rangle$ are reachable.  
 
 
 \begin{figure}[!ht]
@@ -1431,15 +1431,15 @@ states of the \textsc{DFA} $F =\langle Q, \Sigma, \delta, q_0, A \rangle$ are re
   \label{fig:nicht-gleichwertig.dot}
 \end{figure}
 
-In general, we can minimize a \textsc{DFA} by identifying certain states.   
-If we look for example at the \textsc{DFA} shown in figure \ref{fig:nicht-gleichwertig.dot}, we can identify
-the states $q_1$ and $q_2$ as well as $q_3$ and $q_4$ without changing the language of the \textsc{DFA}. 
-The central idea in minimizing a \textsc{DFA} is that we compute those states which \textbf{must not} be
+In general, we can minimize a \simtextsc{Dfa} by identifying certain states.   
+If we look for example at the \simtextsc{Dfa} shown in figure \ref{fig:nicht-gleichwertig.dot}, we can identify
+the states $q_1$ and $q_2$ as well as $q_3$ and $q_4$ without changing the language of the \simtextsc{Dfa}. 
+The central idea in minimizing a \simtextsc{Dfa} is that we compute those states which \textbf{must not} be
 identified and consider all other states as equivalent.  States that must not be identified are called
 \blue{separable states}.  This notion is defined next.
 
 \begin{Definition}[Separable States]
-Assume $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ is a \textsc{DFA}.
+Assume $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ is a \simtextsc{Dfa}.
 Two states $p_1,p_2 \in Q$ are called \blue{separable} \index{separable} if and only if there exists a string 
 $s \in \Sigma^*$ such that either
 \begin{enumerate}
@@ -1522,16 +1522,16 @@ Finally, we define the set of accepting equivalence classes $\widehat{A}$ as
 \hspace*{1.3cm}
 $\widehat{A} := \bigl\{ [q]_\sim \bigm| q \in A \bigr\}$.
 \\[0.2cm]
-Then, the \textsc{DFA}
+Then, the \simtextsc{Dfa}
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mathtt{Min}(F) := \bigl\langle \mathcal{Q}_\sim, \Sigma, \Delta, [q_0]_\sim, \widehat{A} \bigr\rangle$
 \\[0.2cm]
-is the minimal complete \textsc{DFA} that accepts the same language as the \textsc{DFA} $F$.
+is the minimal complete \simtextsc{Dfa} that accepts the same language as the \simtextsc{Dfa} $F$.
 
 \exerciseEng
-We consider the  \textsc{DFA} shown in figure \ref{fig:nicht-gleichwertig.dot} and apply the algorithm
-described above to this \textsc{DFA}. 
+We consider the  \simtextsc{Dfa} shown in figure \ref{fig:nicht-gleichwertig.dot} and apply the algorithm
+described above to this \simtextsc{Dfa}. 
 We use a table for this.  The columns and rows of this table are numbered with the different states.  If we
 have recognized in the first step that the states $i$ and $j$ are separable, we insert a $1$ in this
 table in the $i$-th row and the $j$-th column. 
@@ -1616,26 +1616,26 @@ a $1$ in the $j$-th row and the $i$-th column.
       \item $q_1 \sim q_2$
       \item $q_3 \sim q_4$
       \end{enumerate}
-      Figure \ref{fig:gleichwertig.dot} shows the corresponding reduced finite \textsc{DFA}.
+      Figure \ref{fig:gleichwertig.dot} shows the corresponding reduced finite \simtextsc{Dfa}.
 \end{enumerate}
 
 
 \begin{figure}[!ht]
   \centering
   \epsfig{file=Abbildungen/gleichwertig.eps, scale=0.6}
-   \caption{The reduced \textsc{DFA}.}
+   \caption{The reduced \simtextsc{Dfa}.}
   \label{fig:gleichwertig.dot}
 \end{figure}
 
 
 
 \exerciseEng
-Construct the minimal  \textsc{DFA} that recognizes the language 
+Construct the minimal  \simtextsc{Dfa} that recognizes the language 
 $L\bigl(a \cdot (b \cdot a)^*\bigr)$.  Perform the following steps:
 \begin{enumerate}[(a)]
-\item Construct an \textsc{NFA} which recognizes this language.
-\item Transform this \textsc{NFA} into a  \textsc{DFA}.
-\item Minimize the number of states of this \textsc{DFA} with the algorithm given above.
+\item Construct an \simtextsc{Nfa} which recognizes this language.
+\item Transform this \simtextsc{Nfa} into a  \simtextsc{Dfa}.
+\item Minimize the number of states of this \simtextsc{Dfa} with the algorithm given above.
 \end{enumerate}
 
 \subsection{Implementation}
@@ -1644,7 +1644,7 @@ The \textsl{Jupyter notebook}
 \hspace*{0.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize.ipynb}{https://github.com/karlstroetmann/Formal-Languages/../Python/Chapter-04-05/07-Minimize.ipynb}
 \\[0.2cm]
-contains a program that takes a  \textsc{DFA} $F$ and returns an equivalent \textsc{DFA} that has
+contains a program that takes a  \simtextsc{Dfa} $F$ and returns an equivalent \simtextsc{Dfa} that has
 the minimum number of states.
 
 
@@ -1652,11 +1652,11 @@ the minimum number of states.
 In this chapter we have shown that the concept of a \blue{finite automaton}
 and the concept of a \blue{regular expression} are equivalent in their ability to describe formal languages.
 \begin{enumerate}[(a)]
-\item Every \textsc{DFA} can be translated into an equivalent regular expression.
-\item Every regular expression can be translated into an equivalent \textsc{NFA}.
-\item Every \textsc{NFA} can be transformed into an equivalent \textsc{DFA}.
+\item Every \simtextsc{Dfa} can be translated into an equivalent regular expression.
+\item Every regular expression can be translated into an equivalent \simtextsc{Nfa}.
+\item Every \simtextsc{Nfa} can be transformed into an equivalent \simtextsc{Dfa}.
 \end{enumerate}
-Furthermore, we have shown that every \textsc{DFA} can be minimized.
+Furthermore, we have shown that every \simtextsc{Dfa} can be minimized.
 
 \paragraph{Historical Remark}
 \href{http://en.wikipedia.org/wiki/Stephen_Cole_Kleene}{Stephen Cole Kleene} (1909 -- 1994) has shown in 1956 that the concepts of 
@@ -1665,14 +1665,14 @@ Furthermore, we have shown that every \textsc{DFA} can be minimized.
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
-\item How are \textsc{DFA}s and \textsc{NFA}s defined?
-\item Given an \textsc{NFA} $F$, can you convert it into an equivalent \textsc{DFA}
-      $\mathtt{det}(F)$ that accepts the same language as the \textsc{NFA} $F$?
+\item How are \simtextsc{Dfa}s and \simtextsc{Nfa}s defined?
+\item Given an \simtextsc{Nfa} $F$, can you convert it into an equivalent \simtextsc{Dfa}
+      $\mathtt{det}(F)$ that accepts the same language as the \simtextsc{Nfa} $F$?
 \item Given a regular expression $r$, can you describe the steps necessary to construct an 
-      \textsc{NFA} $F$ that accepts the language specified by $r$?
-\item Given a \textsc{DFA} $F$ can you describe how to construct a regular expression $r$
+      \simtextsc{Nfa} $F$ that accepts the language specified by $r$?
+\item Given a \simtextsc{Dfa} $F$ can you describe how to construct a regular expression $r$
       that specifies the language accepted by $F$?
-\item How do we mimimize a \textsc{DFA}?
+\item How do we mimimize a \simtextsc{Dfa}?
 \end{enumerate}
 
 %%% Local Variables: 

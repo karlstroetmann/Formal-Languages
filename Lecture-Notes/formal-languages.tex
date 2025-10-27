@@ -7,7 +7,7 @@
 
 \usepackage{placeins}
 \usepackage{graphicx}
-\usepackage{epstopdf}
+\usepackage{microtype}  % For \textls (letter-spacing)\usepackage{epstopdf}
 \usepackage{epsfig}
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -67,6 +67,30 @@
 \definecolor{orange}{rgb}{1, 0.9, 0.0}
 \definecolor{sepia}{rgb}{0.95, 0.95, 0.9}
 \definecolor{ttcolor}{rgb}{0.4,0.1,0.0}
+
+\newcommand{\fakesc}[1]{\resizebox{!}{0.99ex}{\textls[90]{\MakeUppercase{#1}}}}
+
+% --- Corrected \simtextsc Macro ---
+\makeatletter
+
+% This is the internal helper. 
+% It's now on one line to prevent the newline/space bug.
+\def\@simtextsc#1#2\@nil{\textsc{\MakeUppercase{#1}}\fakesc{#2}}
+
+% This is the main command.
+% It checks the context (math or text) before calling the helper.
+\newcommand{\simtextsc}[1]{%
+  \ifmmode
+    % We are in MATH mode:
+    % Use \text{...} to switch back to text mode correctly.
+    \text{\@simtextsc#1\@nil}%
+  \else
+    % We are in TEXT mode:
+    % Just call the helper directly.
+    \@simtextsc#1\@nil
+  \fi
+}
+\makeatother
 
 \newcommand{\exercise}{\vspace*{0.2cm}
 \stepcounter{aufgabe}
