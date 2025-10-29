@@ -96,9 +96,8 @@ no need for further discussions here.
         
     def t_error(t):
         c = t.value[0]
-        n = t.lexer.lexpos
         l = t.lexer.lineno
-        print(f"Illegal character '{c}' at character number {n} in line {l}.")
+        print(f"Illegal character '{c}' in line {l}.")
         t.lexer.skip(1)
     
     lexer = lex.lex()
@@ -125,11 +124,11 @@ no need for further discussions here.
     def p_stmnt_assign(p):
         "stmnt : IDENTIFIER ASSIGN expr ';'"
         Names2Values[p[1]] = p[3]
-    
+        
     def p_stmnt_expr(p):
         "stmnt : expr ';'"
         print(p[1])
-    
+        
     def p_expr_plus(p):
         "expr : expr '+' prod"
         p[0] = p[1] + p[3]
@@ -141,7 +140,7 @@ no need for further discussions here.
     def p_expr_prod(p):
         "expr : prod"
         p[0] = p[1]
-    
+        
     def p_prod_mult(p):
         "prod : prod '*' factor"
         p[0] = p[1] * p[3]
@@ -153,18 +152,6 @@ no need for further discussions here.
     def p_prod_factor(p):
         "prod : factor"
         p[0] = p[1]
-    
-    def p_factor_group(p):
-        "factor : '(' expr ')'"
-        p[0] = p[2]
-    
-    def p_factor_number(p):
-        "factor : NUMBER"
-        p[0] = p[1]
-    
-    def p_factor_id(p):
-        "factor : IDENTIFIER"
-        p[0] = Names2Values.get(p[1], float('nan'))
 \end{minted}
 \vspace*{-0.3cm}
 \caption{A parser for the symbolic calculator, part \texttt{I}.}
@@ -184,7 +171,7 @@ grammar is implemented in \simtextsc{Ply}.  We discuss it line by line.
       \hspace*{1.3cm}
       $\textsl{stmnt} \rightarrow \simtextsc{Identifier} \quoted{:=} \textsl{expr}$.
       \\[0.2cm]
-      Note that this grammar rule itself is represented by the \blue{document string} of the function
+      This grammar rule is represented by the \blue{document string} of the function 
       \texttt{p\_stmnt\_assign}.  In general, if
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -258,11 +245,24 @@ grammar is implemented in \simtextsc{Ply}.  We discuss it line by line.
 \begin{minted}[ frame        = lines, 
                 framesep     = 0.3cm, 
                 bgcolor      = sepia,
+                firstnumber  = last,
                 numbers      = left,
                 numbersep    = -0.2cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
-              ]{python3}
+                ]{python3}
+    def p_factor_group(p):
+        "factor : '(' expr ')'"
+        p[0] = p[2]
+        
+    def p_factor_number(p):
+        "factor : NUMBER"
+        p[0] = p[1]
+
+    def p_factor_id(p):
+        "factor : IDENTIFIER"
+        p[0] = Names2Values.get(p[1], float('nan'))
+                
     def p_error(p):
         if p:
             print(f'Syntax error at {p.value} in line {p.lexer.lineno}.')
