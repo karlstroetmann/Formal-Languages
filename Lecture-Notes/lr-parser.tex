@@ -265,36 +265,33 @@ We write \(\textsl{nullable}(\textsl{a})\) if the variable \(\textsl{a}\) is $\l
 \eox
 \end{Definition}
 
-\examplesEng
-\begin{enumerate}[(a)]
-\item In the grammar shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2},
-      the variables \textsl{exprRest} and \textsl{productRest} are \(\lambda\)-generating.
-\item Now let's consider a less obvious example. Suppose the grammar \(G\)
-      contains the following rules:
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \(S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}\)
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \(\textsl{a} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{b}\;\textsl{c}\)
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \(\textsl{b} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{c}\;\textsl{c}\)
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \(\textsl{c} \rightarrow \textsl{a}\;\textsl{b}\; \textsl{c} \mid \lambda\)
-      \\[0.2cm]
-      Initially, it's clear that the variable \(\textsl{c}\) is \(\lambda\)-generating. Then, due to the rule
-      \(\textsl{b} \rightarrow \textsl{c} \;\textsl{c}\), \(\textsl{b}\) is also \(\lambda\)-generating, and from the rule \(\textsl{a} \rightarrow \textsl{b}\;\textsl{c}\), \(\textsl{a}\) 
-      becomes \(\lambda\)-generating as well. Finally, \(S\) is recognized as \(\lambda\)-generating,
-      since the first rule states
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \(S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}\)
-      \\[0.2cm]
-      and here, all variables on the right side of the rule have already been proven to be
-      \(\lambda\)-generating variables.
-\end{enumerate}
+\exampleEng
+Suppose the grammar \(G\)
+contains the following rules:
+\\[0.2cm]
+\hspace*{1.3cm}
+\(S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}\)
+\\[0.2cm]
+\hspace*{1.3cm}
+\(\textsl{a} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{b}\;\textsl{c}\)
+\\[0.2cm]
+\hspace*{1.3cm}
+\(\textsl{b} \rightarrow \aquoted{X} \textsl{b} \mid \textsl{a} \aquoted{Y} \mid \textsl{c}\;\textsl{c}\)
+\\[0.2cm]
+\hspace*{1.3cm}
+\(\textsl{c} \rightarrow \textsl{a}\;\textsl{b}\; \textsl{c} \mid \lambda\)
+\\[0.2cm]
+Initially, it's clear that the variable \(\textsl{c}\) is \(\lambda\)-generating. Then, due to the rule
+\(\textsl{b} \rightarrow \textsl{c} \;\textsl{c}\), \(\textsl{b}\) is also \(\lambda\)-generating, and from the rule \(\textsl{a} \rightarrow \textsl{b}\;\textsl{c}\), \(\textsl{a}\) 
+becomes \(\lambda\)-generating as well. Finally, \(S\) is recognized as \(\lambda\)-generating,
+since the first rule states
+\\[0.2cm]
+\hspace*{1.3cm}
+\(S \rightarrow \textsl{a} \; \textsl{b} \; \textsl{c}\)
+\\[0.2cm]
+and here, all variables on the right side of the rule have already been proven to be
+\(\lambda\)-generating variables. \eox
+
 
 \begin{Definition}[\(\textsl{First}()\)]
 Let \(G = \langle V, T, R, s \rangle\) be a context-free grammar and \(\textsl{a} \in V\).
@@ -334,6 +331,30 @@ are mutually recursive.  The computation of $\textsl{First}(\textsl{a})$ is best
 fixpoint computation:  Start by setting $\textsl{First}(\textsl{a}) := \{\}$ for all variables $\textsl{a}\in V$ and
 then continue to iterate the equations defining $\textsl{First}(\textsl{a})$ until none of the sets
 $\textsl{First}(\textsl{a})$ changes any more.  The next example clarifies this idea.
+
+\begin{figure}[htbp]
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{9cm}
+  \begin{eqnarray*}
+  \textsl{expr}        & \rightarrow & \;\textsl{product}\;\;\textsl{exprRest}            \\[0.2cm]
+  \textsl{exprRest}    & \rightarrow & \quoted{+} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \quoted{-} \textsl{product}\;\;\textsl{exprRest}   \\
+                       & \mid        & \;\lambda                                      \\[0.2cm]
+  \textsl{product}     & \rightarrow & \;\textsl{factor}\;\;\textsl{productRest}          \\[0.2cm]
+  \textsl{productRest} & \rightarrow & \quoted{$\cdot$} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \quoted{/} \textsl{factor}\;\;\textsl{productRest} \\
+                       & \mid        & \;\lambda                                      \\[0.2cm]
+  \textsl{factor}      & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}                \\
+                       & \mid        & \;\simtextsc{Number} 
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+  \end{minipage}}}
+  \end{center}
+  \caption{Grammar for arithmetic expressions.}
+  \label{fig:Expr2}
+\end{figure}
 
 \exampleEng
 We can iteratively compute the sets \(\textsl{First}(\textsl{a})\) for the variables \(\textsl{a}\) of the grammar shown in Figure \ref{fig:Expr2}. It's best to compute the function \(\textsl{First}(\textsl{a})\) for the individual variables \(\textsl{a}\) starting with those at the bottom of the hierarchy.
