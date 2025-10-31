@@ -8,10 +8,13 @@
 \end{figure}
 
 
-Most\footnote{The programming language \texttt{C++} is a noteable exception.} modern programming languages can
-be parsed using a so called \simtextsc{Lalr}-Parser.  While we will discuss the theory of \simtextsc{Lalr} languages
-later, this chapter introduces the parser generator \href{https://www.dabeaz.com/ply/}{\simtextsc{Ply}}, which can be used to
-generate a parser for any language that has an \simtextsc{Lalr} grammar.  In Chapter \ref{chapter:ply-lex} we have already
+Many modern programming languages, e.g.~\texttt{C}, \textsl{Java}, or \textsc{Go} can
+be parsed using a so called \simtextsc{Lalr}(1)-Parser\footnote{
+  LALR(1) is an acronym that stands for \blue{Look-Ahead Left-to-Right} parsing with 1 token of lookahead.
+  We will discuss the theory of \simtextsc{Lalr}(1) parsing at the end of Chapter \ref{chapter:bottom-up}.}.
+languages later, this chapter introduces the parser generator
+\href{https://www.dabeaz.com/ply/}{\simtextsc{Ply}}, which can be used to 
+generate a parser for any language that has an \simtextsc{Lalr}(1) grammar.  In Chapter \ref{chapter:ply-lex} we have already
 seen how \simtextsc{Ply} can be used to generate a scanner.  This chapter focuses on the parser-generating aspect
 of \simtextsc{Ply}.
 We will discuss three example that use \simtextsc{Ply} as a parser generator.
@@ -88,7 +91,7 @@ no need for further discussions here.
     
     literals = ['+', '-', '*', '/', '(', ')', ';']
     
-    t_ignore  = ' \t'
+    t_ignore = ' \t'
 
     def t_newline(t):
         r'\n+'
@@ -213,7 +216,7 @@ grammar is implemented in \simtextsc{Ply}.  We discuss it line by line.
       \hspace*{1.3cm}
       \texttt{"$v$ : $X_1$ $\cdots$ $X_n$"}
       \\[0.2cm]
-      It is very \red{\underline{im}p\underline{ortant}} that the character ``\texttt{:}'' is
+      It is very \colorbox{black}{\red{\underline{im}p\underline{ortant}}} that the character ``\texttt{:}'' is
       surrounded by space characters.  Otherwise, the parser generator does not work but rather generates error
       messages that are difficult to understand. 
 
@@ -264,8 +267,9 @@ grammar is implemented in \simtextsc{Ply}.  We discuss it line by line.
         p[0] = Names2Values.get(p[1], float('nan'))
                 
     def p_error(p):
+        l = p.lexer.lineno
         if p:
-            print(f'Syntax error at {p.value} in line {p.lexer.lineno}.')
+            print(f'Syntax error at {p.value} in line {l}.')
         else:
             print('Syntax error at end of input.')
         
@@ -290,22 +294,22 @@ grammar is implemented in \simtextsc{Ply}.  We discuss it line by line.
 Figure \ref{fig:Symbolic-Calculator.ipynb:yacc2} on page \pageref{fig:Symbolic-Calculator.ipynb:yacc2}
 is discussed next.
 \begin{enumerate}
-\item Line 1 -- 5 shows the function \texttt{p\_error} which is used to print error messages in the case that
+\item Line 48 -- 43 shows the function \texttt{p\_error} which is used to print error messages in the case that
       the input can not be parsed because of a syntax error.  The argument \texttt{p} is the token $t$ that
       caused the entry $\texttt{action}(s, t)$ in the action table to be undefined.
       If the syntax error happens at the end of the input, \texttt{p} has the value \texttt{None}.
-\item Line 7 generates the parser.
-\item Line 9 initializes the dictionary \texttt{Names2Values}.  For every identifier $x$ defined interactively,
+\item Line 55 generates the parser.
+\item Line 57 initializes the dictionary \texttt{Names2Values}.  For every identifier $x$ defined interactively,
       \texttt{Names2Values[$x$]} is the value associated with $x$.
 \item The function \texttt{main} is used as a driver for the parser.  It reads a string \texttt{s}
       from the command line and tries to parse \texttt{s} using the function \texttt{yacc.parse}.
       The function \texttt{yacc.parse} is generated behind the scenes when the function \texttt{yacc.yacc} is
-      invoked in line 7. 
+      invoked in line 55. 
 \end{enumerate}
 
 The Jupyter notebook \texttt{01-Calculator}, which is available at
 \\[0.2cm]
-\hspace*{0.3cm}
+\hspace*{-0.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator.ipynb}
 \\[0.2cm]
 implements the symbolic calculator discussed in this section.
@@ -314,12 +318,11 @@ implements the symbolic calculator discussed in this section.
 Our next example shows how we can compute an abstract syntax tree with the help of \simtextsc{Ply}.
 The Jupyter notebook \texttt{02-Differentiator}, which is available at
 \\[0.2cm]
-\hspace*{0.3cm}
+\hspace*{-0.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/02-Differentiator.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/02-Differentiator.ipynb}
 \\[0.2cm]
 implements a parser that generates an abstract syntax tree, which can then be used for symbolic
 differentiation.
-\pagebreak
 
 \section{Implementing a Simple Interpreter  \label{chapter:interpreter}}
 Figure \ref{fig:Pure.g} show the grammar of a simple programming language.  In this section, we will develop an
@@ -337,13 +340,13 @@ interpreter for this language.
                   xrightmargin  = 0.8cm,
                 ]
     program
-        : /* epsilon */
+        : /* lambda */
         | stmnt program
         
     stmnt 
         : IF '(' bool_expr ')' stmnt                 
         | WHILE '(' bool_expr ')' stmnt
-        | '{' stmnt_list '}' 
+        | '{' program '}' 
         | ID ':=' expr ';'  
         | expr ';'       
     
@@ -371,7 +374,7 @@ interpreter for this language.
         | ID '(' expr_list ')'
     
     expr_list
-        :
+        : /* lambda */
         | expr ',' ne_expr_list
     
     ne_expr_list
@@ -383,9 +386,9 @@ interpreter for this language.
 \label{fig:Pure.g}
 \end{figure}
 
-The statements of the language that we want to implement include assignments, function calls,
-\texttt{if} statements, and \texttt{while} loops.  The language supports boolean expression that can be build
-with the help of the comparison operators
+The statements of the language that we want to implement include \textsl{assignments}, \textsl{function calls},
+\textsl{\texttt{if} statements}, and \textsl{\texttt{while} loops}.  The language supports boolean expression
+that can be build with the help of the comparison operators
 \\[0.2cm]
 \hspace*{1.3cm}
 \texttt{==}, \texttt{!=}, \texttt{<=}, \texttt{>=}, \texttt{<}, and \texttt{>}.
@@ -406,7 +409,7 @@ which is stored in the variable \texttt{n}. Subsequently, the sum
 \hspace*{1.3cm}
 $\ds s := \sum\limits_{\mbox{$\normalsize i=1$}}^{\mbox{$\normalsize n^2$}} \mbox{\Large $i$}$
 \\[0.2cm]
-is computed using a \texttt{while} loop.  Finally, the sum is printed.
+is computed using a \texttt{while} loop.  Finally, this sum is printed.
 
 \begin{figure}[!ht]
 \centering
@@ -469,14 +472,15 @@ that start with a ``\texttt{.}''.
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.3cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm,
+                bgcolor       = sepia,
+                firstnumber   = 1,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     tokens = [ 'NUMBER',    # r'0|[1-9][0-9]*'
                'ID',        # r'[a-zA-Z][a-zA-Z0-9_]*'
                'ASSIGN',    # r':='
@@ -506,7 +510,7 @@ that start with a ``\texttt{.}''.
     
     Keywords = { 'if': 'IF', 'while': 'WHILE' }
     
-    def t_ID(t):
+    def t_IDENTIFIER(t):
         r'[a-zA-Z][a-zA-Z0-9_]*'
         t.type = Keywords.get(t.value, 'ID')
         return t
@@ -514,14 +518,14 @@ that start with a ``\texttt{.}''.
     literals = ['+', '-', '*', '/', '%', '(', ')', '{', '}', ';', '<', '>', ',']
     
     t_ignore  = ' \t\r'
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm} %\$
 \caption{Implementation of the scanner.}
 \label{fig:Interpreter-Scanner}
 \end{figure}
 
 Figure \ref{fig:Interpreter-Scanner} on \pageref{fig:Interpreter-Scanner} show the implementation of the
-scanner. The scanner primarily differentiates between variables (token \simtextsc{Id}) and numbers (token
+scanner. The scanner primarily differentiates between variables (token \simtextsc{Identifier}) and numbers (token
 \simtextsc{Number}).  Variables start with an uppercase or lowercase letter, followed by additional digits and 
 the underscore. Furthermore, there are operator symbols for the comparison operators
 ``\texttt{==}'', ``\texttt{!=}'', ``\texttt{<=}'', ``\texttt{>=}'', ``\texttt{<}'', and ``\texttt{>}'',
@@ -541,7 +545,7 @@ The scanner is pretty standard, but there are two things worth mentioning.
             \\[0.2cm]
             where ``\texttt{...}'' denotes arbitrary text not containing the substring ``\texttt{*/}''.
 
-            We have to uses used the so-called \emph{non-greedy} version of the
+            We have to use the so-called \emph{non-greedy} version of the
             Kleene operator ``\texttt{*}'' in the specification of multiline comments. The non-greedy version of the
             operator ``\texttt{*}'' is written as ``\texttt{*?}'' and matches as little as possible. Therefore, the
             regular expression 
@@ -562,19 +566,20 @@ The scanner is pretty standard, but there are two things worth mentioning.
       Note that the symbol \simtextsc{Comment} is not declared as a token.  The reason is that it won't appear in the grammar
       rules later, as comments are discarded by the scanner.
 \item The treatment of keywords requires special care.  Since both ``\texttt{if}'' and ``\texttt{while}'' have
-      the same syntactical form as variables, the function \texttt{t\_ID} recognizes them.  This is done with
-      the help of the dictionary \texttt{Keywords}.  If \texttt{t\_ID} finds a string of characters, it first
+      the same syntactical form as variables, the function \texttt{t\_IDENTIFIER} recognizes them.  This is done with
+      the help of the dictionary \texttt{Keywords}.  If \texttt{t\_IDENTIFIER} finds a string of characters, it first
       checks, whether this string has an associated token value in the dictionary \texttt{Keywords}.  If there
       is a value associated with the string, the string is a keyword and the corresponding token is returned.
       On the other hand, if the string is not stored in the dictionary \texttt{Keywords}, the function
-      \texttt{get} returns the token \simtextsc{Id} as a default. 
+      \texttt{get} returns the token \simtextsc{Identifier} as a default. 
 \end{enumerate}
 
 
 \noindent
-The figures \ref{fig:Interpreter-Parser-1}, \ref{fig:Interpreter-Parser-2}, \ref{fig:Interpreter-Parser-3}, and
-\ref{fig:Interpreter-Parser-4} show the implementation of the parser using  \simtextsc{Ply}.
-\ref{fig:Interpreter-Parser-1} on page \pageref{fig:Interpreter-Parser-1} implements the following grammar rules:
+The figures \ref{fig:Interpreter-Parser-1}, \ref{fig:Interpreter-Parser-2}, \ref{fig:Interpreter-Parser-3a},
+\ref{fig:Interpreter-Parser-3b}, and \ref{fig:Interpreter-Parser-4} show the implementation of the parser using
+\simtextsc{Ply}.  Figure \ref{fig:Interpreter-Parser-1} on page \pageref{fig:Interpreter-Parser-1} implements
+the following grammar rules: 
 
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
@@ -592,8 +597,8 @@ The figures \ref{fig:Interpreter-Parser-1}, \ref{fig:Interpreter-Parser-2}, \ref
     stmnt 
         : IF '(' bool_expr ')' stmnt                 
         | WHILE '(' bool_expr ')' stmnt
-        | '{' stmnt_list '}' 
-        | ID ':=' expr ';'  
+        | '{' program '}' 
+        | IDENTIFIER ':=' expr ';'  
         | expr ';'       
 \end{Verbatim}
 
@@ -601,24 +606,20 @@ The figures \ref{fig:Interpreter-Parser-1}, \ref{fig:Interpreter-Parser-2}, \ref
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.3cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    def p_program_one(p):
-        "program : stmnt_list"
-        p[0] = p[1]
-    
-    def p_stmnt_list_empty(p):
-        "stmnt_list : "
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
+    def p_program_lambda(p):
+        "program : "
         p[0] = ('.',)
     
-    def p_stmnt_list_more(p):
-        "stmnt_list : stmnt stmnt_list"
+    def p_program_more(p):
+        "program : stmnt program"
         p[0] = ('.', p[1]) + p[2][1:]
     
     def p_stmnt_if(p):
@@ -630,17 +631,17 @@ The figures \ref{fig:Interpreter-Parser-1}, \ref{fig:Interpreter-Parser-2}, \ref
         p[0] = ('while', p[3], p[5])
         
     def p_stmnt_block(p):
-        "stmnt : '{' stmnt_list '}'"
+        "stmnt : '{' program '}'"
         p[0] = p[2]
         
     def p_stmnt_assign(p):
-        "stmnt : ID ASSIGN expr ';'"
+        "stmnt : IDENTIFIER ASSIGN expr ';'"
         p[0] = (':=', p[1], p[3])
        
     def p_stmnt_expr(p):
         "stmnt : expr ';'"
-        p[0] = p[1]
-\end{Verbatim}
+        p[0] = ('expr', p[1])
+\end{minted}
 \vspace*{-0.3cm} %\$
 \caption{Specification of statements.}
 \label{fig:Interpreter-Parser-1}
@@ -701,18 +702,18 @@ are supported in our simple language.
       \\[0.2cm]
       we can execute it as a statement.
 \end{enumerate}
-\pagebreak
+
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.3cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     def p_bool_expr_eq(p):
         "bool_expr : expr EQ expr"
         p[0] = ('==', p[1], p[3])
@@ -737,7 +738,7 @@ are supported in our simple language.
         "bool_expr : expr '>' expr"
         p[0] = ('>', p[1], p[3])
     
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm} %\$
 \caption{Specification of boolean expressions.}
 \label{fig:Interpreter-Parser-2}
@@ -745,6 +746,7 @@ are supported in our simple language.
 
 Figure \ref{fig:Interpreter-Parser-2} shows the parsing of boolean expressions.  It implements the following
 grammar rule.
+\pagebreak
 
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
@@ -778,10 +780,10 @@ The syntactic variable \texttt{boolExpr} describes an expression that takes a Bo
       $(\texttt{'=='}, l, r)$.
 \item The other cases are similar.
 \end{enumerate}
-\pagebreak
 
-Figure \ref{fig:Interpreter-Parser-3} on page \pageref{fig:Interpreter-Parser-3} implements the following
-grammar rules:
+
+The figure \ref{fig:Interpreter-Parser-3a} and \ref{fig:Interpreter-Parser-3b} on page
+\pageref{fig:Interpreter-Parser-3a} implements the following grammar rules:
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
                   firstnumber   = 1,
@@ -804,10 +806,92 @@ grammar rules:
     factor
         : '(' expr ')' 
         | NUMBER
-        | ID
-        | ID '(' expr_list ')'
+        | IDENTIFIER
+        | IDENTIFIER '(' expr_list ')'
 \end{Verbatim}
-To understand the code shown in Figure \ref{fig:Interpreter-Parser-3} we have to understand the following:
+
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
+    def p_expr_plus(p):
+        "expr : expr '+' product"
+        p[0] = ('+', p[1], p[3])        
+    def p_expr_minus(p):
+        "expr : expr '-' product"
+        p[0] = ('-', p[1], p[3])
+    
+    def p_expr_product(p):
+        "expr : product"
+        p[0] = p[1]
+        
+    def p_product_times(p):
+        "product : product '*' expr"
+        p[0] = ('*', p[1], p[3])
+    def p_product_divide(p):
+        "product : product '/' expr"
+        p[0] = ('/', p[1], p[3])
+    
+    def p_product_modulo(p):
+        "product : product '%' factor"
+        p[0] = ('%', p[1], p[3])
+    
+    def p_product_factor(p):
+        "product : factor"
+        p[0] = p[1]
+\end{minted}
+\vspace*{-0.3cm} %\$
+\caption{Specification of arithmetic expressions, part \texttt{I}.}
+\label{fig:Interpreter-Parser-3a}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                firstnumber   = last,
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
+    def p_product_factor(p):
+        "product : factor"
+        p[0] = p[1]
+    
+    def p_factor_paren(p):
+        "factor : '(' expr ')'"
+        p[0] = p[2]
+    
+    def p_factor_number(p):
+        "factor : NUMBER"
+        p[0] = p[1]
+    
+    def p_factor_id(p):
+        "factor : IDENTIFIER"
+        p[0] = p[1]
+    
+    def p_factor_fct_call(p):
+        "factor : IDENTIFIER '(' expr_list ')'"
+        p[0] = ('call', p[1]) + p[3][1:]
+\end{minted}
+\vspace*{-0.3cm} %\$
+\caption{Specification of arithmetic expressions, part \texttt{II}.}
+\label{fig:Interpreter-Parser-3b}
+\end{figure}
+
+\noindent
+To understand the code shown in Figure \ref{fig:Interpreter-Parser-3a} and \ref{fig:Interpreter-Parser-3b} we
+have to understand the following: 
 \begin{enumerate}
 \item An arithmetic expression of the form $a + b$ is represented as a triple of the form
       \\[0.2cm]
@@ -818,7 +902,7 @@ To understand the code shown in Figure \ref{fig:Interpreter-Parser-3} we have to
       respectively. 
 \item Arithmetic expressions using the operators ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{\%}''
       are represented analogously.
-\item An parenthesized expression, i.e.~an expression of the form
+\item A parenthesized expression, i.e.~an expression of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       $(e)$
@@ -838,70 +922,9 @@ To understand the code shown in Figure \ref{fig:Interpreter-Parser-3} we have to
       \hspace*{1.3cm}
       \texttt{('call', $f$, $a_1$, $\cdots$, $a_n$)}.
 \end{enumerate}
-
-
-\begin{figure}[!ht]
-\centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.3cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.0cm,
-                ]
-    def p_expr_plus(p):
-        "expr : expr '+' product"
-        p[0] = ('+', p[1], p[3])
-        
-    def p_expr_minus(p):
-        "expr : expr '-' product"
-        p[0] = ('-', p[1], p[3])
-    
-    def p_expr_product(p):
-        "expr : product"
-        p[0] = p[1]
-        
-    def p_product_times(p):
-        "product : product '*' expr"
-        p[0] = ('*', p[1], p[3])
-        
-    def p_product_divide(p):
-        "product : product '/' expr"
-        p[0] = ('/', p[1], p[3])
-    
-    def p_product_modulo(p):
-        "product : product '%' factor"
-        p[0] = ('%', p[1], p[3])
-    
-    def p_product_factor(p):
-        "product : factor"
-        p[0] = p[1]
-    
-    def p_factor_paren(p):
-        "factor : '(' expr ')'"
-        p[0] = p[2]
-    
-    def p_factor_number(p):
-        "factor : NUMBER"
-        p[0] = p[1]
-    
-    def p_factor_id(p):
-        "factor : ID"
-        p[0] = p[1]
-    
-    def p_factor_fct_call(p):
-        "factor : ID '(' expr_list ')'"
-        p[0] = ('call', p[1]) + p[3][1:]
-\end{Verbatim}
-\vspace*{-0.3cm} %\$
-\caption{Specification of arithmetic expressions.}
-\label{fig:Interpreter-Parser-3}
-\end{figure}
-\pagebreak
-\vspace*{\fill}
 \pagebreak
 
+\noindent
 Figure \ref{fig:Interpreter-Parser-4} on page \pageref{fig:Interpreter-Parser-4} implements the following
 grammar rules:
 \begin{Verbatim}[ frame         = lines, 
@@ -923,17 +946,16 @@ grammar rules:
 \end{Verbatim}
 
 
-
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.3cm,
-                  xleftmargin   = 0.3cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     def p_expr_list_empty(p):
         "expr_list : "
         p[0] = ('.',)
@@ -953,7 +975,7 @@ grammar rules:
     def p_ne_expr_list_more(p):
         "ne_expr_list : expr ',' ne_expr_list"
         p[0] = ('.', p[1]) + p[3][1:] 
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm} %\$
 \caption{Specification of lists of expressions.}
 \label{fig:Interpreter-Parser-4}
@@ -964,22 +986,21 @@ grammar rules:
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     def main(file):
         with open(file, 'r') as handle:
             program = handle.read() 
         stmnt = yacc.parse(program)
         Values = {}
         execute(stmnt, Values)
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Specification of the function \texttt{main}.}
 \label{fig:Interpreter.ipynb:main}
@@ -987,23 +1008,22 @@ grammar rules:
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     def execute(stmnt: NestedTuple, Values: dict[str, Number]) -> None:
         match stmnt:
             case ('.', *SL):
                 execute_tuple(tuple(SL), Values)
             case (':=', var, value):
                 Values[var] = evaluate(value, Values)
-            case ('call', 'print', expr):
-                print(evaluate(expr, Values))
+            case ('expr', expr):
+                evaluate(expr, Values)
             case ('if', test, stmnt):
                 if evaluate_bool(test, Values):
                     execute(stmnt, Values)
@@ -1016,7 +1036,7 @@ grammar rules:
     def execute_tuple(Statement_List, Values={}):
         for stmnt in Statement_List:
             execute(stmnt, Values)
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{The function \texttt{execute}.}
 \label{fig:Interpreter.ipynb:execute}
@@ -1026,7 +1046,7 @@ Figure \ref{fig:Interpreter.ipynb:main} shows the function \texttt{main}, which 
 file containing a program in our simple programming language as input. This program is parsed and
 thus transformed into a tuple of statements. The function \texttt{execute} executes this tuple.  In order to do
 so, it needs to know the values of all variables.  Theses are stored in the dictionary \texttt{Values}, which
-initially is empty.  Every time a variable is assigned, the variable will and the corresponding value will be
+initially is empty.  Every time a variable is assigned, the variable and the corresponding value will be
 stored in this dictionary.
 
 Figure \ref{fig:Interpreter.ipynb:execute} shows the implementation of the function \texttt{execute}. This
@@ -1047,10 +1067,9 @@ implementation consists mainly of a large case distinction based on the type of 
 \item If the statement is an expression statement of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{('print', expr)}
+      \texttt{(expr', expr)}
       \\[0.2cm]
-      then the expression \texttt{expr} is first evaluated using the function \texttt{evaluate}.
-      The resulting value is then printed.
+      then the corresponding \texttt{expr} is evaluated using the function \texttt{evaluate}.
 \item If the command is of the form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1076,15 +1095,14 @@ implementation consists mainly of a large case distinction based on the type of 
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     def evaluate_bool(expr, Values):
         match expr:
             case ('==', lhs, rhs):
@@ -1101,7 +1119,7 @@ implementation consists mainly of a large case distinction based on the type of 
                 return evaluate(lhs, Values) >  evaluate(rhs, Values)
             case _:
                 assert False, f'{expr} unexpected'
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{The evaluation of boolean expressions.}
 \label{fig:Interpreter.ipynb:evaluate_bool}
@@ -1131,15 +1149,14 @@ This function receives a boolean expression and a dictionary storing the current
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.3cm,
+                xleftmargin   = 0.3cm,
+                xrightmargin  = 0.0cm,
+              ]{python3}
     def evaluate(expr, Values):
         match expr:
             case int():
@@ -1148,6 +1165,9 @@ This function receives a boolean expression and a dictionary storing the current
                 return Values[expr] 
             case ('call', 'read'):
                 return int(input('Please enter a natural number: '))
+            case ('call', 'print', expr):
+                print(evaluate(expr, Values))        
+                return 0;
             case ('+', lhs, rhs):
                 return evaluate(lhs, Values) + evaluate(rhs, Values)
             case ('-', lhs, rhs):
@@ -1160,7 +1180,7 @@ This function receives a boolean expression and a dictionary storing the current
                 return evaluate(lhs, Values) % evaluate(rhs, Values)
             case _:
                 assert False, f'{expr} unexpected'
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{The evaluation of arithmetic expressions.}
 \label{fig:Interpreter.ipynb:evaluate}
@@ -1175,6 +1195,8 @@ values of the variables as input.
       variable in the dictionary \texttt{Values} and return this value as the result.
 \item If the expression to be evaluated is a call to the function \texttt{read},
       we prompt the user to enter a natural number. We then convert the string entered by the user into an integer.
+\item If the expression to be evaluated is a call to the function \texttt{print}, we evaluate the argument and
+      print it.  Furthermore, we return 0 since the evaluation of an expression always has to return a value.
 \item If the expression to be evaluated is a sum of the form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1200,7 +1222,7 @@ implements an interpreter.
 \item Add \texttt{for} loops to the interpreter.
 \item Expand the interpreter to include logical operators
       ``\texttt{\&\&}'' for logical \emph{and}, ``\texttt{||}'' for logical \emph{or},
-      and ``\texttt{!}'' for \emph{negation}. The operator ``\texttt{!}'' should bind the
+      and ``\texttt{!}'' for \emph{negation}. The operator ``\texttt{!}'' should bind 
       strongest and the operator ``\texttt{||}'' should bind weakest.
 \item Enhance the interpreter to allow for user-defined functions.
       \begin{itemize}
