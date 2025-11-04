@@ -306,35 +306,35 @@ maintains two dictionaries.
                 bgcolor       = sepia,
                 numbers       = left,
                 numbersep     = -0.2cm,
-                xleftmargin   = 0.8cm,
-                xrightmargin  = 0.8cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
               ]{python3}      
-def parse(self, TL):
-    index   = 0      # points to next token
-    Symbols = []     # stack of symbols
-    States  = ['s0'] # stack of states, s0 is start state
-    TL     += ['EOF']
-    while True:
-        q = States[-1]
-        t = TL[index]
-        # Below, an undefined table entry is interpreted as an error entry.
-        match self.mActionTable.get((q, t), 'error'):
-            case 'error': 
-                return False
-            case 'accept':
-                return True
-            case 'shift', s: 
-                Symbols += [t]
-                States  += [s]
-                index   += 1
-            case 'reduce', rule:
-                head, body = rule
-                n       = len(body)
-                Symbols = Symbols[:-n]
-                States  = States [:-n] 
-                Symbols = Symbols + [head]
-                state   = States[-1]
-                States += [ self.mGotoTable[state, head] ]
+    def parse(self, TL):
+        index   = 0        # points to next token
+        Symbols = []       # stack of symbols
+        States  = ['s0']   # stack of states, s0 is start state
+        TL     += ['EOF']  # token list
+        while True:
+            q = States[-1]
+            t = TL[index]
+            # undefined table entries are interpreted as 'error'
+            match self.mActionTable.get((q, t), 'error'):
+                case 'error': 
+                    return False
+                case 'accept':
+                    return True
+                case 'shift', s: 
+                    Symbols += [t]
+                    States  += [s]
+                    index   += 1
+                case 'reduce', rule:
+                    head, body = rule
+                    n       = len(body)
+                    Symbols = Symbols[:-n]
+                    States  = States [:-n] 
+                    Symbols = Symbols + [head]
+                    state   = States[-1]
+                    States += [ self.mGotoTable[state, head] ]
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Implementation of a shift-reduce parser in \textsl{Python}}
