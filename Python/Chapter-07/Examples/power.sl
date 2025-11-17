@@ -1,5 +1,3 @@
-
-
 function power(S) {
     if (S == {}) {
 	return { {} };
