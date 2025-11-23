@@ -1,8 +1,4 @@
 // This is the grammar for the programming language C.
-// You have to make to make three changes to turn this into an SLR grammar:
-// 1. ?
-// 2. ?
-// 3. ?
 
 translation_unit
 	: external_declaration
