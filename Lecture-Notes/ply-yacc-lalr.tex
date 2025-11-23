@@ -1,5 +1,5 @@
 \chapter{Advanced Features of \textsc{Ply}}
-When we discussed the parser generator \simtextsc{Ply} in chapter 7, we were not able to discuss all the features of
+When we had discussed the parser generator \simtextsc{Ply} in chapter 7, we were not able to discuss all the features of
 \simtextsc{Ply}, since the underlying theory, which is the theory of \simtextsc{Lalr} parsing,  had not been developed.  Since
 we have aquainted ourselves with this theory in the pervious chapter, we are finally able to discuss some of the
 more advanced features of \simtextsc{Ply}. 
@@ -501,96 +501,95 @@ Next, we explain in detail how \simtextsc{Ply} uses operator precedence relation
 \section{Resolving Shift-Reduce and Reduce-Reduce Conflicts}
 We start our discussion by categorizing conflicts with respect to their origin.
 \begin{enumerate}
-\item \emph{Mehrdeutigkeits-Konflikte} sind Konflikte, die ihre Ursache in einer Mehrdeutigkeit
-      der zu Grunde liegenden Grammatik haben.  Solche Konflikte weisen damit auf ein tats\"achliches
-      Problem der Grammatik hin.  Wir hatten ein Beispiel f\"ur solche Konflikte gesehen, als wir in
-      Abbildung \ref{fig:Conflicts.ipynb} 
-      versucht hatten, die Syntax arithmetischer Ausdr\"ucke ohne die syntaktischen
-      Kategorien \textsl{product} und \textsl{factor} zu beschreiben.
+\item \emph{Ambiguity Conflicts} are conflicts that originate from an ambiguity
+      in the underlying grammar. Such conflicts therefore indicate an actual
+      problem with the grammar. We saw an example of such conflicts when we
+      tried in Figure \ref{fig:Conflicts.ipynb}
+      to describe the syntax of arithmetic expressions without the syntactic
+      categories \textsl{product} and \textsl{factor}.
 
-      Wir hatten damals bereits gesehen, dass wir das Problem durch die Einf\"uhrung von
-      Operator-Pr\"azedenzen l\"osen k\"onnen.  Falls dies nicht m\"oglich ist, dann bleibt nur das
-      Umschreiben der Grammatik.
-\item \emph{Look-Ahead-Konflikte} sind Reduce-Reduce-Konflikte, bei denen die Grammatik zwar
-      einerseits eindeutig ist, f\"ur die aber andererseits
-      ein Look-Ahead von einem Token nicht ausreichend ist um den Konflikt zu l\"osen.
-\item \emph{Mysteri\"ose Konflikte} entstehen erst beim \"Ubergang von den LR-Zust\"anden zu den \simtextsc{Lalr}-Zust\"anden 
-      durch das Zusammenfassen von Zust\"anden mit dem gleichen Kern.  Diese Konflikte treten also
-      genau dann auf, wenn das Konzept einer \simtextsc{Lalr}-Grammatik nicht ausreichend ist um die Syntax der
-      zu parsenden Sprache zu beschreiben.
+      We had already seen back then that we can solve the problem by introducing
+      operator precedences. If this is not possible, then the only remaining option is
+      rewriting the grammar.
+\item \emph{Look-Ahead Conflicts} are Reduce-Reduce conflicts where the grammar is
+      technically unambiguous, but for which a look-ahead of one token is
+      insufficient to resolve the conflict.
+\item \emph{Mysterious Conflicts} arise only during the transition from LR states to \simtextsc{Lalr} states
+      by merging states with the same core. These conflicts therefore occur
+      precisely when the concept of an \simtextsc{Lalr} grammar is insufficient to describe the syntax of the
+      language to be parsed.
 \end{enumerate}
-Wir betrachten die letzten beiden F\"alle nun im Detail und zeigen Wege auf, wie die Konflikte gel\"ost
-werden k\"onnen.
+We will now look at the last two cases in detail and show ways in which the conflicts can be resolved.
 
-\subsection{Look-Ahead-Konflikte}
-Ein Look-Ahead-Konflikt liegt dann vor, wenn die Grammatik zwar eindeutig ist, aber ein Look-Ahead von einem
-Token nicht ausreicht um zu entscheiden,  mit welcher Regel reduziert werden soll.  Abbildung 
-\ref{fig:lr-conflict.g} zeigt die Grammatik 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Look-Ahead.ipynb}{\texttt{Look-Ahead.ipynb}}\footnote{ 
-Diese Grammatik habe ich im Netz auf der Seite von Pete Jinks unter der Adresse
+\subsection{Look-Ahead Conflicts}
+A Look-Ahead Conflict exists when the grammar is unambiguous, but a look-ahead of one
+token is insufficient to decide which rule should be used for reduction. Figure
+\ref{fig:lr-conflict.g} shows the grammar
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Look-Ahead.ipynb}{\texttt{Look-Ahead.ipynb}}\footnote{
+I found this grammar on the web on Pete Jinks' page at the address
 \\[0.1cm]
 \hspace*{1.3cm}
 \href{http://www.cs.man.ac.uk/~pjj/cs212/ho/node19.html}{\texttt{http://www.cs.man.ac.uk/\symbol{126}pjj/cs212/ho/node19.html}}
 \\[0.1cm]
-gefunden.},
-die zwar eindeutig ist, aber nicht die LR(1)-Eigenschaft hat und damit erst recht keine \simtextsc{Lalr}(1) Grammatik ist.
+.},
+which, although unambiguous, does not possess the LR(1) property and is therefore certainly not an \simtextsc{Lalr}(1) grammar.
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
+\begin{Verbatim}[ frame           = lines,
+                  framesep        = 0.3cm,
+                  firstnumber     = 1,
+                  labelposition   = bottomline,
+                  numbers         = left,
+                  numbersep       = -0.2cm,
+                  xleftmargin     = 0.8cm,
+                  xrightmargin    = 0.8cm,
                 ]
     a : b 'U' 'V'
       | c 'U' 'W'
     b : 'X'
-    c : 'X'   
+    c : 'X'
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Eine eindeutige Grammatik ohne die LR(1)-Eigenschaft.}
+\caption{An unambiguous grammar without the LR(1) property.}
 \label{fig:lr-conflict.g}
 \end{figure}
 
 
-Berechnen wir die LR-Zust\"ande dieser Grammatik,
-so finden wir unter anderem den folgenden Zustand:
+If we calculate the LR states of this grammar,
+we find, among others, the following state:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\{ b \rightarrow \;\squoted{X} \bullet: \squoted{U},\; c \rightarrow \;\squoted{X} \bullet: \squoted{U} \}$.
+$\{ b \rightarrow \;\saquoted{X} \bullet: \saquoted{U},\; c \rightarrow \;\saquoted{X} \bullet: \saquoted{U} \}$.
 \\[0.2cm]
-Da die Menge der Folge-Token f\"ur beide Regeln gleich sind, haben wir hier einen Reduce-Reduce-Konflikt.
-Dieser Konflikt hat seine Ursache darin, dass der Parser mit einem Look-Ahead von nur einem Token nicht
-entscheiden kann, ob ein $\squoted{X}$ als ein $b$ oder als ein $c$ zu interpretieren ist, denn dies
-entscheidet sich erst, wenn das auf $\squoted{U}$ folgende Zeichen gelesen wird:  Handelt es sich hierbei
-um ein $\squoted{V}$, so wird insgesamt die Regel
-\\[0.2cm]
-\hspace*{1.3cm}
-$a \rightarrow b\; \squoted{U} \squoted{V}$
-\\[0.2cm]
-verwendet werden und folglich ist das $\squoted{X}$ als ein $b$ zu interpretieren. Ist das zweite Token
-hinter dem $\squoted{X}$ hingegen ein  $\squoted{W}$, so ist die zu verwendende Regel
+Since the set of follow tokens is the same for both rules, we have a Reduce-Reduce conflict here.
+This conflict is caused by the fact that the parser, with a look-ahead of only one token, cannot
+decide whether an $\saquoted{X}$ should be interpreted as a $b$ or as a $c$, because this
+is only decided when the character following $\saquoted{U}$ is read: If this is
+a $\saquoted{V}$, then the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow c \;\squoted{U} \squoted{W}$
+$a \rightarrow b\; \saquoted{U}\; \saquoted{V}$
 \\[0.2cm]
-und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
+will be used overall, and consequently the $\saquoted{X}$ is to be interpreted as a $b$. If, however, the second token
+after the $\saquoted{X}$ is a $\saquoted{W}$, then the rule to be used is
+\\[0.2cm]
+\hspace*{1.3cm}
+$a \rightarrow c \;\saquoted{U}\; \saquoted{W}$
+\\[0.2cm]
+and consequently the $\saquoted{X}$ is to be read as $c$.
 
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
+\begin{Verbatim}[ frame           = lines,
+                  framesep        = 0.3cm,
+                  firstnumber     = 1,
+                  labelposition   = bottomline,
+                  numbers         = left,
+                  numbersep       = -0.2cm,
+                  xleftmargin     = 0.8cm,
+                  xrightmargin    = 0.8cm,
                 ]
     a : b 'V'
       | c 'W'
@@ -598,40 +597,40 @@ und folglich ist das $\quoted{X}$ als  $c$ zu lesen.
     c : 'X' 'U'
 \end{Verbatim}
 \vspace*{-0.3cm}
-\caption{Eine zu Abbildung \ref{fig:lr-conflict.g} \"aquivalente LR(1)-Grammatik.}
+\caption{An LR(1) grammar equivalent to Figure \ref{fig:lr-conflict.g}.}
 \label{fig:lr-conflict-resolved.g}
 \end{figure}
 
-Das Problem bei dieser Grammatik ist, dass sie versucht, abh\"angig vom Kontext ein $\squoted{X}$ wahlweise
-als ein $b$ oder als ein $c$ zu interpretieren.  Es ist offensichtlich, wie das Problem gel\"ost werden
-kann:  Wenn der Kontext ``\texttt{U}'', der sowohl auf $b$ als auch auf $c$ folgt, mit in
-die Regeln f\"ur $b$ und $c$ aufgenommen wird, dann verschwindet der Konflikt, denn dann hat der
-Zustand, in dem fr\"uher der Konflikt auftrat, die Form
+The problem with this grammar is that it attempts to interpret an $\saquoted{X}$ either
+as a $b$ or as a $c$ depending on the context. It is obvious how the problem can be
+solved: If the context ``\texttt{U}'', which follows both $b$ and $c$, is included in
+the rules for $b$ and $c$, then the conflict disappears, because then the
+state in which the conflict previously occurred has the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$\{ b \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{V},\; 
-    c \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{W} 
+$\{ b \rightarrow \;\saquoted{X}\; \saquoted{U}\bullet: \saquoted{V},\;
+    c \rightarrow \;\saquoted{X}\; \saquoted{U}\bullet: \saquoted{W}
 \}
 $.
-\\[0.2cm]  
-Hier entscheidet sich nun anhand des n\"achsten Tokens, mit welcher Regel wir in diesem Zustand
-reduzieren m\"ussen:  Ist das n\"achste Token ein $\squoted{V}$, so reduzieren wir mit der Regel
+\\[0.2cm]
+Here, the next token decides which rule we must reduce with in this state:
+If the next token is a $\saquoted{V}$, we reduce with the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$b \rightarrow \;\squoted{X} \squoted{U}$,
+$b \rightarrow \;\saquoted{X}\; \saquoted{U}$,
 \\[0.2cm]
-ist das n\"achste Token hingegen der Buchstabe $\squoted{W}$, so nehmen wir stattdessen die Regel
-\\[0.2cm]
-\hspace*{1.3cm}
-$c \rightarrow \;\squoted{X} \squoted{U}\bullet: \squoted{W}$.
-\\[0.2cm]
-Abbildung
-\ref{fig:lr-conflict-resolved.g} zeigt die entsprechend modifizierte Grammatik, die Sie unter
+if, however, the next token is the letter $\saquoted{W}$, we take the rule
 \\[0.2cm]
 \hspace*{1.3cm}
+$c \rightarrow \;\saquoted{X}\; \saquoted{U}\bullet: \saquoted{W}$ 
+\\[0.2cm]
+instead.  Figure
+\ref{fig:lr-conflict-resolved.g} shows the correspondingly modified grammar, which you can find at
+\\[0.2cm]
+\hspace*{-0.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-10/Look-Ahead-Solved.ipynb}{\texttt{Formal-Languages/tree/master/Python/Chapter-10/Look-Ahead-Solved.ipynb}}
 \\[0.2cm]
-im Netz finden.
+on the web.
 
 
 \subsection{Mysterious Reduce-Reduce Conflicts}
@@ -720,18 +719,27 @@ Interestingly, \simtextsc{Ply} does not merge these states and is therefore able
 conflicts.  On the other hand, \simtextsc{Ply} claims to generate \simtextsc{Lalr} tables.  Therefore, I have written an
 email to \href{https://en.wikipedia.org/wiki/David_M._Beazley}{David Beazley} asking whether this behaviour is
 a feature or a bug.  He has classified this example as an ``\emph{interesting curiosity}''.
-
+\pagebreak
 
 \exerciseEng
 Use \simtextsc{Ply} to implement a \textsl{Python} parser that is able to evaluate formulas from propositional logic.
-The language should support the operators ``\texttt{<->}'' (equivalence), ``\texttt{->}'' (implication),
-``\texttt{|}'' (disjunction), ``\texttt{\&}'' (conjunction), and 
-``\texttt{!}'' (negation).  The operator ``\texttt{!}'' should bind stronger than the operator ``\texttt{\&}'',
-which in turn binds stronger than the operator ``\texttt{|}''.  The operators ``\texttt{|}'' and ``\texttt{\&}''
-are both left associative.  The operator ``\texttt{->}'' associates to the right and binds weaker than the
-operator ``\texttt{|}''. 
-The operator ``\texttt{<->}'' in not associative and is the weakest of all operators in terms of binding strength.
-Furthermore, the language should support parenthesis, variables, and the assignment operator ``\texttt{:=}''.  \eox
+The language should support the operators
+\begin{itemize}
+\item ``\texttt{<->}'' (equivalence), 
+\item ``\texttt{->}'' (implication),
+\item ``\texttt{|}'' (disjunction), 
+\item ``\texttt{\&}'' (conjunction), and 
+\item ``\texttt{!}'' (negation).
+\end{itemize}
+The precedences and associativities are defined as follows:
+\begin{enumerate}
+\item The operator ``\texttt{!}''  binds stronger than the operator ``\texttt{\&}''.
+\item The operator ``\texttt{\&}'' binds stronger than the operator ``\texttt{|}''.  
+\item The operators ``\texttt{|}'' and ``\texttt{\&}'' are both left associative.  
+\item The operator ``\texttt{->}'' associates to the right and binds weaker than the operator ``\texttt{|}''. 
+\item The operator ``\texttt{<->}'' in not associative and binds weaker than the operator ``\texttt{->}''.
+\end{enumerate}
+Furthermore, the language should support parenthesis, variables, and the constants ``$\top$'' and ``$\bot$''.
 
 
 %%% Local Variables: 
