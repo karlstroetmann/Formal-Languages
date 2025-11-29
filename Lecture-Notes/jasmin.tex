@@ -82,8 +82,8 @@ hardware platforms that support \textsl{Java}.
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
                 ]
     .class public Hello
     .super java/lang/Object
@@ -136,7 +136,24 @@ We discuss this program line by line.
       has to be replaced by the character ``\texttt{/}''.  This is true even if a \textsl{Windows}
       operating system is used.
 \item The lines 4 -- 8 initialize the program.  This code is always the same and corresponds to a
-      constructor for the class \texttt{Hello}.  As this code is copied verbatim to the beginning 
+  constructor for the class \texttt{Hello}.  It is equivalent to the following \textsl{Java} code:
+
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{java}
+    public Hello() {
+        super(); // Calls the constructor of java.lang.Object
+    }
+\end{minted}
+
+      As this code is copied verbatim to the beginning 
       of every class file, we will not discuss it further. 
 \item The lines 10 -- 17 defines the method \texttt{main} that does the actual work.
   \begin{enumerate}[(a)]
@@ -166,29 +183,29 @@ We discuss this program line by line.
         The information on the number of local variables is needed by the \textsl{Java} virtual
         machine in order to allocate memory for these variables on the stack.
 
+        
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 2.3cm,
-                  xrightmargin  = 2.3cm,
-                ]
-    public class Hello {
-        public static void main(String[] args) {
-    	System.out.println("Hello World!");
-        }
+\begin{minted}[ frame         = lines, 
+                framesep      = 0.3cm, 
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                labelposition = bottomline,
+                numbers       = left,
+                numbersep     = -0.2cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{java}
+    public static void main(String[] args) {
+        System.out.println("Hello World!");
     }
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Printing \texttt{Hello world} in \textsl{Java}.} 
 \label{fig:Hello.java}
 \end{figure}
 
-  \item For the purpose of the following discussion, we basically assume that there exist two types of
+  \item For the purpose of the following discussion, we assume that there exist two types of
         processors: Those that store the objects they work upon in registers and those that store
         these objects on a stack residing in main memory.  The Java virtual machine is of the second
         type.  Hence, \textsl{Jasmin} assembler programs do not refer to registers but rather refer to
@@ -213,11 +230,14 @@ We discuss this program line by line.
         Then, the command \texttt{ldc} in line 14 pushes a reference to the string ``\texttt{Hello World}'' onto the stack.
         The other instructions do not push anything onto the stack.
   \item Line 15 calls the method \texttt{println}, which is a method of the class
-        ``\texttt{java.io.PrintStream}''.  It also specifies that \texttt{println} takes one argument of
-        type \texttt{java.lang.String} and returns nothing.
+        ``\texttt{java.io.PrintStream}''.
+        Therefore, we first have to put an object of this class onto the stack.  This object is the object
+        \texttt{java.lang.System.out} that was  pushed on the stack using the method \texttt{getstatic} in
+        line 13.
 
-        \texttt{println} needs a second argument.  This argument is the object
-        \texttt{java.lang.System.out} that we had previously pushed on the stack using the method \texttt{getstatic}.
+        Line 15 also specifies that \texttt{println} takes one argument of
+        type \texttt{java.lang.String} and that it returns \texttt{void}, i.e. nothing.
+
   \item Line 16 returns from the method \texttt{main}.
   \item In line 17 the directive ``\texttt{\green{.end}}''  marks the end of the code corresponding to the method 
         \texttt{main}.
@@ -301,8 +321,19 @@ instructions we have to discuss how the main memory is organized in the \simtext
 \item The \blue{constant pool} contains the definitions of constants and also the addresses of
       methods in program memory.
 \end{enumerate}
+Figure \ref{fig:jvm.png} shows the memory structure of the \simtextsc{Jvm}.
 In the following, we will be mostly concerned with the stack.
 We proceed to discuss some of the assembler instructions.
+
+
+\begin{figure}[!ht]
+\centering
+\epsfig{file=Abbildungen/jvm.png, scale=0.17}
+\vspace*{-0.3cm}
+\caption{The memory structure of the \simtextsc{Jvm}.}
+\label{fig:jvm.png}
+\end{figure}
+
 
 \subsubsection{Arithmetical and Logical Instructions}
 
@@ -318,7 +349,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{black}{sepia}{
 \begin{picture}(20,14)
 \put(4.5,1){before \texttt{iadd}}
 \put(4.91,3){$\vdots$}
@@ -363,7 +394,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{black}{sepia}{
 \begin{picture}(20,14)
 \put(4.5,1){before \texttt{isub}}
 \put(4.91,3){$\vdots$}
@@ -443,7 +474,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{blue}{sepia}{
 \begin{picture}(20,14)
 \put(4.5,1){before \texttt{ishl}}
 \put(4.91,3){$\vdots$}
@@ -493,7 +524,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{blue}{sepia}{
 \begin{picture}(20,14)
 \put(4.5,1){before \texttt{dup}}
 \put(4.91,3){$\vdots$}
@@ -533,7 +564,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{blue}{sepia}{
 \begin{picture}(20,14)
 \put(4.5,1){before \texttt{pop}}
 \put(4.91,3){$\vdots$}
@@ -578,7 +609,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{blue}{sepia}{
 \begin{picture}(20,14)
 \put(4.5,1){before \texttt{bipush} $b$}
 \put(4.91,3){$\vdots$}
@@ -632,7 +663,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{blue}{sepia}{
 \begin{picture}(20,18)
 \put(4.5,1){before \texttt{iload} $v$}
 \put(4.91,3){$\vdots$}
@@ -695,7 +726,7 @@ We proceed to discuss some of the assembler instructions.
 \setlength{\unitlength}{0.5cm}
 \begin{figure}[!ht]
   \centering
-\framebox{
+\fcolorbox{blue}{sepia}{
 \begin{picture}(20,18)
 \put(4.5,1){before \texttt{istore} $v$}
 \put(4.91,3){$\vdots$}
