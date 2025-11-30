@@ -141,61 +141,55 @@ scanners that we have already seen before, there are only a few points worth men
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    import ply.lex as lex
-    
-    tokens = [ 'NUMBER', 'ID', 'EQ', 'NE', 'LE', 'GE', 'AND', 'OR',
-               'INT', 'IF', 'ELSE', 'WHILE', 'RETURN'
-             ]
-    
-    t_NUMBER = r'0|[1-9][0-9]'
-    
-    t_EQ  = r'=='
-    t_NE  = r'!='
-    t_LE  = r'<='
-    t_GE  = r'>='
-    t_AND = r'&&'
-    t_OR  = r'\|\|'
-    
-    def t_COMMENT(t):
-        r'//[^\n]*'
-        pass
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+   import ply.lex as lex
+   
+   tokens = [ 'NUMBER', 'ID', 'EQ', 'NE', 'LE', 'GE', 'AND', 'OR',
+              'INT', 'IF', 'ELSE', 'WHILE', 'RETURN'             ]
 
-    Keywords = { 'int'   : 'INT', 
-                 'if'    : 'IF',
-                 'else'  : 'ELSE', 
-                 'while' : 'WHILE', 
-                 'return': 'RETURN'
-               }
-    
-    def t_ID(t):
-        r'[a-zA-Z][a-zA-Z0-9_]*'
-        t.type = Keywords.get(t.value, 'ID')
-        return t
-    
-    literals = ['+','-','*','/','%','(',')','{','}',';','=','<','>','!',',']
-    
-    t_ignore  = ' \t\r'
-    
-    def t_newline(t):
-        r'\n+'
-        t.lexer.lineno += t.value.count('\n')
+   t_NUMBER = r'0|[1-9][0-9]'
+   t_EQ  = r'=='
+   t_NE  = r'!='
+   t_LE  = r'<='
+   t_GE  = r'>='
+   t_AND = r'&&'
+   t_OR  = r'\|\|'
+   
+   def t_COMMENT(t):
+       r'//[^\n]*'
+       pass
 
-    def t_error(t):
-        print(f"Illegal character '{t.value[0]}' in line {t.lineno}.")
-        t.lexer.skip(1)
-    
-    __file__ = 'main'
-    
-    lexer = lex.lex()
-\end{Verbatim}
+   Keywords = { 'int': 'INT', 'if': 'IF', 'else': 'ELSE', 
+                'while': 'WHILE', 'return': 'RETURN'      }
+   
+   def t_ID(t):
+       r'[a-zA-Z][a-zA-Z0-9_]*'
+       t.type = Keywords.get(t.value, 'ID')
+       return t
+   
+   literals = ['+', '-', '*', '/', '%', '(', ')', '{', '}', 
+               '=', '<', '>', '!', ',', ';'                 ]
+   
+   t_ignore  = ' \t\r'
+   
+   def t_newline(t):
+       r'\n+'
+       t.lexer.lineno += t.value.count('\n')
+
+   def t_error(t):
+       print(f"Illegal character '{t.value[0]}' in line {t.lineno}.")
+       t.lexer.skip(1)
+   
+   __file__ = 'main'    
+   lexer    = lex.lex()
+\end{minted}
 \vspace*{-0.3cm}
 \caption{The scanner for \textsl{Integer}-\mytt{C}.}
 \label{fig:Compiler.ipynb:lex}
@@ -212,10 +206,10 @@ scanners that we have already seen before, there are only a few points worth men
       token.  We have used this shortcut to define most of the tokens recognized by our scanner.
 \item While we do not need to declare tokens for those operators that consist of just one token, 
       we have to declare those tokens that consist of two or more characters.  For example, the operator
-      \quoted{==} is represented by the token \mytt{'EQ'} and is defined in line 9.
+      \quoted{==} is represented by the token \mytt{'EQ'} and is defined in line 7.
 \item Our programming language supports single line comments that start with the string \quoted{//} and extend
       to the end of the line.  These comments are implemented via the token \mytt{COMMENT} that is defined in
-      line 16--18.  Note that the function \mytt{t\_COMMENT} does not return a value.  Therefore,
+      line 14--16.  Note that the function \mytt{t\_COMMENT} does not return a value.  Therefore,
       these comments are simply discarded.  This is also the reason that we have to use a function to define
       this token.
 \item The most interesting aspect is the implementation of keywords like \quoted{while} or \quoted{return}.
@@ -227,53 +221,55 @@ scanners that we have already seen before, there are only a few points worth men
       \hspace*{1.3cm}
       \mytt{r'[a-zA-Z][a-zA-Z0-9\_]*'}
       \\[0.2cm]
-      that is used for recognizing identifiers in line 28.  However, the function \mytt{t\_ID} that recognizes
+      that is used for recognizing identifiers in line 22.  However, the function \mytt{t\_ID} that recognizes
       identifiers does not immediately return the token \mytt{'ID'} when it has scanned the name of an
       identifier.  Rather, it first checks whether this name is a predefined keyword.  The predefined keywords
-      are the key of the dictionary \mytt{Keywords} that is defined in line 38-43.  The values of the
+      are the key of the dictionary \mytt{Keywords} that is defined in line 18 and 19.  The values of the
       keywords in this dictionary are the token types.  Therefore, the function \mytt{t\_ID} sets the
       \blue{token type} of the token that is returned to the value stored in the dictionary \mytt{Keywords}.
       In case a name is not defined in this dictionary, the token type is set to \mytt{'ID'}.
-\item The scanner implements the function \mytt{t\_newline} in line 6.  This function is needed
+\item The scanner implements the function \mytt{t\_newline} in line 31.  This function is needed
       to update the attribute \mytt{lineno} of the scanner.  This attribute stores the line number and is
       needed for error messages.
 \end{enumerate}
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    import ply.yacc as yacc
-    
-    start = 'program'
-    
-    precedence = (
-        ('left', 'OR'),
-        ('left', 'AND'),
-        ('right', '!'),
-        ('nonassoc', 'EQ', 'NE', 'LE', 'GE', '<', '>'),
-        ('left', '+', '-'),
-        ('left', '*', '/', '%')
-    )
-    
-    def p_program_one(p):
-        "program : function"
-        p[0] = ('program', p[1])
-        
-    def p_program_more(p):
-        "program : function program"
-        p[0] = ('program', p[1]) + p[2][1:]
-    
-    def p_function(p):
-        "function : INT ID '(' param_list ')' '{' decl_list stmnt_list '}'"
-        p[0] = ('fct', p[2], p[4], p[7], p[8])
-\end{Verbatim}
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = -0.5cm,
+                xrightmargin = -0.3cm,
+              ]{python3}
+  import ply.yacc as yacc
+  
+  start = 'program'
+  
+  precedence = (
+      ('nonassoc', 'IF'),
+      ('nonassoc', 'ELSE'),
+      ('left', 'OR'),
+      ('left', 'AND'),
+      ('right', '!'),
+      ('nonassoc', 'EQ', 'NE', 'LE', 'GE', '<', '>'),
+      ('left', '+', '-'),
+      ('left', '*', '/', '%')
+  )
+  
+  def p_program_one(p):
+      "program : function"
+      p[0] = ('program', p[1])
+      
+  def p_program_more(p):
+      "program : function program"
+      p[0] = ('program', p[1]) + p[2][1:]
+  
+  def p_function(p):
+      "function : INT ID '(' param_list ')' '{' decl_list stmnt_list '}'"
+      p[0] = ('fct', p[2], p[4], p[7], p[8])
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Grammar for Integer-\texttt{C}, part 1.}
 \label{fig:Compiler.ipynb-1}
@@ -284,10 +280,13 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
 \pageref{fig:Compiler.ipynb-1}.  
 \begin{enumerate}
 \item Line 3 declares the start symbol \mytt{program}.
-\item Line 5--12 declare the operator precedences.
+\item Line 5--14 declare the operator precedences.
   \begin{enumerate}[(a)]
-  \item The operator ``\mytt{||}'' that represents \blue{logical or} has the lowest precedence and associates
-        to the left.  
+  \item The keywords ``\mytt{if}'' and ``\mytt{else}''  have the lowest precedence and the precedence of
+        ``\mytt{if}'' is lower than the precedence of ``\mytt{else}''.  This is necessary to solve the
+        \blue{dangling else} conflict.
+  \item The operator ``\mytt{||}'' that represents \blue{logical or} has the lowest precedence of all proper
+        operators and associates to the left.  
   \item The operator ``\mytt{\&\&}'' that represents \blue{logical and} binds stronger than ``\mytt{||}''
         but not as strong as  the negation operator ``\mytt{!}''.
   \item The negation operator ``\mytt{!}'' is right associative because we want to interpret an expression of
@@ -300,8 +299,8 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
         arithmetical operators ``\mytt{*}'', ``\mytt{/}'',  and ``\mytt{\%}''. 
   \end{enumerate}
 \item A \mytt{program} is a non-empty list of \mytt{function} definitions.  Therefore, it is either a single
-      function definition (line 14--16) or it is a function definition followed by more function definitions
-      (line 18--20).
+      function definition (line 16--18) or it is a function definition followed by more function definitions
+      (line 20--22).
 
       The purpose of the parser is to turn the given program into an abstract syntax tree.  This abstract
       syntax tree is represented as a \blue{nested tuple}.  A program consisting of the functions 
@@ -329,15 +328,15 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  firstnumber   = last,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                firstnumber  = last,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
     def p_param_list_empty(p):
         "param_list :"
         p[0] = ('.', )
@@ -373,7 +372,7 @@ we have split the grammar into six parts.  We start with Figure \ref{fig:Compile
     def p_stmnt_list_more(p):
         "stmnt_list : stmnt stmnt_list"
         p[0] = ('.', p[1]) + p[2][1:]
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{ Grammar for Integer-\texttt{C}, part 2.}
 \label{fig:Compiler.ipynb-2}
@@ -420,15 +419,15 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
 \end{enumerate}
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  firstnumber   = last,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                firstnumber   = last,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
     def p_stmnt_block(p):
         "stmnt : '{' stmnt_list '}'"
         p[0] = p[2]
@@ -456,7 +455,7 @@ Figure \ref{fig:Compiler.ipynb-2} shows the definition of parameter lists, decla
     def p_stmnt_expr(p):
         "stmnt : expr ';'"
         p[0] = p[1]
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Grammar for Integer-\texttt{C}, part 3.}
 \label{fig:Compiler.ipynb-3}
@@ -478,15 +477,15 @@ defined.  The grammar rules for statements are as follows:
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  firstnumber   = last,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                firstnumber  = last,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
     def p_bool_expr_or(p):
         "bool_expr : bool_expr OR bool_expr"
         p[0] = ('||', p[1], p[3])
@@ -526,7 +525,7 @@ defined.  The grammar rules for statements are as follows:
     def p_bool_expr_gt(p):
         "bool_expr : expr '>' expr"
         p[0] = ('>', p[1], p[3])
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Grammar for Integer-\texttt{C}, part 4.}
 \label{fig:Compiler.ipynb-4}
@@ -535,6 +534,7 @@ defined.  The grammar rules for statements are as follows:
 \noindent
 Figure \ref{fig:Compiler.ipynb-4} on page \pageref{fig:Compiler.ipynb-4} shows how Boolean expressions are
 defined.  The grammar rules are as follows:
+\pagebreak
 
 \begin{verbatim}
         bool_expr : bool_expr '||' bool_expr
@@ -552,15 +552,15 @@ defined.  The grammar rules are as follows:
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  firstnumber   = last,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                firstnumber  = last,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
     def p_expr_plus(p):
         "expr : expr '+' expr"
         p[0] = ('+', p[1], p[3])
@@ -596,7 +596,7 @@ defined.  The grammar rules are as follows:
     def p_expr_fct_call(p):
         "expr : ID '(' expr_list ')'"
         p[0] = ('call', p[1]) + p[3][1:]
-\end{Verbatim}
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Grammar for Integer-\texttt{C}, part 5.}
 \label{fig:Compiler.ipynb-5}
@@ -604,6 +604,13 @@ defined.  The grammar rules are as follows:
 \noindent
 Figure \ref{fig:Compiler.ipynb-5} on page \pageref{fig:Compiler.ipynb-5} shows how arithmetic expressions
 are defined.  The grammar rules are as follows:
+\pagebreak
+\vspace*{\fill}
+
+\pagebreak
+\vspace*{\fill}
+
+\pagebreak
 
 \begin{verbatim}
         expr : expr '+' expr
@@ -638,43 +645,43 @@ In this case \mytt{p.value} is the part of the input string corresponding to thi
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  labelposition = bottomline,
-                  numbers       = left,
-                  firstnumber   = last,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    def p_expr_list_empty(p):
-        "expr_list :"
-        p[0] = ('.',)
-        
-    def p_expr_list_one(p):
-        "expr_list : expr"
-        p[0] = ('.', p[1])     
-    
-    def p_expr_list_more(p):
-        "expr_list : expr ',' ne_expr_list"
-        p[0] = ('.', p[1]) + p[3][1:]     
-    
-    def p_ne_expr_list_one(p):
-        "ne_expr_list : expr"
-        p[0] = ('.', p[1]) 
-        
-    def p_ne_expr_list_more(p):
-        "ne_expr_list : expr ',' ne_expr_list"
-        p[0] = ('.', p[1]) + p[3][1:] 
-    
-    def p_error(p):
-        if p:
-            print(f'Syntax error at token "{p.value}" in line {p.lineno}.')
-        else:
-            print('Syntax error at end of input.')
-    
-    parser = yacc.yacc(write_tables=False, debug=True)
-\end{Verbatim}
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                firstnumber  = last,
+                numbersep    = -0.2cm,
+                xleftmargin  = -0.5cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+  def p_expr_list_empty(p):
+      "expr_list :"
+      p[0] = ('.',)
+      
+  def p_expr_list_one(p):
+      "expr_list : expr"
+      p[0] = ('.', p[1])     
+  
+  def p_expr_list_more(p):
+      "expr_list : expr ',' ne_expr_list"
+      p[0] = ('.', p[1]) + p[3][1:]     
+  
+  def p_ne_expr_list_one(p):
+      "ne_expr_list : expr"
+      p[0] = ('.', p[1]) 
+      
+  def p_ne_expr_list_more(p):
+      "ne_expr_list : expr ',' ne_expr_list"
+      p[0] = ('.', p[1]) + p[3][1:] 
+  
+  def p_error(p):
+      if p:
+          print(f'Syntax error at "{p.value}" in line {p.lineno}.')
+      else:
+          print('Syntax error at end of input.')
+  
+  parser = yacc.yacc(write_tables=False, debug=True)
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Grammar for Integer-\texttt{C}, part 6.}
 \label{fig:Compiler.ipynb-6}
