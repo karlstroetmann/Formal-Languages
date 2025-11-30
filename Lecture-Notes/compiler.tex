@@ -33,8 +33,8 @@ In compilers whose target code is a \simtextsc{Risc} assembler program, a code s
 usually generated first. Such a code is referred to as \emph{intermediate code}. It then remains the task of a
 so-called \emph{backend} to generate an assembler program for a given processor architecture. The most
 challenging task here is to find a register allocation for the variables, such that as many variables as
-possible can be held in registers. Due to time constraints, we cannot address the topic of register allocation 
-in this lecture.
+possible can be held in registers.  
+
 
 \section{The Programming Language \textsl{Integer}-\mytt{C}}
 \begin{figure}[!ht]
@@ -52,9 +52,10 @@ in this lecture.
                      & \mid        &  \quoted{while} \quoted{(} \textsl{boolExpr} \quoted{)} \textsl{stmnt} \\[0.0cm]
                      & \mid        &  \quoted{return} \textsl{expr}\; \squoted{;} \\[0.0cm]
                      & \mid        &  \;\textsl{expr} \;\squoted{;}               \\[0.2cm]
-   \textsl{boolExpr} & \rightarrow & \textsl{expr} \;(\squoted{==} \mid \squoted{!=} \mid \squoted{<=} \mid \squoted{>=} \mid \squoted{<} \mid \squoted{>})\;  \textsl{expr} \\
-         & \mid        &  \quoted{!} \textsl{boolExpr}             \\[0.0cm]
-         & \mid        &  \textsl{boolExpr} \;(\squoted{\&\&} \mid \squoted{||})\; \textsl{boolExpr}   \\[0.2cm]
+   \textsl{boolExpr} & \rightarrow & \textsl{boolExpr} \;(\squoted{\&\&} \mid \squoted{||})\; \textsl{boolExpr} \\
+         & \mid      &  \quoted{!} \textsl{boolExpr}             \\[0.0cm]
+                     & \mid        &  \quoted{(} \textsl{boolExpr} \quoted{)}   \\[0.2cm]
+         & \mid      &    \textsl{expr} \;(\squoted{==} \mid \squoted{!=} \mid \squoted{<=} \mid \squoted{>=} \mid \squoted{<} \mid \squoted{>})\;  \textsl{expr} \\[0.2cm]
  \textsl{expr} & \rightarrow & \textsl{expr} \;(\squoted{+} \mid \squoted{-} \mid \squoted{*} \mid \squoted{/} \mid \squoted{\%})\; \textsl{expr} \\[0.0cm]
      & \mid        &  \quoted{(} \textsl{expr} \quoted{)}                 \\[0.0cm]
      & \mid        &  \simtextsc{Number}                             \\[0.0cm]
@@ -69,7 +70,10 @@ in this lecture.
 \end{figure}
 
 \noindent
-We now introduce the language \textsl{Integer}-\texttt{C}, which our compiler is intended to translate. In this context, we also refer to it as the \emph{source language} of our compiler. Figure \ref{fig:compiler.ebnf} on page \pageref{fig:compiler.ebnf} shows the grammar of the source language in Extended Backus-Naur Form (\simtextsc{Ebnf}). The grammar for \textsl{Integer}-\texttt{C} uses the following terminals:
+We now introduce the language \textsl{Integer}-\texttt{C}, which our compiler is intended to translate. In this
+context, we also refer to it as the \emph{source language} of our compiler. Figure \ref{fig:compiler.ebnf} on
+page \pageref{fig:compiler.ebnf} shows the grammar of the source language in Extended Backus-Naur Form
+(\simtextsc{Ebnf}). The grammar for \textsl{Integer}-\texttt{C} uses the following terminals: 
 \begin{enumerate}
 \item \simtextsc{Id} is an abbreviation for \blue{Identifier} and represents a sequence of digits, letters, and underscores that begins with a letter. An \simtextsc{Id} designates either a variable or the name of a function.
 \item \simtextsc{Number} stands for a sequence of digits interpreted as a decimal number.
@@ -77,13 +81,12 @@ We now introduce the language \textsl{Integer}-\texttt{C}, which our compiler is
 \end{enumerate}
 According to the grammar provided above, a program is a list of functions. A function consists of the
 declaration of its signature, followed by a list of declarations (\textsl{decl}) and commands (\textsl{stmt})
-enclosed in curly braces.
-% The structure of the individual commands is then similar to that of the language
-% \simtextsc{Sl}, for which we have developed an interpreter in Chapter \ref{chapter:interpreter}.
-The grammar shown
-in Figure \ref{fig:compiler.ebnf} is ambiguous: 
+enclosed in curly braces.  The grammar shown
+in Figure \ref{fig:compiler.ebnf} is ambiguous:
+\pagebreak
+
 \begin{enumerate}
-\item The grammar has the \emph{Dangling-Else Problem}.  We will solve this problem via operator precedences. 
+\item The grammar has the \blue{Dangling-Else Problem}.  We will solve this problem via operator precedences. 
 \item For the operators used in arithmetic and Boolean expressions, precedences must be set to resolve
       ambiguities in the interpretation of these expressions. 
 \end{enumerate}
