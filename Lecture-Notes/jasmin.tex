@@ -76,33 +76,35 @@ hardware platforms that support \textsl{Java}.
 
 \begin{figure}[!ht]
 \centering
+\begin{tcolorbox}[colback=sepia, boxrule=1pt, sharp corners, boxsep=0pt]
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
                   firstnumber   = 1,
                   labelposition = bottomline,
                   numbers       = left,
-                  numbersep     = -0.2cm,
+                  numbersep     = 0.5cm,
                   xleftmargin   = 0.0cm,
                   xrightmargin  = 0.0cm,
                 ]
-    .class public Hello
-    .super java/lang/Object
-    
-    .method public <init>()V
-        aload 0
-        invokenonvirtual java/lang/Object/<init>()V
-        return
-    .end method
-    
-    .method public static main([Ljava/lang/String;)V
-        .limit locals 1
-        .limit stack  2
-        getstatic     java/lang/System/out Ljava/io/PrintStream;
-        ldc           "Hello World!"
-        invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V 
-        return
-    .end method
+.class public Hello
+.super java/lang/Object
+
+.method public <init>()V
+    aload 0
+    invokenonvirtual java/lang/Object/<init>()V
+    return
+.end method
+
+.method public static main([Ljava/lang/String;)V
+    .limit locals 1
+    .limit stack  2
+    getstatic     java/lang/System/out Ljava/io/PrintStream;
+    ldc           "Hello World!"
+    invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V 
+    return
+.end method
 \end{Verbatim}
+\end{tcolorbox}
 \vspace*{-0.3cm}
 \caption{An assembler program to print ``\texttt{Hello World!}''.}
 \label{fig:Hello.jas}
@@ -929,15 +931,16 @@ We discuss the implementation of this program next.
 \end{figure}
 
 \begin{figure}[!ht]
-\centering
+  \centering
+\begin{tcolorbox}[colback=sepia, boxrule=1pt, sharp corners, boxsep=0pt]
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
                   firstnumber   = 1,
                   labelposition = bottomline,
                   numbers       = left,
                   numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
                 ]
     .class public Sum
     .super java/lang/Object
@@ -980,6 +983,7 @@ We discuss the implementation of this program next.
         ireturn                     ; return s;
     .end method
 \end{Verbatim}
+\end{tcolorbox}
 \vspace*{-0.3cm}
 \caption{An assembler program to compute the sum $\sum\limits_{i=1}^{36} i$.}
 \label{fig:Sum.jas}
@@ -1103,6 +1107,64 @@ The output of this command is shown in Figure \ref{fig:Sum.class}.  We see that 
 \texttt{javap} differs a bit from the syntax used by \textsl{Jasmin}.  It is rather unfortunate that
 the company developing \textsl{Java} has decided not to make their assembler public.  Still, we can
 see that the output produced by \texttt{javap} is quite similar to the input accepted by \texttt{jasmin}.
+
+\begin{figure}[!ht]
+\centering
+% The tcolorbox acts as the background container
+% colback=LightSepia: sets the background color
+% frame hidden: removes the box border (so we only see Verbatim lines)
+% boxrule=0pt: ensures no border width
+% sharp corners: ensures the background is a rectangle, not rounded
+\begin{tcolorbox}[colback=sepia, boxrule=1pt, sharp corners, boxsep=0pt]
+    \begin{Verbatim}[ frame         = lines, 
+                      framesep      = 0.3cm, 
+                      firstnumber   = 1,
+                      labelposition = bottomline,
+                      numbers       = none,
+                      xleftmargin   = 0.0cm,
+                      xrightmargin  = 0.0cm,
+                    ]
+Compiled from "Sum.java"
+public class Sum {
+  public Sum();
+    Code:
+      0: aload_0        
+      1: invokespecial #1 // Method java/lang/Object."<init>":()V
+      4: return        
+ 
+  public static void main(java.lang.String[]);
+    Code:
+      0: getstatic     #2 // Field java/lang/System.out:
+                          //       Ljava/io/PrintStream;
+      3: bipush        36
+      5: invokestatic  #3 // Method sum:(I)I
+      8: invokevirtual #4 // Method java/io/PrintStream.println:(I)V
+     11: return        
+ 
+  static int sum(int);
+    Code:
+      0: iconst_0      
+      1: istore_1      
+      2: iconst_0      
+      3: istore_2      
+      4: iload_2        
+      5: iload_0        
+      6: if_icmpgt     19
+      9: iload_1        
+     10: iload_2        
+     11: iadd          
+     12: istore_1      
+     13: iinc          2, 1
+     16: goto          4
+     19: iload_1        
+     20: ireturn        
+}
+\end{Verbatim}
+\end{tcolorbox}
+\vspace*{-0.3cm}
+\caption{The output of ``\texttt{javap -c Sum.class}''.}
+\label{fig:Sum.class}
+\end{figure}
 
 \begin{figure}[!ht]
 \centering
