@@ -181,7 +181,8 @@ division is similar.
             op, lhs, rhs = expr
             L1, sz1 = compile_expr(lhs, st, class_name)
             L2, sz2 = compile_expr(rhs, st, class_name)
-            OpToCmd = { '+': 'iadd', '-': 'isub', '*': 'imul', '/': 'idiv', '%': 'irem' }
+            OpToCmd = { '+': 'iadd', '-': 'isub', '*': 'imul',
+                        '/': 'idiv', '%': 'irem' }
             Cmd     = indent(OpToCmd[op])
             return L1 + L2 + [Cmd], max(sz1, 1 + sz2)
         ...
@@ -223,8 +224,9 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
       \\[0.2cm]
       \hspace*{0.8cm}
-      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) :=
-      \bigl\langle L_1 + \cdots + L_n + \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := $ \\
+      \hspace*{3.3cm}
+      $\bigl\langle L_1 + \cdots + L_n + \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
 \item If $f$ is the function \mytt{println}, then \textsl{Jasmin} treats the function $f$ as a method of the
       predefined \textsl{Java} object \mytt{java.lang.System.out}.
       This method can be invoked using the assembler command
@@ -270,37 +272,38 @@ translation of function calls is implemented.
                  firstnumber   = last,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_expr(expr, st, class_name):
-        ...
-        elif expr[0] == 'call' and expr[1] == 'println':
-            _, _, *args = expr
-            CmdLst    = ['getstatic java/lang/System/out Ljava/io/PrintStream;')
-            stck_size = 0
-            cnt       = 0
-            for arg in args:
-                L, sz_arg = compile_expr(arg, st, class_name)
-                stck_size = max(stck_size, cnt + 1 + sz_arg)
-                CmdLst   += L
-                cnt      += 1
-            CmdLst += [f'invokevirtual java/io/PrintStream/println({"I"*cnt})V']
-            return CmdLst, stck_size
-        elif expr[0] == 'call' and expr[1] != 'println':
-            _, f, *args = expr
-            CmdLst    = []
-            stck_size = 0
-            cnt       = 0
-            for arg in args:
-                L, sz_arg = compile_expr(arg, st, class_name)
-                stck_size = max(stck_size, cnt + sz_arg)
-                CmdLst   += L
-                cnt      += 1
-            CmdLst += [f'invokestatic {class_name}/{f}({"I"*cnt})I']
-            return CmdLst, max(stck_size, 1)
-        ...
+def compile_expr(expr, st, class_name):
+  ...
+  elif expr[0] == 'call' and expr[1] == 'println':
+    _, _, *args = expr
+    CmdLst = ['getstatic java/lang/System/out Ljava/io/PrintStream;')
+    stck_size = 0
+    cnt       = 0
+    for arg in args:
+        L, sz_arg = compile_expr(arg, st, class_name)
+        stck_size = max(stck_size, cnt + 1 + sz_arg)
+        CmdLst   += L
+        cnt      += 1
+    Is = "I" * cnt    
+    CmdLst += [f'invokevirtual java/io/PrintStream/println({Is})V']
+    return CmdLst, stck_size
+  elif expr[0] == 'call' and expr[1] != 'println':
+    _, f, *args = expr
+    CmdLst    = []
+    stck_size = 0
+    cnt       = 0
+    for arg in args:
+        L, sz_arg = compile_expr(arg, st, class_name)
+        stck_size = max(stck_size, cnt + sz_arg)
+        CmdLst   += L
+        cnt      += 1
+    CmdLst += [f'invokestatic {class_name}/{f}({"I"*cnt})I']
+    return CmdLst, max(stck_size, 1)
+  ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of function calls.}
@@ -333,7 +336,8 @@ should either place the number $1$ or $0$ onto the stack: If the value of \texts
 Let us assume that we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile\_expr}(\textsl{lhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$ \quad and \quad
+$\mytt{compile\_expr}(\textsl{lhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$ \quad and \\
+\hspace*{1.3cm}
 $\mytt{compile\_expr}(\textsl{rhs}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$.
 \\[0.2cm]
 Then the stack size needed for evaluating the equation $\textsl{lhs}\; \mytt{==} \;\textsl{rhs}$ is given by
