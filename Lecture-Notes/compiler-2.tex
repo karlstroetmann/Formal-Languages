@@ -27,7 +27,7 @@ The interpretation of the arguments is as follows:
       \mytt{st['x'] = 2},
       \\[0.2cm]
       because the first variable in the local variable frame has index 0.  We will discuss later how the 
-      positions of the variables in the local variable frame is assigned.
+      positions of the variables in the local variable frame are assigned.
 \item \mytt{name} is the name of the class that is to be used by our compiler.
 
       As we generate \textsl{Java} assembler and in \textsl{Java} every function has to be a part of a class,
@@ -51,13 +51,46 @@ The function \mytt{compile\_expr} returns a pair.
       This declaration is done using the pseudo assembler command
       \\[0.2cm]
       \hspace*{1.3cm}
-      \mytt{.limit stack} \mytt{\textsl{sz}}
+      \mytt{.limit stack} \mytt{\;\textsl{sz}}
       \\[0.2cm]
       where \mytt{\textsl{sz}} is the maximum size of the stack.  Controlling the 
       maximum height of the stack is a security feature of \textsl{Java} that prevents exploits that
       utilize stack overflows.
 \end{enumerate}
-In the following, we discuss the evaluation of the different arithmetic expressions one by one.
+The function \texttt{compile\_expr} is implemented via a case distinction.  Figure
+\ref{fig:Compiler.ipynb:compile_expr} on page \pageref{fig:Compiler.ipynb:compile_expr} shows the skeleton of
+this function.  In the following, we discuss the implementation of the different expressions one by one.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = 1,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = 0.3cm,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
+               ]{python3}
+def compile_expr(expr, st, class_name):
+match expr:
+    case str(var):     # variables
+        ...
+    case 'Number', n:  # numbers
+        ...
+    case ('+' | '-' | '*' | '/' | '%') as op, lhs, rhs:
+        ...
+    case 'call', 'println', *args: # println
+        ...
+    case 'call', f, *args: # user defined functions
+        ...
+    case _:
+        assert False, f'E: compile_expr({expr}, {st}, {class_name})'
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Translation of an expression.}
+\label{fig:Compiler.ipynb:compile_expr}
+\end{figure}
 
 
 \subsubsection{Translation of a Variable}
@@ -85,10 +118,10 @@ The code for translating a variable is shown in Figure \ref{fig:Compiler.ipynb:c
                  xleftmargin   = 0.8cm,
                  xrightmargin  = 0.8cm,
                ]{python3}
-    def compile_expr(expr, st, class_name):
-        if isinstance(expr, str):
+def compile_expr(expr, st, class_name):
+    match expr:
+        case str(var):     # variables
             return [f'iload {st[expr]}'], 1
-        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a variable.}
@@ -122,10 +155,10 @@ The code for translating a constant is shown in Figure \ref{fig:Compiler.ipynb:c
                  xleftmargin   = 0.8cm,
                  xrightmargin  = 0.8cm,
                ]{python3}
-    def compile_expr(expr, st, class_name):
+def compile_expr(expr, st, class_name):
+    match expr:
         ...
-        elif expr[0] == 'Number':
-            _, n = expr
+        case 'Number', n:  # numbers
             return [f'ldc {n}'], 1
         ...
 \end{minted}
@@ -161,8 +194,9 @@ $
 \end{array}$
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:iadd} on page \pageref{fig:Compiler.ipynb:compile:iadd} shows how the
-translation of arithmetic operators is implemented.  The translation of subtraction, multiplication, and
-division is similar.
+translation of arithmetic operators is implemented.  The translation of the subtraction, the multiplication, the
+division, and the modulo operator is similar.  Note how we use the matching statement to extract the arithmetic
+operator and the dictionary \texttt{OpToCmd} to pick the correct assembler command.
 
 \begin{figure}[!ht]
 \centering
@@ -175,15 +209,16 @@ division is similar.
                  xleftmargin   = 0.3cm,
                  xrightmargin  = 0.3cm,
                ]{python3}
-    def compile_expr(expr, st, class_name):
+def compile_expr(expr, st, class_name):
+    match expr:
         ...
-        elif expr[0] in  ['+', '-', '*', '/', '%']:
-            op, lhs, rhs = expr
+        case ('+' | '-' | '*' | '/' | '%') as op, lhs, rhs:
             L1, sz1 = compile_expr(lhs, st, class_name)
             L2, sz2 = compile_expr(rhs, st, class_name)
             OpToCmd = { '+': 'iadd', '-': 'isub', '*': 'imul',
-                        '/': 'idiv', '%': 'irem' }
-            Cmd     = indent(OpToCmd[op])
+                        '/': 'idiv', '%': 'irem'
+                      }
+            Cmd     = OpToCmd[op]
             return L1 + L2 + [Cmd], max(sz1, 1 + sz2)
         ...
 \end{minted}
@@ -197,36 +232,6 @@ division is similar.
 In order to translate a function call of the form  $f(a_1, \cdots, a_n)$ we first have to translate the
 arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
 \begin{enumerate}
-\item $f$ is a user defined function.  In this case, the byte code treats $f$ as a static function of the
-      class \mytt{class\_name}.  This static function can be called using the assembler command
-      \mytt{invokestatic}.  In order to calculate the stack size that needs to be reserved for the evaluation
-      of  $f(a_1, \cdots, a_n)$, let us assume that we have
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\mytt{compile\_expr}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$,
-      \\[0.2cm]
-      i.e.~evaluation of the $i^\mathrm{th}$ argument is done by the list of assembler commands $L_i$ and
-      needs a stack size of $s_i$.  As we are evaluating the arguments $a_i$ in the order from $a_1$ to $a_n$,
-      the evaluation of $a_i$ needs a stack size of $i-1 + s_i$, since the results from the evaluation of
-      the arguments $a_1$, $\cdots$, $a_{i-1}$ are already placed on the stack.  Therefore, if we define
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $s := \max(s_1, 1 + s_2, \cdots, i - 1 + s_i, \cdots, n-1 + s_n)$,
-      \\[0.2cm]
-      then $s$ is the total amount of stack size needed to evaluate the arguments.  Furthermore, let us define
-      the \blue{signature} \mytt{fs} of the function $f$ as the string
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\mytt{fs} := \mytt{class\_name/}\mytt{f(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)I}$.
-      \\[0.2cm]
-      Then we can define the
-      value of
-      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
-      \\[0.2cm]
-      \hspace*{0.8cm}
-      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := $ \\
-      \hspace*{3.3cm}
-      $\bigl\langle L_1 + \cdots + L_n + \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
 \item If $f$ is the function \mytt{println}, then \textsl{Jasmin} treats the function $f$ as a method of the
       predefined \textsl{Java} object \mytt{java.lang.System.out}.
       This method can be invoked using the assembler command
@@ -259,11 +264,10 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       \hspace*{1.3cm}
       $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := \\[0.1cm]
       \hspace*{2.8cm} \bigl\langle \mytt{[} \;\mytt{gs} \;\mytt{]} + L_1 + \cdots + L_n +
-                   \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
-      \end{enumerate}
+      \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
 
-Figure \ref{fig:Compiler.ipynb:compile:iadd} on page \pageref{fig:Compiler.ipynb:compile:iadd} shows how the
-translation of function calls is implemented.  
+      Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:call_println} shows how the
+      translation of a call to \texttt{println} is implemented.
 
 \begin{figure}[!ht]
 \centering
@@ -277,38 +281,104 @@ translation of function calls is implemented.
                  xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
-  ...
-  elif expr[0] == 'call' and expr[1] == 'println':
-    _, _, *args = expr
-    CmdLst = ['getstatic java/lang/System/out Ljava/io/PrintStream;')
-    stck_size = 0
-    cnt       = 0
-    for arg in args:
-        L, sz_arg = compile_expr(arg, st, class_name)
-        stck_size = max(stck_size, cnt + 1 + sz_arg)
-        CmdLst   += L
-        cnt      += 1
-    Is = "I" * cnt    
-    CmdLst += [f'invokevirtual java/io/PrintStream/println({Is})V']
-    return CmdLst, stck_size
-  elif expr[0] == 'call' and expr[1] != 'println':
-    _, f, *args = expr
-    CmdLst    = []
-    stck_size = 0
-    cnt       = 0
-    for arg in args:
-        L, sz_arg = compile_expr(arg, st, class_name)
-        stck_size = max(stck_size, cnt + sz_arg)
-        CmdLst   += L
-        cnt      += 1
-    CmdLst += [f'invokestatic {class_name}/{f}({"I"*cnt})I']
-    return CmdLst, max(stck_size, 1)
-  ...
+   match expr:
+   ...
+     case 'call', 'println', *args: # println
+           gs = 'getstatic java/lang/System/out Ljava/io/PrintStream;'
+           CmdLst = [gs]
+           stck_size = 0
+           cnt       = 0
+           for arg in args:
+               L, sz_arg = compile_expr(arg, st, class_name)
+               stck_size = max(stck_size, cnt + 1 + sz_arg)
+               CmdLst   += L
+               cnt      += 1
+           Is = "I" * cnt
+           iv = f'invokevirtual java/io/PrintStream/println({Is})V'
+           CmdLst += [iv]
+           return CmdLst, stck_size
+     ...
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Translation of a call to \texttt{println}.}
+\label{fig:Compiler.ipynb:compile:call_println}
+\end{figure}
+\pagebreak
+
+      
+\item $f$ is a user defined function.  In this case, the byte code treats $f$ as a static function of the
+      class \mytt{class\_name}.  This static function can be called using the assembler command
+      \mytt{invokestatic}.  In order to calculate the stack size that needs to be reserved for the evaluation
+      of  $f(a_1, \cdots, a_n)$, let us assume that we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{compile\_expr}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$,
+      \\[0.2cm]
+      i.e.~evaluation of the $i^\mathrm{th}$ argument is done by the list of assembler commands $L_i$ and
+      needs a stack size of $s_i$.  As we are evaluating the arguments $a_i$ in the order from $a_1$ to $a_n$,
+      the evaluation of $a_i$ needs a stack size of $i-1 + s_i$, since the results from the evaluation of
+      the arguments $a_1$, $\cdots$, $a_{i-1}$ are already placed on the stack.  Therefore, if we define
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s := \max(s_1, 1 + s_2, \cdots, i - 1 + s_i, \cdots, n-1 + s_n)$,
+      \\[0.2cm]
+      then $s$ is the total amount of stack size needed to evaluate the arguments.  Furthermore, let us define
+      the \blue{signature} \mytt{fs} of the function $f$ as the string
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mytt{fs} := \mytt{class\_name/}\mytt{f(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)I}$.
+      \\[0.2cm]
+      Then we can define the
+      value of
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr)$ as follows:
+      \\[0.2cm]
+      \hspace*{0.8cm}
+      $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := $ \\
+      \hspace*{3.3cm}
+      $\bigl\langle L_1 + \cdots + L_n + \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]},
+      \max(s,1)\bigr\rangle$.
+
+      We have to take the maximum of $s$ and $1$ to cover the case that the function does not take any
+      parameters.
+      
+      Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:fct} shows how the
+      translation of function calls is implemented.
+
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines, 
+                 framesep      = 0.3cm, 
+                 firstnumber   = last,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = 0.3cm,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
+               ]{python3}
+def compile_expr(expr, st, class_name):
+   match expr:
+   ...
+     case 'call', f, *args: # user defined functions
+           CmdLst    = []
+           stck_size = 0
+           cnt       = 0
+           for arg in args:
+               L, sz_arg = compile_expr(arg, st, class_name)
+               stck_size = max(stck_size, cnt + sz_arg)
+               CmdLst   += L
+               cnt      += 1
+           CmdLst += [f'invokestatic {class_name}/{f}({"I"*cnt})I']
+           return CmdLst, max(stck_size, 1)
+     ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of function calls.}
-\label{fig:Compiler.ipynb:compile:call}
+\label{fig:Compiler.ipynb:compile:fct}
 \end{figure}
+\end{enumerate}
+
+
 
 \subsection{Translation of Boolean Expressions}
 Boolean expressions are build from equations and inequations using the logical operators
@@ -369,7 +439,7 @@ function that is compiled.  Let me explain this equation in detail:
       \textsl{true}.
 \item Otherwise execution commences with the next instruction and hence the value $0$ is pushed onto the stack.
 \item Next, the control flow jumps to the label \textsl{next}, which is at the end of the generated
-      list of assembler commands.  Hence, in this case the execution of equation
+      list of assembler commands.  Hence, in this case the evaluation of the equation
       $\textsl{lhs}\; \mytt{==} \;\textsl{rhs}$ is finished. 
 \item If the values of \textsl{lhs} and \textsl{rhs} are the same, the number $1$
       is pushed onto the stack.
@@ -662,18 +732,21 @@ is similar.  Let us assume that we have the following:
 \item $\mytt{compile\_stmnt}(\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}) = \pair(L_3, s_3)$.
 \end{enumerate}
 Then we define:
+\pagebreak
+
+\hspace*{0.0cm}
+$ \textsl{compile\_stmnt}\bigl(\mytt{if}\;
+     (\textsl{bool\_expr})\;\textsl{stmnt}_1\;\mytt{else}\;\textsl{stmnt}_2, \mytt{st},
+     \mytt{class\_name}\bigr) \; = $
 \\[0.2cm]
-\hspace*{0.3cm}
-$
-   \begin{array}[t]{lcccl}
-   \textsl{compile\_stmnt}\bigl(\mytt{if}\; (\textsl{bool\_expr})\;\textsl{stmnt}_1\;\mytt{else}\;\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}\bigr) & = & \bigl\langle & & L_1  \\
-   &&& + & [\;\mytt{ifeq}\;\textsl{else}\;] \\
-   &&& + & L_2 \\
-   &&& + & [\mytt{goto}\;\textsl{next}] \\
-   &&& + & [\;\textsl{else}\mytt{:}\;] \\
-   &&& + & L_3 \\
-   &&& + & [\;\textsl{next}\mytt{:}\;], \qquad \max(s_1, s_2, s_3) \bigr\rangle        
-\end{array}
+\hspace*{1.3cm}
+$\bigl\langle  L_1 \;+\;  
+    [\;\mytt{ifeq}\;\textsl{else}\;] \;+\;
+    L_2 \;+ 
+    [\mytt{goto}\;\textsl{next}] \;+\;
+    [\;\textsl{else}\mytt{:}\;] \;+\;
+    L_3 \;+ 
+    [\;\textsl{next}\mytt{:}\;],\; \max(s_1, s_2, s_3) \bigr\rangle        
 $
 \\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:if} on page \pageref{fig:Compiler.ipynb:compile:if} shows how the
@@ -686,33 +759,34 @@ translation of branching statements is implemented.
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.5cm,
-                 xrightmargin  = 0.5cm,
+                 numbersep     = 0.3cm,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_stmnt(stmnt, st, class_name):
-        ...
-        elif stmnt[0] == 'if':
-            _, expr, sub_stmnt = stmnt
-            L1, sz1    = compile_bool(expr, st, class_name)
-            L2, sz2    = compile_stmnt(sub_stmnt, st, class_name)
-            else_label = new_label()
-            CmdLst = L1 + [f'ifeq {else_label}'] + L2 + [else_label + ':']
-            return CmdLst, max(sz1, sz2)
-        elif stmnt[0] == 'if-else':
-            _, expr, then_stmnt, else_stmnt = stmnt
-            L1, sz1    = compile_bool(expr, st, class_name)
-            L2, sz2    = compile_stmnt(then_stmnt, st, class_name)
-            L3, sz3    = compile_stmnt(else_stmnt, st, class_name)        
-            else_label = new_label()
-            next_label = new_label()
-            if_stmnt   = f'ifeq {else_label}'
-            else_stmnt = else_label + ':'
-            next_stmnt = next_label + ':'
-            goto_stmnt = f'goto {next_label}'
-            CmdLst = L1 + [if_stmnt] + L2 + [goto_stmnt, else_stmnt] + L3 + [next_stmnt]
-            return CmdLst, max(sz1, sz2, sz3)
-        ...       
+def compile_stmnt(stmnt, st, class_name):
+    ...
+    elif stmnt[0] == 'if':
+        _, expr, sub_stmnt = stmnt
+        L1, sz1    = compile_bool(expr, st, class_name)
+        L2, sz2    = compile_stmnt(sub_stmnt, st, class_name)
+        else_label = new_label()
+        CmdLst = L1 + [f'ifeq {else_label}'] + L2 + [else_label + ':']
+        return CmdLst, max(sz1, sz2)
+    elif stmnt[0] == 'if-else':
+        _, expr, then_stmnt, else_stmnt = stmnt
+        L1, sz1    = compile_bool(expr, st, class_name)
+        L2, sz2    = compile_stmnt(then_stmnt, st, class_name)
+        L3, sz3    = compile_stmnt(else_stmnt, st, class_name)        
+        else_label = new_label()
+        next_label = new_label()
+        if_stmnt   = f'ifeq {else_label}'
+        else_stmnt = else_label + ':'
+        next_stmnt = next_label + ':'
+        goto_stmnt = f'goto {next_label}'
+        CmdLst = L1 + [if_stmnt] + L2 + [goto_stmnt, else_stmnt] + \
+                 L3 + [next_stmnt]
+        return CmdLst, max(sz1, sz2, sz3)
+    ...       
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of branching statements.}
@@ -733,7 +807,9 @@ and
 $\mytt{compile\_stmnt}(\textsl{stmnt}, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$,
 \\[0.2cm]
 Then we can define
-\[
+\\[0.2cm]
+\hspace*{0.3cm}
+$
    \begin{array}[t]{lcccl}
      \textsl{compile\_stmnt}\bigl(\mytt{while}\; (\textsl{cond})\;\textsl{stmnt}, \mytt{st}, \mytt{class\_name}\bigr)
      & = & \bigl\langle & & [ \textsl{loop}:]  \\
@@ -743,7 +819,8 @@ Then we can define
    &&& + & [\mytt{goto}\;\textsl{loop}] \\
    &&& + & [\;\textsl{next}\mytt{:}\;], \qquad \max(s_1, s_2) \bigr\rangle        
 \end{array}
-\]
+$
+\\[0.2cm]
 Figure \ref{fig:Compiler.ipynb:compile:while} on page \pageref{fig:Compiler.ipynb:compile:while} shows how the
 translation of a loop is implemented.
 
@@ -770,7 +847,8 @@ translation of a loop is implemented.
             loop_stmnt = loop_label + ':'        
             next_stmnt = next_label + ':'
             goto_stmnt = f'goto {loop_label}'
-            CmdLst = [loop_stmnt] + L1 + [if_stmnt] + L2 + [goto_stmnt, next_stmnt]
+            CmdLst = [loop_stmnt] + L1 + [if_stmnt] + \
+                     L2 + [goto_stmnt, next_stmnt]
             return CmdLst, max(sz1, sz2)
         ...       
 \end{minted}
@@ -919,44 +997,45 @@ translation of an expression statement is implemented.
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_fct(fct_def, class_name):
-        global label_counter
-        label_counter = 0
-        _, name, parameters, variables, stmnts = fct_def
-        _, *parameters = parameters
-        _, *variables  = variables
-        _, *stmnts     = stmnts
-        m   = len(parameters)
-        n   = len(variables)
-        st  = {}
-        cnt = 0
-        for var in parameters:
-            st[var] = cnt
-            cnt    += 1
-        for var in variables:
-            st[var] = cnt
-            cnt    += 1
-        CmdLst = []
-        size   = 0
-        for stmnt in stmnts:
-            L, sz = compile_stmnt(stmnt, st, class_name)
-            CmdLst += L
-            size = max(size, sz)
-        limit_locals = f'.limit locals {m+n}'
-        limit_stack  = f'.limit stack  {size}'
-        if name != 'main':
-            method = f'.method public static {name}({"I"*m})I'
-            CmdLst = [method, limit_locals, limit_stack] + CmdLst + ['.end method']
-            return CmdLst, sz
-        else:
-            method = '.method public static main([Ljava/lang/String;)V'
-            CmdLst = [method, limit_locals, limit_stack] + CmdLst + \
-                     ['return', '.end method']
-            return CmdLst, sz
+def compile_fct(fct_def, class_name):
+    global label_counter
+    label_counter = 0
+    _, name, parameters, variables, stmnts = fct_def
+    _, *parameters = parameters
+    _, *variables  = variables
+    _, *stmnts     = stmnts
+    m   = len(parameters)
+    n   = len(variables)
+    st  = {}
+    cnt = 0
+    for var in parameters:
+        st[var] = cnt
+        cnt    += 1
+    for var in variables:
+        st[var] = cnt
+        cnt    += 1
+    CmdLst = []
+    size   = 0
+    for stmnt in stmnts:
+        L, sz = compile_stmnt(stmnt, st, class_name)
+        CmdLst += L
+        size = max(size, sz)
+    limit_locals = f'.limit locals {m+n}'
+    limit_stack  = f'.limit stack  {size}'
+    if name != 'main':
+        method = f'.method public static {name}({"I"*m})I'
+        CmdLst = [method, limit_locals, limit_stack] + CmdLst + \
+                 ['.end method']
+        return CmdLst, sz
+    else:
+        method = '.method public static main([Ljava/lang/String;)V'
+        CmdLst = [method, limit_locals, limit_stack] + CmdLst + \
+                 ['return', '.end method']
+        return CmdLst, sz
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a function definition.}
@@ -976,9 +1055,9 @@ are two cases.
                         framesep      = 0.3cm, 
                         labelposition = bottomline,
                         numbers       = left,
-                        numbersep     = -0.2cm,
-                        xleftmargin   = 0.8cm,
-                        xrightmargin  = 0.8cm,
+                        numbersep     = -0.3cm,
+                        xleftmargin   = 0.0cm,
+                        xrightmargin  = 0.0cm,
                         commandchars  = \\\{\},
                         codes={\catcode`$=3\catcode`^=7\catcode`_=8}
                       ]
@@ -991,16 +1070,20 @@ are two cases.
                return
             .end method
        \end{Verbatim}
-       % \$
+       % $
 
        Here $l$ is the number of all variables used by the function \mytt{main}, while $s$ is the maximum
        height of the stack.
        Finally,  $s_1$, $\cdots$, $s_n$ are the assembler commands that result from translating the block
        inside the function.
-\pagebreak
+       \pagebreak
+       
+       \vspace*{\fill}
+       \pagebreak
+
        
 \item Otherwise, the following code is to be generated:
-
+  
       \begin{Verbatim}[ frame         = lines, 
                         framesep      = 0.3cm, 
                         labelposition = bottomline,
@@ -1080,34 +1163,34 @@ function \mytt{compile\_program} line by line.
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                  ]{python3}
-    import os
-                 
-    def compile_program(file_name):
-        directory = os.path.dirname(file_name)
-        base      = os.path.basename(file_name)
-        base      = base[:-2]
-        with open(file_name, 'r') as handle:
-            program = handle.read() 
-        ast = yacc.parse(program)
-        _, *fct_lst = ast
-        CmdLst      = []
-        for fct in fct_lst:
-            L, _ = compile_fct(fct, base)
-            CmdLst += L + ['\n']
-        with open(directory + '/' + base + '.jas', 'w') as handle:
-            handle.write('.class public ' + base + '\n');
-            handle.write('.super java/lang/Object\n\n');
-            handle.write('.method public <init>()V\n');
-            handle.write('    aload 0\n');
-            handle.write('    invokenonvirtual java/lang/Object/<init>()V\n');
-            handle.write('    return\n');
-            handle.write('.end method\n\n');
-            for cmd in CmdLst:
-                handle.write(cmd + '\n')                
+import os
+             
+def compile_program(file_name):
+    directory = os.path.dirname(file_name)
+    base      = os.path.basename(file_name)
+    base      = base[:-2]
+    with open(file_name, 'r') as handle:
+      program = handle.read() 
+    ast = yacc.parse(program)
+    _, *fct_lst = ast
+    CmdLst      = []
+    for fct in fct_lst:
+      L, _ = compile_fct(fct, base)
+       CmdLst += L + ['\n']
+    with open(directory + '/' + base + '.jas', 'w') as handle:
+      handle.write('.class public ' + base + '\n');
+      handle.write('.super java/lang/Object\n\n');
+      handle.write('.method public <init>()V\n');
+      handle.write(' aload 0\n');
+      handle.write(' invokenonvirtual java/lang/Object/<init>()V\n');
+      handle.write(' return\n');
+      handle.write('.end method\n\n');
+      for cmd in CmdLst:
+        handle.write(cmd + '\n')                
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a program.}
@@ -1196,9 +1279,7 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
     .super java/lang/Object
     
     .method public <init>()V
-        aload 0
-        invokenonvirtual java/lang/Object/<init>()V
-        return
+        ...
     .end method
         
     .method public static sum(I)I
@@ -1229,15 +1310,7 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
     .method public static main([Ljava/lang/String;)V
     .limit locals 1
     .limit stack  2
-            ldc 6
-            ldc 6
-            imul
-            istore 0
-            getstatic java/lang/System/out Ljava/io/PrintStream;
-            iload 0
-            invokestatic MySum/sum(I)I
-            invokevirtual java/io/PrintStream/println(I)V
-            return
+            ...
     .end method
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -1245,17 +1318,20 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
 \label{fig:MySum.jas}
 \end{figure}
 
+\pagebreak
 \vspace*{\fill}
+
+\pagebreak
+\vspace*{\fill}
+
 \pagebreak
 
-\vspace*{\fill}
-\pagebreak
 
 \exerciseEng
-Extend the compiler that is presented in this chapter and is available at
+Extend the compiler that is presented in this chapter and that is available at
 \\[0.2cm]
-\hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Compiler.ipynb}{\texttt{https://github.com/karlstroetmann/Formal-Languages/blob/master/Ply/Compiler.ipynb}}
+\hspace*{0.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-12/Compiler.ipynb}{\scriptsize\texttt{github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-12/Compiler.ipynb}}
 \\[0.2cm]
 so that a new kind of \mytt{for}-loops is supported.
 Figure \ref{fig:MySum.c3} on page \pageref{fig:MySum.c3} shows an example of the use of this kind of
