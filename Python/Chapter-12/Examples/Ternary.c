@@ -1,15 +1,8 @@
-int sum(int n) {
-    int s;
-    s = 0;
-    while (n != 0) {
-        s = n != 2 ? s + n : s - n;
-        n = n - 1;
-    }
-    return s;
+/*** This function computes the factorial of a given number n. ***/
+int min(int a, int b) {
+    return a < b ? a : b;
 }
-
+// This function os executed when the program runs.
 int main() {
-    int n;
-    n = 6 * 6;
-    println(sum(n));
+    println(min(2,3));
 }
