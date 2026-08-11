@@ -1,0 +1,2093 @@
+\chapter[Building Scanners]{Building Scanners with Regular Expressions \label{chapter:ply-lex}}
+
+After introducing the concept of regular expressions, we will now explore their practical
+applications. In this chapter, we show how a scanner can be implemented directly in \textsl{Python},
+using nothing but the regular expressions provided by the \textsl{Python} module \texttt{re}.
+A \textcolor{blue}{scanner}\index{scanner} is a program
+designed to segment a given string into a sequence of \emph{tokens}, where a
+\textcolor{blue}{token}\index{token} is a contiguous string of characters that logically group together. To
+illustrate, consider the input for a \texttt{C}-compiler, which is an \simtextsc{Ascii}-string representing a
+valid \texttt{C} program. The compiler initially organizes these characters into various \emph{tokens},
+including:  
+
+\begin{enumerate}
+\item \textcolor{blue}{Keywords} or reserved words, such as, for example, ``\texttt{if}'', ``\texttt{while}'',
+      ``\texttt{for}'', and ``\texttt{switch}''. 
+\item \textcolor{blue}{Operator symbols}, for example ``\texttt{+}'', ``\texttt{+=}'', ``\texttt{<}'',
+      and ``\texttt{<=}''.
+\item \textcolor{blue}{Parentheses}, which include ``\texttt{(}'', ``\texttt{[}'', ``\texttt{\{}'', and the
+      corresponding closing symbols. 
+\item \textcolor{blue}{Constants}, with \texttt{C} recognizing three types:
+    \begin{enumerate}
+    \item Numerical constants, such as the integer ``\texttt{42}'' or the floating-point number
+          ``\texttt{1.23e2}''. 
+    \item String constants enclosed in double quotes, like ``\texttt{\symbol{34}hello\symbol{34}}''.
+
+          Note that the double quote character ``\texttt{\symbol{34}}'' is part of the string constant.
+    \item Single-character constants wrapped in single quotes, as in ``\texttt{\symbol{39}a\symbol{39}}''.
+
+          Note that the single quote character ``\texttt{\symbol{39}}'' is part of the character constant.
+    \end{enumerate}
+\item \textcolor{blue}{Identifiers}, which may serve as variable names, function names, or type names.
+\item \textcolor{blue}{Comments}, available in two forms: \textcolor{blue}{Single-line comments} start with
+      ``\texttt{//}'' and extend to the end of the line, while \textcolor{blue}{multi-line comments} begin with
+      ``\texttt{/*}'' and end with ``\texttt{*/}''. 
+\item \textcolor{blue}{Whitespace characters}, such as the \textcolor{blue}{blank character} \texttt{' '},
+      the \textcolor{blue}{tab} character \texttt{'\symbol{92}t'}, the \textcolor{blue}{newline} character
+      \texttt{'\symbol{92}n'}, and the \textcolor{blue}{carriage return} character \texttt{'\symbol{92}r'}. 
+
+Both whitespace characters and comments are generally discarded by the scanner.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.3cm,
+                  xleftmargin  = 0.8cm,
+                  xrightmargin = 0.8cm,
+                  ]{c}
+    /* Hello World program */
+    #include <stdio.h>
+    
+    int main() {
+        printf("Hello World!");
+        return 1;
+    }
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A straightforward \texttt{C} program.}
+\label{fig:hello-world.c}
+\end{figure}
+
+\noindent
+For a more tangible example, consider Figure \ref{fig:hello-world.c} on page \pageref{fig:hello-world.c}, which
+presents a \texttt{C} program that outputs the string ``\texttt{Hello World!}'' along with a newline
+character. The scanner processes this program into the following list of tokens:
+
+\noindent
+\hspace*{1.3cm}
+   [ ``\texttt{\#}'', ``\texttt{include}'', ``\texttt{<}'', ``\texttt{stdio.h}'', ``\texttt{>}'',
+   ``\texttt{int}'', ``\texttt{main}'', ``\texttt{(}'', ``\texttt{)}'', ``\texttt{\{}'',
+\\
+\hspace*{1.4cm} 
+     ``\texttt{printf}'', ``\texttt{(}'', ``\texttt{"Hello World!"}'', ``\texttt{)}'', ``\texttt{;}'', ``\texttt{return}'', ``\texttt{1}'', ``\texttt{;}'', ``\texttt{\}}''
+   ]
+   \\[0.2cm]
+Note that the scanner discards all white space characters, as these are only used to demarcate tokens.  The
+exception to this are those white space characters that occur inside string constants.  Furthermore, the
+comment has been removed by the scanner. 
+
+While it is certainly possible to implement a scanner by inspecting the input character by character, doing so
+by hand is tedious and error-prone.  \textsl{Python}'s \texttt{re} module makes this task considerably easier:
+We specify every kind of token as a regular expression and let \texttt{re} do the work of matching.  We develop
+this approach in the following section. 
+
+\section{Building a Scanner with Regular Expressions}
+\index{scanner!building with regular expressions}
+In order to build a scanner using regular expressions, we proceed in three steps that mirror the three parts of
+any scanner specification:
+\begin{enumerate}
+\item We decide on the names of all token types that our scanner is supposed to recognize.
+\item For every token name, we specify a regular expression that describes the set of strings that are to be
+      recognized as tokens of this type.
+\item We combine all of these regular expressions into a single \blue{master pattern}\index{master pattern} and
+      use this pattern to scan the input string from left to right.
+\end{enumerate}
+To illustrate this approach, we develop a scanner that tokenizes simple arithmetic expressions.  Figure
+\ref{fig:regexp-scanner.py-1} on page \pageref{fig:regexp-scanner.py-1} and Figure
+\ref{fig:regexp-scanner.py-2} on page \pageref{fig:regexp-scanner.py-2} show the complete implementation, which we discuss line by line below.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+    import re
+    import collections
+    
+    token_specification = [
+        ('NUMBER',   r'0|[1-9][0-9]*'),
+        ('PLUS',     r'\+'),
+        ('MINUS',    r'-'),
+        ('TIMES',    r'\*'),
+        ('DIVIDE',   r'/'),
+        ('LPAREN',   r'\('),
+        ('RPAREN',   r'\)'),
+        ('NEWLINE',  r'\n'),
+        ('SKIP',     r'[ \t]+'),
+        ('MISMATCH', r'.'),
+    ]
+    master_pattern = \
+      '|'.join(f'(?P<{name}>{regexp})'
+               for name, regexp in token_specification)
+    
+    Token = collections.namedtuple(
+               'Token', ['type', 'value', 'line', 'column'])
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A scanner for simple arithmetic expressions, implemented with regular expressions.}
+\label{fig:regexp-scanner.py-1}
+\end{figure}
+
+\begin{enumerate}
+\item Line 1 imports the module \texttt{re}, while line 2 imports the module \texttt{collections}, which we
+      need in order to define the class of our tokens.
+\item Lines 4--15 contain the \blue{token specification}\index{token specification}.  Syntactically, this is a
+      list of pairs.  The first component of every pair is the name of a token and, by convention, this name is
+      written using capital letters.  The second component is a regular expression using the syntax that is
+      specified in the \textsl{Python} \href{https://docs.python.org/3/library/re.html}{\texttt{re}} module.
+      This regular expression describes the set of strings that are recognized as tokens of the given name.
+
+      Three of the names occurring in the token specification, namely \texttt{NEWLINE}, \texttt{SKIP}, and
+      \texttt{MISMATCH}, do not name genuine tokens.  Instead, they serve a bookkeeping purpose:
+      \begin{enumerate}
+      \item \texttt{NEWLINE} matches a single newline character.  Whenever this token is recognized, we have to
+            increment our line counter.
+      \item \texttt{SKIP} matches blanks and tabs.  These characters are only used to separate tokens and are
+            therefore discarded.
+      \item \texttt{MISMATCH} matches any single character that has not already been matched by one of the
+            preceding regular expressions.  If this token is recognized, an unexpected character has been found
+            in the input and the scanner has to report an error.
+      \end{enumerate}
+\item Line 16 combines the individual regular expressions into the \blue{master pattern}.  Every regular
+      expression is wrapped inside a \blue{named group}\index{named group}, which is written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{(?P<\textsl{NAME}>\textsl{regexp})}.
+      \\[0.2cm]
+      These named groups are then joined using the alternative operator ``\texttt{|}''.  Later, once a match has
+      been found, we can ask which of the named groups is responsible for the match.
+
+      \remarkEng
+      Unlike some scanner generators, which choose the \emph{longest} matching alternative irrespective of the
+      order in which the alternatives are written down, \textsl{Python}'s \texttt{re} module chooses the
+      \emph{first} alternative---reading from left to right---that matches at the current position.  Therefore,
+      the order of the pairs in the token specification is significant: More specific patterns have to be listed
+      before more general ones.  For instance, if our language had keywords, the regular expressions for these
+      keywords would have to precede the regular expression used for identifiers, since otherwise every keyword
+      would incorrectly be recognized as an identifier.
+      \eox
+\item Line 18 defines the class \texttt{Token}\index{Token} using the function
+      \texttt{collections.namedtuple}.  Every object of this class has four attributes, namely \texttt{type},
+      \texttt{value}, \texttt{line}, and \texttt{column}, which we discuss in more detail below.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  firstnumber  = last,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+def tokenize(code):
+    ln         = 1
+    line_start = 0
+    for mo in re.finditer(master_pattern, code):
+        kind  = mo.lastgroup
+        value = mo.group()
+        col   = mo.start() - line_start
+        if kind == 'NUMBER':
+            value = int(value)
+        elif kind == 'NEWLINE':
+            line_start   = mo.end()
+            line_number += 1
+            continue
+        elif kind == 'SKIP':
+            continue
+        elif kind == 'MISMATCH':
+            raise RuntimeError(f"{value!r}: line {ln}, col {col}.")
+        yield Token(kind, value, ln, col)
+
+data = '3 + 4 * 10 + 007 + (-20) * 2'
+for tok in tokenize(data):
+    print(tok)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A scanner for simple arithmetic expressions, part 2.}
+\label{fig:regexp-scanner.py-2}
+\end{figure}
+
+\item Lines 22--39 define the function \texttt{tokenize}, which is a \blue{generator function}: Instead of
+      returning a single value, it \texttt{yield}s a sequence of \texttt{Token} objects, one for every token
+      found in its argument \texttt{code}.
+      \begin{enumerate}
+      \item Lines 21--22 initialize the variables \texttt{ln} (short for \emph{line number})
+            and \texttt{line\_start}.  The variable \linebreak
+            \texttt{ln} counts the lines of the input, starting with the value $1$.  The variable
+            \texttt{line\_start} stores the position at which the current line begins; it is needed to compute
+            the column of a token.
+      \item Line 23 uses the function \texttt{finditer} from the module \texttt{re} to scan the input string
+            \texttt{code} for non-overlapping matches of the \texttt{master\_pattern}.  This function returns
+            an iterator of \blue{match objects}, one for every token that is found, in the order in which these
+            tokens occur in the input.
+      \item Line 26 uses the attribute \texttt{lastgroup} of the match object \texttt{mo} to determine the name
+            of the named group that is responsible for the match, i.e.\ the name of the token that has been
+            found.
+      \item Line 27 uses the method \texttt{mo.group()} to extract the string that has been matched.
+      \item Line 28 computes the column at which the token starts by subtracting \texttt{line\_start} from
+            \texttt{mo.start()}, the position at which the match begins.
+      \item Lines 29--30 deal with the token \texttt{NUMBER}: the matched string is converted into an
+            \texttt{int}.
+      \item Lines 29--32 deal with the token \texttt{NEWLINE}: the variable \texttt{line\_start} is updated to
+            the position right after the newline character, the line counter is incremented, and the loop
+            continues with the \texttt{continue} statement---no token is generated.
+      \item Lines 35--36 deal with the token \texttt{SKIP}: nothing needs to be done except to continue with
+            the next match.
+      \item Lines 37--38 deal with the token \texttt{MISMATCH}: an exception is raised that reports the illegal
+            character together with the line and column at which it was found.
+      \item Line 39 is only reached for genuine tokens.  It constructs a \texttt{Token} object and
+            \texttt{yield}s it to the caller.
+      \end{enumerate}
+\item Line 41 defines the string \texttt{data} that we want to tokenize.
+\item Lines 42--43 show how the scanner is used: We simply iterate over the values produced by
+      \texttt{tokenize(data)} and print every token that is found.
+\end{enumerate}
+
+\noindent
+Executing the program depicted in Figures \ref{fig:regexp-scanner.py-1}  and \ref{fig:regexp-scanner.py-2}
+yields the following output: 
+
+\begin{verbatim}
+    Token(type='NUMBER', value=3, line=1, column=0)
+    Token(type='PLUS', value='+', line=1, column=2)
+    Token(type='NUMBER', value=4, line=1, column=4)
+    % ... (rest of the output)
+    Token(type='NUMBER', value=2, line=1, column=27)
+\end{verbatim}
+The scanner returns tokens as instances of the class \texttt{Token}, which possess four distinct attributes:
+\begin{enumerate}
+\item The \blue{\texttt{type}} attribute indicates the type of the token. It holds a string value that
+      corresponds to one of the names occurring in the token specification.
+\item The \blue{\texttt{value}} attribute usually contains the recognized string. However, as shown in the case
+      of the token \texttt{NUMBER}, this value can be transformed before the token is constructed.
+\item The \blue{\texttt{line}} attribute specifies the line number at which the token was found.
+\item The \blue{\texttt{column}} attribute specifies the column at which the token starts.  Note that, unlike a
+      counter that simply counts characters from the very beginning of the input, this column is reset to $0$ at
+      the start of every line, which matches the way most editors report cursor positions.
+\end{enumerate}
+The scanner discussed in this section can be found at:
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03-Lark/01-RegExp-Scanner.ipynb}{Python/Chapter-03-Lark/01-Regexp-Scanner.ipynb}
+
+\section{The Syntax of Regular Expressions in \textsl{Python}}
+\index{regular expression!syntax in \textsl{Python}}
+In the preceding chapter, we introduced regular expressions using a minimalistic syntax.  While this simplicity
+is advantageous for the theoretical discussions in the upcoming chapter---where we explore the implementation of
+regular expressions via finite state machines---it is limiting in practical applications.  To address this, the
+\textsl{Python} module \blue{\texttt{re}}\index{re@\texttt{re} (\textsl{Python} module)} offers a number of
+syntactic abbreviations that allow us to express complex patterns concisely.  In this section, we discuss those
+features of the module \texttt{re} that we will need in the remainder of these lecture notes.
+
+The module \texttt{re} is not part of the core language, but it is part of the \textsl{Python} standard library.
+Therefore, no installation is necessary, but in order to use it we have to import it:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+import re
+\end{minted}
+
+\noindent
+The complete documentation of this module is available at
+\href{https://docs.python.org/3/library/re.html}{https://docs.python.org/3/library/re.html}.
+
+As in the previous chapter, we interpret a regular expression as a description of a \blue{language}, where a
+language is a \blue{set of strings}.  In the following, $\Sigma$ denotes the set of all \simtextsc{Unicode}
+characters, while $\Sigma^*$ denotes the set of all strings that can be built from these characters.  We define
+the set $\textrm{RegExp}$ of all \textsl{Python} regular expressions inductively, and in parallel we define a
+function
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathcal{L}: \textrm{RegExp} \rightarrow 2^{\Sigma^*}$
+\\[0.2cm]
+such that $\mathcal{L}(r)$ is the language described by the regular expression $r$.
+
+\subsection{The Function \texttt{findall}}
+\index{findall@\texttt{findall}}
+In order to experiment with regular expressions, we use the function \texttt{findall} that is provided by the
+module \texttt{re}.  This function is called as follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{re.findall}(r, s, \textrm{flags}=0)$
+\\[0.2cm]
+The arguments are interpreted as follows:
+\begin{enumerate}
+\item $r$ is a string that is interpreted as a regular expression.
+\item $s$ is the string that is searched for substrings matching $r$.
+\item $\textrm{flags}$ is an optional argument of type \texttt{int} that defaults to $0$.
+
+      This argument can be used to set flags that modify the interpretation of the regular expression $r$.  For
+      example, setting the flag \blue{\texttt{re.IGNORECASE}} makes the search case-insensitive.
+\end{enumerate}
+The function \texttt{findall} returns the list of all \emph{non-overlapping} substrings of $s$ that match the
+regular expression $r$.  These substrings are returned in the order in which they occur in $s$.  For example,
+the call
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a', 'abcabcABC')
+\end{minted}
+
+\noindent
+returns the list \texttt{['a', 'a']}, since the character ``\texttt{a}'' occurs twice in the given string.  If
+we set the flag \texttt{re.IGNORECASE}, the capital letter ``\texttt{A}'' is found as well and hence the call
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a', 'abcabcABC', re.IGNORECASE)
+\end{minted}
+
+\noindent
+returns the list \texttt{['a', 'a', 'A']} that has three elements.
+
+\subsection{Characters and Meta-Characters}
+\index{meta-character}
+Before we can define the set $\textrm{RegExp}$, we have to introduce the set $\texttt{MetaChars}$ of all
+\blue{meta-characters}:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{MetaChars} $:= \bigl\{$ \texttt{.}, \texttt{\symbol{94}}, \texttt{\symbol{36}}, \texttt{*},
+\texttt{+}, \texttt{?}, \texttt{\{}, \texttt{\}}, \texttt{[}, \texttt{]}, \texttt{\symbol{92}}, \texttt{|},
+\texttt{(}, \texttt{)} $\bigr\}$.
+\\[0.2cm]
+These characters serve as \blue{operator symbols}, or as parts of operator symbols, inside a regular
+expression.  Now the inductive definition of the set $\textrm{RegExp}$ can be started:
+\begin{enumerate}
+\item Every \simtextsc{Unicode} character $c$ that is \emph{not} a meta-character is a regular expression.  This
+      regular expression matches the character $c$, i.e.\ we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mathcal{L}(c) = \{ c \}$.
+\item If $c$ is a meta-character, then the string $\backslash c$ is a regular expression that matches the
+      character $c$, i.e.\ we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\mathcal{L}(\backslash c) = \{ c \}$.
+
+      In this case, we say that the meta-character $c$ has been \blue{escaped}\index{escaping}.
+\end{enumerate}
+
+\noindent
+For example, the character ``\texttt{+}'' is a meta-character and therefore has to be escaped if we want to
+search for a literal plus sign:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'\+', '+-+')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['+', '+']}.
+
+\remarkEng
+In the example above we have used a \blue{raw string}\index{raw string}.  A string is a raw string if the
+opening quote character is preceded by the character ``\texttt{r}''.  Inside a raw string, the backslash
+character is not interpreted as the beginning of an \blue{escape sequence} of \textsl{Python} but is passed on
+to the module \texttt{re} unchanged.  Since regular expressions use the backslash character extensively, it is
+good practice to always write regular expressions as raw strings.
+
+If we do not want to use a raw string, we have to double every backslash character, because otherwise the
+\textsl{Python} interpreter would try to interpret the backslash itself.  Hence, the call shown above is
+equivalent to the following call:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall('\\+', '+-+')
+\end{minted}
+
+\noindent
+Obviously, the version using the raw string is easier to read.
+\eox
+
+\subsection{Concatenation}
+\index{concatenation!of regular expressions}
+The next rule shows how regular expressions can be \blue{concatenated}:
+\begin{enumerate}
+\setcounter{enumi}{2}
+\item If $r_1$ and $r_2$ are regular expressions, then $r_1r_2$ is a regular expression.  This regular
+      expression matches any string $s$ that can be split into two substrings $s_1$ and $s_2$ such that $r_1$
+      matches $s_1$ and $r_2$ matches $s_2$.  Formally, we have
+      $$\mathcal{L}(r_1r_2) := \bigl\{ s_1 \cdot s_2 \mid s_1 \in \mathcal{L}(r_1) \wedge 
+                                       s_2 \in \mathcal{L}(r_2) \bigr\}.
+      $$
+\end{enumerate}
+Note that in the preceding chapter we have written $r_1 \cdot r_2$ for the concatenation of $r_1$ and $r_2$,
+while in \textsl{Python} the operator symbol ``$\cdot$'' is simply omitted.  Using concatenation, we can search
+for words:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+re.findall(r'the', 'The horse, the dog, and the cat.',
+           flags=re.IGNORECASE)
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['The', 'the', 'the']}.
+
+\subsection{Choice}
+\index{choice!of regular expressions}
+The operator ``\texttt{|}'' is used to choose between \blue{alternatives}:
+\begin{enumerate}
+\setcounter{enumi}{3}
+\item If $r_1$ and $r_2$ are regular expressions, then $r_1\texttt{|}r_2$ is a regular expression.  This regular
+      expression matches every string $s$ that is matched by either $r_1$ or $r_2$.  Formally, we have
+      $$\mathcal{L}(r_1\texttt{|}r_2) := \mathcal{L}(r_1) \cup \mathcal{L}(r_2).$$
+\end{enumerate}
+In the preceding chapter, we have written $r_1 + r_2$ instead of the \textsl{Python} notation
+$r_1\texttt{|}r_2$.  Here is an example:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+re.findall(r'The|a', 'The horse, the dog, and a cat.', 
+           flags=re.IGNORECASE)
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['The', 'the', 'a', 'a', 'a']}.  Note that the last three occurrences of the
+character ``\texttt{a}'' stem from the words ``\texttt{and}'', ``\texttt{a}'', and ``\texttt{cat}''.
+
+\subsection{Quantifiers}
+\index{quantifier}
+The most interesting operators of regular expressions are the \blue{quantifiers}.  The official documentation
+calls them \blue{repetition qualifiers}, but in the following we use the shorter name.  Syntactically,
+quantifiers are \blue{postfix operators}.
+\begin{enumerate}
+\setcounter{enumi}{4}
+\item If $r$ is a regular expression, then $r\texttt{+}$ is a regular expression.  This regular expression
+      matches every string $s$ that can be split into a list of $n$ substrings $s_1$, $\cdots$, $s_n$ such that
+      $r$ matches $s_i$ for all $i \in \{1,\cdots,n\}$.  Formally, we have
+      $$\mathcal{L}(r\texttt{+}) := 
+        \Bigl\{ s \Bigm| \exists n \in \mathbb{N}: \bigl(n \geq 1 \wedge 
+                \exists s_1,\cdots,s_n : (s_1 \cdots s_n = s \wedge 
+                 \forall i \in \{1,\cdots, n\}:  s_i \in \mathcal{L}(r))\bigr)  
+        \Bigr\}.
+      $$
+      Informally, $r\texttt{+}$ matches $r$ any positive number of times.
+\end{enumerate}
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a+', 'abaabaAaba', flags=re.IGNORECASE)
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['a', 'aa', 'aAa', 'a']}.
+
+\begin{enumerate}
+\setcounter{enumi}{5}
+\item If $r$ is a regular expression, then $r\texttt{*}$ is a regular expression.  This regular expression
+      matches either the empty string or any string that is matched by $r\texttt{+}$.  Formally, we have
+      $$\mathcal{L}(r\texttt{*}) := \bigl\{ \texttt{''} \bigr\} \cup \mathcal{L}(r\texttt{+}).$$
+      Informally, $r\texttt{*}$ matches $r$ any number of times, including zero times.
+\end{enumerate}
+Since $r\texttt{*}$ also matches the empty string, the result of the following call contains a number of empty
+strings.  For example, in the string \texttt{'abaabbaaaba'} the regular expression \texttt{a*} finds an empty
+string in front of every occurrence of the character \texttt{'b'} that is not preceded by an \texttt{'a'}.  The
+final occurrence of the empty string is found at the end of the string.
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a*', 'abaabbaaaba')
+\end{minted}
+
+\noindent
+This call returns the list
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{['a', '', 'aa', '', '', 'aaa', '', 'a', '']}.
+
+\begin{enumerate}
+\setcounter{enumi}{6}
+\item If $r$ is a regular expression, then $r\texttt{?}$ is a regular expression.  This regular expression
+      matches either the empty string or any string that is matched by $r$.  Formally, we have
+      $$\mathcal{L}(r\texttt{?}) := \bigl\{ \texttt{''} \bigr\} \cup \mathcal{L}(r).$$
+      Informally, $r\texttt{?}$ matches $r$ at most one time, but possibly also zero times.
+\end{enumerate}
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a?', 'abaa')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['a', '', 'a', 'a', '']}.  Here, the first empty string is found in front of
+the character \texttt{'b'}, while the second is found at the end of the string.
+
+\begin{enumerate}
+\setcounter{enumi}{7}
+\item If $r$ is a regular expression and $m,n\in\mathbb{N}$ such that $m \leq n$, then $r\texttt{\{}m,n\texttt{\}}$
+      is a regular expression.  This regular expression matches any number $k$ of repetitions of $r$ such that
+      $m \leq k \leq n$.  Formally, we have
+\\[0.2cm]
+\hspace*{-1.3cm}
+      $\displaystyle \mathcal{L}(r\texttt{\{}m,n\texttt{\}}) =
+        \Bigl\{ s \Bigm| \exists k \in \mathbb{N}: \bigl(m \leq k \leq n \wedge 
+                \exists s_1,\cdots,s_k : (s_1 \cdots s_k = s \wedge 
+                 \forall i \in \{1,\cdots, k\}:  s_i \in \mathcal{L}(r))\bigr)  
+        \Bigr\}.
+      $
+      \\[0.2cm]
+      Informally, $r\texttt{\{}m,n\texttt{\}}$ matches $r$ at least $m$ times and at most $n$ times.
+\end{enumerate}
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a{2,3}', 'aaaa')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['aaa']}.  The regular expression \texttt{a\{2,3\}} matches the string
+\texttt{'aaaa'} only once, since the first match already consumes three occurrences of the character
+\texttt{'a'} and after that only a single \texttt{'a'} is left, which is not enough for a second match.
+
+The following three abbreviations are frequently useful:
+\begin{enumerate}
+\setcounter{enumi}{8}
+\item If $r$ is a regular expression and $n\in\mathbb{N}$, then $r\texttt{\{}n\texttt{\}}$ is a regular
+      expression that matches exactly $n$ repetitions of $r$:
+      $$\mathcal{L}(r\texttt{\{}n\texttt{\}}) = \mathcal{L}(r\texttt{\{}n,n\texttt{\}}).$$
+\item If $r$ is a regular expression and $n\in\mathbb{N}$, then $r\texttt{\{,}n\texttt{\}}$ is a regular
+      expression that matches up to $n$ repetitions of $r$:
+      $$\mathcal{L}(r\texttt{\{,}n\texttt{\}}) = \mathcal{L}(r\texttt{\{}0,n\texttt{\}}).$$
+\item If $r$ is a regular expression and $n\in\mathbb{N}$, then $r\texttt{\{}n,\texttt{\}}$ is a regular
+      expression that matches $n$ or more repetitions of $r$:
+      $$\mathcal{L}(r\texttt{\{}n,\texttt{\}}) = \mathcal{L}(r\texttt{\{}n\texttt{\}}r\texttt{*}).$$
+\end{enumerate}
+The following three calls illustrate these abbreviations:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a{2}',  'aabaaaba')
+re.findall(r'a{,2}', 'aabaaabba')
+re.findall(r'a{2,}', 'aabaaaba')
+\end{minted}
+
+\noindent
+These calls return the lists
+\begin{enumerate}
+\item \texttt{['aa', 'aa']}, 
+\item \texttt{['aa', '', 'aa', 'a', '', '', 'a', '']}, \quad and \quad
+\item \texttt{['aa', 'aaa']}.
+\end{enumerate}
+
+\remarkEng
+The quantifiers bind stronger than concatenation, and concatenation binds stronger than the choice operator
+``\texttt{|}''.  Hence, the regular expression \texttt{ab+} matches the character \texttt{a} followed by any
+positive number of occurrences of the character \texttt{b}, and the regular expression
+\texttt{ab|cd} matches either the string \texttt{'ab'} or the string \texttt{'cd'}.  If a different grouping is
+required, parentheses have to be used, as discussed in Subsection \ref{subsec:grouping} below.
+\eox
+
+\subsection{Non-Greedy Quantifiers}
+\index{quantifier!non-greedy}
+The quantifiers \texttt{?}, \texttt{+}, \texttt{*}, \texttt{\{}$m$\texttt{,}$n$\texttt{\}},
+\texttt{\{}$n$\texttt{\}}, \texttt{\{,}$n$\texttt{\}}, and \texttt{\{}$n$\texttt{,\}} are
+\blue{greedy}\index{greedy}, i.e.\ they match the longest possible substring.  Suffixing these operators with
+the character ``\texttt{?}'' makes them \blue{non-greedy}\index{non-greedy}, i.e.\ they then match the shortest
+possible substring.  For example, the regular expression \texttt{a\{2,3\}?} matches either two or three
+occurrences of the character \texttt{a}, but it prefers to match only two characters.  Therefore, the regular
+expression \texttt{a\{2,3\}?} finds two matches in the string \texttt{'aaaa'}, while the greedy version
+\texttt{a\{2,3\}} finds only a single match:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'a{2,3}?', 'aaaa'), re.findall(r'a{2,3}', 'aaaa')
+\end{minted}
+
+\noindent
+This call returns the pair
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{(['aa', 'aa'], ['aaa'])}.
+
+\subsection{Character Classes}
+\index{character class}
+In order to match one out of a set of characters, we use a \blue{character class}.  If $c_1$, $\cdots$, $c_n$
+are \emph{Unicode} characters, then $\texttt{[}c_1\cdots c_n\texttt{]}$ is a regular expression that matches
+any of the characters from the set $\{c_1,\cdots,c_n\}$:
+$$\mathcal{L}\bigl(\texttt{[}c_1\cdots c_n\texttt{]}\bigr) := \{ c_1, \cdots, c_n \}.$$
+Note that inside a character class, most meta-characters lose their special meaning and hence do not need to be
+escaped.
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'[abc]+', 'abcdcba')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['abc', 'cba']}.
+
+A character class can also contain \blue{ranges}\index{range}.  Syntactically, a range has the form
+$c_1\texttt{-}c_2$, where $c_1$ and $c_2$ are \simtextsc{Unicode} characters.  Such a range matches every
+character $c$ satisfying $c_1 \leq c \leq c_2$, where the characters are compared according to their
+\simtextsc{Unicode} code points.  For example, the regular expression \texttt{[0-9]} contains the range
+\texttt{0-9} and therefore matches any decimal digit.  In order to find all natural numbers that are embedded in
+a string, we can use the regular expression \texttt{[1-9][0-9]*|0}.  This regular expression matches either a
+string that starts with a non-zero digit and is followed by any number of digits, or a single zero.
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'[1-9][0-9]*|0', '11 abc 12 2345 007 42 0')
+\end{minted}
+
+\noindent
+This call returns the list
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{['11', '12', '2345', '0', '0', '7', '42', '0']}.
+\\[0.2cm]
+Note that the string \texttt{'007'} is decomposed into the three matches \texttt{'0'}, \texttt{'0'}, and
+\texttt{'7'}, since a number is not allowed to start with the digit $0$.
+
+At first sight, the following call looks quite similar, but it produces a very different result:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'[0-9]|[1-9][0-9]*', '11 abc 12 2345 007 42 0')
+\end{minted}
+
+\noindent
+Here, the result is the list
+\\[0.2cm]
+\hspace*{0.1cm}
+\texttt{['1', '1', '1', '2', '2', '3', '4', '5', '0', '0', '7', '4', '2', '0']},
+\\[0.2cm]
+which consists of single digits only.  The reason is the same as the reason discussed in the remark on page
+\pageref{fig:regexp-scanner.py-1}: the module \texttt{re} does not choose the \emph{longest} alternative but
+rather the \emph{first} alternative---reading from left to right---that matches at the current position.  Since
+the alternative \texttt{[0-9]} comes first and already matches a single digit, the search restarts immediately
+after this digit and the second alternative never gets a chance.  If we exchange the two alternatives, we
+recover the previous result:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'[1-9][0-9]*|[0-9]', '11 abc 12 2345 007 42 0')
+\end{minted}
+
+\noindent
+This is exactly the phenomenon that forced us to list the more specific token definitions before the more
+general ones when we built the master pattern of our scanner in the previous section.
+
+There are a number of \blue{predefined character classes}\index{character class!predefined}:
+\begin{enumerate}
+\item \texttt{\symbol{92}d} matches any digit.
+\item \texttt{\symbol{92}D} matches any character that is not a digit.
+\item \texttt{\symbol{92}s} matches any whitespace character.
+\item \texttt{\symbol{92}S} matches any character that is not a whitespace character.
+\item \texttt{\symbol{92}w} matches any alphanumeric character.
+
+      If we were to restrict ourselves to \simtextsc{Ascii} characters, this would be equivalent to the
+      character class \texttt{[0-9a-zA-Z\_]}.
+\item \texttt{\symbol{92}W} matches any character that is not alphanumeric.
+\item \texttt{\symbol{92}b} matches at a \blue{word boundary}\index{word boundary}.  The string that is matched
+      is the empty string.
+\item \texttt{\symbol{92}B} matches at any position that is \textbf{not} a word boundary.  Again, the string
+      that is matched is the empty string.
+\end{enumerate}
+These escape sequences can also be used inside square brackets:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'[\dabcde]+', '11 abc12 1a2 2b3c4d5')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['11', 'abc12', '1a2', '2b3c4d5']}.
+
+A character class is \blue{negated} if the first character following the opening bracket ``\texttt{[}'' is the
+character ``\texttt{\symbol{94}}''.  For example, the regular expression \texttt{[\symbol{94}abc]} matches any
+character that is different from \texttt{a}, \texttt{b}, and \texttt{c}:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'[^abc]+', 'axyzbuvwchij')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['xyz', 'uvw', 'hij']}.
+
+The character class \texttt{\symbol{92}b} is useful in order to extract complete words.  For example, the
+regular expression \texttt{\symbol{92}b\symbol{92}w+\symbol{92}b} matches a maximal sequence of alphanumeric
+characters that is surrounded by word boundaries:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'\b\w+\b',
+           'This is some text where we want to extract the words.')
+\end{minted}
+
+\noindent
+This call returns the list
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{['This', 'is', 'some', 'text', 'where', 'we', 'want', 'to',} \\
+\hspace*{1.5cm}
+\texttt{'extract', 'the', 'words']}.
+
+
+\subsection{Grouping and Back-References \label{subsec:grouping}}
+\index{grouping}
+If $r$ is a regular expression, then $\texttt{(}r\texttt{)}$ is a regular expression that describes the same
+language as $r$, i.e.\ we have
+$$\mathcal{L}\bigl(\texttt{(}r\texttt{)}\bigr) = \mathcal{L}(r).$$
+There are two reasons for using parentheses:
+\begin{enumerate}
+\item Parentheses can be used to override the precedence of the operators.  This is the same concept as in
+      programming languages.  For example, the regular expression \texttt{ab+} matches the character \texttt{a}
+      followed by any positive number of occurrences of the character \texttt{b}, since the precedence of a
+      quantifier is higher than the precedence of concatenation.  In contrast, the regular expression
+      \texttt{(ab)+} matches the strings \texttt{'ab'}, \texttt{'abab'}, \texttt{'ababab'}, and so on.
+\item Parentheses can be used for \blue{back-references}\index{back-reference}: Inside a regular expression, we
+      can refer to the substring that has been matched by a subexpression enclosed in parentheses using the
+      syntax $\backslash n$, where $n \in \{1,\cdots,9\}$.  Here, $\backslash n$ refers to the $n^{\mathrm{th}}$
+      \blue{group}\index{group} of the regular expression, where a group is any part of the regular expression
+      that is enclosed in parentheses.  Counting of the groups starts with the opening parentheses, i.e.\ the
+      groups are numbered in the order in which their opening parentheses occur.  For example, the regular
+      expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{(a(b|c)*d)?ef(gh)+}
+      \\[0.2cm]
+      has three groups:
+      \begin{enumerate}
+      \item \texttt{(a(b|c)*d)} is the first group,
+      \item \texttt{(b|c)} is the second group, and
+      \item \texttt{(gh)} is the third group.
+      \end{enumerate}
+\end{enumerate}
+For example, if we want to recognize a number that is followed by some whitespace and then followed by the
+\textbf{same} number, we can use the regular expression \texttt{(\symbol{92}d+)\symbol{92}s+\symbol{92}1}:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'(\d+)\s+\1', '12 12 12, 23 23 17 18')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['12', '23']}.
+
+\remarkEng
+If a regular expression contains groups, then \texttt{findall} does not return the complete matches but rather
+the substrings that have been matched by the groups.  If there is more than one group, a list of tuples is
+returned.  This explains why the call shown above returns the list \texttt{['12', '23']} and not the list
+\texttt{['12 12', '23 23']}.
+\eox
+
+\noindent
+Since groups change the value returned by \texttt{findall}, the following call is a convenient way to extract
+complete numbers: the parentheses are needed in order to override the precedence of the choice operator, while
+the word boundaries ensure that we do not accept a number that is part of a longer word:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'\b([1-9][0-9]*|0)\b', '11 abc 12 2345 007 42 0')
+\end{minted}
+
+\noindent
+This call returns the list \texttt{['11', '12', '2345', '42', '0']}.  Note that the string \texttt{'007'} is no
+longer matched at all, since the digit \texttt{'0'} at the beginning of this string is not followed by a word
+boundary.
+
+\subsection{The Dot}
+The regular expression \texttt{.} matches any character except the newline character.  For example, the regular
+expression \texttt{c.*?t} matches any string that starts with the character \texttt{c}, ends with the character
+\texttt{t}, and does not contain any newline character.  Since we have used the non-greedy version of the
+quantifier \texttt{*}, the matches are as short as possible:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+re.findall(r'c.*?t', 'ct cat caat could we look at that!')
+\end{minted}
+
+\noindent
+This call returns the list
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{['ct', 'cat', 'caat', 'could we look at']}.
+\\[0.2cm]
+Note that the dot ``\texttt{.}'' has no special meaning if it is used inside a character class.  Hence, the
+regular expression \texttt{[.]} matches only the character ``\texttt{.}'' and is therefore equivalent to the
+regular expression ``\texttt{\symbol{92}.}''.
+
+\subsection{Named Groups}
+\index{named group}
+Referring to a group via the syntax $\backslash n$, where $n$ is a natural number, is both cumbersome and
+error-prone: as soon as a new group is inserted at the beginning of a regular expression, all the numbers change.
+Instead, we can use \blue{named groups}.  The syntax to define a named group is
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{(?P<\textsl{name}>\textsl{r})},
+\\[0.2cm]
+where \textsl{name} is the name of the group and \textsl{r} is a regular expression.  In order to refer to the
+string that has been matched by this group, we use the syntax
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{(?P=\textsl{name})}.
+\\[0.2cm]
+For example, the following call tries to find a string of alphanumeric characters that is enclosed either in
+single quotes or in double quotes.  The character class \texttt{[\symbol{92}'"]} matches either a single quote
+or a double quote.  By referring to the group that has been named \texttt{quote}, we ensure that an opening
+single quote is matched by a closing single quote and that an opening double quote is matched by a closing
+double quote.
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.0cm,
+                xrightmargin = -0.5cm,
+              ]{python3}
+re.findall(r'((?P<quote>[\'"])\w*(?P=quote))', 'abc "uvw" and \'xyz\'')
+\end{minted}
+
+\noindent
+This call returns the list
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{[('"uvw"', '"'), ("'xyz'", "'")]}.
+\\[0.2cm]
+Since the regular expression contains two groups, \texttt{findall} returns a list of pairs: the first component
+of every pair is the string matched by the outer group, while the second component is the quote character that
+has been matched by the group named \texttt{quote}.
+
+\remarkEng
+Named groups are the mechanism that made the master pattern of our scanner work: in Section
+\ref{chapter:ply-lex} we have wrapped the regular expression of every token into a named group, and after a
+match had been found we used the attribute \texttt{lastgroup} of the match object in order to determine the name
+of the group---and hence the type of the token---that was responsible for the match.
+\eox
+
+\subsection{The Start and the End of a Line}
+The regular expression \texttt{\symbol{94}} matches at the start of a string.  If the flag \texttt{re.MULTILINE}
+is set---which we will usually do when working with this regular expression---then \texttt{\symbol{94}} also
+matches at the beginning of every line, i.e.\ it matches after every newline character.
+
+Similarly, the regular expression \texttt{\symbol{36}} matches at the end of a string.  If the flag
+\texttt{re.MULTILINE} is set, then \texttt{\symbol{36}} also matches at the end of every line, i.e.\ it matches
+in front of every newline character.  Note that both of these regular expressions match the empty string; they
+only constrain the \emph{position} at which a match may occur.
+
+The program shown in Figure \ref{fig:multiline.py} on page \pageref{fig:multiline.py} extracts all non-empty
+lines from a given string.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.8cm,
+                  xrightmargin = 0.8cm,
+                ]{python3}
+data = \
+'''
+This is a text containing five lines, two of which are empty.
+This is the second non-empty line,
+
+and this is the third non-empty line.
+'''
+re.findall(r'^.+$', data, flags=re.MULTILINE)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Extracting all non-empty lines of a string.}
+\label{fig:multiline.py}
+\end{figure}
+
+\noindent
+This program returns a list containing the three non-empty lines of the string \texttt{data}.  The empty lines
+are not part of the result, because the regular expression \texttt{\symbol{94}.+\symbol{36}} requires at least
+one character between the start and the end of a line.  Furthermore, observe that the newline characters
+themselves are not part of the matches, since the dot does not match a newline character.
+
+\subsection{Lookahead Assertions}
+\index{lookahead assertion}
+Sometimes we have to look ahead in order to decide whether we have found what we are looking for.  Consider the
+task of adding up all those numbers in a text that are followed by a dollar symbol, while all other numbers are
+to be ignored.  In this case, a \blue{lookahead assertion} comes in handy.  The syntax of a lookahead assertion
+is
+\\[0.2cm]
+\hspace*{1.3cm}
+$r_1\texttt{(?=}r_2\texttt{)}$.
+\\[0.2cm]
+Here, $r_1$ and $r_2$ are regular expressions and \texttt{?=} is the \blue{lookahead operator}.  The regular
+expression $r_1$ describes what we are searching for, while $r_2$ describes the lookahead.  Note that the
+lookahead is \textbf{not} part of the match: it is only checked whether an occurrence of $r_1$ is followed by
+$r_2$, but only the substring matching $r_1$ is returned.  Syntactically, the lookahead $r_2$ has to be preceded
+by the lookahead operator, and both have to be enclosed in parentheses.
+
+The program shown in Figure \ref{fig:lookahead.py} on page \pageref{fig:lookahead.py} sums up all numbers that
+are followed by a dollar symbol, where the dollar symbol may be preceded by whitespace.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.8cm,
+                  xrightmargin = 0.8cm,
+                ]{python3}
+    text = 'Here is 1$, here are 21 EUR, and there are 42 $.'
+    L    = re.findall(r'([0-9]+)(?=\s*\$)', text)
+    print(f'L = {L}')
+    sum(int(x) for x in L)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Summing up all numbers that are followed by a dollar symbol.}
+\label{fig:lookahead.py}
+\end{figure}
+
+\noindent
+This program prints the list \texttt{L = ['1', '42']} and returns the number $43$.  The number $21$ is ignored,
+since it is not followed by a dollar symbol.
+
+There are also \blue{negative lookahead assertions}\index{lookahead assertion!negative}.  The syntax is
+\\[0.2cm]
+\hspace*{1.3cm}
+$r_1\texttt{(?!}r_2\texttt{)}$,
+\\[0.2cm]
+where \texttt{?!} is the \blue{negative lookahead operator}.  This regular expression matches all those
+occurrences of $r_1$ that are \textbf{not} followed by $r_2$.  The program shown in Figure
+\ref{fig:neg-lookahead.py} on page \pageref{fig:neg-lookahead.py} sums up all numbers that are \emph{not}
+followed by a dollar symbol.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.8cm,
+                  xrightmargin = 0.8cm,
+                ]{python3}
+    text = 'Here is 1$, here are 21 EUR, and there are 42 $.'
+    L    = re.findall(r'[0-9]+(?![0-9]*\s*\$)', text)
+    print(f'L = {L}')
+    sum(int(x) for x in L)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Summing up all numbers that are not followed by a dollar symbol.}
+\label{fig:neg-lookahead.py}
+\end{figure}
+
+\noindent
+This program prints the list \texttt{L = ['21']} and returns the number $21$.
+
+\remarkEng
+Note that the lookahead expression in Figure \ref{fig:neg-lookahead.py} has to contain the subexpression
+\texttt{[0-9]*}.  Without it, the regular expression \texttt{[0-9]+} could match the substring \texttt{'4'} of
+the string \texttt{'42 \$'}, and this substring is indeed not followed by a dollar symbol but rather by the digit
+\texttt{'2'}.  In general, negative lookahead is quite tricky and I recommend to use it sparingly.
+\eox
+
+\subsection{Examples}
+In order to have some material to play with, let us read the file \texttt{alice.txt}, which contains the book
+\emph{Alice's Adventures in Wonderland} written by
+\href{https://en.wikipedia.org/wiki/Lewis_Carroll}{Lewis Carroll}:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+with open('alice.txt', 'r') as f:
+    text = f.read()
+\end{minted}
+
+\noindent
+The first question that we ask is how many non-empty lines this story has.  A line is non-empty if it contains at
+least one character that is not a whitespace character:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+len(re.findall(r'^.*\S.*$', text, flags=re.MULTILINE))
+\end{minted}
+
+\noindent
+This call returns the number $2725$.
+
+Next, let us check whether this text is suitable for minors.  In order to do so, we search for all
+\blue{four-letter words} that start with either \texttt{d}, \texttt{f}, or \texttt{s} and that end with
+\texttt{k} or \texttt{t}:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+set(re.findall(r'\b[dfs]\w{2}[kt]\b', text, flags=re.IGNORECASE))
+\end{minted}
+
+\noindent
+This call returns a set containing, among others, the words \texttt{'duck'}, \texttt{'fact'},
+\texttt{'foot'}, \texttt{'salt'}, and \texttt{'suit'}, but nothing that would be objectionable.  Note the use of
+the quantifier \texttt{\{2\}} and of the word boundaries \texttt{\symbol{92}b}, which together ensure that the
+words found have exactly four characters.
+
+Finally, let us count how many words this text contains and how many \emph{different} words are used:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+L = re.findall(r'\b\w+\b', text.lower())
+S = set(L)
+print(f'There are {len(L)} words in this book')
+print(f'and {len(S)} different words.')
+\end{minted}
+
+\noindent
+This program prints the following line:
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{There are 27344 words in this book and 2579 different words.}
+
+\subsection{Further Reading}
+The material presented in this section is also available as a \textsl{Jupyter} notebook that can be found at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/02-Regexp-Tutorial.ipynb}{Python/Chapter-03/02-Regexp-Tutorial.ipynb}.
+\\[0.2cm]
+Since regular expressions are best understood by experimentation, you are strongly encouraged to work through
+this notebook interactively and to modify the examples given there.
+
+Furthermore, the web page \href{https://regex101.com}{regex101.com} can be used to test regular expressions for
+various programming languages.  It shows, step by step, how a given regular expression is matched against a
+given string and is therefore an invaluable tool for debugging complex regular expressions.  Finally, the web
+page \href{https://regexlearn.com/learn/regex101}{https://regexlearn.com/learn/regex101} provides a free
+interactive tutorial on regular expressions.
+
+\exerciseEng
+Write a program that reads a given text, finds all numbers inside this text that are followed by a
+``\texttt{\$}'' symbol, and that converts these numbers into their equivalent value in \texttt{\euro{}}.  Assume
+that $1\,\texttt{\$} = 0.85\,\texttt{\euro{}}$ and note that the numbers may contain a decimal point.  Your
+program should replace every occurrence of a dollar amount by the corresponding euro amount, while leaving the
+remainder of the text unchanged.
+
+\hint
+Have a look at the function \texttt{re.sub}, which is documented at
+\href{https://docs.python.org/3/library/re.html}{https://docs.python.org/3/library/re.html}.  This function can
+take a \emph{function} as its second argument.  This function is then called with the match object and has to
+return the string that is used as the replacement.
+\eox
+
+\section{A Complex Example: Evaluating an Exam}
+\index{exam evaluation}
+This section presents a more complex example that shows some of the power of the module \texttt{re}.  The task at
+hand is the evaluation of an exam.  When I mark an exam, I create a file that has a format similar to the example
+shown in Figure \ref{fig:result.txt} on page \pageref{fig:result.txt}.
+
+\begin{figure}[!h]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.8cm,
+                  xrightmargin  = 0.8cm,
+                  commandchars  = \\\{\}
+                ]
+    Class: Advanced Witchcraft
+    Group: TINF22AI1
+    MaxPoints = 60
+   
+    Exercise:      1. 2. 3. 4. 5. 6.
+    Jim Smith:     9 12 10  6  6  0
+    John Slow:     4  4  2  0  -  -
+    Susi Sorglos:  9 12 12  9  9  6
+    1609922:       7  4 12  5  5  3
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The results of an exam.}
+\label{fig:result.txt}
+\end{figure}
+
+\noindent
+The structure of this file is as follows:
+\begin{enumerate}
+\item The first line contains the keyword ``\texttt{Class}'', a colon ``\texttt{:}'', and then the name of the
+      lecture.
+\item The second line specifies the group that has taken the exam.
+\item The third line specifies the number of points that are necessary in order to obtain the best mark.
+\item The fourth line is empty.
+\item The fifth line numbers the exercises.
+\item After that, there is a table.  Every row of this table lists the scores achieved by a single student.  The
+      row starts with the name of the student, which is followed by a colon and then by the list of the scores
+      achieved for each exercise.  If an exercise has not been attempted at all, the corresponding column
+      contains a hyphen ``\texttt{-}''.
+
+      Note that a student need not be identified by a name: students who prefer to stay anonymous are identified
+      by their seven-digit matriculation number instead.  The last row of Figure \ref{fig:result.txt} shows such
+      a student.
+\end{enumerate}
+Our goal is to write a program that reads data of this kind and computes the mark of every student.  In the
+following, we assume that the contents of this file are stored in the string \texttt{data}.  Note that in
+contrast to the scanner developed in Section \ref{chapter:ply-lex}, we do \emph{not} tokenize the whole input
+into a single stream of tokens.  Instead, we process the input line by line and use a different regular
+expression for every kind of information that we want to extract.  For many text-processing tasks, this
+lightweight approach is both simpler and more robust than writing a full-blown scanner.
+
+\subsection{Computing the Mark}
+Before we turn to the regular expressions, we implement the function \texttt{mark}, which is shown in Figure
+\ref{fig:mark.py} on page \pageref{fig:mark.py}.  This function takes two arguments:
+\begin{enumerate}
+\item \texttt{max\_points} is the number of points that have to be achieved in order to get the best mark
+      $1.0$.
+\item \texttt{points} is the number of points that have been achieved by the student whose mark is to be
+      computed.
+\end{enumerate}
+We assume that the relation between the mark of an exam and the number of points achieved in this exam is
+essentially linear.  Furthermore, a student who has achieved $50\%$ of \texttt{max\_points} points should get the
+mark $4.0$, while a student who has achieved $100\%$ of \texttt{max\_points} points should get the mark $1.0$.
+Since the straight line through the two points $\bigl(\frac{1}{2}\cdot\texttt{max\_points}, 4.0\bigr)$ and
+$\bigl(\texttt{max\_points}, 1.0\bigr)$ is given by the equation
+$$\textrm{grade} = 7 - 6 \cdot \frac{\texttt{points}}{\texttt{max\_points}},$$
+we can use this formula to compute the mark.  However, the worst mark is $5.0$.  Therefore, the function
+\texttt{min} is used to ensure that the computed mark never exceeds $5.0$.  Finally, the resulting number is
+rounded to a single digit after the decimal point.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+import re
+
+def mark(max_points: int, points: int) -> float:
+    grade = 7 - 6 * points / max_points
+    return round(min(5.0, grade), 1)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Computing the mark from the number of points achieved.}
+\label{fig:mark.py}
+\end{figure}
+
+\noindent
+For example, if \texttt{max\_points} has the value $60$, then a student who has achieved $40$ points gets the
+mark $3.0$, while a student who has achieved only $20$ points gets the mark $5.0$.  A student achieving only
+$10$ points would still get the mark since  every value above $5.0$ is capped by the function \texttt{min}.
+
+\subsection{Extracting the Maximum Number of Points}
+In order to evaluate the exam, we first have to isolate the definition of the maximum number of points.  To this
+end, we search the complete input string for the pattern ``\texttt{MaxPoints = \textsl{number}}''.  The
+corresponding function \texttt{get\_max\_points} is shown in Figure \ref{fig:get-max-points.py} on page
+\pageref{fig:get-max-points.py}.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+def get_max_points(text: str) -> int:
+    match = re.search(r'MaxPoints\s*=\s*([1-9][0-9]*)', text)
+    if match:
+        return int(match.group(1))
+    raise ValueError('MaxPoints definition could not be found.')
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Extracting the maximum number of points.}
+\label{fig:get-max-points.py}
+\end{figure}
+
+\begin{enumerate}
+\item Line 2 uses the function \texttt{re.search}\index{search@\texttt{search}}, which is called as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{re.search}(r, s)$.
+      \\[0.2cm]
+      This function scans the string $s$ from left to right and returns a \blue{match object} describing the
+      \emph{first} position at which the regular expression $r$ matches.  If there is no match at all, the
+      function returns the value \texttt{None}.
+
+      Note the difference to the function \texttt{findall} that we have used in the previous section:
+      \texttt{findall} returns \emph{all} matches as a list of strings, while \texttt{search} returns a single
+      match object that also carries information about the position of the match and about the groups occurring
+      in the regular expression.
+
+      In the regular expression \texttt{MaxPoints\symbol{92}s*=\symbol{92}s*([1-9][0-9]*)}, the subexpression
+      \texttt{\symbol{92}s*} allows for arbitrary whitespace surrounding the equality sign, while the
+      parentheses turn the regular expression \texttt{[1-9][0-9]*} that describes the number into a
+      \blue{group}.
+\item Line 3 tests whether a match has been found.  This test works because a match object is always
+      \emph{truthy}, while the value \texttt{None} is \emph{falsy}.
+\item Line 4 uses the method \texttt{group}\index{group@\texttt{group}} of the match object in order to extract
+      the string that has been matched by the first group, i.e.\ the digits of the number.  This string is then
+      converted into an \texttt{int}.
+
+      In general, \texttt{match.group($n$)} returns the substring that has been matched by the $n^{\mathrm{th}}$
+      group, while \texttt{match.group(0)} returns the substring matched by the complete regular expression.
+      Hence, in our example \texttt{match.group(0)} would return the string \texttt{'MaxPoints = 60'}, while
+      \texttt{match.group(1)} returns the string \texttt{'60'}.
+\item Line 5 is only reached if no match has been found.  In this case, the input file is malformed and an
+      exception is raised.
+\end{enumerate}
+Therefore, the call \texttt{get\_max\_points(data)} returns the number $60$.
+
+\subsection{Processing the Student Records}
+Next, we need a function that evaluates the individual students.  This function is shown in Figure
+\ref{fig:evaluate-students.py} on page \pageref{fig:evaluate-students.py}.
+
+A row describing a student consists of an identifier that is followed by a colon.  This identifier is either a
+name---which may contain upper-case letters, lower-case letters, blanks, and hyphens---or a seven-digit
+matriculation number.  The colon is followed by the list of the points achieved.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.0cm,
+                  xrightmargin = 0.0cm,
+                ]{python3}
+def evaluate_students(text: str, max_points: int) -> None:
+    student = re.compile(r'^\s*([A-Za-z \-]+|[0-9]{7}):\s*(.*)$')
+    pattern = re.compile(r'0|[1-9][0-9]*')
+    for line in text.strip().split('\n'):
+        line = line.strip()
+        if not line or line.startswith(
+                ('Class:', 'Group:', 'MaxPoints', 'Exercise:')):
+            continue
+        match = student.match(line)
+        if match:
+            name   = match.group(1).strip()
+            scores = match.group(2)
+            points = sum(int(p) for p in pattern.findall(scores))
+            grade  = mark(max_points, points)
+            print(f'{name}: {points:3d} points, mark {grade}.')
+        else:
+            print(f"Warning: could not parse the line '{line}'.")
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Evaluating the records of the individual students.}
+\label{fig:evaluate-students.py}
+\end{figure}
+
+\begin{enumerate}
+\item Lines 2 and 3 define the two regular expressions that we need.  Both of them are turned into
+      \blue{pattern objects}\index{pattern object} using the function
+      \texttt{re.compile}\index{compile@\texttt{compile}}.  This function translates a regular expression into
+      an internal representation once and for all.  Since both regular expressions are used repeatedly inside
+      the loop that follows, precompiling them is more efficient than passing the regular expression as a string
+      to \texttt{re.search} or \texttt{re.findall} on every iteration.  A pattern object provides the methods
+      \texttt{match}, \texttt{search}, and \texttt{findall}, which are used in the same way as the corresponding
+      functions of the module \texttt{re}, except that the regular expression is no longer given as an argument.
+      \begin{enumerate}
+      \item The regular expression \texttt{student} matches a row that describes a student.  It
+            consists of the following parts:
+            \begin{enumerate}
+            \item \texttt{\symbol{94}\symbol{92}s*} matches the whitespace at the beginning of the line.
+            \item \texttt{([A-Za-z \symbol{92}-]+|[0-9]\{7\})} is the first group.  It matches the identifier of
+                  the student, which is either a non-empty sequence of letters, blanks, and hyphens, or a
+                  sequence of exactly seven digits.
+
+                  Note that the hyphen has been escaped as ``\texttt{\symbol{92}-}'', since inside a character
+                  class an unescaped hyphen would be interpreted as the range operator that we have discussed in
+                  the previous section.
+            \item \texttt{:\symbol{92}s*} matches the colon and the whitespace that separates the identifier
+                  from the scores.
+            \item \texttt{(.*)\symbol{36}} is the second group.  It matches the remainder of the line, which
+                  contains the scores.
+            \end{enumerate}
+      \item The regular expression \texttt{pattern} matches a natural number, i.e.\ either the digit
+            \texttt{0} or a sequence of digits that does not start with the digit \texttt{0}.  It is used to
+            extract the scores and it automatically ignores the hyphens that mark those exercises that have not
+            been attempted.
+      \end{enumerate}
+\item Line 4 removes the leading and trailing whitespace of the input using the method \texttt{strip} and then
+      splits the resulting string into a list of lines using the method \texttt{split}.  The \texttt{for} loop
+      then iterates over these lines.
+\item Line 5 removes the leading and trailing whitespace of the current line.
+\item Lines 6--8 skip those lines that do not describe a student, i.e.\ empty lines as well as the four lines
+      that make up the header of the file.
+\item Line 9 uses the method \texttt{match}\index{match@\texttt{match}} of the pattern object
+      \texttt{student}.  In contrast to \texttt{search}, the method \texttt{match} only checks whether
+      the regular expression matches \emph{at the beginning} of the given string.  Again, the result is either a
+      match object or the value \texttt{None}.
+\item Line 11 extracts the identifier of the student, which has been matched by the first group.  The method
+      \texttt{strip} removes the trailing blanks that separate the name from the colon.
+\item Line 12 extracts the string containing the scores, which has been matched by the second group.
+\item Line 13 uses the method \texttt{findall} of the pattern object \texttt{pattern} in order to
+      extract the list of all scores from this string.  These strings are converted into integers and are then
+      added up using the function \texttt{sum}.
+\item Line 14 computes the mark using the function \texttt{mark} that has been discussed above.
+\item Line 15 prints the result.  The format specifier ``\texttt{:3d}'' right-aligns the number of points in a
+      field of width $2$ so that the output is properly aligned.
+\item Lines 16--17 deal with the case that a line could not be parsed.  In this case, a warning is printed but
+      the evaluation continues with the next line.
+\end{enumerate}
+
+\remarkEng
+At first sight, the test in lines 6--8 looks superfluous: after all, the regular expression
+\texttt{student} has been designed to match the rows describing students.  Unfortunately, this regular
+expression is not selective enough.  For example, the line
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{Group: TINF22AI1}
+\\[0.2cm]
+does match \texttt{student}: the first group matches the string \texttt{'Group'}, while the second group
+matches the string \texttt{'TINF22AI1'}.  Since the regular expression \texttt{pattern} then finds the
+numbers $22$ and $1$ inside this string, we would end up crediting a non-existing student named ``Group'' with
+$23$ points.  Similarly, the line that numbers the exercises would yield a student named ``Exercise'' with
+$1+2+3+4+5+6 = 21$ points.
+
+\subsection{Running the Evaluation}
+Finally, we execute the program by first extracting the maximum number of points and then evaluating the
+individual students:
+
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+max_points = get_max_points(data)
+evaluate_students(data, max_points)
+\end{minted}
+
+\noindent
+This program produces the following output:
+
+\begin{verbatim}
+    Jim Smith has 43 points and achieved the mark 2.7.
+    John Slow has 10 points and achieved the mark 5.0.
+    Susi Sorglos has 57 points and achieved the mark 1.3.
+    1609922 has 36 points and achieved the mark 3.4.
+\end{verbatim}
+
+\noindent
+Note that the two exercises that have not been attempted by John Slow do not contribute anything to his score,
+since the hyphens are silently ignored by the regular expression \texttt{pattern}.
+
+\remarkEng
+The regular expression \texttt{pattern} is written as \texttt{0|[1-9][0-9]*}, i.e.\ the alternative
+matching a single \texttt{0} comes first.  In the previous section we have seen that the order of the
+alternatives usually matters, since the module \texttt{re} always chooses the \emph{first} alternative that
+matches at the current position.  Here, however, the order is irrelevant: the two alternatives start with
+disjoint sets of characters, so at any given position at most one of them can match at all.  Therefore, the
+regular expression \texttt{[1-9][0-9]*|0} would work equally well.
+\eox
+
+\noindent
+The program discussed in this section can be found at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/03-Exam-Evaluation.ipynb}{Python/Chapter-03/03-Exam-Evaluation.ipynb}.
+\\[0.2cm]
+In addition to the code discussed above, this notebook contains a plot of the function \texttt{mark} that
+visualizes the relation between the number of points achieved and the resulting mark.
+
+\section{Converting \simtextsc{Html} to Text \label{section:html2text}}
+\index{Html2Text@\simtextsc{Html} to text}
+In this section, we develop a program that converts an \simtextsc{Html} file into a plain text file.  This
+program is actually quite useful: Some years ago I had a student who was blind.  If he read a web page, he
+would use his Braille display.  For him, the \simtextsc{Html} markup was of no use, so if the markup was
+removed, he could read web pages faster.
+
+Figure \ref{fig:homepage.html} on page \pageref{fig:homepage.html} shows an excerpt of the web page that we are
+going to use as our running example; the complete page is contained in the notebook that accompanies this
+section.  Inspecting this excerpt, we can identify four different kinds of markup that have to be dealt with:
+\begin{enumerate}
+\item The \blue{header} of the document, i.e.\ everything between the tags \texttt{<head>} and
+      \texttt{</head>}, contains no text that is of any interest to the reader.  The same is true for any
+      \textsl{JavaScript} code, which is enclosed in the tags \texttt{<script>} and \texttt{</script>}.
+      Therefore, these parts have to be discarded \emph{completely}, including their contents.
+\item All remaining \blue{tags}, for example \texttt{<div id="row1">} or \texttt{<br/>}, have to be removed,
+      but the text that is enclosed by these tags has to be preserved.
+\item \blue{Named entities}\index{entity!named} like ``\texttt{\&uuml;}'' or ``\texttt{\&nbsp;}'' have to be
+      replaced by the characters that they denote, in this case by the German umlaut ``\"u'' and by a
+      non-breaking space.
+\item \blue{Numerical entities}\index{entity!numerical} like ``\texttt{\&\#8555;}'' specify a
+      \simtextsc{Unicode} character by its numerical code point and have to be replaced accordingly.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{html}
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Homepage of Prof. Dr. Karl Stroetmann</title>
+        <link type="text/css" rel="stylesheet" href="style.css" />
+      </head>
+      <body>
+        <div id="row1">
+          <div class="right">
+            <a id="dhbw" href="http://www.ba-stuttgart.de">Duale
+               Hochschule Baden-W&uuml;rttemberg</a>
+            <br/>Coblitzallee 1-9
+            <br/>Office: &nbsp;&nbsp;&nbsp; Raum 344B
+          </div>
+        </div>
+        <div class="citation">
+          <div id="sign">His holiness Pope Hugo &#8555;.</div>
+        </div>
+      </body>
+    </html>
+\end{minted}
+\vspace*{-0.3cm}
+\caption{An excerpt of the \simtextsc{Html} page that is to be converted into plain text.}
+\label{fig:homepage.html}
+\end{figure}
+
+\noindent
+Note that we do \emph{not} build a scanner for this task.  Instead, we push the input through a
+\blue{pipeline of substitutions}\index{substitution pipeline}: every step of this pipeline uses one regular
+expression in order to remove or to rewrite one kind of markup, and the output of one step is the input of the
+next step.  The tool that makes this possible is the function \texttt{re.sub}, which we discuss below.  In the
+following, we assume that the string \texttt{data} contains the complete \simtextsc{Html} document.
+
+The program is shown in Figure \ref{fig:html2text.py-1} on page \pageref{fig:html2text.py-1} and in Figure
+\ref{fig:html2text.py-2} on page \pageref{fig:html2text.py-2}.  We discuss it line by line below.
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+import re
+from html.entities import html5
+
+def replace_named(match: re.Match) -> str:
+    s = match.group(0)
+    if s[-1] == ';':
+        entity_name = s[1:-1]   # chop off '&' and ';'
+    else:
+        entity_name = s[1:]     # only chop off '&'
+    return html5.get(entity_name, s)
+
+def replace_unicode(match: re.Match) -> str:
+    s = match.group(0)
+    if s[-1] == ';':
+        number_str = s[2:-1]    # chop off '&#' and ';'
+    else:
+        number_str = s[2:]      # only chop off '&#'
+    try:
+        return chr(int(number_str))
+    except ValueError:
+        return s
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Converting \simtextsc{Html} into text, part 1: the replacement functions.}
+\label{fig:html2text.py-1}
+\end{figure}
+
+\noindent
+Before we discuss the program, we have to introduce the function
+\texttt{re.sub}\index{sub@\texttt{sub}}, which is called as follows:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\texttt{re.sub}(r, \textsl{repl}, s, \textrm{flags}=0)$
+\\[0.2cm]
+This function searches the string $s$ for all non-overlapping substrings matching the regular expression $r$
+and replaces each of them.  The result is a \emph{new} string; the string $s$ itself is left unchanged, since
+strings are immutable in \textsl{Python}.  The argument \textsl{repl} can take two different forms:
+\begin{enumerate}
+\item If \textsl{repl} is a string, then every match is replaced by this string.  In particular, if
+      \textsl{repl} is the empty string \texttt{''}, then every match is simply deleted.
+\item If \textsl{repl} is a \emph{function}, then this function is called once for every match.  It receives the
+      corresponding match object as its only argument and has to return the string that is used as the
+      replacement.  This variant is considerably more powerful, since the replacement can then depend on the
+      text that has been matched.
+\end{enumerate}
+Furthermore, we need two of the flags that are provided by the module \texttt{re}:
+\begin{enumerate}
+\item \texttt{re.DOTALL}\index{DOTALL@\texttt{re.DOTALL}} changes the meaning of the regular expression
+      ``\texttt{.}'' so that it matches \emph{every} character, including the newline character.  Recall that,
+      by default, the dot does not match a newline.
+\item \texttt{re.IGNORECASE} makes the matching case-insensitive, which we need because
+      \simtextsc{Html} tags may be written using capital letters as well.
+\end{enumerate}
+Several flags are combined using the operator ``\texttt{|}'', which denotes the bitwise \emph{or}.
+
+Now we are ready to discuss the program.
+\begin{enumerate}
+\item Line 1 imports the module \texttt{re}.
+\item Line 2 imports the dictionary \texttt{html5}\index{html5@\texttt{html5}} from the module
+      \texttt{html.entities}.  This dictionary maps the names of the \simtextsc{Html5} entities to the
+      characters that these entities denote.  For example, 
+      \texttt{html5['uuml']} returns the string \texttt{'\"u'}.
+\item Lines 4--10 define the function \texttt{replace\_named}, which computes the replacement of a named
+      entity.
+      \begin{enumerate}
+      \item Line 5 uses the method \texttt{group(0)} of the match object in order to retrieve the complete
+            string that has been matched, for example the string \texttt{'\&uuml;'}.
+      \item Lines 6--9 chop off the ampersand at the beginning and, if it is present, the semicolon at the end.
+            What remains is the name of the entity.  The semicolon is optional because \simtextsc{Html}
+            tolerates entities that are not terminated by a semicolon.
+      \item Line 10 looks up the name of the entity in the dictionary \texttt{html5}.  Note the use of the
+            method \texttt{get}: if the name is not a key of this dictionary, then \texttt{get} returns its
+            second argument, which is the string \texttt{s} that has been matched.  Hence, an entity that we do
+            not know is left untouched instead of being deleted.
+      \end{enumerate}
+\item Lines 12--21 define the function \texttt{replace\_unicode}, which computes the replacement of a numerical
+      entity.  It works in the same way as the function \texttt{replace\_named}, but this time the string
+      \texttt{'\&\#'} is chopped off at the beginning and the remaining digits are converted into an
+      \texttt{int}.  The built-in function \texttt{chr}\index{chr@\texttt{chr}} then computes the
+      \simtextsc{Unicode} character that has this number as its code point.  For example, the call
+      \texttt{chr(128034)} returns the character with the code point $128034$, which is the emoji showing a
+      turtle.
+
+      The \texttt{try}-\texttt{except} statement in lines 18--21 catches the case that the given number does not
+      denote a valid \simtextsc{Unicode} character.  In this case, the entity is left untouched.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  firstnumber  = 22,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+flgs = re.IGNORECASE|re.DOTALL
+text = data
+text = re.sub(r'<head>.*?</head>'    , '', text, flags=flgs)
+text = re.sub(r'<script>.*?</script>', '', text, flags=flgs)
+text = re.sub(r'<[^>]+>'     , ''             , text)
+text = re.sub(r'&[a-zA-Z]+;?', replace_named  , text)
+text = re.sub(r'&#[0-9]+;?'  , replace_unicode, text)
+text = re.sub(r'(\s*\n\s*)+' , '\n'           , text)
+print(text.strip())
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Converting \simtextsc{Html} into text, part 2: the pipeline of substitutions.}
+\label{fig:html2text.py-2}
+\end{figure}
+
+\begin{enumerate}
+\setcounter{enumi}{4}
+\item Line 23 initializes the variable \texttt{text} with the \simtextsc{Html} document.  From here on, every
+      line overwrites this variable with the result of the previous transformation.  This is the pipeline that
+      we have announced above.
+\item Lines 24--25 remove the header and any \textsl{JavaScript} code, \emph{including} the text enclosed by the
+      corresponding tags.
+
+      Note that the quantifier is used in its \blue{non-greedy} form ``\texttt{.*?}''.  This is essential: if a
+      document contained more than one \texttt{<script>} element, the greedy quantifier ``\texttt{.*}'' would
+      match everything from the \emph{first} opening tag up to the \emph{last} closing tag and would therefore
+      delete all the text in between.
+
+      Furthermore, the flag \texttt{re.DOTALL} is needed here, since the header spans many lines and, without
+      this flag, the regular expression ``\texttt{.}'' would not match the newline characters.
+\item Line 26 removes all remaining tags.  The regular expression \texttt{<[\symbol{94}>]+>} matches a string
+      that starts with the character ``\texttt{<}'' and ends with the character ``\texttt{>}''.  Between these
+      two characters, there has to be a non-empty sequence of characters that are all different from
+      ``\texttt{>}''.  Since these tags are replaced by the empty string, they are deleted, but the text that
+      they enclose is preserved.
+\item Line 27 replaces the named entities.  The regular expression \texttt{\&[a-zA-Z]+;?} matches an ampersand
+      that is followed by a non-empty sequence of letters and, optionally, by a semicolon.  Here, the second
+      argument of \texttt{re.sub} is the \emph{function} \texttt{replace\_named} that has been discussed above.
+\item Line 28 replaces the numerical entities in the same manner.  The regular expression
+      \texttt{\&\#[0-9]+;?} matches an ampersand that is followed by the character ``\texttt{\#}'', a non-empty
+      sequence of digits, and, optionally, a semicolon.
+
+      Note that the substitution of the named entities has to be performed \emph{before} this substitution or,
+      at the very least, that the two substitutions must not be merged into one: since the character
+      ``\texttt{\#}'' is not a letter, the regular expression of line 27 does not interfere with the numerical
+      entities.
+\item Line 29 tidies up the result.  After all the markup has been removed, the text is littered with lines that
+      contain nothing but whitespace.  The regular expression \texttt{(\symbol{92}s*\symbol{92}n\symbol{92}s*)+}
+      matches a non-empty sequence of whitespace that contains at least one newline character, and every such
+      sequence is condensed into a single newline character.
+\item Line 30 prints the result.  The method \texttt{strip} removes the leading and trailing whitespace.
+\end{enumerate}
+
+\noindent
+Running this program on the complete web page produces the output that is shown in Figure
+\ref{fig:homepage.txt} on page \pageref{fig:homepage.txt}.  The original web page can be found at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://wwwlehre.dhbw-stuttgart.de/~stroetma/}{https://wwwlehre.dhbw-stuttgart.de/\symbol{126}stroetma/}
+\\[0.2cm]
+Today, the styling of this website is a little outdated, but I can assure you that it was very trendy when it
+was first conceived!
+
+\begin{figure}[!ht]
+\centering
+\begin{Verbatim}[ frame         = lines, 
+                  framesep      = 0.3cm, 
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                  commandchars  = \\\{\}
+                ]
+Prof. Dr. Karl Stroetmann
+Duale Hochschule Baden-W\"urttemberg
+Coblitzallee 1-9
+68163 Mannheim
+Germany
+Office:     Raum 344B
+Phone:    +49 621 4105-1376
+Fax:        +49 621 4105-1194
+Skype:     karlstroetmann
+Some links:
+My lecture notes,
+as well as the programs presented in class, can be found
+at
+https://github.com/karlstroetmann.
+Most of my papers can be found at researchgate.net.
+The programming language SetlX can be downloaded at
+http://randoom.org/Software/SetlX.
+As I am getting old and wise, I have to accept the limits of
+my own capabilities.  I have condensed these deep philosophical
+insights into a most beautiful pearl of poetry.  I would like
+to share these humble words of wisdom:
+I am a teacher by profession,
+mostly really by obsession;
+But even though I boldly try,
+I just cannot teach pigs to fly.
+Instead, I slaughter them and fry.
+Any sufficiently advanced poetry is indistinguishable from divine
+wisdom.
+His holiness Pope Hugo XII.
+\end{Verbatim}
+\vspace*{-0.3cm}
+\caption{The text that has been extracted from the \simtextsc{Html} page.}
+\label{fig:homepage.txt}
+\end{figure}
+
+\noindent
+Two details of this output deserve a comment.  First, the blanks that separate the labels
+``\texttt{Office:}'', ``\texttt{Phone:}'', ``\texttt{Fax:}'', and ``\texttt{Skype:}'' from their values are in
+fact \emph{non-breaking} spaces, since they originate from the entity ``\texttt{\&nbsp;}''.  Second, the last
+line ends with the single \simtextsc{Unicode} character \texttt{U+216B}, which is the Roman numeral twelve;
+since this character is not available in the font that is used for these lecture notes, it has been rendered as
+``\texttt{XII}'' above.
+
+\remarkEng
+It is worth noting how we have dealt with the header of the document.  The traditional way to solve this problem
+is to equip the scanner with different \blue{scanner states}\index{scanner state}: the scanner starts in a state
+in which it echoes the text that it reads, and as soon as it encounters the tag \texttt{<head>} it switches into
+a state in which everything is discarded until the tag \texttt{</head>} is found.  Scanner generators like
+\texttt{Lex} or \texttt{Ply} offer explicit support for this technique.
+
+The pipeline that we have developed achieves the same effect without any notion of state: because we remove the
+complete header in a separate step \emph{before} we deal with the remaining tags, the later steps never see the
+header at all.  Splitting a problem into a sequence of simple substitutions is often much easier than getting a
+single stateful scanner right.
+\eox
+
+\remarkEng
+The program developed in this section works for the web page shown above, but it is easy to construct
+\simtextsc{Html} documents for which it fails.  For example, an attribute value may itself contain the character
+``\texttt{>}'', as in
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{<a title="a > b">},
+\\[0.2cm]
+and in this case the regular expression \texttt{<[\symbol{94}>]+>} matches only a proper prefix of the tag.
+
+This is not an accident.  In the next chapter, we will prove that the language of all strings with balanced
+parentheses is \emph{not} a regular language, and the nesting of \simtextsc{Html} elements is an instance of
+exactly this problem.  Therefore, no regular expression can ever describe the syntax of \simtextsc{Html}.  Our
+program nevertheless works, because we never have to \emph{understand} the nesting of the elements: apart from
+the header, all we have to do is to delete the markup, and for this task a regular expression is sufficient.
+\eox
+
+\noindent
+The program discussed in this section can be found at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/04-Html2Text.ipynb}{Python/Chapter-03/04-Html2Text.ipynb}.
+\\[0.2cm]
+The notebook contains the complete \simtextsc{Html} document and, in addition, it prints the intermediate result
+after every step of the pipeline.  Inspecting these intermediate results is quite instructive, as it shows how
+the document is stripped of its markup step by step.
+
+\exerciseEng
+The purpose of the following exercise is to transform \href{http://www.latex-project.org}{\LaTeX} into 
+\href{https://www.tutorialspoint.com/mathml/index.htm}{\simtextsc{MathML}}.  \LaTeX\ is a document markup language
+that is especially well suited to present text that contains mathematical formulas.  In fact, these
+lecture notes have all been typeset using \LaTeX.  \simtextsc{MathML} is the part of \simtextsc{Html} that
+deals with the representation of mathematical formulas.  As \LaTeX\ provides a very rich
+document markup language and we can only afford to spend a few hours on this exercise, we confine
+ourselves to a small subset of \LaTeX.  Figure \ref{fig:input.tex} on page \pageref{fig:input.tex}
+shows the example input file that we want to transform in \simtextsc{Html}.  If this example file is
+typeset using \LaTeX, it is displayed as shown in Figure \ref{fig:input.pdf} on page
+\pageref{fig:input.pdf}.  The program that you are
+going to develop should transform the \LaTeX\ input file into an \simtextsc{Html} file.  For your
+convenience, all these files are available in the github directory 
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-03/05-LaTeX2HTML}{\texttt{Python/Chapter-03/05-LaTeX2HTML}}.
+\\[0.2cm]
+This directory contains also the \textsl{Jupyter} notebook 
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/05-LaTeX2HTML/LaTeX2HTML.ipynb}{\texttt{LaTeX2HTML.ipynb}}.
+This notebook contains lots of predefined functions that are useful in order to solve the given task.
+
+\begin{figure}[!ht]
+  \centering
+\begin{verbatim}
+    \documentclass{article}
+    \begin{document}
+    The sum of the squares of the first $n$ natural numbers is given as:
+    $$ \sum\limits_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
+    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    the square root of the squares of the length of the two catheti:
+    $$ c = \sqrt{a^{2} + b^{2}}.  $$
+    The area of a circle is given as 
+    $$  A = \pi \cdot r^{2},   $$ 
+    while its circumference satisfies
+    $$ C = 2 \cdot \pi \cdot r.  $$
+    \end{document}
+    \end{verbatim}
+  \caption{An example \LaTeX\ input file.}
+  \label{fig:input.tex}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \framebox{
+  \begin{minipage}{0.8\linewidth}
+    The sum of the squares of the first $n$ natural numbers is given as:
+    $$ \sum_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
+    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    the square root of the squares of the length of the two catheti:
+    $$ c = \sqrt{a^{2} + b^{2}}.  $$
+    The area $A$ of a circle is given as 
+    $$  A = \pi \cdot r^{2},   $$ 
+    while its circumference satisfies
+    $$ C = 2 \cdot \pi \cdot r.  $$   
+  \end{minipage}}
+  \caption{Output produced by the \LaTeX\ file shown in Figure \ref{fig:input.tex}}
+  \label{fig:input.pdf}
+\end{figure}
+
+In order to do this exercise, you have to understand a little bit about \LaTeX\ and about 
+\simtextsc{MathML}.  In the following, we discuss those features of these two language that are needed in order to
+solve the given problem.
+\begin{enumerate}
+\item A \LaTeX\ input file has the following structure:
+      \begin{enumerate}
+      \item The first line list the type of the document.  In our example, it reads
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{92}documentclass\{article\}}.
+            \\[0.2cm]
+            This line will be transformed into the following \simtextsc{Html}:
+            \begin{verbatim}
+ <html>
+ <head>
+ <script type="text/javascript"
+ src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+ </script>
+ </head>
+            \end{verbatim}
+            Here, the \texttt{<script>} tag is necessary in order for the \simtextsc{MathML} 
+            to be displayed correctly.
+      \item The next line has the form:
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{92}begin\{document\}}
+            \\[0.2cm]
+            This line precedes the content and should be translated into the tag
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{<body>}.
+      \item After that, the \LaTeX\ file consists of text that contains mathematical formula.
+      \item The \LaTeX\ input file finishes with a line of the form
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{\symbol{92}end\{document\}}.
+            \\[0.2cm]
+            This line should be translated into the tags
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{</body></html>}.
+      \end{enumerate}
+\item In \LaTeX, an inline formula is started and ended with a single dollar symbol
+      ``\texttt{\symbol{36}}''.  
+      In \simtextsc{MathML}, an inline formula is written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display='inline'>$\cdots$</math>}.
+      \\[0.2cm]
+      Here, I have used ``$\cdots$'' to represent the mathematical content of the formula.
+\item In \LaTeX, a formula that is displayed in its own line is started and ended with the string
+      ``\texttt{\symbol{36}\symbol{36}}''.  
+      In \simtextsc{MathML}, these formulas\ are called \blue{block formulas} and are written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>$\cdots$</math>}.
+      \\[0.2cm]
+      Again, I have used ``$\cdots$'' to represent the mathematical content of the formula.
+\item While in \LaTeX\ a mathematical variable does not need any special markup, in \simtextsc{MathMl}
+      a mathematical variable is written using the tags 
+      \texttt{<mi>} and \texttt{</mi>}.  For example, the mathematical variable $n$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mi>n</mi>}.
+\item While in \LaTeX\ a number does not need any special markup, in \simtextsc{MathMl}
+      a number is written using the tags 
+      \texttt{<mn>} and \texttt{</mn>}.  For example, the number $3.14159$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mn>3.14159</mn>}.
+\item In \LaTeX\ the mathematical constant $\pi$ is written using the command ``\texttt{\symbol{92}pi}''.
+      In \simtextsc{MathMl}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&pi;}'' and
+      hence we would write $\pi$ as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mn>\&pi;</mn>}.
+\item In \LaTeX\ the multiplication operator ``$\cdot$'' is written using the command ``\texttt{\symbol{92}cdot}''.
+      In \simtextsc{MathMl}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&sdot;}'' and
+      hence we would write ``$\cdot$'' as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mop>\&sdot;</mop>}.
+\item While in \LaTeX\ most operator symbols stand for themselves, in \simtextsc{MathMl}
+      an operator is surrounded by the tags 
+      \texttt{<mop>} and \texttt{</mop>}.  For example, the operator $+$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mop>+</mop>}.
+\item In \LaTeX, raising an expression $e$ to the $n$th power is done using the operator
+      ``\texttt{\symbol{94}}''.  Furthermore, the exponent should be enclosed in the curly braces
+      ``\texttt{\{}'' and ``\texttt{\}}''.  For example, the code to produce the term $x^2$ is
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{x\symbol{94}\{2\}}.
+      \\[0.2cm]
+      In \simtextsc{MathMl}, raising an expression to a power is achieved using the tags
+      \texttt{<msup>} and \texttt{</msup>}.  For example, in order to display the term $x^2$, we
+      have to write  
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<msup><mi>x</mi><mn>2</mn></msup>}.
+\item In \LaTeX, taking the square root of an expression is done using the command
+      ``\texttt{\symbol{92}sqrt}''.  The argument has to be enclosed in curly braces.
+      For example, in order to produce the output $\sqrt{a+b}$, we have to write
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{92}sqrt\{a+b\}}.
+      \\[0.2cm]
+      In \simtextsc{MathMl}, taking the square root makes use of the tags \texttt{<msqrt>} 
+      and \texttt{</msqrt>}.  The example shown above can be written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<msqrt><mi>a</mi><mop>+</mop><mi>b</mi></msqrt>}.
+\item In \LaTeX, writing a fraction is done using the command
+      ``\texttt{\symbol{92}frac}''.  This command takes two arguments, the numerator and the
+      denominator.  Both of these have to be enclosed in curly braces.
+      For example, in order to produce the output $\frac{a+b}{2}$, we have to write
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{92}frac\{a+b\}\{2\}}.
+      \\[0.2cm]
+      In \simtextsc{MathMl}, a fraction is created via the tags \texttt{<mfrac>} 
+      and \texttt{</mfrac>}.  Additionally, if the arguments contain more than a single element,
+      each of them has to be enclosed in the tags \texttt{<mrow>} and \texttt{</mrow>}.
+      The example shown above can be written as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mfrac><mrow><mi>a</mi><mop>+</mop><mi>b</mi></mrow><mn>2</mn></mfrac>}.
+\item In \LaTeX, writing a sum is done using the command
+      ``\texttt{\symbol{92}sum\symbol{92}limits}''.  
+      This command takes two arguments:  The first argument gives the indexing variable together
+      with its lower bound, while the second argument gives the upper bound.  The first argument
+      is started using the string ``\texttt{\_\{}'' and ended using the string ``\texttt{\}}'',
+      while the second argument is started using the string ``\texttt{\symbol{94}\{}'' and ended using the
+      string ``\texttt{\}}''.  For example, in order to produce the output 
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\displaystyle\sum\limits_{i=1}^{n} i$,
+      \\[0.2cm]
+      we have to write
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{\symbol{92}sum\symbol{92}limits\_\{i=1\}\symbol{94}\{n\} i}.
+      \\[0.2cm]
+      In \simtextsc{MathMl}, a sum with lower and upper limits is created via the tags
+      \texttt{<munderover>} and \texttt{</munderover>} and the \simtextsc{Html} entity ``\texttt{\&sum}''.
+      The tag \texttt{munderover} takes three arguments:
+      \begin{enumerate}
+      \item The first argument is the operator, so in this case it is the entity ``\texttt{\&sum}''.
+      \item The second argument initializes the indexing variable of the sum.
+      \item The third argument provides the upper bound.
+      \end{enumerate}
+      The second argument usually contains more than a single item and therefore has to be enclosed 
+      in the tags \texttt{<mrow>} and \texttt{</mrow>}.
+      Hence, the example shown above would be written as follows:
+      
+    \begin{verbatim}
+    <munderover>
+        <mo>&sum;</mo>
+        <mrow>
+            <mi>i</mi> <mo>=</mo> <mn>1</mn>
+        </mrow>
+        <mi>n</mi>
+    </munderover>
+    \end{verbatim}
+\end{enumerate}
+
+\remarkEng
+The most important problem that you have to solve is the following:  Once you encounter a closing brace
+``\texttt{\}}'' you have to know whether this brace closes the argument of a square root, a
+fraction, a sum, or an exponent.  You should be aware that, for example, square roots and fractions
+can be nested.  Hence, it is not enough to have a single variable that remembers whether you are
+parsing, say, a square root or a fraction.  Instead, every time you encounter a string like, e.g.
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{\symbol{92}sqrt\{} \quad or \quad \texttt{\symbol{92}frac\{},
+\\[0.2cm]
+you should store the current state on a stack and set the new state according to whether you have just seen the
+keyword ``\texttt{\symbol{92}frac}'' or ``\texttt{\symbol{92}sqrt}'' or whatever caused the
+curly brace to be opened.  When you encounter a closing brace ``\texttt{\}}'', you should 
+restore the state to its previous value by looking up this value from the stack.  
+\eox
+
+\section{Check your Understanding}
+\begin{enumerate}[(a)]
+\item How are regular expressions defined in \textsl{Python}?
+\item Do you understand the structure of the scanner discussed at the beginning of this chapter?
+\item Are you able to use regular expressions to write a program that reads a given text, finds all numbers inside
+      this text that are followed by a $\texttt{\$}$ symbol and that then converts these numbers to their
+      equivalent  value in \texttt{\euro{}}?  Assume that $1 \mathtt{\$} = 0.85 \texttt{\euro{}}$.
+\end{enumerate}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "formal-languages.tex"
+%%% End:
+
