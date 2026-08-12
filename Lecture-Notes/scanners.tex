@@ -1,14 +1,70 @@
 \chapter[Building Scanners]{Building Scanners with Regular Expressions \label{chapter:ply-lex}}
 
-After introducing the concept of regular expressions, we will now explore their practical
-applications. In this chapter, we show how a scanner can be implemented directly in \textsl{Python},
-using nothing but the regular expressions provided by the \textsl{Python} module \texttt{re}.
-A \textcolor{blue}{scanner}\index{scanner} is a program
-designed to segment a given string into a sequence of \emph{tokens}, where a
-\textcolor{blue}{token}\index{token} is a contiguous string of characters that logically group together. To
-illustrate, consider the input for a \texttt{C}-compiler, which is an \simtextsc{Ascii}-string representing a
-valid \texttt{C} program. The compiler initially organizes these characters into various \emph{tokens},
-including:  
+\begin{figure}[h] 
+\centering
+  \includegraphics[width=17.0cm]{Abbildungen/scanner.jpg}
+\caption{The scanner component of a mediaval compiler.}
+\label{fig:scanner.jpg}
+\end{figure}
+
+\section{Overview}
+In the previous chapter we have investigated regular expressions from a theoretical point of view.  This chapter
+is devoted to their most important practical application: the construction of \blue{scanners}\index{scanner}.  A
+scanner is the program that splits a structured text into the smallest units that carry a meaning of their own.
+These units are called \blue{tokens}\index{token}.  Every compiler starts by running a scanner, but scanners are
+also useful in many situations that have nothing to do with compilers, and we will see several examples of this
+kind.
+
+It is worth pointing out that we do \emph{not} use any scanner generator in this chapter.  Traditionally,
+scanners have been produced by tools like \href{https://en.wikipedia.org/wiki/Lex_(software)}{\texttt{Lex}}
+\index{Lex@\texttt{Lex}} or \href{https://www.dabeaz.com/ply/}{\texttt{Ply}}
+\index{Ply@\texttt{Ply}}, which read a scanner specification and generate the corresponding program. 
+As \textsl{Python} already provides regular expressions in its module
+\href{https://docs.python.org/3/library/re.html}{\texttt{re}}, \index{re@\texttt{re}} which is part of the
+standard library,  we can do without such a tool: everything that is needed in order to build a scanner is
+contained in the module \texttt{re}.  This keeps the number of tools that have to be learned small and it makes
+the inner workings of a scanner much more visible.
+
+As this chapter is rather long, we start with a road map.
+\begin{enumerate}
+\item The section \emph{Introduction} discusses what a scanner is supposed to do.  It presents the kinds of
+      tokens that occur in a typical programming language and shows how a small \texttt{C} program is split into
+      its tokens.
+\item The section \emph{Building a Scanner with Regular Expressions} develops the recipe that is used throughout
+      this chapter: every token is described by a regular expression, all of these regular expressions are
+      combined into a single \blue{master pattern}\index{master pattern} built from \blue{named
+      groups}\index{named group}, and this pattern is then used in order to scan the input from left to right.
+      The running example of this section is a scanner for arithmetic expressions.
+\item The section \emph{The Syntax of Regular Expressions in \textsl{Python}} discusses the syntax that is
+      supported by the module \texttt{re} in a systematic way.  Among other things, it covers meta-characters,
+      quantifiers and their non-greedy variants, character classes, groups and back-references, the anchors that
+      match the start and the end of a line, and lookahead assertions.  If you are already acquainted with
+      regular expressions, this section can be skimmed on first reading and used as a reference later on.
+\item The section \emph{A Complex Example: Evaluating an Exam} presents a program that I use in order to
+      evaluate the exams that you have to write.  This program reads a file that contains the number of points
+      that the students have achieved, computes the corresponding marks, and prints a summary.  It shows that
+      regular expressions are useful for much more than just building compilers.
+\item The section \emph{Converting \simtextsc{Html} to Text} solves the problem of extracting the text that is
+      embedded in an \simtextsc{Html} document.  Interestingly, this problem is \emph{not} solved by building a
+      scanner.  Instead, the input is pushed through a \blue{pipeline of substitutions}\index{substitution
+      pipeline}.  This section also shows the limits of our approach: we will prove in the next chapter that no
+      regular expression is able to describe the syntax of \simtextsc{Html}.
+\item The exercise that concludes that section asks you to translate a small subset of \LaTeX\ into
+      \simtextsc{MathML}.  In order to solve this exercise, two techniques are needed that go beyond a plain
+      token specification: the scanner has to switch between different \blue{scanner states}\index{scanner
+      state}, and it has to maintain a \blue{stack}\index{stack} in order to keep track of the delimiters that
+      are currently open.
+\end{enumerate}
+All the programs that are discussed in this chapter are available as \textsl{Jupyter} notebooks.  As programming
+is not a spectator sport, you are strongly encouraged to run these notebooks on your own and to experiment with
+them while you read.
+
+\section{Introduction}
+A \blue{scanner}\index{scanner} is a program designed to segment a given string into a sequence of
+\emph{tokens}, where a \blue{token}\index{token} is a contiguous string of characters that logically group
+together. To illustrate, consider the input for a \texttt{C}-compiler, which is an \simtextsc{Ascii}-string
+representing a valid \texttt{C} program. The compiler initially organizes these characters into various
+\emph{tokens}, including:  
 
 \begin{enumerate}
 \item \textcolor{blue}{Keywords} or reserved words, such as, for example, ``\texttt{if}'', ``\texttt{while}'',
@@ -83,7 +139,7 @@ comment has been removed by the scanner.
 While it is certainly possible to implement a scanner by inspecting the input character by character, doing so
 by hand is tedious and error-prone.  \textsl{Python}'s \texttt{re} module makes this task considerably easier:
 We specify every kind of token as a regular expression and let \texttt{re} do the work of matching.  We develop
-this approach in the following section. 
+this approach in the following section.
 
 \section{Building a Scanner with Regular Expressions}
 \index{scanner!building with regular expressions}
@@ -1159,7 +1215,7 @@ This program prints the following line:
 The material presented in this section is also available as a \textsl{Jupyter} notebook that can be found at
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/02-Regexp-Tutorial.ipynb}{Python/Chapter-03/02-Regexp-Tutorial.ipynb}.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03-Lark/02-Regexp-Tutorial.ipynb}{Python/Chapter-03-Lark/02-Regexp-Tutorial.ipynb}.
 \\[0.2cm]
 Since regular expressions are best understood by experimentation, you are strongly encouraged to work through
 this notebook interactively and to modify the examples given there.
@@ -1497,7 +1553,7 @@ regular expression \texttt{[1-9][0-9]*|0} would work equally well.
 The program discussed in this section can be found at
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/03-Exam-Evaluation.ipynb}{Python/Chapter-03/03-Exam-Evaluation.ipynb}.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03-Lark/03-Exam-Evaluation.ipynb}{Python/Chapter-03-Lark/03-Exam-Evaluation.ipynb}.
 \\[0.2cm]
 In addition to the code discussed above, this notebook contains a plot of the function \texttt{mark} that
 visualizes the relation between the number of points achieved and the resulting mark.
@@ -1827,7 +1883,7 @@ the header, all we have to do is to delete the markup, and for this task a regul
 The program discussed in this section can be found at
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/04-Html2Text.ipynb}{Python/Chapter-03/04-Html2Text.ipynb}.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03-Lark/04-Html2Text.ipynb}{Python/Chapter-03-Lark/04-Html2Text.ipynb}.
 \\[0.2cm]
 The notebook contains the complete \simtextsc{Html} document and, in addition, it prints the intermediate result
 after every step of the pipeline.  Inspecting these intermediate results is quite instructive, as it shows how
@@ -1847,10 +1903,10 @@ typeset using \LaTeX, it is displayed as shown in Figure \ref{fig:input.pdf} on 
 an \simtextsc{Html} file.  For your convenience, all these files are available in the github directory 
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-03/05-LaTeX2HTML}{\texttt{Python/Chapter-03/05-LaTeX2HTML}}.
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-03-Lark/05-LaTeX2HTML}{\texttt{Python/Chapter-03-Lark/05-LaTeX2HTML}}.
 \\[0.2cm]
 This directory contains also the \textsl{Jupyter} notebook 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/05-LaTeX2HTML/LaTeX2HTML.ipynb}{\texttt{LaTeX2HTML.ipynb}}.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03-Lark/05-LaTeX2HTML/LaTeX2HTML-Exercise.ipynb}{\texttt{LaTeX2HTML-Exercise.ipynb}}.
 This notebook provides the complete framework of the scanner: it contains all the functions that write the
 \simtextsc{MathML}, the driver of the scanner, and the processing of those parts of the input that are not
 mathematical formulas.  Your task is to fill in the parts that are marked in this notebook, i.e.\ the regular
@@ -2214,10 +2270,10 @@ from the scanner discussed at the beginning of this chapter in two respects.
                   xleftmargin  = 0.3cm,
                   xrightmargin = 0.3cm,
                 ]{python3}
-master_patterns = { state: re.compile('|'.join(f'(?P<{name}>{regexp})'
-                                               for name, regexp in spec))
-                    for state, spec in token_specifications.items()
-                  }
+ master_patterns = \
+      { state: re.compile('|'.join(f'(?P<{name}>{regexp})'
+                   for name, regexp in spec))
+        for state, spec in token_specifications.items() }
 
 def scan(text):
     state = 'PREAMBLE'
@@ -2235,7 +2291,7 @@ def scan(text):
         else:
             state = process_formula(token, value, stack)
     if state != 'DONE':
-        raise SyntaxError(r'the input did not contain "\end{document}"')
+        raise SyntaxError(r'no "\end{document}"')
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The driver of the scanner that translates \LaTeX\ into \simtextsc{MathML}.}
