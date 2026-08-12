@@ -1841,27 +1841,36 @@ lecture notes have all been typeset using \LaTeX.  \simtextsc{MathML} is the par
 deals with the representation of mathematical formulas.  As \LaTeX\ provides a very rich
 document markup language and we can only afford to spend a few hours on this exercise, we confine
 ourselves to a small subset of \LaTeX.  Figure \ref{fig:input.tex} on page \pageref{fig:input.tex}
-shows the example input file that we want to transform in \simtextsc{Html}.  If this example file is
+shows the example input file that we want to transform into \simtextsc{Html}.  If this example file is
 typeset using \LaTeX, it is displayed as shown in Figure \ref{fig:input.pdf} on page
-\pageref{fig:input.pdf}.  The program that you are
-going to develop should transform the \LaTeX\ input file into an \simtextsc{Html} file.  For your
-convenience, all these files are available in the github directory 
+\pageref{fig:input.pdf}.  The program that you are going to develop should transform the \LaTeX\ input file into
+an \simtextsc{Html} file.  For your convenience, all these files are available in the github directory 
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-03/05-LaTeX2HTML}{\texttt{Python/Chapter-03/05-LaTeX2HTML}}.
 \\[0.2cm]
 This directory contains also the \textsl{Jupyter} notebook 
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/05-LaTeX2HTML/LaTeX2HTML.ipynb}{\texttt{LaTeX2HTML.ipynb}}.
-This notebook contains lots of predefined functions that are useful in order to solve the given task.
+This notebook provides the complete framework of the scanner: it contains all the functions that write the
+\simtextsc{MathML}, the driver of the scanner, and the processing of those parts of the input that are not
+mathematical formulas.  Your task is to fill in the parts that are marked in this notebook, i.e.\ the regular
+expressions of the tokens that occur inside a formula and the actions that are associated with these tokens.
 
 \begin{figure}[!ht]
-  \centering
-\begin{verbatim}
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  fontsize     = \small,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{latex}
     \documentclass{article}
+
     \begin{document}
     The sum of the squares of the first $n$ natural numbers is given as:
     $$ \sum\limits_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
-    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    According to Pythagoras, the length of the hypotenuse of a right-angled triangle is
     the square root of the squares of the length of the two catheti:
     $$ c = \sqrt{a^{2} + b^{2}}.  $$
     The area of a circle is given as 
@@ -1869,7 +1878,8 @@ This notebook contains lots of predefined functions that are useful in order to 
     while its circumference satisfies
     $$ C = 2 \cdot \pi \cdot r.  $$
     \end{document}
-    \end{verbatim}
+\end{minted}
+\vspace*{-0.3cm}
   \caption{An example \LaTeX\ input file.}
   \label{fig:input.tex}
 \end{figure}
@@ -1880,10 +1890,10 @@ This notebook contains lots of predefined functions that are useful in order to 
   \begin{minipage}{0.8\linewidth}
     The sum of the squares of the first $n$ natural numbers is given as:
     $$ \sum_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
-    According to Pythagoras, the length of the hypotenuse of a right triangle is
+    According to Pythagoras, the length of the hypotenuse of a right-angled triangle is
     the square root of the squares of the length of the two catheti:
     $$ c = \sqrt{a^{2} + b^{2}}.  $$
-    The area $A$ of a circle is given as 
+    The area of a circle is given as 
     $$  A = \pi \cdot r^{2},   $$ 
     while its circumference satisfies
     $$ C = 2 \cdot \pi \cdot r.  $$   
@@ -1893,93 +1903,110 @@ This notebook contains lots of predefined functions that are useful in order to 
 \end{figure}
 
 In order to do this exercise, you have to understand a little bit about \LaTeX\ and about 
-\simtextsc{MathML}.  In the following, we discuss those features of these two language that are needed in order to
+\simtextsc{MathML}.  In the following, we discuss those features of these two languages that are needed in order to
 solve the given problem.
 \begin{enumerate}
 \item A \LaTeX\ input file has the following structure:
       \begin{enumerate}
-      \item The first line list the type of the document.  In our example, it reads
+      \item The file starts with its \blue{preamble}\index{preamble}.  The preamble specifies the type of the
+            document and loads the packages that are used.  In our example, the preamble consists of the single
+            line
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{\symbol{92}documentclass\{article\}}.
             \\[0.2cm]
-            This line will be transformed into the following \simtextsc{Html}:
-            \begin{verbatim}
- <html>
- <head>
- <script type="text/javascript"
- src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
- </script>
- </head>
-            \end{verbatim}
-            Here, the \texttt{<script>} tag is necessary in order for the \simtextsc{MathML} 
-            to be displayed correctly.
-      \item The next line has the form:
+            As our translator does not support any of the options that \LaTeX\ offers here, the preamble is
+            simply discarded.  Instead, the following \simtextsc{Html} header is written:
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.3cm,
+              ]{html}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Converted LaTeX Document</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async>
+</script>
+</head>
+\end{minted}
+            Here, the \texttt{<script>} tag loads \href{https://www.mathjax.org}{MathJax}, which is the
+            \textsl{JavaScript} library that renders the \simtextsc{MathML} in the browser.  Without this tag,
+            the formulas are not displayed correctly.
+      \item The content of the document is started by the line
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{\symbol{92}begin\{document\}}
             \\[0.2cm]
-            This line precedes the content and should be translated into the tag
+            and this line is translated into the tag
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{<body>}.
-      \item After that, the \LaTeX\ file consists of text that contains mathematical formula.
+      \item After that, the \LaTeX\ file consists of text that contains mathematical formulas.
       \item The \LaTeX\ input file finishes with a line of the form
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{\symbol{92}end\{document\}}.
             \\[0.2cm]
-            This line should be translated into the tags
+            This line is translated into the tags
             \\[0.2cm]
             \hspace*{1.3cm}
-            \texttt{</body></html>}.
+            \texttt{</body></html>}
+            \\[0.2cm]
+            and everything that follows it is discarded.
       \end{enumerate}
 \item In \LaTeX, an inline formula is started and ended with a single dollar symbol
       ``\texttt{\symbol{36}}''.  
       In \simtextsc{MathML}, an inline formula is written as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display='inline'>$\cdots$</math>}.
+      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">$\cdots$</math>}.
       \\[0.2cm]
       Here, I have used ``$\cdots$'' to represent the mathematical content of the formula.
 \item In \LaTeX, a formula that is displayed in its own line is started and ended with the string
       ``\texttt{\symbol{36}\symbol{36}}''.  
-      In \simtextsc{MathML}, these formulas\ are called \blue{block formulas} and are written as
+      In \simtextsc{MathML}, these formulas are called \blue{block formulas}\index{block formula} and are written as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display='block'>$\cdots$</math>}.
+      \texttt{<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">$\cdots$</math>}.
       \\[0.2cm]
       Again, I have used ``$\cdots$'' to represent the mathematical content of the formula.
-\item While in \LaTeX\ a mathematical variable does not need any special markup, in \simtextsc{MathMl}
+\item While in \LaTeX\ a mathematical variable does not need any special markup, in \simtextsc{MathML}
       a mathematical variable is written using the tags 
       \texttt{<mi>} and \texttt{</mi>}.  For example, the mathematical variable $n$ is written as    
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{<mi>n</mi>}.
-\item While in \LaTeX\ a number does not need any special markup, in \simtextsc{MathMl}
+\item While in \LaTeX\ a number does not need any special markup, in \simtextsc{MathML}
       a number is written using the tags 
       \texttt{<mn>} and \texttt{</mn>}.  For example, the number $3.14159$ is written as    
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{<mn>3.14159</mn>}.
 \item In \LaTeX\ the mathematical constant $\pi$ is written using the command ``\texttt{\symbol{92}pi}''.
-      In \simtextsc{MathMl}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&pi;}'' and
+      In \simtextsc{MathML}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&pi;}'' and
       hence we would write $\pi$ as
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{<mn>\&pi;</mn>}.
+\item While in \LaTeX\ most operator symbols stand for themselves, in \simtextsc{MathML}
+      an operator is surrounded by the tags 
+      \texttt{<mo>} and \texttt{</mo>}.  For example, the operator $+$ is written as    
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{<mo>+</mo>}.
 \item In \LaTeX\ the multiplication operator ``$\cdot$'' is written using the command ``\texttt{\symbol{92}cdot}''.
-      In \simtextsc{MathMl}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&sdot;}'' and
+      In \simtextsc{MathML}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&sdot;}'' and
       hence we would write ``$\cdot$'' as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<mop>\&sdot;</mop>}.
-\item While in \LaTeX\ most operator symbols stand for themselves, in \simtextsc{MathMl}
-      an operator is surrounded by the tags 
-      \texttt{<mop>} and \texttt{</mop>}.  For example, the operator $+$ is written as    
+      \texttt{<mo>\&sdot;</mo>}.
       \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{<mop>+</mop>}.
+      Similarly, the comparison operators ``$\leq$'' and ``$\geq$'', which are written as
+      ``\texttt{\symbol{92}leq}'' and ``\texttt{\symbol{92}geq}'' in \LaTeX, make use of the entities
+      ``\texttt{\&le;}'' and ``\texttt{\&ge;}''.
 \item In \LaTeX, raising an expression $e$ to the $n$th power is done using the operator
       ``\texttt{\symbol{94}}''.  Furthermore, the exponent should be enclosed in the curly braces
       ``\texttt{\{}'' and ``\texttt{\}}''.  For example, the code to produce the term $x^2$ is
@@ -1987,12 +2014,12 @@ solve the given problem.
       \hspace*{1.3cm}
       \texttt{x\symbol{94}\{2\}}.
       \\[0.2cm]
-      In \simtextsc{MathMl}, raising an expression to a power is achieved using the tags
-      \texttt{<msup>} and \texttt{</msup>}.  For example, in order to display the term $x^2$, we
-      have to write  
+      In \simtextsc{MathML}, raising an expression to a power is achieved using the tags
+      \texttt{<msup>} and \texttt{</msup>}.  This tag takes two arguments: the base and the exponent.
+      For example, in order to display the term $x^2$, we have to write  
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<msup><mi>x</mi><mn>2</mn></msup>}.
+      \texttt{<msup><mi>x</mi><mrow><mn>2</mn></mrow></msup>}.
 \item In \LaTeX, taking the square root of an expression is done using the command
       ``\texttt{\symbol{92}sqrt}''.  The argument has to be enclosed in curly braces.
       For example, in order to produce the output $\sqrt{a+b}$, we have to write
@@ -2000,11 +2027,11 @@ solve the given problem.
       \hspace*{1.3cm}
       \texttt{\symbol{92}sqrt\{a+b\}}.
       \\[0.2cm]
-      In \simtextsc{MathMl}, taking the square root makes use of the tags \texttt{<msqrt>} 
+      In \simtextsc{MathML}, taking the square root makes use of the tags \texttt{<msqrt>} 
       and \texttt{</msqrt>}.  The example shown above can be written as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<msqrt><mi>a</mi><mop>+</mop><mi>b</mi></msqrt>}.
+      \texttt{<msqrt><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></msqrt>}.
 \item In \LaTeX, writing a fraction is done using the command
       ``\texttt{\symbol{92}frac}''.  This command takes two arguments, the numerator and the
       denominator.  Both of these have to be enclosed in curly braces.
@@ -2013,13 +2040,14 @@ solve the given problem.
       \hspace*{1.3cm}
       \texttt{\symbol{92}frac\{a+b\}\{2\}}.
       \\[0.2cm]
-      In \simtextsc{MathMl}, a fraction is created via the tags \texttt{<mfrac>} 
-      and \texttt{</mfrac>}.  Additionally, if the arguments contain more than a single element,
-      each of them has to be enclosed in the tags \texttt{<mrow>} and \texttt{</mrow>}.
-      The example shown above can be written as
+      In \simtextsc{MathML}, a fraction is created via the tags \texttt{<mfrac>} 
+      and \texttt{</mfrac>}.  The example shown above can be written as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<mfrac><mrow><mi>a</mi><mop>+</mop><mi>b</mi></mrow><mn>2</mn></mfrac>}.
+      \texttt{<mfrac><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow>}
+      \\
+      \hspace*{1.3cm}
+      \texttt{\phantom{<mfrac>}<mrow><mn>2</mn></mrow></mfrac>}.
 \item In \LaTeX, writing a sum is done using the command
       ``\texttt{\symbol{92}sum\symbol{92}limits}''.  
       This command takes two arguments:  The first argument gives the indexing variable together
@@ -2036,49 +2064,285 @@ solve the given problem.
       \hspace*{1.3cm}
       \texttt{\symbol{92}sum\symbol{92}limits\_\{i=1\}\symbol{94}\{n\} i}.
       \\[0.2cm]
-      In \simtextsc{MathMl}, a sum with lower and upper limits is created via the tags
-      \texttt{<munderover>} and \texttt{</munderover>} and the \simtextsc{Html} entity ``\texttt{\&sum}''.
+      In \simtextsc{MathML}, a sum with lower and upper limits is created via the tags
+      \texttt{<munderover>} and \texttt{</munderover>} and the \simtextsc{Html} entity ``\texttt{\&sum;}''.
       The tag \texttt{munderover} takes three arguments:
       \begin{enumerate}
-      \item The first argument is the operator, so in this case it is the entity ``\texttt{\&sum}''.
+      \item The first argument is the operator, so in this case it is the entity ``\texttt{\&sum;}''.
       \item The second argument initializes the indexing variable of the sum.
       \item The third argument provides the upper bound.
       \end{enumerate}
-      The second argument usually contains more than a single item and therefore has to be enclosed 
-      in the tags \texttt{<mrow>} and \texttt{</mrow>}.
       Hence, the example shown above would be written as follows:
-      
-    \begin{verbatim}
-    <munderover>
-        <mo>&sum;</mo>
-        <mrow>
-            <mi>i</mi> <mo>=</mo> <mn>1</mn>
-        </mrow>
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.3cm,
+              ]{xml}
+<munderover>
+    <mo>&sum;</mo>
+    <mrow>
+        <mi>i</mi> <mo>=</mo> <mn>1</mn>
+    </mrow>
+    <mrow>
         <mi>n</mi>
-    </munderover>
-    \end{verbatim}
+    </mrow>
+</munderover>
+\end{minted}
 \end{enumerate}
+
+\noindent
+Strictly speaking, the tags \texttt{<mrow>} and \texttt{</mrow>} that occur in the examples above are only
+required if the corresponding argument consists of more than a single element.  However, enclosing an argument
+in these tags is never wrong, and it is much simpler to write them unconditionally than to figure out, at the
+time the argument is started, whether more than one element will follow.  Therefore, the scanner always encloses
+the arguments of \texttt{<msup>}, \texttt{<msqrt>}, \texttt{<mfrac>}, and \texttt{<munderover>} in a row.
+
+Now that we know what has to be produced, we can discuss how the scanner has to be organized.  The crucial
+observation is that the rules that apply inside a mathematical formula are completely different from the rules
+that apply in ordinary text: inside a formula, the string ``\texttt{\symbol{92}frac}'' has to be translated,
+while in ordinary text it is nothing but a sequence of five characters.  Therefore, the scanner needs
+\blue{scanner states}\index{scanner state}.  We have already met this notion in Section
+\ref{section:html2text}, where we have deliberately \emph{avoided} it by using a pipeline of substitutions.
+Here, we cannot avoid it, since the output depends on the order in which the tokens occur.  Our scanner uses the
+four states that are shown in Table \ref{tab:latex2html-states} on page \pageref{tab:latex2html-states}.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{|l|p{10.2cm}|}
+\hline
+\textbf{State} & \textbf{Meaning} \\
+\hline
+\texttt{PREAMBLE} & This is the state the scanner starts in.  Everything that occurs before the string
+                    \texttt{\symbol{92}begin\{document\}} is discarded. \\
+\hline
+\texttt{TEXT}     & The scanner is reading ordinary text, i.e.\ text that is not part of a mathematical
+                    formula.  This text is echoed unchanged. \\
+\hline
+\texttt{FORMULA}  & The scanner is inside a formula, i.e.\ it has read either a ``\texttt{\$}'' or a
+                    ``\texttt{\$\$}''.  The input has to be translated into \simtextsc{MathML}. \\
+\hline
+\texttt{DONE}     & The string \texttt{\symbol{92}end\{document\}} has been read and the scanner stops. \\
+\hline
+\end{tabular}
+\caption{The states of the scanner translating \LaTeX\ into \simtextsc{MathML}.}
+\label{tab:latex2html-states}
+\end{table}
+
+\noindent
+Since every state uses its own set of tokens, we do not have a single token specification anymore.  Instead, we
+have a \emph{dictionary} \texttt{token\_specifications} that maps every state to the token specification that is
+used in this state.  In the state \texttt{DONE} the scanner does not read anything anymore and therefore this
+state does not need a token specification.  The states \texttt{PREAMBLE} and \texttt{TEXT} are simple: apart
+from the strings \texttt{\symbol{92}begin\{document\}}, \texttt{\symbol{92}end\{document\}}, ``\texttt{\$}'',
+and ``\texttt{\$\$}'', these states only need a token that matches an arbitrary character, which is then either
+discarded or echoed.  The interesting state is the state \texttt{FORMULA}, whose tokens are listed in Table
+\ref{tab:latex2html-tokens} on page \pageref{tab:latex2html-tokens}.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{|l|p{9.4cm}|}
+\hline
+\textbf{Token} & \textbf{Matches} \\
+\hline
+\texttt{DOLLAR\_DOLLAR} & the string ``\texttt{\$\$}'', which ends a block formula \\
+\texttt{DOLLAR}         & the string ``\texttt{\$}'', which ends an inline formula \\
+\hline
+\texttt{SUM\_LIMITS}    & the string \texttt{\symbol{92}sum\symbol{92}limits\_\{} \\
+\texttt{SQRT}           & the string \texttt{\symbol{92}sqrt\{} \\
+\texttt{FRAC}           & the string \texttt{\symbol{92}frac\{} \\
+\texttt{VARIABLE\_HAT}  & a variable that is followed by ``\texttt{\symbol{94}\{}'', e.g.\
+                          \texttt{i\symbol{94}\{} \\
+\texttt{NUMBER\_HAT}    & a number that is followed by ``\texttt{\symbol{94}\{}'', e.g.\
+                          \texttt{2\symbol{94}\{} \\
+\hline
+\texttt{CB\_HAT\_OB}    & the string \texttt{\}\symbol{94}\{}, which separates the limits of a sum \\
+\texttt{CB\_OB}         & the string \texttt{\}\{}, which separates numerator and denominator \\
+\texttt{CB}             & the string \texttt{\}}, which closes the innermost construct \\
+\hline
+\texttt{CDOT}           & the string \texttt{\symbol{92}cdot} \\
+\texttt{LEQ}            & the string \texttt{\symbol{92}leq} \\
+\texttt{GEQ}            & the string \texttt{\symbol{92}geq} \\
+\texttt{PI}             & the string \texttt{\symbol{92}pi} \\
+\hline
+\texttt{NUMBER}         & a natural number \\
+\texttt{VARIABLE}       & a sequence of letters \\
+\texttt{OPERATOR}       & one of the characters
+                          \texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}, \texttt{=}, \texttt{<}, \texttt{>},
+                          \texttt{.}, \texttt{,}, \texttt{(}, \texttt{)} \\
+\hline
+\texttt{WS}             & whitespace, which is discarded \\
+\texttt{MISMATCH}       & any other character, which is an error \\
+\hline
+\end{tabular}
+\caption{The tokens of the state \texttt{FORMULA}.}
+\label{tab:latex2html-tokens}
+\end{table}
+
+\noindent
+Figure \ref{fig:latex2html.py} on page \pageref{fig:latex2html.py} shows how the scanner is driven.  It differs
+from the scanner discussed at the beginning of this chapter in two respects.
+\begin{enumerate}
+\item Lines 1--3 build one master pattern for every state.  Note that the names of the groups only have to be
+      unique \emph{within} a single master pattern.  Therefore, the token \texttt{DOLLAR\_DOLLAR} can occur both
+      in the state \texttt{TEXT} and in the state \texttt{FORMULA}, even though the actions associated with this
+      token are different in these two states.
+\item The scanner switches between different master patterns and therefore the function
+      \texttt{re.finditer} can not be used here, since this function scans a string from its beginning to its
+      end using one fixed regular expression.  Instead, the master patterns are compiled via
+      \texttt{re.compile}\index{compile@\texttt{re.compile}} and line 10 uses the method
+      \texttt{match}\index{match@\texttt{match}} of the resulting objects.  This method is called as
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{pattern}.\texttt{match}(s, \textsl{pos})$
+      \\[0.2cm]
+      and tries to find a match that starts \emph{exactly} at the position \textsl{pos} of the string $s$.
+      Hence, the scanner has to keep track of the position where the next token starts itself, which is done in
+      line 13.
+
+      Note that this is precisely the behaviour that a scanner needs: it must not skip any characters, since
+      every character of the input belongs to some token.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+  \begin{minted}[ frame        = lines, 
+                  framesep     = 0.3cm, 
+                  bgcolor      = sepia,
+                  numbers      = left,
+                  numbersep    = 0.4cm,
+                  xleftmargin  = 0.3cm,
+                  xrightmargin = 0.3cm,
+                ]{python3}
+master_patterns = { state: re.compile('|'.join(f'(?P<{name}>{regexp})'
+                                               for name, regexp in spec))
+                    for state, spec in token_specifications.items()
+                  }
+
+def scan(text):
+    state = 'PREAMBLE'
+    stack = []
+    pos   = 0
+    while state != 'DONE' and pos < len(text):
+        mo    = master_patterns[state].match(text, pos)
+        token = mo.lastgroup
+        value = mo.group()
+        pos   = mo.end()
+        if state == 'PREAMBLE':
+            state = process_preamble(token, value)
+        elif state == 'TEXT':
+            state = process_text(token, value)
+        else:
+            state = process_formula(token, value, stack)
+    if state != 'DONE':
+        raise SyntaxError(r'the input did not contain "\end{document}"')
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The driver of the scanner that translates \LaTeX\ into \simtextsc{MathML}.}
+\label{fig:latex2html.py}
+\end{figure}
+
+\noindent
+For every state there is a function that processes the tokens of this state.  This function writes the
+\simtextsc{MathML} that corresponds to the given token and returns the state that the scanner has to switch to.
+For example, the function \texttt{process\_text} returns the state \texttt{FORMULA} if it has been called with
+the token \texttt{DOLLAR} or with the token \texttt{DOLLAR\_DOLLAR}, while in all other cases it returns the
+state \texttt{TEXT}.  Note that the state is nothing but a string that is passed around: there is no magic
+involved, and this is the reason why we do not need a scanner generator in order to implement scanner states.
 
 \remarkEng
 The most important problem that you have to solve is the following:  Once you encounter a closing brace
 ``\texttt{\}}'' you have to know whether this brace closes the argument of a square root, a
 fraction, a sum, or an exponent.  You should be aware that, for example, square roots and fractions
 can be nested.  Hence, it is not enough to have a single variable that remembers whether you are
-parsing, say, a square root or a fraction.  Instead, every time you encounter a string like, e.g.
+translating, say, a square root or a fraction.  Instead, you need a \blue{stack}\index{stack}.
+
+Every time you encounter a string that opens a curly brace, you push a marker onto this stack that records which
+construct has been opened.  Every time you encounter a string that closes a curly brace, you pop this marker
+again and it tells you which \simtextsc{MathML} tags have to be written.  This is the reason why the function
+\texttt{scan} shown in Figure \ref{fig:latex2html.py} maintains the variable \texttt{stack} and hands it to the
+function \texttt{process\_formula}.  Table \ref{tab:latex2html-stack} on page \pageref{tab:latex2html-stack}
+lists the markers that are needed.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Marker} & \textbf{pushed when reading} & \textbf{popped when reading} \\
+\hline
+\texttt{'SQRT'}      & \texttt{\symbol{92}sqrt\{}                    & \texttt{\}} \\
+\texttt{'FRAC\_NUM'} & \texttt{\symbol{92}frac\{}                    & \texttt{\}\{} \\
+\texttt{'FRAC\_DEN'} & \texttt{\}\{}                                 & \texttt{\}} \\
+\texttt{'SUM\_LOWER'}& \texttt{\symbol{92}sum\symbol{92}limits\_\{}  & \texttt{\}\symbol{94}\{} \\
+\texttt{'SUM\_UPPER'}& \texttt{\}\symbol{94}\{}                      & \texttt{\}} \\
+\texttt{'SUPER'}     & \texttt{i\symbol{94}\{}                       & \texttt{\}} \\
+\hline
+\end{tabular}
+\caption{The markers that are stored on the stack.}
+\label{tab:latex2html-stack}
+\end{table}
+
+\noindent
+Note that the markers \texttt{'FRAC\_NUM'} and \texttt{'SUM\_LOWER'} must not be closed by a simple closing
+brace: the numerator of a fraction is always followed by its denominator, while the lower limit of a sum is
+always followed by its upper limit.  If a formula ends while the stack is not empty, the input contains an
+opening brace that is never closed and your program should report an error.
+\eox
+
+\remarkEng
+There is a subtlety hidden in the tokens \texttt{VARIABLE\_HAT} and \texttt{NUMBER\_HAT}.  At first sight, the
+string \texttt{i\symbol{94}\{2\}} seems to consist of the variable ``\texttt{i}'', the operator
+``\texttt{\symbol{94}}'', and the number ``\texttt{2}'' enclosed in braces.  However, the corresponding
+\simtextsc{MathML} is
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{\symbol{92}sqrt\{} \quad or \quad \texttt{\symbol{92}frac\{},
+\texttt{<msup><mi>i</mi><mrow><mn>2</mn></mrow></msup>}
 \\[0.2cm]
-you should store the current state on a stack and set the new state according to whether you have just seen the
-keyword ``\texttt{\symbol{92}frac}'' or ``\texttt{\symbol{92}sqrt}'' or whatever caused the
-curly brace to be opened.  When you encounter a closing brace ``\texttt{\}}'', you should 
-restore the state to its previous value by looking up this value from the stack.  
+and here the tag \texttt{<msup>} has to be written \emph{before} the variable ``\texttt{i}''.  At the time the
+scanner reads this variable it does not yet know whether an exponent follows, and once it knows, the variable
+has already been written.
+
+The solution is to recognize the string \texttt{i\symbol{94}\{} as a \emph{single} token.  This token then
+carries the information that an exponent follows and the corresponding action can write the opening tag, the
+base, and the tag \texttt{<mrow>} in the correct order.  This trick is a poor man's version of a
+\blue{lookahead}\index{lookahead}: instead of inspecting the characters that follow the variable, we simply make
+them part of the token.  Note that the token \texttt{VARIABLE\_HAT} therefore has to precede the token
+\texttt{VARIABLE} in the token specification, since otherwise the string \texttt{i\symbol{94}\{} would be
+recognized as an ordinary variable.
+\eox
+
+\remarkEng
+As we have discussed in the remark on page \pageref{fig:regexp-scanner.py-1}, \textsl{Python} chooses the
+\emph{first} alternative of the master pattern that matches at the current position.  Hence, the order of the
+tokens listed in Table \ref{tab:latex2html-tokens} is significant and you should keep it:
+\begin{enumerate}
+\item \texttt{VARIABLE\_HAT} has to precede \texttt{VARIABLE} and \texttt{NUMBER\_HAT} has to precede
+      \texttt{NUMBER}.
+\item \texttt{CB\_HAT\_OB} has to precede \texttt{CB\_OB}, which in turn has to precede \texttt{CB}, since
+      otherwise the string \texttt{\}\symbol{94}\{} would be recognized as a single closing brace that is
+      followed by garbage.
+\item \texttt{DOLLAR\_DOLLAR} has to precede \texttt{DOLLAR}, since otherwise a block formula would be ended
+      by the first of the two dollar symbols.
+\end{enumerate}
+Finally, note that the token \texttt{MISMATCH} matches an arbitrary character and therefore has to be the
+\emph{last} token of the specification.  Since this token matches everything that the preceding tokens do not
+match, the method \texttt{match} always succeeds and the program never has to check whether it has returned
+\texttt{None}.  Any \LaTeX\ command that is not supported, for example the command
+``\texttt{\symbol{92}alpha}'', is caught by this token and produces a readable error message instead of silently
+disappearing from the output.
 \eox
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
 \item How are regular expressions defined in \textsl{Python}?
 \item Do you understand the structure of the scanner discussed at the beginning of this chapter?
+\item Why does the order of the pairs in a token specification matter, and which rule does
+      \textsl{Python} use in order to choose between several alternatives that all match at the current
+      position?
+\item What is a \blue{scanner state} and how can scanner states be implemented using the module
+      \texttt{re}?  Why can the function \texttt{re.finditer} not be used in this case?
+\item Why is a single variable not sufficient in order to remember which construct is closed by a closing
+      brace, and what has to be used instead?
 \item Are you able to use regular expressions to write a program that reads a given text, finds all numbers inside
       this text that are followed by a $\texttt{\$}$ symbol and that then converts these numbers to their
       equivalent  value in \texttt{\euro{}}?  Assume that $1 \mathtt{\$} = 0.85 \texttt{\euro{}}$.
@@ -2090,4 +2354,3 @@ restore the state to its previous value by looking up this value from the stack.
 %%% mode: latex
 %%% TeX-master: "formal-languages.tex"
 %%% End:
-
