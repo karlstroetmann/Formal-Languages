@@ -247,8 +247,8 @@ it, print it, or store it without having to know anything about the internals of
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = -0.2cm,
-                xleftmargin  = 0.8cm,
-                xrightmargin = 0.8cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
               ]{python3}
     def ast_to_tuples(node):
         if isinstance(node, Token):
@@ -263,7 +263,7 @@ it, print it, or store it without having to know anything about the internals of
             'number':     'num',
             'var':        'var'
         }
-        op       = operator_map.get(node.data, node.data)
+        op       = operator_map[node.data]
         children = [ast_to_tuples(child) for child in node.children]
         return (op, *children)
 \end{minted}
@@ -282,9 +282,8 @@ Figure \ref{fig:01-Calculator.ipynb:ast} on page \pageref{fig:01-Calculator.ipyn
       that are used by \simtextsc{Lark} into the operator symbols that we want to use in our abstract
       syntax tree.  For example, the node name \texttt{add}, which has been introduced as an alias in line
       9 of Figure \ref{fig:01-Calculator.ipynb:grammar}, is translated into the string \squoted{+}.
-\item Line 14 looks up the name of the given node.  If this name is not a key of the dictionary
-      \texttt{operator\_map}, then the name is used unchanged.
-\item Line 15 converts all children recursively.
+\item Line 14 looks up the name of the given node.  
+\item Line 15 converts all children of the given node recursively.
 \item Line 16 returns the resulting nested tuple:  The first component is the operator, the remaining
       components are the converted children.
 \end{enumerate}
@@ -293,11 +292,11 @@ Figure \ref{fig:01-Calculator.ipynb:ast} on page \pageref{fig:01-Calculator.ipyn
 The string
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{x := 2 * (y + 1);}
+\texttt{"x := 2 * (y + 1);"}
 \\[0.2cm]
 is converted into the nested tuple
 \\[0.2cm]
-\hspace*{1.3cm}
+\hspace*{0.3cm}
 \texttt{(':=', 'x', ('*', ('num', '2'), ('+', ('var', 'y'), ('num', '1'))))}.
 \\[0.2cm]
 Note the following details:
@@ -319,34 +318,33 @@ Note the following details:
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = -0.2cm,
-                xleftmargin  = 0.8cm,
-                xrightmargin = 0.8cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
               ]{python3}
-    Names2Values = {}
+   Names2Values = {}
 
-    def evaluate_adt(adt):
-        match adt:
-            case ('num', value):
-                return float(value)
-            case ('var', var_name):
-                if var_name not in Names2Values:
-                    print(f"Error: variable '{var_name}' is undefined.")
-                    return 0.0
-                return Names2Values[var_name]
-            case (':=', var_name, expr):
-                Names2Values[var_name] = evaluate_adt(expr)
-            case ('eval', expr):
-                print(evaluate_adt(expr))
-            case (('+' | '-' | '*' | '/') as op, left, right):
-                val_left  = evaluate_adt(left )
-                val_right = evaluate_adt(right)
-                match op:
-                    case '+': return val_left + val_right
-                    case '-': return val_left - val_right
-                    case '*': return val_left * val_right
-                    case '/': return val_left / val_right
-            case _:
-                raise ValueError(f'Unknown ADT structure: {adt}')
+   def evaluate_adt(adt):
+       match adt:
+           case ('num', value):
+               return float(value)
+           case ('var', name):
+               if name not in Names2Values:
+                   print(f"Error: variable '{name}' is undefined.")
+                   return 0.0
+               return Names2Values[var_name]
+           case (':=', var_name, expr):
+               Names2Values[var_name] = evaluate_adt(expr)
+           case ('eval', expr):
+               print(evaluate_adt(expr))
+           case (('+' | '-' | '*' | '/') as op, left, right):
+               val_left, val_right = map(evaluate_adt, [left, right])
+               match op:               
+                   case '+': return val_left + val_right
+                   case '-': return val_left - val_right
+                   case '*': return val_left * val_right
+                   case '/': return val_left / val_right
+           case _:
+               raise ValueError(f'Unknown ADT structure: {adt}')
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Evaluating the abstract syntax tree.}
@@ -371,12 +369,12 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
       return a value.
 \item Line 14 -- 15 implement an expression statement:  The expression is evaluated and the resulting value
       is printed.
-\item Line 16 -- 23 evaluate the arithmetic operators.  The pattern in line 16 uses an \blue{or pattern} in
+\item Line 16 -- 22 evaluate the arithmetic operators.  The pattern in line 16 uses an \blue{or pattern} in
       order to capture all four binary operators at once.  The keyword \texttt{as} binds the operator that
       has actually been found to the variable \texttt{op}.  Then, both operands are evaluated recursively
       and the inner \texttt{match} statement in line 19 -- 23 selects the operation that has to be
       performed.
-\item Line 24 -- 25 catch the case that the abstract syntax tree has a shape that is not supported.  If
+\item Line 23 -- 24 catch the case that the abstract syntax tree has a shape that is not supported.  If
       this happens, we have made a mistake, either in the grammar or in the function
       \texttt{ast\_to\_tuples}.
 \end{enumerate}
@@ -426,8 +424,8 @@ single erroneous input does not terminate the calculator.
 
 The Jupyter notebook \texttt{01-Calculator}, which is available at
 \\[0.2cm]
-\hspace*{-0.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator.ipynb}
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07-Lark/01-Calculator.ipynb}{Python/Chapter-07-Lark/01-Calculator.ipynb}
 \\[0.2cm]
 implements the symbolic calculator discussed in this section.
 
@@ -448,16 +446,532 @@ binds stronger than multiplication and it is \blue{right associative}, i.e.~the 
 Introduce a new syntactical variable \texttt{power} between \texttt{product} and \texttt{factor} and make
 this variable right recursive.
 
+\section{Symbolic Differentiation  \label{section:differentiator}}
+Our second example shows how a parser can be used to construct an \blue{abstract syntax tree} that is
+afterwards transformed by a program.  Concretely, we implement \blue{symbolic differentiation}:  Given a
+string \texttt{s} that represents an arithmetic expression containing the variable \texttt{x}, we want to
+compute a string that represents the derivative
+\\[0.2cm]
+\hspace*{1.3cm}
+$\ds\frac{\mathrm{d}\;}{\mathrm{d}x} \texttt{s}$.
+\\[0.2cm]
+For example, given the input string \texttt{"x*exp(x)"} the program should produce the output string
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{"exp(x) + x*exp(x)"}
+\\[0.2cm]
+since we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$\ds\frac{\mathrm{d}\;}{\mathrm{d}x} \bigl( x \cdot \mathrm{e}^x \bigr) = \mathrm{e}^x + x \cdot \mathrm{e}^x$.
+\\[0.2cm]
+In contrast to the calculator of the previous section, the abstract syntax tree is no longer evaluated
+immediately.  Instead, it is the \emph{data} that our program works on:  It is transformed into a second
+abstract syntax tree that represents the derivative, this tree is then simplified, and only at the very
+end is it converted back into a string.  This is the reason why building an explicit abstract syntax tree
+pays off.
 
-\section{Symbolic Differentiation}
-Our next example shows how we can compute an abstract syntax tree with the help of \simtextsc{Ply}.
+Figure \ref{fig:differentiator.g} on page \pageref{fig:differentiator.g} shows the grammar of the
+arithmetic expressions that our program supports.  Besides the four basic arithmetic operators, this
+grammar supports the \blue{exponentiation operator} \squoted{**}, the \blue{unary minus}, and the two
+functions $\exp$ and $\ln$.  For the sake of simplicity, \texttt{x} is the only variable.
+
+\begin{figure}[!ht]
+
+  \begin{center}    
+  \framebox{
+  \framebox{
+  \begin{minipage}[t]{10cm}
+  \begin{eqnarray*}
+  \textsl{expr}    & \rightarrow & \;\textsl{expr} \quoted{+} \textsl{product}      \\
+                   & \mid        & \;\textsl{expr} \quoted{-} \textsl{product}      \\
+                   & \mid        & \;\textsl{product}                               \\[0.2cm]
+  \textsl{product} & \rightarrow & \;\textsl{product} \quoted{*} \textsl{unary}     \\
+                   & \mid        & \;\textsl{product} \quoted{/} \textsl{unary}     \\
+                   & \mid        & \;\textsl{unary}                                 \\[0.2cm]
+  \textsl{unary}   & \rightarrow &   \quoted{-} \textsl{unary}                      \\
+                   & \mid        & \;\textsl{factor}                                \\[0.2cm]
+  \textsl{factor}  & \rightarrow & \;\textsl{base} \quoted{**} \textsl{unary}       \\
+                   & \mid        & \;\textsl{base}                                  \\[0.2cm]
+  \textsl{base}    & \rightarrow &   \quoted{exp} \quoted{(} \textsl{expr} \quoted{)} \\
+                   & \mid        &   \quoted{ln} \quoted{(} \textsl{expr} \quoted{)}  \\
+                   & \mid        &   \quoted{(} \textsl{expr} \quoted{)}            \\
+                   & \mid        & \;\simtextsc{Number}                             \\
+                   & \mid        &   \quoted{x}                                     
+  \end{eqnarray*}
+  \vspace*{-0.5cm}
+  \end{minipage}}}
+  \end{center}
+  \caption{A grammar for differentiable arithmetic expressions.}
+  \label{fig:differentiator.g}
+\end{figure}
+
+\noindent
+Figure \ref{fig:02-Differentiator.ipynb:grammar} on page \pageref{fig:02-Differentiator.ipynb:grammar}
+shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \simtextsc{Lark}.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+    from lark import Lark, Token
+
+    calc_grammar = """
+    ?start: expr
+
+    ?expr: expr "+" product   -> add
+         | expr "-" product   -> sub
+         | product
+
+    ?product: product "*" unary -> mul
+            | product "/" unary -> div
+            | unary
+
+    ?unary: "-" unary           -> neg
+          | factor
+
+    ?factor: base "**" unary    -> pow
+           | base
+
+    ?base: "exp" "(" expr ")"    -> exp
+         | "ln" "(" expr ")"     -> ln
+         | "(" expr ")"
+         | NUMBER                -> number
+         | "x"                   -> var
+
+    %import common.NUMBER
+    %import common.WS
+    %ignore WS
+    """
+
+    parser = Lark(calc_grammar, parser='lalr')
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The grammar of the differentiator, written for \simtextsc{Lark}.}
+\label{fig:02-Differentiator.ipynb:grammar}
+\end{figure}
+
+\noindent
+As the general structure of this grammar is the same as the structure of the grammar that we have
+discussed in the previous section, we only comment on those parts that are new.
+\begin{enumerate}
+\item Line 4 declares the variable \texttt{expr} as the start symbol.  In contrast to the calculator,
+      this language has no statements:  The input is a single expression and there is no terminating
+      semicolon.
+\item Line 6 -- 12 define the variables \texttt{expr} and \texttt{product} in the usual way.  Note that the
+      second operand of the operators \squoted{*} and \squoted{/} is now the variable \texttt{unary}
+      instead of the variable \texttt{factor}.
+\item Line 14 -- 15 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
+      is \blue{right recursive}, since a unary operator can be applied repeatedly:  The string
+      \texttt{"-\,-x"} is a legal expression.
+\item Line 17 -- 18 define the variable \texttt{factor}, which implements exponentiation.  The interplay
+      between \texttt{unary} and \texttt{factor} deserves a closer look, because it encodes two
+      conventions that every mathematician takes for granted:
+      \begin{enumerate}
+      \item The left operand of the operator \squoted{**} is a \texttt{base}, not a \texttt{unary} operator.
+            Therefore, the string 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{"-x ** 2''} 
+            \\[0.2cm]
+            is parsed as $-\bigl(x^2\bigr)$ and not as
+            $(-x)^2$, i.e.~exponentiation binds stronger than the unary minus.
+      \item The right operand of the operator \squoted{**} is a \texttt{unary}, not a \texttt{base}.
+            Therefore, the string 
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{"x ** -x"}
+            \\[0.2cm]
+            is a legal expression and, furthermore, the operator
+            \squoted{**} is \blue{right associative}:  The string
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{"x ** x ** x"}
+            \\[0.2cm] is parsed as the expression $x^{\left(x^x\right)}$.
+      \end{enumerate}
+\item Line 20 -- 24 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
+      line 20 and line 21 are ordinary literals, i.e.~are recognized in exactly the same way as the operator
+      symbols.  The nodes \texttt{exp} and \texttt{ln} have a single child.
+\item Line 24 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
+      as a literal string, we do not need a token for identifiers at all.
+\end{enumerate}
+\FloatBarrier
+
+\noindent
+Figure \ref{fig:02-Differentiator.ipynb:ast} on page \pageref{fig:02-Differentiator.ipynb:ast} shows the
+function \texttt{ast\_to\_tuples} that converts the parse tree produced by \simtextsc{Lark} into a nested
+tuple, together with the function \texttt{parse} that combines both steps.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = -0.2cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+                ]{python3}
+    operatorTable = {'add': '+', 'sub': '-',
+                     'mul': '*', 'div': '/', 'pow': '**'}
+                    
+    def ast_to_tuples(node):
+        if isinstance(node, Token):
+            return str(node)
+        match node.data:
+            case 'number': 
+                return int(node.children[0])
+            case 'var':    
+                return 'x'
+            case op_name:
+                op_sym = operatorTable.get(op_name, op_name)
+                return (op_sym, *map(ast_to_tuples, node.children))                
+    
+    def parse(s):
+        return ast_to_tuples(parser.parse(s))
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Converting the parse tree into an abstract syntax tree.}
+\label{fig:02-Differentiator.ipynb:ast}
+\end{figure}
+
+
+\noindent
+This function serves the same purpose as the function of the same name that we have discussed in the
+previous section.  However, it is organized differently:  Instead of providing a separate case for every
+operator, it is \blue{table driven}.
+\begin{enumerate}
+\item Line 1 --2  defines the dictionary \texttt{operatorTable}.  This dictionary maps the names of the nodes
+      that are created by \simtextsc{Lark} to the operator symbols that we want to use in our abstract
+      syntax tree.  For example, the node name \texttt{add}, which has been introduced as an alias in
+      line 6 of Figure \ref{fig:02-Differentiator.ipynb:grammar}, is mapped to the string \squoted{+}.
+
+      Observe that the node names \texttt{neg}, \texttt{exp}, and \texttt{ln} do \emph{not} occur in this
+      dictionary.  The reason is that we want to use these names unchanged in the abstract syntax tree.
+      Line 13 shows how this is achieved.
+\item Line 5 -- 6 deal with the base case:  If the given node is a \texttt{Token}, then it is a leaf of
+      the parse tree and hence we return the string that is stored in this token.
+\item Line 7 starts a \texttt{match} statement that inspects the attribute \texttt{node.data}, i.e.~the
+      name of the node.  As this name is an ordinary string, all patterns of this \texttt{match} statement
+      are patterns for strings.
+\item Line 8 -- 9 convert a number.  In contrast to the calculator of the previous section, the conversion
+      of a string into a number happens already at this point, because the abstract syntax tree is not
+      evaluated later but rather transformed symbolically.
+
+      We will tacitly assume that all numbers are integers.
+\item Line 10 -- 11 convert the variable \texttt{x}.  Since the string \texttt{"x"} occurs as an anonymous
+      literal in the grammar, it is discarded when the parse tree is built.  Therefore, the node
+      \texttt{var} has no children at all and we simply return the string \squoted{x}.
+\item Line 12 is the most interesting line of this function.  The pattern \texttt{op\_name} is a
+      \blue{capture pattern}:  As \texttt{op\_name} is a plain variable name, this pattern matches
+      \emph{any} value and binds this value to the variable \texttt{op\_name}.  Hence, this case is the
+      default case that deals with all remaining nodes, i.e.~with all nodes that represent an operator.
+\item Line 13 translates the name of the node into an operator symbol.  The second argument of the method
+      \texttt{get} is the value that is returned if the given key is not present in the dictionary.  Here,
+      this default value is the name of the node itself.  This is the trick that has been announced above:
+      Every node name that is not listed in \texttt{operatorTable} is used unchanged.  Consequently, the
+      nodes \texttt{neg}, \texttt{exp}, and \texttt{ln} are converted into tuples that start with the
+      strings \squoted{neg}, \squoted{exp}, and \squoted{ln}, respectively.
+\item Line 14 converts all children recursively and prepends the operator symbol.  The expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{map(ast\_to\_tuples, node.children)}
+      \\[0.2cm]
+      applies the function \texttt{ast\_to\_tuples} to every child of the given node, while the operator
+      ``\texttt{*}'' unpacks the resulting iterator into the tuple that is created.  Note that this works
+      for unary and for binary operators alike:  The number of components of the resulting tuple is
+      determined by the number of children of the node.
+\item Line 16 -- 17 define the function \texttt{parse}, which combines both steps:  It parses the string
+      \texttt{s} and immediately converts the resulting parse tree into an abstract syntax tree.
+\end{enumerate}
+
+\exampleEng
+The string \texttt{"ln(x ** x) + exp(x * -x)"} is converted into the nested tuple
+\\[0.2cm]
+\hspace*{0.3cm}
+\texttt{('+', ('ln', ('**', 'x', 'x')), ('exp', ('*', 'x', ('neg', 'x'))))}.
+\hspace*{\fill} $\diamond$
+
+\remarkEng
+The table driven organization of the function \texttt{ast\_to\_tuples} pays off as soon as the language is
+extended.  In order to support an additional operator or an additional function, it is usually sufficient
+to extend the grammar:  If the alias of the new grammar rule is already the symbol that we want to use in
+the abstract syntax tree, then the function \texttt{ast\_to\_tuples} does not have to be changed at all.
+Otherwise, a single entry has to be added to the dictionary \texttt{operatorTable}.  \eox
+\vspace*{0.1cm}
+
+\noindent
+Now that we can turn a string into an abstract syntax tree, we are ready to implement the function
+\texttt{diff}.  This function takes an abstract syntax tree $e$ and computes an abstract syntax tree that
+represents the derivative of $e$ with respect to the variable \texttt{x}.  Figure
+\ref{fig:02-Differentiator.ipynb:diff} on page \pageref{fig:02-Differentiator.ipynb:diff} shows the
+implementation.  Every case of the \texttt{match} statement corresponds to one of the differentiation
+rules that are taught in any calculus course.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines, 
+                framesep     = 0.3cm, 
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = 0.4cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+def diff(e):
+    "differentiate the expression e with respect to the variable x"
+    match e:
+        case ('+', f, g):
+            fs, gs = diff(f), diff(g)
+            return ('+', fs, gs)
+        case ('-', f, g):
+            fs, gs = diff(f), diff(g)
+            return ('-', fs, gs)
+        case ('*', f, g):
+            fs, gs = diff(f), diff(g)
+            return ('+', ('*', fs, g), ('*', f, gs))
+        case ('/', f, g):
+            fs, gs = diff(f), diff(g)
+            return ('/', ('-', ('*',fs,g), ('*',f,gs)), ('*',g,g))
+        case ('**', f, g):
+            return diff(('exp', ('*', g, ('ln', f))))
+        case ('neg', f):
+            return ('neg', diff(f))
+        case ('ln', f):
+            fs = diff(f)
+            return ('/', fs, f)
+        case ('exp', f):
+            fs = diff(f)
+            return ('*', fs, e)
+        case 'x':
+            return 1
+    return 0
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Symbolic differentiation.}
+\label{fig:02-Differentiator.ipynb:diff}
+\end{figure}
+
+\noindent
+The function \texttt{diff} is discussed next.
+\begin{enumerate}
+\item Line 4 -- 6 implement the \blue{sum rule}
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\bigl(f(x) + g(x)\bigr) 
+       = \frac{\mathrm{d}\;}{\mathrm{d}x} f(x) + \frac{\mathrm{d}\;}{\mathrm{d}x} g(x)$,
+      \\[0.1cm]
+      while line 7 -- 9 implement the corresponding rule for the difference of two expressions.
+\item Line 10 -- 12 implement the \blue{product rule}
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\bigl(f(x) \cdot g(x)\bigr)
+       = \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot g(x)
+       + f(x) \cdot \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} g(x)\Bigr)$.
+\item Line 13 -- 15 implement the \blue{quotient rule}
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\left(\frac{f(x)}{g(x)}\right)
+       = \frac{\Bigl(\frac{\mathrm{d}}{\mathrm{d}x} f(x)\Bigr) \cdot g(x)
+              - f(x) \cdot \Bigl(\frac{\mathrm{d}}{\mathrm{d}x} g(x)\Bigr)}{g(x) \cdot g(x)}$.
+\item Line 16 -- 17 deal with exponentiation.  Instead of implementing a separate rule for the expression
+      $f(x)^{g(x)}$, we use the identity
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $f(x)^{g(x)} = \exp\bigl(g(x) \cdot \ln(f(x))\bigr)$
+      \\[0.2cm]
+      and differentiate the resulting expression instead.  This is an instance of a general and very
+      useful strategy:  Rather than adding a new rule, we \blue{rewrite} the expression so that it can be
+      handled by the rules that we already have.  Note that this identity is only valid if $f(x)$ is
+      positive.  Our implementation ignores this side condition.
+\item Line 18 -- 19 implement the rule
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\bigl(-f(x)\bigr) 
+       = -\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)$.
+\item Line 20 -- 22 and line 23 -- 25 implement the \blue{chain rule} for the two functions that our
+      language provides:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\ln\bigl(f(x)\bigr) 
+       = \frac{\frac{\mathrm{d}}{\mathrm{d}x} f(x)}{f(x)}$
+      \qquad and \qquad
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\exp\bigl(f(x)\bigr)
+       = \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot \exp\bigl(f(x)\bigr)$.
+      \\[0.2cm]
+      Observe that line 25 reuses the expression \texttt{e} instead of building the tree
+      \texttt{('exp', f)} a second time.
+\item Line 26 -- 27 implement the base case
+      $\ds\frac{\mathrm{d}x}{\mathrm{d}x} = 1$.
+\item Line 28 is reached if none of the previous patterns did match.  In this case, the expression does
+      not contain the variable \texttt{x} and therefore it is a constant.  As the derivative of a constant
+      is $0$, the value $0$ is returned.
+\end{enumerate}
+\FloatBarrier
+
+\noindent
+The abstract syntax tree that is computed by the function \texttt{diff} is correct, but it is unreadable.
+For example, differentiating the string \texttt{"x * exp(x)"} yields a tree that corresponds to the
+string
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{"1*exp(x) + x*1*exp(x)"}.
+\\[0.2cm]
+Therefore, two more functions are needed.  Since neither of them has anything to do with parsing, we only
+describe what they do and refer the interested reader to the notebook for the implementation.
+\begin{enumerate}
+\item The function \texttt{simplify} takes an abstract syntax tree $e$ and returns an abstract syntax tree
+      that is mathematically equivalent to $e$ but, in general, smaller.  The function works
+      \blue{bottom-up}:  It simplifies all subexpressions first and only then tries to apply a
+      simplification rule to the resulting expression.  Some of the rules produce a new expression that
+      can be simplified further.  In these cases, the function \texttt{simplify} is applied recursively to
+      the result.
+
+      The rules that are implemented are listed below.  Here, $a$, $b$, and $f$ denote arbitrary
+      expressions, while $c$ and $d$ denote numbers.
+      \begin{enumerate}
+      \item \textbf{Constant folding}:  If both operands of one of the operators
+            $\texttt{+}$, $\texttt{-}$, $\texttt{*}$, $\texttt{/}$, or $\texttt{**}$ are numbers, then the
+            operation is carried out.  A division is only performed if the divisor is different from $0$.
+      \item \textbf{Negation}:
+            $-(-a) \rightarrow a$, \quad
+            $-0 \rightarrow 0$, \quad
+            $-c \rightarrow d$ \; where $d$ is the negated number $c$.
+      \item \textbf{Addition and subtraction}:
+            \\[0.1cm]
+            $a + 0 \rightarrow a$, \quad
+            $0 + a \rightarrow a$, \quad
+            $a - 0 \rightarrow a$, \quad
+            $0 - a \rightarrow -a$, \quad
+            $a - a \rightarrow 0$,
+            \\[0.1cm]
+            $a + (-b) \rightarrow a - b$, \quad
+            $(-a) + b \rightarrow b - a$, \quad
+            $a - (-b) \rightarrow a + b$.
+      \item \textbf{Multiplication}:
+            \\[0.1cm]
+            $a \cdot 0 \rightarrow 0$, \quad
+            $0 \cdot a \rightarrow 0$, \quad
+            $a \cdot 1 \rightarrow a$, \quad
+            $1 \cdot a \rightarrow a$, \quad
+            $(-1) \cdot a \rightarrow -a$, \quad
+            $a \cdot (-1) \rightarrow -a$,
+            \\[0.1cm]
+            $\ds a \cdot \frac{1}{a} \rightarrow 1$, \quad
+            $\ds (-a) \cdot \frac{1}{a} \rightarrow -1$, \quad
+            $\ds a \cdot \Bigl(-\frac{1}{a}\Bigr) \rightarrow -1$.
+      \item \textbf{Division}:
+            $\ds \frac{0}{a} \rightarrow 0$, \quad
+            $\ds \frac{a}{1} \rightarrow a$, \quad
+            $\ds \frac{a}{a} \rightarrow 1$.
+      \item \textbf{Powers}:
+            $a^0 \rightarrow 1$, \quad
+            $a^1 \rightarrow a$, \quad
+            $0^a \rightarrow 0$, \quad
+            $1^a \rightarrow 1$.
+      \item \textbf{Logarithm and exponential function}:
+            \\[0.1cm]
+            $\ln(1) \rightarrow 0$, \quad
+            $\ln\bigl(\exp(a)\bigr) \rightarrow a$, \quad
+            $\exp(0) \rightarrow 1$, \quad
+            $\exp\bigl(\ln(a)\bigr) \rightarrow a$,
+            \\[0.1cm]
+            $\exp\bigl(a \cdot \ln(f)\bigr) \rightarrow f^{a}$.
+            \\[0.1cm]
+            The last of these rules undoes the rewriting that the function \texttt{diff} has performed in
+            order to differentiate the operator \squoted{**}.
+      \item \textbf{Derivatives of powers}:  These rules clean up the expressions that are produced when a
+            power is differentiated.  For a number $c$ we have
+            \\[0.1cm]
+            $\ds a \cdot \frac{1}{f} \cdot f^{c} \rightarrow a \cdot f^{\,c-1}$
+            \qquad and \qquad
+            $\ds \frac{1}{f} \cdot f^{c} \rightarrow f^{\,c-1}$.
+            \\[0.1cm]
+            In the special case $c = 2$ the results are simplified further to $a \cdot f$ and $f$,
+            respectively.
+      \end{enumerate}
+\item The function \texttt{toString} takes an abstract syntax tree $e$ and returns a string that
+      represents $e$.  The interesting part of this function is that it does not insert parentheses
+      blindly:  A subexpression is only enclosed in parentheses if the precedence of its operator is lower
+      than the precedence that is required at this position.  To this end, the function uses the
+      precedence table
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \begin{tabular}{lcl}
+        \squoted{+}, \squoted{-} & : & $1$, \\
+        \squoted{*}, \squoted{/} & : & $2$, \\
+        unary minus              & : & $3$, \\
+        \squoted{**}             & : & $4$, \\
+        numbers and \texttt{x}   & : & $5$.
+      \end{tabular}
+      \\[0.2cm]
+      Since the operators \squoted{-} and \squoted{/} are not associative, the right operand of these
+      operators is parenthesized already when its operator has the \emph{same} precedence.  For the
+      operator \squoted{**} it is the other way round:  As this operator is right associative, its right
+      operand needs no parentheses if it is a power itself, while its left operand is parenthesized
+      whenever it is not an atom.  Therefore, the expression $x^{\left(x^x\right)}$ is printed as
+      \texttt{x**x**x}, while $(x+1)^2$ is printed as \texttt{(x + 1)**2}.
+\end{enumerate}
+
+\noindent
+Putting everything together, the derivative of a string \texttt{s} is computed by the expression
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{toString(simplify(diff(parse(s))))}.
+\\[0.2cm]
+The following table shows the results that are produced for a number of inputs.
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{input \texttt{s}} & \textbf{computed derivative} \\
+\hline
+\texttt{x*x}           & \texttt{x + x}                                        \\
+\texttt{x/x}           & \texttt{0}                                            \\
+\texttt{x * exp(x)}    & \texttt{exp(x) + x*exp(x)}                            \\
+\texttt{-x ** 2}       & \texttt{-2*x}                                         \\
+\texttt{x ** -x}       & \texttt{(-1 - ln(x))*x**(-x)}                         \\
+\texttt{1/(1+exp(-x))} & \texttt{exp(-x)/((1 + exp(-x))*(1 + exp(-x)))}        \\
+\texttt{ln(x ** x)}    & \texttt{(ln(x) + 1)*x**x/x**x}                        \\
+\hline
+\end{tabular}
+\end{center}
+
+\remarkEng
+The last two rows of this table show the limits of our simplifier.  The derivative of \texttt{x*x} is
+computed as \texttt{x + x} instead of \texttt{2*x}, and the derivative of \texttt{ln(x ** x)} is not
+reduced to \texttt{ln(x) + 1}, although the factor $x^x/x^x$ obviously cancels.  The reason is that our
+function \texttt{simplify} is nothing but a finite collection of \blue{rewrite rules}:  It does not bring
+an expression into a \blue{normal form} and therefore it cannot recognize that two syntactically different
+expressions are mathematically equal.  Computing normal forms of algebraic expressions is a hard problem
+that is studied in the field of \blue{computer algebra}.  \eox
+
 The Jupyter notebook \texttt{02-Differentiator}, which is available at
 \\[0.2cm]
-\hspace*{-0.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/02-Differentiator.ipynb}{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/02-Differentiator.ipynb}
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07-Lark/02-Differentiator.ipynb}{Python/Chapter-07-Lark/02-Differentiator.ipynb}
 \\[0.2cm]
-implements a parser that generates an abstract syntax tree, which can then be used for symbolic
-differentiation.
+implements the symbolic differentiator that has been discussed in this section.
+
+\exerciseEng
+Extend the differentiator so that it supports the trigonometric functions $\sin$ and $\cos$.  You have to
+\begin{enumerate}
+\item add two alternatives to the variable \texttt{base} in the grammar shown in Figure
+      \ref{fig:02-Differentiator.ipynb:grammar},
+\item add the corresponding cases to the function \texttt{ast\_to\_tuples}, and
+\item add the rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\sin\bigl(f(x)\bigr) 
+       = \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot \cos\bigl(f(x)\bigr)$
+      \quad and \quad
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\cos\bigl(f(x)\bigr) 
+       = -\Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot \sin\bigl(f(x)\bigr)$
+      \\[0.2cm]
+      to the function \texttt{diff}.
+\end{enumerate}
+Which changes are necessary in the function \texttt{toString}? \eox
 
 \section{Implementing a Simple Interpreter  \label{chapter:interpreter}}
 Figure \ref{fig:Pure.g} show the grammar of a simple programming language.  In this section, we will develop an
