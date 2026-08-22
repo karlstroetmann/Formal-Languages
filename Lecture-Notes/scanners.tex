@@ -231,7 +231,7 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
       keywords would have to precede the regular expression used for identifiers, since otherwise every keyword
       would incorrectly be recognized as an identifier.
       \eox
-\item Line 18 defines the class \texttt{Token}\index{Token} using the function
+\item Lines 20--21 define the class \texttt{Token}\index{Token} using the function
       \texttt{collections.namedtuple}.  Every object of this class has four attributes, namely \texttt{type},
       \texttt{value}, \texttt{line}, and \texttt{column}, which we discuss in more detail below.
 
@@ -257,7 +257,7 @@ def tokenize(code):
             value = int(value)
         elif kind == 'NEWLINE':
             line_start   = mo.end()
-            line_number += 1
+            ln += 1
             continue
         elif kind == 'SKIP':
             continue
@@ -278,12 +278,12 @@ for tok in tokenize(data):
       returning a single value, it \texttt{yield}s a sequence of \texttt{Token} objects, one for every token
       found in its argument \texttt{code}.
       \begin{enumerate}
-      \item Lines 21--22 initialize the variables \texttt{ln} (short for \emph{line number})
+      \item Lines 23--24 initialize the variables \texttt{ln} (short for \emph{line number})
             and \texttt{line\_start}.  The variable \linebreak
             \texttt{ln} counts the lines of the input, starting with the value $1$.  The variable
             \texttt{line\_start} stores the position at which the current line begins; it is needed to compute
             the column of a token.
-      \item Line 23 uses the function \texttt{finditer} from the module \texttt{re} to scan the input string
+      \item Line 25 uses the function \texttt{finditer} from the module \texttt{re} to scan the input string
             \texttt{code} for non-overlapping matches of the \texttt{master\_pattern}.  This function returns
             an iterator of \blue{match objects}, one for every token that is found, in the order in which these
             tokens occur in the input.
@@ -295,7 +295,7 @@ for tok in tokenize(data):
             \texttt{mo.start()}, the position at which the match begins.
       \item Lines 29--30 deal with the token \texttt{NUMBER}: the matched string is converted into an
             \texttt{int}.
-      \item Lines 29--32 deal with the token \texttt{NEWLINE}: the variable \texttt{line\_start} is updated to
+      \item Lines 31--34 deal with the token \texttt{NEWLINE}: the variable \texttt{line\_start} is updated to
             the position right after the newline character, the line counter is incremented, and the loop
             continues with the \texttt{continue} statement---no token is generated.
       \item Lines 35--36 deal with the token \texttt{SKIP}: nothing needs to be done except to continue with
@@ -1493,7 +1493,7 @@ def evaluate_students(text: str, max_points: int) -> None:
       added up using the function \texttt{sum}.
 \item Line 14 computes the mark using the function \texttt{mark} that has been discussed above.
 \item Line 15 prints the result.  The format specifier ``\texttt{:3d}'' right-aligns the number of points in a
-      field of width $2$ so that the output is properly aligned.
+      field of width $3$ so that the output is properly aligned.
 \item Lines 16--17 deal with the case that a line could not be parsed.  In this case, a warning is printed but
       the evaluation continues with the next line.
 \end{enumerate}
@@ -2246,7 +2246,7 @@ from the scanner discussed at the beginning of this chapter in two respects.
 \item The scanner switches between different master patterns and therefore the function
       \texttt{re.finditer} can not be used here, since this function scans a string from its beginning to its
       end using one fixed regular expression.  Instead, the master patterns are compiled via
-      \texttt{re.compile}\index{compile@\texttt{re.compile}} and line 10 uses the method
+      \texttt{re.compile}\index{compile@\texttt{re.compile}} and line 11 uses the method
       \texttt{match}\index{match@\texttt{match}} of the resulting objects.  This method is called as
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -2254,7 +2254,7 @@ from the scanner discussed at the beginning of this chapter in two respects.
       \\[0.2cm]
       and tries to find a match that starts \emph{exactly} at the position \textsl{pos} of the string $s$.
       Hence, the scanner has to keep track of the position where the next token starts itself, which is done in
-      line 13.
+      line 14.
 
       Note that this is precisely the behaviour that a scanner needs: it must not skip any characters, since
       every character of the input belongs to some token.
