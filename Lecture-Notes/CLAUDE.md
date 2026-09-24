@@ -23,7 +23,9 @@ pdflatex -shell-escape formal-languages.tex
   lr-parser (chapter 10), lark-lalr, jasmin, compiler + compiler-2 (chapter 13).
 - `notation.tex` holds the entries of the *List of Notation* (package `glossaries`).
 - The Python notebooks live in `../Python/Chapter-NN/`, numbered like the chapters
-  (`Chapter-04-05` covers chapters 4 and 5).  Old Ply versions are archived in `../Python/Ply/`.
+  (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl`, e.g.
+  `conda run -n fl jupyter nbconvert --to notebook --execute --output /tmp/out.ipynb X.ipynb`;
+  the Homebrew Python lacks the required packages.  Old Ply versions are archived in `../Python/Ply/`.
 
 ## Conventions
 
