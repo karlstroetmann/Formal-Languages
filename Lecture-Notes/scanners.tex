@@ -27,38 +27,45 @@ the inner workings of a scanner much more visible.
 
 As this chapter is rather long, we start with a road map.
 \begin{enumerate}
-\item The section \emph{Introduction} discusses what a scanner is supposed to do.  It presents the kinds of
-      tokens that occur in a typical programming language and shows how a small \texttt{C} program is split into
-      its tokens.
-\item The section \emph{Building a Scanner with Regular Expressions} develops the recipe that is used throughout
-      this chapter: every token is described by a regular expression, all of these regular expressions are
-      combined into a single \blue{master pattern}\index{master pattern} built from \blue{named
-      groups}\index{named group}, and this pattern is then used in order to scan the input from left to right.
-      The running example of this section is a scanner for arithmetic expressions.
-\item The section \emph{The Syntax of Regular Expressions in \textsl{Python}} discusses the syntax that is
-      supported by the module \texttt{re} in a systematic way.  Among other things, it covers meta-characters,
-      quantifiers and their non-greedy variants, character classes, groups and back-references, the anchors that
-      match the start and the end of a line, and lookahead assertions.  If you are already acquainted with
-      regular expressions, this section can be skimmed on first reading and used as a reference later on.
-\item The section \emph{A Complex Example: Evaluating an Exam} presents a program that I use in order to
-      evaluate the exams that you have to write.  This program reads a file that contains the number of points
-      that the students have achieved, computes the corresponding marks, and prints a summary.  It shows that
-      regular expressions are useful for much more than just building compilers.
-\item The section \emph{Converting \simtextsc{Html} to Text} solves the problem of extracting the text that is
-      embedded in an \simtextsc{Html} document.  Interestingly, this problem is \emph{not} solved by building a
-      scanner.  Instead, the input is pushed through a \blue{pipeline of substitutions}\index{substitution pipeline}.  This section also shows the limits of our approach: we will see in Chapter
-      \ref{chapter:regular-languages} why no regular expression is able to describe the syntax of
-      \simtextsc{Html}.
-\item The exercise that concludes that section asks you to translate a small subset of \LaTeX\ into
-      \simtextsc{MathML}.  In order to solve this exercise, two techniques are needed that go beyond a plain
-      token specification: the scanner has to switch between different \blue{scanner states}\index{scanner state}, and it has to maintain a \blue{stack}\index{stack} in order to keep track of the delimiters that
-      are currently open.
+\item Section \ref{section:scanner-introduction}, \emph{Introduction}, discusses what a scanner is supposed to
+      do.  It presents the kinds of tokens that occur in a typical programming language and shows how a small
+      \texttt{C} program is split into its tokens.
+\item Section \ref{section:regexp-scanner}, \emph{Building a Scanner with Regular Expressions}, develops the
+      recipe that is used throughout this chapter: every token is described by a regular expression, all of
+      these regular expressions are combined into a single \blue{master pattern}\index{master pattern} built from
+      \blue{named groups}\index{named group}, and this pattern is then used in order to scan the input from left
+      to right.  The running example of this section is a scanner for arithmetic expressions.
+\item Section \ref{section:python-regexp-syntax}, \emph{The Syntax of Regular Expressions in \textsl{Python}},
+      discusses the syntax that is supported by the module \texttt{re} in a systematic way.  Among other things,
+      it covers meta-characters, quantifiers and their non-greedy variants, character classes, groups and
+      back-references, the dot, named groups, the anchors that match the start and the end of a line, and
+      lookahead assertions.  The section concludes with some examples that analyze the book \emph{Alice's
+      Adventures in Wonderland} and with Exercise \ref{exercise:dollar-to-euro}, which converts dollar amounts
+      into euros.  If you are already acquainted with regular expressions, this section can be skimmed on first
+      reading and used as a reference later on.
+\item Section \ref{section:exam}, \emph{A Complex Example: Evaluating an Exam}, presents a program that I use in
+      order to evaluate the exams that you have to write.  This program reads a file that contains the number of
+      points that the students have achieved, computes the corresponding marks, and prints the mark of every
+      student.  Along the way, this section introduces the functions \texttt{re.search} and
+      \texttt{re.compile} and discusses match objects in more detail.  It shows that regular expressions are useful for
+      much more than just building compilers.
+\item Section \ref{section:html2text}, \emph{Converting \simtextsc{Html} to Text}, solves the problem of
+      extracting the text that is embedded in an \simtextsc{Html} document.  Interestingly, this problem is
+      \emph{not} solved by building a scanner.  Instead, the input is pushed through a \blue{pipeline of
+      substitutions}\index{substitution pipeline}, which is built with the function \texttt{re.sub}.  This
+      section also shows the limits of our approach: we will see in Chapter \ref{chapter:regular-languages} why
+      no regular expression is able to describe the syntax of \simtextsc{Html}.
+\item Exercise \ref{exercise:latex-to-mathml}, which concludes that section, asks you to translate a small
+      subset of \LaTeX\ into \simtextsc{MathML}.  In order to solve this exercise, two techniques are needed that
+      go beyond a plain token specification: the scanner has to switch between different \blue{scanner
+      states}\index{scanner state}, and it has to maintain a \blue{stack}\index{stack} in order to keep track of
+      the delimiters that are currently open.
 \end{enumerate}
 All the programs that are discussed in this chapter are available as \textsl{Jupyter} notebooks.  As programming
 is not a spectator sport, you are strongly encouraged to run these notebooks on your own and to experiment with
 them while you read.
 
-\section{Introduction}
+\section{Introduction \label{section:scanner-introduction}}
 A \blue{scanner}\index{scanner} is a program designed to segment a given string into a sequence of
 \emph{tokens}, where a \blue{token}\index{token} is a contiguous string of characters that logically group
 together. To illustrate, consider the input for a \texttt{C}-compiler, which is an \simtextsc{Ascii}-string
@@ -336,7 +343,7 @@ The scanner discussed in this section can be found at:
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-03/01-RegExp-Scanner.ipynb}{Python/Chapter-03/01-RegExp-Scanner.ipynb}
 
-\section{The Syntax of Regular Expressions in \textsl{Python}}
+\section{The Syntax of Regular Expressions in \textsl{Python} \label{section:python-regexp-syntax}}
 \index{regular expression!syntax in \textsl{Python}}
 In the preceding chapter, we introduced regular expressions using a minimalistic syntax.  While this simplicity
 is advantageous for the theoretical discussions in the upcoming chapter---where we explore the implementation of
@@ -1230,7 +1237,7 @@ given string and is therefore an invaluable tool for debugging complex regular e
 page \href{https://regexlearn.com/learn/regex101}{https://regexlearn.com/learn/regex101} provides a free
 interactive tutorial on regular expressions.
 
-\exerciseEng
+\exerciseEng\label{exercise:dollar-to-euro}
 Write a program that reads a given text, finds all numbers inside this text that are followed by a
 ``\texttt{\$}'' symbol, and that converts these numbers into their equivalent value in \texttt{\euro{}}.  Assume
 that $1\,\texttt{\$} = 0.85\,\texttt{\euro{}}$ and note that the numbers may contain a decimal point.  Your
@@ -1244,7 +1251,7 @@ take a \emph{function} as its second argument.  This function is then called wit
 return the string that is used as the replacement.
 \eox
 
-\section{A Complex Example: Evaluating an Exam}
+\section{A Complex Example: Evaluating an Exam \label{section:exam}}
 \index{exam evaluation}
 This section presents a more complex example that shows some of the power of the module \texttt{re}.  The task at
 hand is the evaluation of an exam.  When I mark an exam, I create a file that has a format similar to the example
@@ -1892,7 +1899,7 @@ The notebook contains the complete \simtextsc{Html} document and, in addition, i
 after every step of the pipeline.  Inspecting these intermediate results is quite instructive, as it shows how
 the document is stripped of its markup step by step.
 
-\exerciseEng
+\exerciseEng\label{exercise:latex-to-mathml}
 The purpose of the following exercise is to transform \href{http://www.latex-project.org}{\LaTeX} into 
 \href{https://www.tutorialspoint.com/mathml/index.htm}{\simtextsc{MathML}}.  \LaTeX\ is a document markup language
 that is especially well suited to present text that contains mathematical formulas.  In fact, these
