@@ -26,13 +26,13 @@ pdflatex -shell-escape formal-languages.tex
   (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl`, e.g.
   `conda run -n fl jupyter nbconvert --to notebook --execute --output /tmp/out.ipynb X.ipynb`;
   the Homebrew Python lacks the required packages.  Old Ply versions are archived in `../Python/Ply/`.
-- Type checking of notebooks: the notebooks of chapters 2 to 5 use basedpyright
-  (`conda run -n fl basedpyright X.ipynb`; live in JupyterLab via jupyterlab-lsp).  Its settings are in
-  `../Python/pyrightconfig.json` (mode "standard"; the default mode warns about every unused return value,
-  e.g. of `outfile.write`).  JupyterLab is started in `../Python`, so the language server finds this file.
-  Recursive types are written as `type X = ...`; basedpyright cannot follow `%run`, so the test notebooks
-  report the names loaded with `%run` as undefined.  The notebooks of the later chapters still use `%load_ext nb_mypy`, which breaks on `match` statements and `type X = ...` (its
-  dependency astor cannot unparse them) and needs forward declarations for mutually recursive functions.
+- Type checking of notebooks: all notebooks use basedpyright (`conda run -n fl basedpyright X.ipynb`; live in
+  JupyterLab via jupyterlab-lsp); only the archive `../Python/Ply/` still contains notebooks with `nb_mypy`.
+  The settings are in `../Python/pyrightconfig.json` (mode "standard"; the default mode warns about every
+  unused return value, e.g. of `outfile.write`).  JupyterLab is started in `../Python`, so the language
+  server finds this file.  Recursive types are written as `type X = ...`; no forward declarations are
+  needed.  basedpyright cannot follow `%run`, so notebooks that load other notebooks report the loaded
+  names as undefined (a note in these notebooks says so).
 
 ## Conventions
 
