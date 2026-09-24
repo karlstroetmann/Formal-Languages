@@ -1,229 +1,164 @@
-\documentclass[11pt]{report}
+% Compile with:  pdflatex -shell-escape formal-languages.tex
+% (minted calls the external program pygmentize).
+\documentclass[11pt,a4paper,fleqn]{report}
 
-\usepackage{atkinson}
+%======================================================================
+% Page layout
+%======================================================================
+% 17cm wide text block centered on A4.  The body text and the running
+% header start at the same height as with the former a4wide setup on
+% letter paper; the text height is a whole number of lines (49 + \topskip).
+\usepackage[textwidth=17cm, textheight=677.4pt, hmarginratio=1:1,
+            top=80.82pt, headheight=13.6pt, headsep=23.4pt, footskip=30pt]{geometry}
+
+%======================================================================
+% Fonts
+%======================================================================
 \usepackage[T1]{fontenc}
-\usepackage{chancery}
+\usepackage[sfdefault]{atkinson}  % Atkinson Hyperlegible as the main font
+\usepackage{microtype}            % also provides \textls (letter spacing)
+\usepackage[official]{eurosym}    % \euro
+\usepackage{skull}                % \skull, the dead state of a DFA
+\usepackage{CJKutf8}              % Chinese characters in the introduction
+
+% Zapf Chancery, used for the epigraphs
 \newcommand{\calligfont}{\fontfamily{pzc}\selectfont}
 
-
-\usepackage{a4wide}
-
-\usepackage{placeins}
-\usepackage{graphicx}
-\usepackage{microtype}  % For \textls (letter-spacing)\usepackage{epstopdf}
-\usepackage{epsfig}
-\usepackage{amssymb}
+%======================================================================
+% Mathematics
+%======================================================================
 \usepackage{amsmath}
-\usepackage{skull}
-\usepackage{textcomp}
-\usepackage{fancyvrb}
-\usepackage{fancyhdr}
-\usepackage[dvipsnames]{xcolor} 
-\usepackage{alltt}
-\usepackage{fleqn}
-\usepackage{enumerate}
+\usepackage{amssymb}
 \usepackage{theorem}
-\usepackage{minted}
-\usepackage{makeidx}
-\usepackage[official]{eurosym}
+% Indentation of flush-left displays (class option fleqn).  This must
+% come after amsmath, which resets \mathindent.
+\setlength{\mathindent}{1.3cm}
+
+{\theorembodyfont{\sffamily}
+\newtheorem{Definition}{Definition}
+\newtheorem{Theorem}[Definition]{Theorem}
+\newtheorem{Proposition}[Definition]{Proposition}
+\newtheorem{Corollary}[Definition]{Corollary}
+}
+
+%======================================================================
+% Graphics, colors, boxes, and floats
+%======================================================================
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[skins]{tcolorbox}
+\usepackage{placeins}  % \FloatBarrier
 \usepackage{epigraph}
 \setlength{\epigraphwidth}{0.7\textwidth}
-\usepackage{tcolorbox}
-\usepackage{CJKutf8} % Required for Chinese characters
-
-
-% point links to top left corner of respective element, not to caption
-\usepackage{hyperref}
-\usepackage[all]{hypcap}
-
-\tcbuselibrary{skins}
-
-\hypersetup{
-        colorlinks = true, % comment this to make xdvi work
-        linkcolor  = blue,
-        citecolor  = red,
-        filecolor  = Gold,
-        urlcolor   = blue,
-        pdfborder  = {0 0 0} 
-}
-\setlength{\mathindent}{1.3cm}
-\setlength{\textwidth}{17cm}
-\addtolength{\oddsidemargin}{-1cm}
-\addtolength{\evensidemargin}{-1cm}
-\addtolength{\topmargin}{-1cm}
-
-\usepackage{fancyhdr}
-\usepackage{lastpage} 
-
-\renewcommand*{\familydefault}{\sfdefault} 
-
-\pagestyle{fancy}
-
-\fancyfoot[C]{--- \thepage/\pageref{LastPage}\ ---}
-
-\fancypagestyle{plain}{%
-\fancyhf{}
-\fancyfoot[C]{--- \thepage/\pageref{LastPage}\ ---}
-\renewcommand{\headrulewidth}{0pt}
-}
-
-\renewcommand{\chaptermark}[1]{\markboth{\chaptername \ \thechapter.\ #1}{}}
-\renewcommand{\sectionmark}[1]{\markright{\thesection. \ #1}{}}
-\fancyhead[R]{\leftmark}
-\fancyhead[L]{\rightmark}
 
 \definecolor{dg}{rgb}{0.0, 0.4, 0.0}
 \definecolor{amethyst}{rgb}{0.2, 0.4, 0.6}
-\definecolor{orange}{rgb}{1, 0.9, 0.0}
 \definecolor{sepia}{rgb}{0.95, 0.95, 0.9}
-\definecolor{ttcolor}{rgb}{0.4,0.1,0.0}
+\definecolor{ttcolor}{rgb}{0.4, 0.1, 0.0}
 
-\newcommand{\fakesc}[1]{\resizebox{!}{0.99ex}{\textls[90]{\MakeUppercase{#1}}}}
+%======================================================================
+% Program listings and lists
+%======================================================================
+\usepackage{fancyvrb}
+\usepackage{minted}
+\usepackage{enumerate}
 
-% --- Corrected \simtextsc Macro ---
-\makeatletter
+%======================================================================
+% Headers and footers
+%======================================================================
+\usepackage{fancyhdr}
+\usepackage{lastpage}
 
-% This is the internal helper. 
-% It's now on one line to prevent the newline/space bug.
-\def\@simtextsc#1#2\@nil{\textsc{\MakeUppercase{#1}}\fakesc{#2}}
+\pagestyle{fancy}
+\fancyfoot[C]{--- \thepage/\pageref{LastPage}\ ---}
+\fancyhead[R]{\leftmark}
+\fancyhead[L]{\rightmark}
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername \ \thechapter.\ #1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection. \ #1}{}}
 
-% This is the main command.
-% It checks the context (math or text) before calling the helper.
-\newcommand{\simtextsc}[1]{%
-  \ifmmode
-    % We are in MATH mode:
-    % Use \text{...} to switch back to text mode correctly.
-    \text{\@simtextsc#1\@nil}%
-  \else
-    % We are in TEXT mode:
-    % Just call the helper directly.
-    \@simtextsc#1\@nil
-  \fi
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{--- \thepage/\pageref{LastPage}\ ---}%
+  \renewcommand{\headrulewidth}{0pt}%
 }
+
+%======================================================================
+% Index, hyperlinks (hyperref should be loaded last)
+%======================================================================
+\usepackage{makeidx}
+\makeindex
+
+\usepackage{hyperref}
+\usepackage[all]{hypcap}  % links point to the top of a figure, not to its caption
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = blue,
+  citecolor  = red,
+  urlcolor   = blue
+}
+
+%======================================================================
+% Macros
+%======================================================================
+
+% --- Faked small caps (Atkinson Hyperlegible has no small caps) ---
+% \simtextsc{Lark}: first letter as a capital, the rest as shrunken
+% capitals.  Works both in text and in math mode.
+\newcommand{\fakesc}[1]{\resizebox{!}{0.99ex}{\textls[90]{\MakeUppercase{#1}}}}
+\makeatletter
+\def\@simtextsc#1#2\@nil{\textsc{\MakeUppercase{#1}}\fakesc{#2}}
+\newcommand{\simtextsc}[1]{%
+  \ifmmode\text{\@simtextsc#1\@nil}\else\@simtextsc#1\@nil\fi}
 \makeatother
 
-\newcommand{\exercise}{\vspace*{0.2cm}
-\stepcounter{aufgabe}
-\noindent
-\textbf{Aufgabe \arabic{aufgabe}}: }
+% --- Run-in headings for exercises, proofs, examples, ... ---
+\newcounter{aufgabe}
+\newcommand{\runinhead}[1]{\vspace*{0.2cm}\noindent\textbf{#1}: }
+\newcommand{\exerciseEng}{\stepcounter{aufgabe}\runinhead{Exercise \arabic{aufgabe}}}
+\newcommand{\proofEng}{\runinhead{Proof}}
+\newcommand{\hint}{\runinhead{Hint}}
+\newcommand{\remarkEng}{\runinhead{Remark}}
+\newcommand{\solutionEng}{\runinhead{Solution}}
+\newcommand{\exampleEng}{\runinhead{Example}\ }
+\newcommand{\examplesEng}{\runinhead{Examples}\ }
+\newcommand{\qed}{\hspace*{\fill} $\Box$}       % end of proof
+\newcommand{\eox}{\hspace*{\fill} $\diamond$}   % end of example
 
-\newcommand{\exerciseStar}{\vspace*{0.2cm}
-\stepcounter{aufgabe}
-\noindent
-\textbf{Aufgabe \arabic{aufgabe}$^*$}: }
-
-\newcommand{\exerciseEngStar}{\vspace*{0.2cm}
-\stepcounter{aufgabe}
-\noindent
-\textbf{Exercise \arabic{aufgabe}$^*$}: }
-
-\newcommand{\homework}{\vspace*{0.2cm}
-\stepcounter{aufgabe}
-\noindent
-\textbf{Hausaufgabe \arabic{aufgabe}}: }
-
-\newcommand{\exerciseEng}{\vspace*{0.2cm}
-\stepcounter{aufgabe}
-\noindent
-\textbf{Exercise \arabic{aufgabe}}: }
-
-\newcommand{\proof}{\vspace*{0.2cm}
-\noindent
-\textbf{Beweis}: }
-
-\newcommand{\proofEng}{\vspace*{0.2cm}
-\noindent
-\textbf{Proof}: }
-
-\newcommand{\hint}{\vspace*{0.2cm}
-\noindent
-\textbf{Hint}: }
-
-\newcommand{\remark}{\vspace*{0.2cm}
-\noindent
-\textbf{Bemerkung}: }
-
-\newcommand{\remarkEng}{\vspace*{0.2cm}
-\noindent
-\textbf{Remark}: }
-
-\newcommand{\homeworkEng}{\vspace*{0.2cm}
-\noindent
-\textbf{Homework}: }
-
-
-\newcommand{\solution}{\vspace*{0.2cm}
-\noindent
-\textbf{L\"osung}: }
-
-\newcommand{\solutionEng}{\vspace*{0.2cm}
-\noindent
-\textbf{Solution}: }
-
-\newcommand{\exampleEng}{\vspace*{0.2cm}
-\noindent
-\textbf{Example}: \ }
-
-\newcommand{\examplesEng}{\vspace*{0.2cm}
-\noindent
-\textbf{Examples}: \ }
-
-\newcommand{\example}{\vspace*{0.2cm}
-\noindent
-\textbf{Beispiel}: \ }
-
+% --- Colors ---
 \newcommand{\green}[1]{{\color{dg}#1}}
-\newcommand{\orange}[1]{{\color{orange}#1}}
 \newcommand{\blue}[1]{{\color{blue}#1}}
 \newcommand{\red}[1]{{\color{red}#1}}
-\newcommand{\magenta}[1]{{\bf\color{magenta}#1}}
 \newcommand{\mytt}[1]{{\color{ttcolor}\texttt{#1}}}
 
-\newcommand{\examples}{\vspace*{0.2cm}
-\noindent
-\textbf{Beispiele}: \ }
-%\newcommand{\next}{\vspace*{0.2cm}}
-\newcommand{\ds}{\displaystyle}
-\newcommand{\ra}{\rightarrow}
-\newcommand{\shft}[1]{$\pair(\textsl{shft},s_{#1})$}
-\newcommand{\rdc}[1]{$\pair(\textsl{rdc},r_#1)$}
-\newcommand{\accept}{\textsl{accept}}
-\newcommand{\eqmark}{\stackrel{!}{=}}
-\newcommand{\uarr}[3]{\underset{\underset{#1_{#2}}{\uparrow}}{#3}}
-\newcommand{\squoted}[1]{\mbox{``\texttt{#1}''}}
-\newcommand{\saquoted}[1]{\mbox{'\texttt{#1}'}}
-\newcommand{\quoted}[1]{\;\mbox{``\texttt{#1}''}\;}
-\newcommand{\aquoted}[1]{\;\mbox{'\texttt{#1}'}\;}
-\newcommand{\mathquoted}[1]{\mbox{'$#1$'}}
+% --- Quoted terminal symbols ---
 \newcommand{\qote}[1]{``\texttt{#1}''}
+\newcommand{\squoted}[1]{\mbox{\qote{#1}}}
+\newcommand{\saquoted}[1]{\mbox{'\texttt{#1}'}}
+\newcommand{\quoted}[1]{\;\squoted{#1}\;}
+\newcommand{\aquoted}[1]{\;\saquoted{#1}\;}
+\newcommand{\mathquoted}[1]{\mbox{'$#1$'}}
+
+% --- Mathematics ---
+\newcommand{\ds}{\displaystyle}
 \newcommand{\comp}[1]{\stackrel{#1}{\mapsto}}
-\newcommand{\dx}{\,\textrm{d}}
-\newcommand{\bruch}[2]{\frac{\displaystyle#1}{\displaystyle #2}}
-\newcommand{\folge}[1]{\bigl(#1\bigr)_{n\in\mathbb{N}}}
-\def\pair(#1,#2){\langle #1, #2 \rangle}
-\def\trip(#1,#2,#3){\langle #1, #2, #3 \rangle}
-\newcommand{\qed}{\hspace*{\fill} $\Box$}
-\newcommand{\eox}{\hspace*{\fill} $\diamond$}
-\newcommand{\lmderiv}{\;\raisebox{-2.3mm}{$\stackrel{\mbox{\large$\Rightarrow$}}{\mbox{\scriptsize l}}$}\;}
-\newcommand{\lb}{\hspace*{\fill} \linebreak}
+\def\pair(#1,#2){\langle #1, #2 \rangle}   % usage: \pair(a,b)
 
-{\theorembodyfont{\sf}
-\newtheorem{Definition}{Definition}
-\newtheorem{Theorem}[Definition]{Theorem}
-\newtheorem{Satz}[Definition]{Satz}
-\newtheorem{Proposition}[Definition]{Proposition}
-\newtheorem{Lemma}[Definition]{Lemma}
-\newtheorem{Korollar}[Definition]{Korollar}
-\newtheorem{Corollary}[Definition]{Corollary}
-}
-\newcounter{aufgabe}
+% --- Entries of shift-reduce parse tables ---
+\newcommand{\shft}[1]{$\pair(\textsl{shft},s_{#1})$}
+\newcommand{\rdc}[1]{$\pair(\textsl{rdc},r_{#1})$}
+\newcommand{\accept}{\textsl{accept}}
 
-\title{\epsfig{file=Abbildungen/dhbw-logo.pdf, scale=1.5}\\[0.3cm] 
+% --- Miscellaneous ---
+\newcommand{\lb}{\hspace*{\fill} \linebreak}  % line break that fills the line
+
+%======================================================================
+% Title
+%======================================================================
+\title{\includegraphics[scale=1.5]{Abbildungen/dhbw-logo.pdf}\\[0.3cm]
        Formal Languages and Their Applications \\[0.1cm]
        {\large An Introduction via \textsc{Lark}} \\[0.2cm]
       {\large --- \the\year{} ---}}
 \author{Prof.~Dr.~Karl Stroetmann}
-
 
 \date{\today \\[0.5cm]
 \noindent
@@ -253,8 +188,7 @@ submitting a pull request or contacting me via \href{https://discord.com}{Discor
 \end{minipage}
 }
 
-\makeindex
-
+%======================================================================
 \begin{document}
 
 \begin{titlepage}
@@ -264,7 +198,7 @@ submitting a pull request or contacting me via \href{https://discord.com}{Discor
     \vspace*{\fill}
     The Parse Tree of Knowledge
   \end{titlepage}
-  
+
 \maketitle
 \tableofcontents
 \include{introduction}
