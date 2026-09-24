@@ -21,8 +21,15 @@ At the core, regular expressions enable the specification of:
 Regular expressions form the backbone of many modern scripting languages. For instance, the initial surge in
 the popularity of the programming language \href{http://en.wikipedia.org/wiki/Perl}{\textsl{Perl}} can be
 largely attributed to its efficient handling of regular expressions. Today,  most popular high-level
-programming languages (e.g.~\textsl{Python}, \texttt{C++}, \textsl{Java}, \texttt{C\#}, \texttt{JavaScript},
-\texttt{PHP}, \texttt{Ruby}) support regular expressions.  In the programming language \texttt{C} regular
+programming languages (e.g.~\href{https://www.python.org/}{\textsl{Python}},
+\href{https://isocpp.org/}{\texttt{C++}},
+\href{https://dev.java/}{\textsl{Java}},
+\href{https://learn.microsoft.com/en-us/dotnet/csharp/}{\texttt{C\#}},
+\href{https://developer.mozilla.org/en-US/docs/Web/JavaScript}{\texttt{JavaScript}},
+\href{https://www.typescriptlang.org/}{\texttt{TypeScript}},
+\href{https://www.php.net/}{\texttt{PHP}},
+\href{https://www.ruby-lang.org/}{\texttt{Ruby}},
+\href{https://www.tcl-lang.org/}{\texttt{Tcl}}) support regular expressions.  In the programming language \texttt{C} regular
 expressions are available via the \simtextsc{Posix} library.  
 
 Moreover, various \simtextsc{Unix} utilities, including \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}},
@@ -107,7 +114,7 @@ L^* = \{ \texttt{a}^n \mid n \in \mathbb{N} \},
 where $ \texttt{a}^n $ represents a string of $ n $ consecutive \texttt{a}'s. \eox
 
 The previous example highlights that the Kleene closure of a finite language can be infinite. Specifically,
-$L^*$ will be infinite whenever $L$ contains a string different from $\lambda$.
+$L^*$ will be infinite whenever $L$ contains a string different from the empty string $\lambda$.
 
 
 
@@ -121,7 +128,6 @@ $L: \texttt{RegExp}_\Sigma \rightarrow 2^{\Sigma^*}$,
 which interprets each regular expression $ r $ as a formal language $ L(r) \in 2^{\Sigma^*} $\glsadd{langofre}.\footnote{
   Given a set $ M $, the \blue{power set}\index{power set}\glsadd{powerset} of $ M $, i.e., the set of all subsets of $ M $, is denoted as $ 2^M $.
 }
-\pagebreak
 
 \begin{Definition}[Regular Expressions, Stephen Cole Kleene] \index{regular expression}
   The set $ \texttt{RegExp}_\Sigma $\glsadd{regexp} of \blue{regular expressions} on the alphabet $ \Sigma $ is defined inductively as follows:
@@ -225,10 +231,24 @@ is interpreted as
 $\mathrm{a} + \bigl( \mathrm{b} \cdot (\mathrm{c}^*) \bigr)$.
 \\[0.2cm]
 Precedences do not tell us how to read an expression like $\mathtt{a} + \mathtt{b} + \mathtt{c}$, where the same
-operator occurs twice.  However, we will see in the next section that the operators ``$+$'' and ``$\cdot$'' are
-associative, i.e.~both ways of setting the parentheses yield the same language.  Therefore, we omit these
-parentheses.
+operator occurs twice.  We assume that the operators ``$+$'' and ``$\cdot$'' both associate to the left.
+Therefore, 
 \\[0.2cm]
+\hspace*{1.3cm}
+$a + b + c$
+is interpreted as 
+$(a + b) + c$
+\\[0.2cm]
+and
+\\[0.2cm]
+\hspace*{1.3cm}
+$a \cdot b \cdot c$
+is interpreted as 
+$(a \cdot b) \cdot c$
+\\[0.2cm]
+However, we will see in the next section that the operators ``$+$'' and ``$\cdot$'' are
+associative, e.g.~the regular expression $(a+b)+c$ and $a + (b+c)$ are equivalent.
+
 \examplesEng
 In the following examples, the alphabet $ \Sigma $ is defined as
 \\[0.2cm]
@@ -422,6 +442,16 @@ following algebraic laws hold:
 \item $r^* \doteq \varepsilon + r^* \cdot r$
 \item $r^* \doteq (\varepsilon + r)^*$
 \end{enumerate}
+
+Used as rewrite rules, these laws can simplify regular expressions.  Some of them have to be read from right to
+left for this purpose, e.g.~law (m) replaces $\varepsilon + r^* \cdot r$ by $r^*$.  The \textsl{Jupyter}
+notebook
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-02/Simplify-RegExp.ipynb}{Python/Chapter-02/Simplify-RegExp.ipynb}
+\\[0.2cm]
+contains a parser for the regular expressions defined in this chapter and a function \texttt{simplify\_regexp}
+that simplifies regular expressions using the laws given above.
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
