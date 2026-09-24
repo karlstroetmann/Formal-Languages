@@ -24,9 +24,9 @@ pdflatex -shell-escape formal-languages.tex
 - The Python notebooks live in `../Python/Chapter-NN/`, numbered like the chapters
   (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl`, e.g.
   `conda run -n fl jupyter nbconvert --to notebook --execute --output /tmp/out.ipynb X.ipynb`;
-  the Homebrew Python lacks the required packages.  Old Ply versions are archived in `../Python/Ply/`.
+  the Homebrew Python lacks the required packages.
 - Type checking of notebooks: all notebooks use basedpyright (`conda run -n fl basedpyright X.ipynb`; live in
-  JupyterLab via jupyterlab-lsp); only the archive `../Python/Ply/` still contains notebooks with `nb_mypy`.
+  JupyterLab via jupyterlab-lsp).
   The settings are in `../Python/pyrightconfig.json` (mode "standard"; the default mode warns about every
   unused return value, e.g. of `outfile.write`).  JupyterLab is started in `../Python`, so the language
   server finds this file.  Recursive types are written as `type X = ...`; no forward declarations are
