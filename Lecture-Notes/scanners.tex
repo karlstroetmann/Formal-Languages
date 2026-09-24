@@ -46,8 +46,9 @@ As this chapter is rather long, we start with a road map.
       regular expressions are useful for much more than just building compilers.
 \item The section \emph{Converting \simtextsc{Html} to Text} solves the problem of extracting the text that is
       embedded in an \simtextsc{Html} document.  Interestingly, this problem is \emph{not} solved by building a
-      scanner.  Instead, the input is pushed through a \blue{pipeline of substitutions}\index{substitution pipeline}.  This section also shows the limits of our approach: we will prove in the next chapter that no
-      regular expression is able to describe the syntax of \simtextsc{Html}.
+      scanner.  Instead, the input is pushed through a \blue{pipeline of substitutions}\index{substitution pipeline}.  This section also shows the limits of our approach: we will see in Chapter
+      \ref{chapter:regular-languages} why no regular expression is able to describe the syntax of
+      \simtextsc{Html}.
 \item The exercise that concludes that section asks you to translate a small subset of \LaTeX\ into
       \simtextsc{MathML}.  In order to solve this exercise, two techniques are needed that go beyond a plain
       token specification: the scanner has to switch between different \blue{scanner states}\index{scanner state}, and it has to maintain a \blue{stack}\index{stack} in order to keep track of the delimiters that
@@ -107,8 +108,8 @@ Both whitespace characters and comments are generally discarded by the scanner.
     #include <stdio.h>
     
     int main() {
-        printf("Hello World!");
-        return 1;
+        printf("Hello World!\n");
+        return 0;
     }
 \end{minted}
 \vspace*{-0.3cm}
@@ -127,7 +128,7 @@ character. The scanner processes this program into the following list of tokens:
    ``\texttt{int}'', ``\texttt{main}'', ``\texttt{(}'', ``\texttt{)}'', ``\texttt{\{}'',
 \\
 \hspace*{1.4cm} 
-     ``\texttt{printf}'', ``\texttt{(}'', ``\texttt{"Hello World!"}'', ``\texttt{)}'', ``\texttt{;}'', ``\texttt{return}'', ``\texttt{1}'', ``\texttt{;}'', ``\texttt{\}}''
+     ``\texttt{printf}'', ``\texttt{(}'', ``\texttt{"Hello World!\symbol{92}n"}'', ``\texttt{)}'', ``\texttt{;}'', ``\texttt{return}'', ``\texttt{0}'', ``\texttt{;}'', ``\texttt{\}}''
    ]
    \\[0.2cm]
 Note that the scanner discards all white space characters, as these are only used to demarcate tokens.  The
@@ -139,7 +140,7 @@ by hand is tedious and error-prone.  \textsl{Python}'s \texttt{re} module makes 
 We specify every kind of token as a regular expression and let \texttt{re} do the work of matching.  We develop
 this approach in the following section.
 
-\section{Building a Scanner with Regular Expressions}
+\section{Building a Scanner with Regular Expressions \label{section:regexp-scanner}}
 \index{scanner!building with regular expressions}
 In order to build a scanner using regular expressions, we proceed in three steps that mirror the three parts of
 any scanner specification:
@@ -245,12 +246,12 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
                   xrightmargin = 0.3cm,
                 ]{python3}
 def tokenize(code):
-    ln         = 1
-    line_start = 0
+    ln         = 1    # number of the current line
+    line_start = 0    # position where the current line starts
     for mo in re.finditer(master_pattern, code):
         kind  = mo.lastgroup
         value = mo.group()
-        col   = mo.start() - line_start
+        col   = mo.start() - line_start  # column of the token
         if kind == 'NUMBER':
             value = int(value)
         elif kind == 'NEWLINE':
@@ -316,7 +317,7 @@ yields the following output:
     Token(type='NUMBER', value=3, line=1, column=0)
     Token(type='PLUS', value='+', line=1, column=2)
     Token(type='NUMBER', value=4, line=1, column=4)
-    % ... (rest of the output)
+    ...
     Token(type='NUMBER', value=2, line=1, column=27)
 \end{verbatim}
 The scanner returns tokens as instances of the class \texttt{Token}, which possess four distinct attributes:
@@ -579,8 +580,9 @@ This call returns the list \texttt{['a', 'aa', 'aAa', 'a']}.
 \end{enumerate}
 Since $r\texttt{*}$ also matches the empty string, the result of the following call contains a number of empty
 strings.  For example, in the string \texttt{'abaabbaaaba'} the regular expression \texttt{a*} finds an empty
-string in front of every occurrence of the character \texttt{'b'} that is not preceded by an \texttt{'a'}.  The
-final occurrence of the empty string is found at the end of the string.
+string in front of every occurrence of the character \texttt{'b'}: at these positions, no \texttt{'a'} can be
+matched and therefore \texttt{a*} matches the empty string.  The final occurrence of the empty string is found at
+the end of the string.
 
 \begin{minted}[ frame        = lines, 
                 framesep     = 0.3cm, 
@@ -807,17 +809,20 @@ There are a number of \blue{predefined character classes}\index{character class!
 \item \texttt{\symbol{92}D} matches any character that is not a digit.
 \item \texttt{\symbol{92}s} matches any whitespace character.
 \item \texttt{\symbol{92}S} matches any character that is not a whitespace character.
-\item \texttt{\symbol{92}w} matches any alphanumeric character.
+\item \texttt{\symbol{92}w} matches any alphanumeric character and the underscore ``\texttt{\_}''.
 
       If we were to restrict ourselves to \simtextsc{Ascii} characters, this would be equivalent to the
       character class \texttt{[0-9a-zA-Z\_]}.
 \item \texttt{\symbol{92}W} matches any character that is not alphanumeric.
 \item \texttt{\symbol{92}b} matches at a \blue{word boundary}\index{word boundary}.  The string that is matched
-      is the empty string.
+      is the empty string.  Strictly speaking, \texttt{\symbol{92}b} is therefore not a character class but an
+      \blue{assertion}\index{assertion}: it does not match a character but only checks a condition at the
+      current position.
 \item \texttt{\symbol{92}B} matches at any position that is \textbf{not} a word boundary.  Again, the string
       that is matched is the empty string.
 \end{enumerate}
-These escape sequences can also be used inside square brackets:
+With the exception of \texttt{\symbol{92}b} and \texttt{\symbol{92}B}, these escape sequences can also be used
+inside square brackets:
 
 \begin{minted}[ frame        = lines, 
                 framesep     = 0.3cm, 
@@ -847,7 +852,7 @@ re.findall(r'[^abc]+', 'axyzbuvwchij')
 \noindent
 This call returns the list \texttt{['xyz', 'uvw', 'hij']}.
 
-The character class \texttt{\symbol{92}b} is useful in order to extract complete words.  For example, the
+The assertion \texttt{\symbol{92}b} is useful in order to extract complete words.  For example, the
 regular expression \texttt{\symbol{92}b\symbol{92}w+\symbol{92}b} matches a maximal sequence of alphanumeric
 characters that is surrounded by word boundaries:
 
@@ -884,7 +889,7 @@ There are two reasons for using parentheses:
       \texttt{(ab)+} matches the strings \texttt{'ab'}, \texttt{'abab'}, \texttt{'ababab'}, and so on.
 \item Parentheses can be used for \blue{back-references}\index{back-reference}: Inside a regular expression, we
       can refer to the substring that has been matched by a subexpression enclosed in parentheses using the
-      syntax $\backslash n$, where $n \in \{1,\cdots,9\}$.  Here, $\backslash n$ refers to the $n^{\mathrm{th}}$
+      syntax $\backslash n$, where $n \in \{1,\cdots,99\}$.  Here, $\backslash n$ refers to the $n^{\mathrm{th}}$
       \blue{group}\index{group} of the regular expression, where a group is any part of the regular expression
       that is enclosed in parentheses.  Counting of the groups starts with the opening parentheses, i.e.\ the
       groups are numbered in the order in which their opening parentheses occur.  For example, the regular
@@ -1009,7 +1014,7 @@ has been matched by the group named \texttt{quote}.
 
 \remarkEng
 Named groups are the mechanism that made the master pattern of our scanner work: in Section
-\ref{chapter:ply-lex} we have wrapped the regular expression of every token into a named group, and after a
+\ref{section:regexp-scanner} we have wrapped the regular expression of every token into a named group, and after a
 match had been found we used the attribute \texttt{lastgroup} of the match object in order to determine the name
 of the group---and hence the type of the token---that was responsible for the match.
 \eox
@@ -1291,7 +1296,7 @@ The structure of this file is as follows:
 \end{enumerate}
 Our goal is to write a program that reads data of this kind and computes the mark of every student.  In the
 following, we assume that the contents of this file are stored in the string \texttt{data}.  Note that in
-contrast to the scanner developed in Section \ref{chapter:ply-lex}, we do \emph{not} tokenize the whole input
+contrast to the scanner developed in Section \ref{section:regexp-scanner}, we do \emph{not} tokenize the whole input
 into a single stream of tokens.  Instead, we process the input line by line and use a different regular
 expression for every kind of information that we want to extract.  For many text-processing tasks, this
 lightweight approach is both simpler and more robust than writing a full-blown scanner.
@@ -1339,7 +1344,8 @@ def mark(max_points: int, points: int) -> float:
 \noindent
 For example, if \texttt{max\_points} has the value $60$, then a student who has achieved $40$ points gets the
 mark $3.0$, while a student who has achieved only $20$ points gets the mark $5.0$.  A student achieving only
-$10$ points would still get the mark since every value above $5.0$ is capped by the function \texttt{min}.
+$10$ points would still get the mark $5.0$, since every value above $5.0$ is capped by the function
+\texttt{min}.
 
 \subsection{Extracting the Maximum Number of Points}
 In order to evaluate the exam, we first have to isolate the definition of the maximum number of points.  To this
@@ -1434,7 +1440,8 @@ def evaluate_students(text: str, max_points: int) -> None:
             scores = match.group(2)
             points = sum(int(p) for p in pattern.findall(scores))
             grade  = mark(max_points, points)
-            print(f'{name}: {points:3d} points, mark {grade}.')
+            print(f'{name} has {points:2d} points and '
+                  f'achieved the mark {grade}.')
         else:
             print(f"Warning: could not parse the line '{line}'.")
 \end{minted}
@@ -1491,9 +1498,9 @@ def evaluate_students(text: str, max_points: int) -> None:
       extract the list of all scores from this string.  These strings are converted into integers and are then
       added up using the function \texttt{sum}.
 \item Line 14 computes the mark using the function \texttt{mark} that has been discussed above.
-\item Line 15 prints the result.  The format specifier ``\texttt{:3d}'' right-aligns the number of points in a
-      field of width $3$ so that the output is properly aligned.
-\item Lines 16--17 deal with the case that a line could not be parsed.  In this case, a warning is printed but
+\item Lines 15--16 print the result.  The format specifier ``\texttt{:2d}'' right-aligns the number of points in
+      a field of width $2$ so that the output is properly aligned.
+\item Lines 17--18 deal with the case that a line could not be parsed.  In this case, a warning is printed but
       the evaluation continues with the next line.
 \end{enumerate}
 
@@ -1641,11 +1648,7 @@ from html.entities import html5
 
 def replace_named(match: re.Match) -> str:
     s = match.group(0)
-    if s[-1] == ';':
-        entity_name = s[1:-1]   # chop off '&' and ';'
-    else:
-        entity_name = s[1:]     # only chop off '&'
-    return html5.get(entity_name, s)
+    return html5.get(s[1:], s)  # chop off '&'
 
 def replace_unicode(match: re.Match) -> str:
     s = match.group(0)
@@ -1696,30 +1699,29 @@ Now we are ready to discuss the program.
 \item Line 1 imports the module \texttt{re}.
 \item Line 2 imports the dictionary \texttt{html5}\index{html5@\texttt{html5}} from the module
       \texttt{html.entities}.  This dictionary maps the names of the \simtextsc{Html5} entities to the
-      characters that these entities denote.  For example, 
-      \texttt{html5['uuml']} returns the string \texttt{'\"u'}.
-\item Lines 4--10 define the function \texttt{replace\_named}, which computes the replacement of a named
+      characters that these entities denote.  Note that these names include the terminating semicolon.  For
+      example, \texttt{html5['uuml;']} returns the string \texttt{'\"u'}.  A few entities, e.g.~\texttt{uuml} and
+      \texttt{nbsp}, are also contained without the semicolon, since \simtextsc{Html} tolerates these
+      entities even if the semicolon is missing.
+\item Lines 4--6 define the function \texttt{replace\_named}, which computes the replacement of a named
       entity.
       \begin{enumerate}
       \item Line 5 uses the method \texttt{group(0)} of the match object in order to retrieve the complete
             string that has been matched, for example the string \texttt{'\&uuml;'}.
-      \item Lines 6--9 chop off the ampersand at the beginning and, if it is present, the semicolon at the end.
-            What remains is the name of the entity.  The semicolon is optional because \simtextsc{Html}
-            tolerates entities that are not terminated by a semicolon.
-      \item Line 10 looks up the name of the entity in the dictionary \texttt{html5}.  Note the use of the
-            method \texttt{get}: if the name is not a key of this dictionary, then \texttt{get} returns its
-            second argument, which is the string \texttt{s} that has been matched.  Hence, an entity that we do
-            not know is left untouched instead of being deleted.
+      \item Line 6 chops off the ampersand at the beginning.  What remains, e.g.~the string
+            \texttt{'uuml;'}, is a key of the dictionary \texttt{html5}.  Note the use of the method
+            \texttt{get}: if the string is not a key of this dictionary, then \texttt{get} returns its second
+            argument, which is the string \texttt{s} that has been matched.  Hence, an entity that we do not know
+            is left untouched instead of being deleted.
       \end{enumerate}
-\item Lines 12--21 define the function \texttt{replace\_unicode}, which computes the replacement of a numerical
-      entity.  It works in the same way as the function \texttt{replace\_named}, but this time the string
-      \texttt{'\&\#'} is chopped off at the beginning and the remaining digits are converted into an
-      \texttt{int}.  The built-in function \texttt{chr}\index{chr@\texttt{chr}} then computes the
+\item Lines 8--17 define the function \texttt{replace\_unicode}, which computes the replacement of a numerical
+      entity.  Here, the string \texttt{'\&\#'} is chopped off at the beginning and, if it is present, the
+      semicolon is chopped off at the end.  The remaining digits are converted into an \texttt{int}.  The built-in function \texttt{chr}\index{chr@\texttt{chr}} then computes the
       \simtextsc{Unicode} character that has this number as its code point.  For example, the call
       \texttt{chr(128034)} returns the character with the code point $128034$, which is the emoji showing a
       turtle.
 
-      The \texttt{try}-\texttt{except} statement in lines 18--21 catches the case that the given number does not
+      The \texttt{try}-\texttt{except} statement in lines 14--17 catches the case that the given number does not
       denote a valid \simtextsc{Unicode} character.  In this case, the entity is left untouched.
 \end{enumerate}
 
@@ -1729,15 +1731,15 @@ Now we are ready to discuss the program.
                   framesep     = 0.3cm, 
                   bgcolor      = sepia,
                   numbers      = left,
-                  firstnumber  = 22,
+                  firstnumber  = 18,
                   numbersep    = 0.4cm,
                   xleftmargin  = 0.3cm,
                   xrightmargin = 0.3cm,
                 ]{python3}
 flgs = re.IGNORECASE|re.DOTALL
 text = data
-text = re.sub(r'<head>.*?</head>'    , '', text, flags=flgs)
-text = re.sub(r'<script>.*?</script>', '', text, flags=flgs)
+text = re.sub(r'<head>.*?</head>'            , '', text, flags=flgs)
+text = re.sub(r'<script\b[^>]*>.*?</script>', '', text, flags=flgs)
 text = re.sub(r'<[^>]+>'     , ''             , text)
 text = re.sub(r'&[a-zA-Z]+;?', replace_named  , text)
 text = re.sub(r'&#[0-9]+;?'  , replace_unicode, text)
@@ -1751,11 +1753,13 @@ print(text.strip())
 
 \begin{enumerate}
 \setcounter{enumi}{4}
-\item Line 23 initializes the variable \texttt{text} with the \simtextsc{Html} document.  From here on, every
+\item Line 19 initializes the variable \texttt{text} with the \simtextsc{Html} document.  From here on, every
       line overwrites this variable with the result of the previous transformation.  This is the pipeline that
       we have announced above.
-\item Lines 24--25 remove the header and any \textsl{JavaScript} code, \emph{including} the text enclosed by the
-      corresponding tags.
+\item Lines 20--21 remove the header and any \textsl{JavaScript} code, \emph{including} the text enclosed by the
+      corresponding tags.  The part \texttt{\symbol{92}b[\symbol{94}>]*} of the regular expression in line 21
+      allows the opening tag to contain attributes, as in \texttt{<script src="code.js">}.  The word boundary
+      \texttt{\symbol{92}b} ensures that the name of the tag is exactly \texttt{script}.
 
       Note that the quantifier is used in its \blue{non-greedy} form ``\texttt{.*?}''.  This is essential: if a
       document contained more than one \texttt{<script>} element, the greedy quantifier ``\texttt{.*}'' would
@@ -1764,27 +1768,26 @@ print(text.strip())
 
       Furthermore, the flag \texttt{re.DOTALL} is needed here, since the header spans many lines and, without
       this flag, the regular expression ``\texttt{.}'' would not match the newline characters.
-\item Line 26 removes all remaining tags.  The regular expression \texttt{<[\symbol{94}>]+>} matches a string
+\item Line 22 removes all remaining tags.  The regular expression \texttt{<[\symbol{94}>]+>} matches a string
       that starts with the character ``\texttt{<}'' and ends with the character ``\texttt{>}''.  Between these
       two characters, there has to be a non-empty sequence of characters that are all different from
       ``\texttt{>}''.  Since these tags are replaced by the empty string, they are deleted, but the text that
       they enclose is preserved.
-\item Line 27 replaces the named entities.  The regular expression \texttt{\&[a-zA-Z]+;?} matches an ampersand
+\item Line 23 replaces the named entities.  The regular expression \texttt{\&[a-zA-Z]+;?} matches an ampersand
       that is followed by a non-empty sequence of letters and, optionally, by a semicolon.  Here, the second
       argument of \texttt{re.sub} is the \emph{function} \texttt{replace\_named} that has been discussed above.
-\item Line 28 replaces the numerical entities in the same manner.  The regular expression
+\item Line 24 replaces the numerical entities in the same manner.  The regular expression
       \texttt{\&\#[0-9]+;?} matches an ampersand that is followed by the character ``\texttt{\#}'', a non-empty
       sequence of digits, and, optionally, a semicolon.
 
-      Note that the substitution of the named entities has to be performed \emph{before} this substitution or,
-      at the very least, that the two substitutions must not be merged into one: since the character
-      ``\texttt{\#}'' is not a letter, the regular expression of line 27 does not interfere with the numerical
-      entities.
-\item Line 29 tidies up the result.  After all the markup has been removed, the text is littered with lines that
+      Note that the order of the lines 23 and 24 does not matter: since the character ``\texttt{\#}'' is not
+      a letter, the regular expression of line 23 does not match any numerical entity, while the regular
+      expression of line 24 only matches numerical entities.
+\item Line 25 tidies up the result.  After all the markup has been removed, the text is littered with lines that
       contain nothing but whitespace.  The regular expression \texttt{(\symbol{92}s*\symbol{92}n\symbol{92}s*)+}
       matches a non-empty sequence of whitespace that contains at least one newline character, and every such
       sequence is condensed into a single newline character.
-\item Line 30 prints the result.  The method \texttt{strip} removes the leading and trailing whitespace.
+\item Line 26 prints the result.  The method \texttt{strip} removes the leading and trailing whitespace.
 \end{enumerate}
 
 \noindent
@@ -1871,9 +1874,10 @@ The program developed in this section works for the web page shown above, but it
 \\[0.2cm]
 and in this case the regular expression \texttt{<[\symbol{94}>]+>} matches only a proper prefix of the tag.
 
-This is not an accident.  In the next chapter, we will prove that the language of all strings with balanced
-parentheses is \emph{not} a regular language, and the nesting of \simtextsc{Html} elements is an instance of
-exactly this problem.  Therefore, no regular expression can ever describe the syntax of \simtextsc{Html}.  Our
+This is not an accident.  In Chapter \ref{chapter:regular-languages}, we will prove that the language
+$\{ \mathtt{a}^n\mathtt{b}^n \mid n \in \mathbb{N} \}$ is \emph{not} a regular language.  It follows that the
+language of all strings with balanced parentheses is not regular either, and the nesting of \simtextsc{Html}
+elements is an instance of exactly this problem.  Therefore, no regular expression can ever describe the syntax of \simtextsc{Html}.  Our
 program nevertheless works, because we never have to \emph{understand} the nesting of the elements: apart from
 the header, all we have to do is to delete the markup, and for this task a regular expression is sufficient.
 \eox
@@ -1927,7 +1931,7 @@ expressions of the tokens that occur inside a formula and the actions that are a
     The sum of the squares of the first $n$ natural numbers is given as:
     $$ \sum\limits_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
     According to Pythagoras, the length of the hypotenuse of a right-angled triangle is
-    the square root of the squares of the length of the two catheti:
+    the square root of the sum of the squares of the lengths of the two catheti:
     $$ c = \sqrt{a^{2} + b^{2}}.  $$
     The area of a circle is given as 
     $$  A = \pi \cdot r^{2},   $$ 
@@ -1947,7 +1951,7 @@ expressions of the tokens that occur inside a formula and the actions that are a
     The sum of the squares of the first $n$ natural numbers is given as:
     $$ \sum_{i=1}^{n} i^{2} = \frac{1}{6} \cdot n \cdot (n+1) \cdot (2\cdot n + 1). $$
     According to Pythagoras, the length of the hypotenuse of a right-angled triangle is
-    the square root of the squares of the length of the two catheti:
+    the square root of the sum of the squares of the lengths of the two catheti:
     $$ c = \sqrt{a^{2} + b^{2}}.  $$
     The area of a circle is given as 
     $$  A = \pi \cdot r^{2},   $$ 
@@ -1991,8 +1995,9 @@ solve the given problem.
 </head>
 \end{minted}
             Here, the \texttt{<script>} tag loads \href{https://www.mathjax.org}{MathJax}, which is the
-            \textsl{JavaScript} library that renders the \simtextsc{MathML} in the browser.  Without this tag,
-            the formulas are not displayed correctly.
+            \textsl{JavaScript} library that renders the \simtextsc{MathML} in the browser.  Modern browsers
+            can display \simtextsc{MathML} on their own, but \textsl{MathJax} ensures that the formulas look
+            the same in every browser.
       \item The content of the document is started by the line
             \\[0.2cm]
             \hspace*{1.3cm}
@@ -2050,11 +2055,12 @@ solve the given problem.
       \hspace*{1.3cm}
       \texttt{<mn>3.14159</mn>}.
 \item In \LaTeX\ the mathematical constant $\pi$ is written using the command ``\texttt{\symbol{92}pi}''.
-      In \simtextsc{MathML}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&pi;}'' and
-      hence we would write $\pi$ as
+      In \simtextsc{MathML}, we have to make use of the \simtextsc{Html} entity ``\texttt{\&pi;}''.  Since
+      $\pi$ is the name of a constant, it is enclosed in the same tags as a variable, and hence we would write
+      $\pi$ as
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{<mn>\&pi;</mn>}.
+      \texttt{<mi>\&pi;</mi>}.
 \item While in \LaTeX\ most operator symbols stand for themselves, in \simtextsc{MathML}
       an operator is surrounded by the tags 
       \texttt{<mo>} and \texttt{</mo>}.  For example, the operator $+$ is written as    
@@ -2247,7 +2253,7 @@ discarded or echoed.  The interesting state is the state \texttt{FORMULA}, whose
 Figure \ref{fig:latex2html.py} on page \pageref{fig:latex2html.py} shows how the scanner is driven.  It differs
 from the scanner discussed at the beginning of this chapter in two respects.
 \begin{enumerate}
-\item Lines 1--3 build one master pattern for every state.  Note that the names of the groups only have to be
+\item Lines 1--4 build one master pattern for every state.  Note that the names of the groups only have to be
       unique \emph{within} a single master pattern.  Therefore, the token \texttt{DOLLAR\_DOLLAR} can occur both
       in the state \texttt{TEXT} and in the state \texttt{FORMULA}, even though the actions associated with this
       token are different in these two states.
@@ -2278,10 +2284,10 @@ from the scanner discussed at the beginning of this chapter in two respects.
                   xleftmargin  = 0.3cm,
                   xrightmargin = 0.3cm,
                 ]{python3}
- master_patterns = \
-      { state: re.compile('|'.join(f'(?P<{name}>{regexp})'
-                   for name, regexp in spec))
-        for state, spec in token_specifications.items() }
+master_patterns = \
+    { state: re.compile('|'.join(f'(?P<{name}>{regexp})'
+                                 for name, regexp in spec))
+      for state, spec in token_specifications.items() }
 
 def scan(text):
     state = 'PREAMBLE'
@@ -2299,7 +2305,7 @@ def scan(text):
         else:
             state = process_formula(token, value, stack)
     if state != 'DONE':
-        raise SyntaxError(r'no "\end{document}"')
+        raise SyntaxError(r'missing "\end{document}"')
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The driver of the scanner that translates \LaTeX\ into \simtextsc{MathML}.}
