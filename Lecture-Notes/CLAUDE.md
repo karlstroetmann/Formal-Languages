@@ -16,8 +16,7 @@ pdflatex -shell-escape formal-languages.tex
 ## Structure
 
 - `formal-languages.tex` is the main file: preamble (grouped by purpose, `hyperref`/`glossaries` last),
-  then the `\include`d chapters.  Only the chapters that are `\include`d there are part of the book;
-  several other `.tex` files in this directory are old, unused chapters.
+  then the `\include`d chapters.  Figures are included as `\includegraphics{Abbildungen/...}`.
 - Chapter order: introduction, regular-expressions, scanners, finite-state-machines, regular-languages,
   context-free-languages, lark, lark-interpreter (chapter 8), earley-parser, shift-reduce-parser +
   lr-parser (chapter 10), lark-lalr, jasmin, compiler + compiler-2 (chapter 13).
