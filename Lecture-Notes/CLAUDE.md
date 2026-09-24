@@ -25,11 +25,13 @@ pdflatex -shell-escape formal-languages.tex
 - The Python notebooks live in `../Python/Chapter-NN/`, numbered like the chapters
   (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl`, e.g.
   `conda run -n fl jupyter nbconvert --to notebook --execute --output /tmp/out.ipynb X.ipynb`;
-  the Homebrew Python lacks the required packages.
-- Type checking of notebooks: `Chapter-02/Regular-Expressions.ipynb` uses basedpyright
-  (`conda run -n fl basedpyright X.ipynb`; live in JupyterLab via jupyterlab-lsp).  The older notebooks use
-  `%load_ext nb_mypy`, which breaks on `match` statements and `type X = ...` (its dependency astor cannot
-  unparse them) and needs forward declarations for mutually recursive functions.  Old Ply versions are archived in `../Python/Ply/`.
+  the Homebrew Python lacks the required packages.  Old Ply versions are archived in `../Python/Ply/`.
+- Type checking of notebooks: the notebooks of chapters 2 and 3 use basedpyright
+  (`conda run -n fl basedpyright X.ipynb`; live in JupyterLab via jupyterlab-lsp).  Its settings are in
+  `../Python/pyrightconfig.json` (mode "standard"; the default mode warns about every unused return value,
+  e.g. of `outfile.write`).  JupyterLab is started in `../Python`, so the language server finds this file.
+  The older notebooks use `%load_ext nb_mypy`, which breaks on `match` statements and `type X = ...` (its
+  dependency astor cannot unparse them) and needs forward declarations for mutually recursive functions.
 
 ## Conventions
 

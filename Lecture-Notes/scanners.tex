@@ -174,6 +174,7 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
                 ]{python3}
     import re
     import collections
+    from collections.abc import Iterator
     
     token_specification = [
         ('NUMBER',   r'0|[1-9][0-9]*'),
@@ -201,8 +202,9 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
 
 \begin{enumerate}
 \item Line 1 imports the module \texttt{re}, while line 2 imports the module \texttt{collections}, which we
-      need in order to define the class of our tokens.
-\item Lines 4--15 contain the \blue{token specification}\index{token specification}.  Syntactically, this is a
+      need in order to define the class of our tokens.  Line 3 imports the type \texttt{Iterator}, which is
+      used in the \blue{type annotation}\index{type annotation} of the function \texttt{tokenize}.
+\item Lines 5--16 contain the \blue{token specification}\index{token specification}.  Syntactically, this is a
       list of pairs.  The first component of every pair is the name of a token and, by convention, this name is
       written using capital letters.  The second component is a regular expression using the syntax that is
       specified in the \textsl{Python} \href{https://docs.python.org/3/library/re.html}{\texttt{re}} module.
@@ -219,7 +221,7 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
             preceding regular expressions.  If this token is recognized, an unexpected character has been found
             in the input and the scanner has to report an error.
       \end{enumerate}
-\item Line 16 combines the individual regular expressions into the \blue{master pattern}.  Every regular
+\item Line 17 combines the individual regular expressions into the \blue{master pattern}.  Every regular
       expression is wrapped inside a \blue{named group}\index{named group}, which is written as
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -237,7 +239,7 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
       keywords would have to precede the regular expression used for identifiers, since otherwise every keyword
       would incorrectly be recognized as an identifier.
       \eox
-\item Lines 20--21 define the class \texttt{Token}\index{Token@\texttt{Token} (class)} using the function
+\item Lines 21--22 define the class \texttt{Token}\index{Token@\texttt{Token} (class)} using the function
       \texttt{collections.namedtuple}.  Every object of this class has four attributes, namely \texttt{type},
       \texttt{value}, \texttt{line}, and \texttt{column}, which we discuss in more detail below.
 
@@ -252,7 +254,7 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
                   xleftmargin  = 0.3cm,
                   xrightmargin = 0.3cm,
                 ]{python3}
-def tokenize(code):
+def tokenize(code: str) -> Iterator[Token]:
     ln         = 1    # number of the current line
     line_start = 0    # position where the current line starts
     for mo in re.finditer(master_pattern, code):
@@ -280,39 +282,40 @@ for tok in tokenize(data):
 \label{fig:regexp-scanner.py-2}
 \end{figure}
 
-\item Lines 22--39 define the function \texttt{tokenize}, which is a \blue{generator function}\index{generator function}: Instead of
+\item Lines 23--40 define the function \texttt{tokenize}, which is a \blue{generator function}\index{generator function}: Instead of
       returning a single value, it \texttt{yield}s a sequence of \texttt{Token} objects, one for every token
-      found in its argument \texttt{code}.
+      found in its argument \texttt{code}.  Accordingly, the type annotation of \texttt{tokenize} states that
+      it takes a string and returns an \texttt{Iterator} of \texttt{Token} objects.
       \begin{enumerate}
-      \item Lines 23--24 initialize the variables \texttt{ln} (short for \emph{line number})
+      \item Lines 24--25 initialize the variables \texttt{ln} (short for \emph{line number})
             and \texttt{line\_start}.  The variable \linebreak
             \texttt{ln} counts the lines of the input, starting with the value $1$.  The variable
             \texttt{line\_start} stores the position at which the current line begins; it is needed to compute
             the column of a token.
-      \item Line 25 uses the function \texttt{finditer} from the module \texttt{re} to scan the input string
+      \item Line 26 uses the function \texttt{finditer} from the module \texttt{re} to scan the input string
             \texttt{code} for non-overlapping matches of the \texttt{master\_pattern}.  This function returns
             an iterator of \blue{match objects}\index{match object}, one for every token that is found, in the order in which these
             tokens occur in the input.
-      \item Line 26 uses the attribute \texttt{lastgroup} of the match object \texttt{mo} to determine the name
+      \item Line 27 uses the attribute \texttt{lastgroup} of the match object \texttt{mo} to determine the name
             of the named group that is responsible for the match, i.e.\ the name of the token that has been
             found.
-      \item Line 27 uses the method \texttt{mo.group()} to extract the string that has been matched.
-      \item Line 28 computes the column at which the token starts by subtracting \texttt{line\_start} from
+      \item Line 28 uses the method \texttt{mo.group()} to extract the string that has been matched.
+      \item Line 29 computes the column at which the token starts by subtracting \texttt{line\_start} from
             \texttt{mo.start()}, the position at which the match begins.
-      \item Lines 29--30 deal with the token \texttt{NUMBER}: the matched string is converted into an
+      \item Lines 30--31 deal with the token \texttt{NUMBER}: the matched string is converted into an
             \texttt{int}.
-      \item Lines 31--34 deal with the token \texttt{NEWLINE}: the variable \texttt{line\_start} is updated to
+      \item Lines 32--35 deal with the token \texttt{NEWLINE}: the variable \texttt{line\_start} is updated to
             the position right after the newline character, the line counter is incremented, and the loop
             continues with the \texttt{continue} statement---no token is generated.
-      \item Lines 35--36 deal with the token \texttt{SKIP}: nothing needs to be done except to continue with
+      \item Lines 36--37 deal with the token \texttt{SKIP}: nothing needs to be done except to continue with
             the next match.
-      \item Lines 37--38 deal with the token \texttt{MISMATCH}: an exception is raised that reports the illegal
+      \item Lines 38--39 deal with the token \texttt{MISMATCH}: an exception is raised that reports the illegal
             character together with the line and column at which it was found.
-      \item Line 39 is only reached for genuine tokens.  It constructs a \texttt{Token} object and
+      \item Line 40 is only reached for genuine tokens.  It constructs a \texttt{Token} object and
             \texttt{yield}s it to the caller.
       \end{enumerate}
-\item Line 41 defines the string \texttt{data} that we want to tokenize.
-\item Lines 42--43 show how the scanner is used: We simply iterate over the values produced by
+\item Line 42 defines the string \texttt{data} that we want to tokenize.
+\item Lines 43--44 show how the scanner is used: We simply iterate over the values produced by
       \texttt{tokenize(data)} and print every token that is found.
 \end{enumerate}
 
@@ -1653,11 +1656,11 @@ The program is shown in Figure \ref{fig:html2text.py-1} on page \pageref{fig:htm
 import re
 from html.entities import html5
 
-def replace_named(match: re.Match) -> str:
+def replace_named(match: re.Match[str]) -> str:
     s = match.group(0)
     return html5.get(s[1:], s)  # chop off '&'
 
-def replace_unicode(match: re.Match) -> str:
+def replace_unicode(match: re.Match[str]) -> str:
     s = match.group(0)
     if s[-1] == ';':
         number_str = s[2:-1]    # chop off '&#' and ';'
@@ -2275,7 +2278,7 @@ from the scanner discussed at the beginning of this chapter in two respects.
       \\[0.2cm]
       and tries to find a match that starts \emph{exactly} at the position \textsl{pos} of the string $s$.
       Hence, the scanner has to keep track of the position where the next token starts itself, which is done in
-      line 14.
+      line 15.
 
       Note that this is precisely the behaviour that a scanner needs: it must not skip any characters, since
       every character of the input belongs to some token.
@@ -2296,12 +2299,13 @@ master_patterns = \
                                  for name, regexp in spec))
       for state, spec in token_specifications.items() }
 
-def scan(text):
+def scan(text: str) -> None:
     state = 'PREAMBLE'
-    stack = []
+    stack: list[str] = []
     pos   = 0
     while state != 'DONE' and pos < len(text):
         mo    = master_patterns[state].match(text, pos)
+        assert mo is not None and mo.lastgroup is not None
         token = mo.lastgroup
         value = mo.group()
         pos   = mo.end()
@@ -2403,8 +2407,10 @@ tokens listed in Table \ref{tab:latex2html-tokens} is significant and you should
 \end{enumerate}
 Finally, note that the token \texttt{MISMATCH} matches an arbitrary character and therefore has to be the
 \emph{last} token of the specification.  Since this token matches everything that the preceding tokens do not
-match, the method \texttt{match} always succeeds and the program never has to check whether it has returned
-\texttt{None}.  Any \LaTeX\ command that is not supported, for example the command
+match, the method \texttt{match} always succeeds.  However, a type checker cannot know this, since in
+general the method \texttt{match} returns \texttt{None} if there is no match, and the attribute
+\texttt{lastgroup} is \texttt{None} if no named group has matched.  Therefore, line 12 of the function
+\texttt{scan} asserts that neither of these cases occurs.  Any \LaTeX\ command that is not supported, for example the command
 ``\texttt{\symbol{92}alpha}'', is caught by this token and produces a readable error message instead of silently
 disappearing from the output.
 \eox
