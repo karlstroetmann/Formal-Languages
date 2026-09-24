@@ -10,7 +10,8 @@ pdflatex -shell-escape formal-languages.tex
 - Run it 2–3 times so that references, the index, and the list of notation settle.  A clean build has
   0 errors and no "multiply defined" or "undefined reference" warnings.
 - The bibliography needs `bibtex formal-languages` only when `cs.bib` or the `\cite`s change.
-- The tracked PDF `formal-languages.pdf` is committed together with source changes.
+- The tracked build outputs `formal-languages.pdf` and `formal-languages.idx` are committed together with
+  source changes.
 
 ## Structure
 
