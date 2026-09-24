@@ -57,36 +57,61 @@ The function \mytt{compile\_expr} returns a pair.
       maximum height of the stack is a security feature of \textsl{Java} that prevents exploits that
       utilize stack overflows.
 \end{enumerate}
+All assembler commands that are generated are indented by eight space characters, while labels are indented by
+four space characters.  This makes the generated assembler code easier to read.  The indentation of the commands
+is done by the function \mytt{indent} that is shown in Figure \ref{fig:Compiler.ipynb:indent}.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
+               ]{python3}
+def indent(s):
+    return ' ' * 8 + s
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Indentation of assembler commands.}
+\label{fig:Compiler.ipynb:indent}
+\end{figure}
+
+\noindent
 The function \texttt{compile\_expr} is implemented via a case distinction.  Figure
 \ref{fig:Compiler.ipynb:compile_expr} on page \pageref{fig:Compiler.ipynb:compile_expr} shows the skeleton of
 this function.  In the following, we discuss the implementation of the different expressions one by one.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
                  numbersep     = 0.3cm,
+                 fontsize      = \footnotesize,
                  xleftmargin   = 0.0cm,
                  xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
     match expr:
-        case str(var):     # variables
+        case str(var): # expr is a variable name
             ...
-        case 'Number', n:  # numbers
+        case 'Number', n:
             ...
         case ('+' | '-' | '*' | '/' | '%') as op, lhs, rhs:
             ...
-        case 'call', 'println', *args: # println
+        case 'call', 'println', *args:
             ...
-        case 'call', f, *args: # user defined functions
+        case 'call', f, *args:
             ...
         case _:
-            assert False, \
-            f'E: compile_expr({expr}, {st}, {class_name})'
+            assert False, f'Error in compile_expr({expr}, {st}, {class_name})'
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of an expression.}
@@ -110,19 +135,22 @@ The code for translating a variable is shown in Figure \ref{fig:Compiler.ipynb:c
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
     match expr:
-        case str(var):     # variables
-            return [f'iload {st[expr]}'], 1
+        case str(var): # expr is a variable name
+            Cmd = indent(f'iload {st[var]}')
+            return [Cmd], 1
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a variable.}
@@ -147,20 +175,22 @@ The code for translating a constant is shown in Figure \ref{fig:Compiler.ipynb:c
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
     match expr:
         ...
-        case 'Number', n:  # numbers
-            return [f'ldc {n}'], 1
+        case 'Number', n:
+            Cmd = indent(f'ldc {n}')
+            return [Cmd], 1
         ...
 \end{minted}
 \vspace*{-0.3cm}
@@ -201,14 +231,15 @@ operator and the dictionary \texttt{OpToCmd} to pick the correct assembler comma
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.3cm,
-                 xrightmargin  = 0.3cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
     match expr:
@@ -217,9 +248,8 @@ def compile_expr(expr, st, class_name):
             L1, sz1 = compile_expr(lhs, st, class_name)
             L2, sz2 = compile_expr(rhs, st, class_name)
             OpToCmd = { '+': 'iadd', '-': 'isub', '*': 'imul',
-                        '/': 'idiv', '%': 'irem'
-                      }
-            Cmd     = OpToCmd[op]
+                        '/': 'idiv', '%': 'irem' }
+            Cmd     = indent(OpToCmd[op])
             return L1 + L2 + [Cmd], max(sz1, 1 + sz2)
         ...
 \end{minted}
@@ -245,7 +275,7 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       can evaluate any of the arguments.  Therefore, in order to calculate the stack size we now define
       \\[0.2cm]
       \hspace*{1.3cm}
-      $s := \max(1 + s_1, 2 + s_2, \cdots, i - 1 + s_i, \cdots, n + s_n)$.
+      $s := \max(1 + s_1, 2 + s_2, \cdots, i + s_i, \cdots, n + s_n)$.
       \\[0.2cm]
       In this case we have to define the \blue{signature}\index{signature of a method} \mytt{fs} of $f$ as the string
       \\[0.2cm]
@@ -265,40 +295,42 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       \hspace*{1.3cm}
       $\mytt{compile\_expr}\bigl(f(a_1,\cdots,a_n), \mytt{st}, \mytt{class\_name}\bigr) := \\[0.1cm]
       \hspace*{2.8cm} \bigl\langle \mytt{[} \;\mytt{gs} \;\mytt{]} + L_1 + \cdots + L_n +
-      \mytt{[} \; \mytt{invokestatic}\; \mytt{fs} \;\mytt{]}, \max(s,1)\bigr\rangle$.
+      \mytt{[} \; \mytt{invokevirtual}\; \mytt{fs} \;\mytt{]}, s\bigr\rangle$.
 
-      Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:call_println} shows how the
-      translation of a call to \texttt{println} is implemented.
+      Figure \ref{fig:Compiler.ipynb:compile:call_println} on page \pageref{fig:Compiler.ipynb:compile:call_println}
+      shows how the translation of a call to \texttt{println} is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
                  numbersep     = 0.3cm,
+                 fontsize      = \footnotesize,
                  xleftmargin   = 0.0cm,
                  xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
-   match expr:
-   ...
-     case 'call', 'println', *args: # println
-           gs = 'getstatic java/lang/System/out Ljava/io/PrintStream;'
-           CmdLst = [gs]
-           stck_size = 0
-           cnt       = 0
-           for arg in args:
-               L, sz_arg = compile_expr(arg, st, class_name)
-               stck_size = max(stck_size, cnt + 1 + sz_arg)
-               CmdLst   += L
-               cnt      += 1
-           Is = "I" * cnt
-           iv = f'invokevirtual java/io/PrintStream/println({Is})V'
-           CmdLst += [iv]
-           return CmdLst, stck_size
-     ...
+    match expr:
+        ...
+        case 'call', 'println', *args:
+            CmdLst    = [
+                indent('getstatic java/lang/System/out Ljava/io/PrintStream;')
+            ]
+            stck_size = 0
+            cnt       = 0
+            for arg in args:
+                L, sz_arg = compile_expr(arg, st, class_name)
+                stck_size = max(stck_size, cnt + 1 + sz_arg)
+                CmdLst   += L
+                cnt      += 1
+            CmdLst += [
+                indent(f'invokevirtual java/io/PrintStream/println({"I"*cnt})V')
+            ]
+            return CmdLst, stck_size
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a call to \texttt{println}.}
@@ -342,40 +374,41 @@ def compile_expr(expr, st, class_name):
       We have to take the maximum of $s$ and $1$ to cover the case that the function does not take any
       parameters.
       
-      Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:fct} shows how the
+      Figure \ref{fig:Compiler.ipynb:compile:call} on page \pageref{fig:Compiler.ipynb:compile:call} shows how the
       translation of function calls is implemented.
 
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
                  numbersep     = 0.3cm,
+                 fontsize      = \footnotesize,
                  xleftmargin   = 0.0cm,
                  xrightmargin  = 0.0cm,
                ]{python3}
 def compile_expr(expr, st, class_name):
-   match expr:
-   ...
-     case 'call', f, *args: # user defined functions
-           CmdLst    = []
-           stck_size = 0
-           cnt       = 0
-           for arg in args:
-               L, sz_arg = compile_expr(arg, st, class_name)
-               stck_size = max(stck_size, cnt + sz_arg)
-               CmdLst   += L
-               cnt      += 1
-           CmdLst += [f'invokestatic {class_name}/{f}({"I"*cnt})I']
-           return CmdLst, max(stck_size, 1)
-     ...
+    match expr:
+        ...
+        case 'call', f, *args:
+            CmdLst    = []
+            stck_size = 0
+            cnt       = 0
+            for arg in args:
+                L, sz_arg = compile_expr(arg, st, class_name)
+                stck_size = max(stck_size, cnt + sz_arg)
+                CmdLst   += L
+                cnt      += 1
+            CmdLst += [indent(f'invokestatic {class_name}/{f}({"I"*cnt})I')]
+            return CmdLst, max(stck_size, 1)
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of function calls.}
-\label{fig:Compiler.ipynb:compile:fct}
+\label{fig:Compiler.ipynb:compile:call}
 \end{figure}
 \end{enumerate}
 
@@ -396,6 +429,36 @@ of the function \mytt{compile\_expr}.
 When we execute the list of assembler commands that result from the compilation of a Boolean expression, we
 expect that the execution of these commands either puts the number $1$ (representing \mytt{True}) or the
 number $0$ (representing \mytt{False}) onto the stack. 
+The translation of Boolean expressions needs labels.  These labels are created by the function
+\mytt{new\_label} that is shown in Figure \ref{fig:Compiler.ipynb:new_label}.  The global variable
+\mytt{label\_counter} counts the labels that have already been created, so that every call of \mytt{new\_label}
+returns a new label of the form \mytt{l1}, \mytt{l2}, \mytt{l3}, etc.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
+                 bgcolor       = sepia,
+                 numbers       = left,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
+               ]{python3}
+label_counter = 0
+
+def new_label():
+    global label_counter
+    label_counter += 1
+    return 'l' + str(label_counter)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Creating new labels.}
+\label{fig:Compiler.ipynb:new_label}
+\end{figure}
+
+\noindent
 We start our discussion of the function \mytt{compile\_bool} with the translation of equations.
 
 \subsubsection{Translation of Equations}
@@ -465,25 +528,26 @@ translation of equations and inequations is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_bool(expr, st, class_name):
-        if expr[0] in ['==', '!=', '<=', '>=', '<', '>']:
-            OpToCmd = { '==': 'if_icmpeq', 
-                        '!=': 'if_icmpne', 
+def compile_bool(expr, st, class_name):
+    match expr:
+        case ('==' | '!=' | '<=' | '>=' | '<' | '>') as op, lhs, rhs:
+            OpToCmd = { '==': 'if_icmpeq',
+                        '!=': 'if_icmpne',
                         '<=': 'if_icmple',
                         '>=': 'if_icmpge',
                         '<' : 'if_icmplt',
                         '>' : 'if_icmpgt'
                       }
-            op, lhs, rhs = expr
             L1, sz1    = compile_expr(lhs, st, class_name)
             L2, sz2    = compile_expr(rhs, st, class_name)
             true_label = new_label()
@@ -497,7 +561,7 @@ translation of equations and inequations is implemented.
             CmdLst    += [indent('bipush 1')]
             CmdLst    += [' ' * 4 + next_label + ':']
             return CmdLst, max(sz1, 1 + sz2)
-            ...
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of equations.}
@@ -511,7 +575,7 @@ into assembler code, we first have to recursively translate the expressions \tex
 \textsl{rhs} into assembler code.  Later, when this code is executed the values of the expressions
 \textsl{lhs} and \textsl{rhs} are placed on the stack.  We combine these values using the command \mytt{iand}.
 If the evaluation of \textsl{lhs} needs $s_1$ words on the stack and the evaluation of \textsl{rhs} needs $s_2$
-words on the stack, then the evaluation of $\textsl{lhs} + \textsl{rhs}$ needs 
+words on the stack, then the evaluation of $\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}$ needs 
 \\[0.2cm]
 \hspace*{1.3cm}
 $\max(s_1, 1 + s_2)$
@@ -526,7 +590,7 @@ $
 \begin{array}[t]{cll}
         & \mytt{compile\_bool}(\textsl{lhs}, \mytt{st}, \mytt{name}) = \pair(L_1, s_1)  \\[0.1cm]
 \wedge  & \mytt{compile\_bool}(\textsl{rhs}, \mytt{st}, \mytt{name}) = \pair(L_2, s_2)  \\[0.1cm]
-\rightarrow & \mytt{compile\_bool}(\textsl{lhs} + \textsl{rhs}, \mytt{st}, \mytt{name}) = 
+\rightarrow & \mytt{compile\_bool}(\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}, \mytt{st}, \mytt{name}) = 
             \bigl\langle L_1 + L_2 + \mytt{[}\; \mytt{iand} \;\mytt{]}, \max(s_1, 1+s_2) \bigr\rangle.
 \end{array}$
 \\[0.2cm]
@@ -538,20 +602,21 @@ translation of binary logical operators is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_expr(expr, st, class_name):
+def compile_bool(expr, st, class_name):
+    match expr:
         ...
-        elif expr[0] in ['&&', '||']:
-            op, lhs, rhs = expr
-            OpToCmd      = { '&&': iand, '||': 'ior' }
+        case ('&&' | '||') as op, lhs, rhs:
+            OpToCmd      = { '&&': 'iand', '||': 'ior' }
             L1, sz1      = compile_bool(lhs, st, class_name)
             L2, sz2      = compile_bool(rhs, st, class_name)
             cmd          = OpToCmd[op]
@@ -604,22 +669,23 @@ translation of the negation operator is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
-                 firstnumber   = last,
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
+                 firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_expr(expr, st, class_name):
+def compile_bool(expr, st, class_name):
+    match expr:
         ...
-        elif expr[0] == '!':
-            _, arg = expr
-            L, sz  = compile_expr(arg, st, class_name)
-            CmdLst = ['bipush 1'] + L + ['isub']
-            return CmdLst, max(sz1, sz + 1)
+        case '!', arg:
+            L, sz  = compile_bool(arg, st, class_name)
+            CmdLst = [indent('bipush 1')] + L + [indent('isub')]
+            return CmdLst, sz + 1
         ...
 \end{minted}
 \vspace*{-0.3cm}
@@ -669,21 +735,22 @@ translation of an assignment is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_stmnt(stmnt, st, class_name):
-        if stmnt[0] == '=':
-            _, var, expr = stmnt
+def compile_stmnt(stmnt, st, class_name):
+    match stmnt:
+        case '=', var, expr:
             CmdLst, sz = compile_expr(expr, st, class_name)
-            CmdLst    += [f'istore {st[var]}']
-            return CmdLst, sz                
+            CmdLst    += [indent(f'istore {st[var]}')]
+            return CmdLst, sz
         ...
 \end{minted}
 \vspace*{-0.3cm}
@@ -701,7 +768,7 @@ Obviously, we first have to translate the Boolean expression \textsl{bool\_expr}
 If we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile\_expr}(\textsl{bool\_expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+$\mytt{compile\_bool}(\textsl{bool\_expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \\[0.2cm]
 and, furthermore, 
 \\[0.2cm]
@@ -728,7 +795,7 @@ The translation of a branching command of the form
 \[ \mytt{if}\; (\textsl{bool\_expr})\; \textsl{stmnt}_1\; \mytt{else}\; \textsl{stmnt}_2 \]
 is similar.  Let us assume that we have the following:
 \begin{enumerate}
-\item $\mytt{compile\_expr}(\textsl{bool\_expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+\item $\mytt{compile\_bool}(\textsl{bool\_expr}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \item $\mytt{compile\_stmnt}(\textsl{stmnt}_1, \mytt{st}, \mytt{class\_name}) = \pair(L_2, s_2)$, and
 \item $\mytt{compile\_stmnt}(\textsl{stmnt}_2, \mytt{st}, \mytt{class\_name}) = \pair(L_3, s_3)$.
 \end{enumerate}
@@ -755,39 +822,40 @@ translation of branching statements is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
                  numbersep     = 0.3cm,
+                 fontsize      = \footnotesize,
                  xleftmargin   = 0.0cm,
                  xrightmargin  = 0.0cm,
                ]{python3}
 def compile_stmnt(stmnt, st, class_name):
-    ...
-    elif stmnt[0] == 'if':
-        _, expr, sub_stmnt = stmnt
-        L1, sz1    = compile_bool(expr, st, class_name)
-        L2, sz2    = compile_stmnt(sub_stmnt, st, class_name)
-        else_label = new_label()
-        CmdLst = L1 + [f'ifeq {else_label}'] + L2 + [else_label + ':']
-        return CmdLst, max(sz1, sz2)
-    elif stmnt[0] == 'if-else':
-        _, expr, then_stmnt, else_stmnt = stmnt
-        L1, sz1    = compile_bool(expr, st, class_name)
-        L2, sz2    = compile_stmnt(then_stmnt, st, class_name)
-        L3, sz3    = compile_stmnt(else_stmnt, st, class_name)        
-        else_label = new_label()
-        next_label = new_label()
-        if_stmnt   = f'ifeq {else_label}'
-        else_stmnt = else_label + ':'
-        next_stmnt = next_label + ':'
-        goto_stmnt = f'goto {next_label}'
-        CmdLst = L1 + [if_stmnt] + L2 + [goto_stmnt, else_stmnt] + \
-                 L3 + [next_stmnt]
-        return CmdLst, max(sz1, sz2, sz3)
-    ...       
+    match stmnt:
+        ...
+        case 'if', expr, sub_stmnt:
+            L1, sz1    = compile_bool(expr, st, class_name)
+            L2, sz2    = compile_stmnt(sub_stmnt, st, class_name)
+            else_label = new_label()
+            lbl_stmnt  = ' ' * 4 + else_label + ':'
+            CmdLst = L1 + [indent(f'ifeq {else_label}')] + L2 + [lbl_stmnt]
+            return CmdLst, max(sz1, sz2)
+        case 'if-else', expr, then_stmnt, else_stmnt:
+            L1, sz1    = compile_bool(expr, st, class_name)
+            L2, sz2    = compile_stmnt(then_stmnt, st, class_name)
+            L3, sz3    = compile_stmnt(else_stmnt, st, class_name)
+            else_label = new_label()
+            next_label = new_label()
+            if_stmnt   = indent(f'ifeq {else_label}')
+            else_stmnt = ' ' * 4 + else_label + ':'
+            next_stmnt = ' ' * 4 + next_label + ':'
+            goto_stmnt = indent(f'goto {next_label}')
+            CmdLst = L1 + [if_stmnt] + L2 + [goto_stmnt, else_stmnt] + \
+                     L3 + [next_stmnt]
+            return CmdLst, max(sz1, sz2, sz3)
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of branching statements.}
@@ -800,7 +868,7 @@ If we want to translate a \mytt{while} loop of the form
 we recursively compute
 \\[0.2cm]
 \hspace*{1.3cm}
-$\mytt{compile\_expr}(\textsl{cond}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
+$\mytt{compile\_bool}(\textsl{cond}, \mytt{st}, \mytt{class\_name}) = \pair(L_1, s_1)$
 \\[0.2cm]
 and
 \\[0.2cm]
@@ -827,31 +895,32 @@ translation of a loop is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.5cm,
-                 xrightmargin  = 0.5cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_stmnt(stmnt, st, class_name):
+def compile_stmnt(stmnt, st, class_name):
+    match stmnt:
         ...
-        elif stmnt[0] == 'while':
-            _, expr, body_stmnt = stmnt
+        case 'while', expr, body_stmnt:
             L1, sz1    = compile_bool(expr, st, class_name)
             L2, sz2    = compile_stmnt(body_stmnt, st, class_name)
             loop_label = new_label()
             next_label = new_label()
-            if_stmnt   = f'ifeq {next_label}'
-            loop_stmnt = loop_label + ':'        
-            next_stmnt = next_label + ':'
-            goto_stmnt = f'goto {loop_label}'
+            if_stmnt   = indent(f'ifeq {next_label}')
+            loop_stmnt = ' ' * 4 + loop_label + ':'
+            next_stmnt = ' ' * 4 + next_label + ':'
+            goto_stmnt = indent(f'goto {loop_label}')
             CmdLst = [loop_stmnt] + L1 + [if_stmnt] + \
                      L2 + [goto_stmnt, next_stmnt]
             return CmdLst, max(sz1, sz2)
-        ...       
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a loop.}
@@ -879,23 +948,24 @@ return statement is translated.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.5cm,
-                 xrightmargin  = 0.5cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_stmnt(stmnt, st, class_name):
+def compile_stmnt(stmnt, st, class_name):
+    match stmnt:
         ...
-        elif stmnt[0] == 'return':
-            _, expr = stmnt
+        case 'return', expr:
             CmdLst, sz = compile_expr(expr, st, class_name)
-            CmdLst    += ['ireturn']
+            CmdLst    += [indent('ireturn')]
             return CmdLst, sz
-        ...       
+        ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a return statement.}
@@ -924,19 +994,20 @@ translation of a block statement is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_stmnt(stmnt, st, class_name):
+def compile_stmnt(stmnt, st, class_name):
+    match stmnt:
         ...
-        elif stmnt[0] == '.':
-            _, *stmnt_lst = stmnt 
+        case '.', *stmnt_lst:
             CmdLst = []
             size   = 0
             for s in stmnt_lst:
@@ -944,9 +1015,10 @@ translation of a block statement is implemented.
                 CmdLst += L
                 size   = max(size, sz)
             return CmdLst, size
+        ...
 \end{minted}
 \vspace*{-0.3cm}
-\caption{Translation of an expression statement.}
+\caption{Translation of a block statement.}
 \label{fig:Compiler.ipynb:compile:block}
 \end{figure}
 
@@ -971,20 +1043,21 @@ translation of an expression statement is implemented.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
-                 numbersep     = -0.2cm,
-                 xleftmargin   = 0.8cm,
-                 xrightmargin  = 0.8cm,
+                 numbersep     = 0.3cm,
+                 fontsize      = \small,
+                 xleftmargin   = 0.0cm,
+                 xrightmargin  = 0.0cm,
                ]{python3}
-    def compile_stmnt(stmnt, st, class_name):
+def compile_stmnt(stmnt, st, class_name):
+    match stmnt:
         ...
-       else: # it must be an expression statement
-            CmdLst, sz = compile_expr(stmnt, st, class_name)
-            return CmdLst, sz
+        case _: # it must be an expression statement
+            return compile_expr(stmnt, st, class_name)
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of an expression statement.}
@@ -995,12 +1068,13 @@ translation of an expression statement is implemented.
 \subsection{Translation of a Function Definition}
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                 framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                 framesep      = 0.3cm,
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
                  numbersep     = 0.3cm,
+                 fontsize      = \small,
                  xleftmargin   = 0.0cm,
                  xrightmargin  = 0.0cm,
                ]{python3}
@@ -1015,10 +1089,7 @@ def compile_fct(fct_def, class_name):
     n   = len(variables)
     st  = {}
     cnt = 0
-    for var in parameters:
-        st[var] = cnt
-        cnt    += 1
-    for var in variables:
+    for var in parameters + variables:
         st[var] = cnt
         cnt    += 1
     CmdLst = []
@@ -1029,16 +1100,17 @@ def compile_fct(fct_def, class_name):
         size = max(size, sz)
     limit_locals = f'.limit locals {m+n}'
     limit_stack  = f'.limit stack  {size}'
+    return_stmnt = indent('return')
     if name != 'main':
         method = f'.method public static {name}({"I"*m})I'
         CmdLst = [method, limit_locals, limit_stack] + CmdLst + \
                  ['.end method']
-        return CmdLst, sz
+        return CmdLst, size
     else:
         method = '.method public static main([Ljava/lang/String;)V'
         CmdLst = [method, limit_locals, limit_stack] + CmdLst + \
-                 ['return', '.end method']
-        return CmdLst, sz
+                 [return_stmnt, '.end method']
+        return CmdLst, size
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a function definition.}
@@ -1047,7 +1119,7 @@ def compile_fct(fct_def, class_name):
 \noindent
 Figure \ref{fig:Compiler.ipynb:compile:fct} on page \pageref{fig:Compiler.ipynb:compile:fct} shows how a
 function definition is translated.  
-In order to understand how this works we have to understand what type of code the function \mytt{compile} has
+In order to understand how this works we have to understand what type of code the function \mytt{compile\_fct} has
 to generate.  Depending on whether the function that is translated is the function \mytt{main} or not there
 are two cases.
 \begin{enumerate}
@@ -1081,12 +1153,7 @@ are two cases.
        height of the stack.
        Finally,  $s_1$, $\cdots$, $s_n$ are the assembler commands that result from translating the block
        inside the function.
-       \pagebreak
-       
-       \vspace*{\fill}
-       \pagebreak
 
-       
 \item Otherwise, the following code is to be generated:
 
       \begin{tcolorbox}[colback=sepia, boxrule=1pt, sharp corners, boxsep=0pt]
@@ -1142,14 +1209,17 @@ We proceed to discuss the implementation shown in Figure \ref{fig:Compiler.ipynb
       In line 5-7 these nested tuples are transformed into proper lists.
 \item $m$ is the number of parameters. 
 \item $n$ is the number of local variables. 
-\item The \mytt{for} loops in line 12--17 initialize the symbol table \mytt{st}.
+\item The \mytt{for} loop in line 12--14 initializes the symbol table \mytt{st}.  The parameters occupy the
+      first positions of the local variable frame and the local variables follow the parameters.
       Given a parameter or local variable $x$, the expression \mytt{st[$x$]}
       returns the position in the local variable frame where the parameter or variable is stored.
-\item The \mytt{for} loop in line 20--23 translates the statements in the body of the function one by one.
+\item The \mytt{for} loop in line 17--20 translates the statements in the body of the function one by one.
   Furthermore, it computes the size of the stack that is needed.
-\item Line 24 declares the size of the local variable frame.  The pseudo-command \mytt{.limit locals}
+\item Line 21 declares the size of the local variable frame.  The pseudo-command \mytt{.limit locals}
   reserves memory for the parameters and the local variables.
-\item Line 25 declares the size of the stack needed by the function.
+\item Line 22 declares the size of the stack needed by the function.
+\item Line 23 creates the command \mytt{return} that has to terminate the function \mytt{main}, since this
+  function does not return a value.
 \item Depending on whether the function that is compiled is the function \mytt{main} or not,
   the correct code is returned.
 \end{enumerate}
@@ -1299,13 +1369,16 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
     .limit stack  2
             ldc 0
             istore 1
-        l3: iload 0
+        l3:
+            iload 0
             ldc 0
             if_icmpne l1
             bipush 0
             goto l2
-        l1: bipush 1
-        l2: ifeq l4
+        l1:
+            bipush 1
+        l2:
+            ifeq l4
             iload 1
             iload 0
             iadd
@@ -1315,7 +1388,8 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
             isub
             istore 0
             goto l3
-        l4: iload 1
+        l4:
+            iload 1
             ireturn
     .end method
             
