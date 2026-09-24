@@ -1170,34 +1170,36 @@ function \mytt{compile\_program} line by line.
                  firstnumber   = 1,
                  bgcolor       = sepia,
                  numbers       = left,
+                 fontsize      = \small,
                  numbersep     = 0.3cm,
                  xleftmargin   = 0.0cm,
                  xrightmargin  = 0.0cm,
                  ]{python3}
 import os
-             
+
 def compile_program(file_name):
     directory = os.path.dirname(file_name)
     base      = os.path.basename(file_name)
     base      = base[:-2]
+    outfile   = os.path.join(directory, base + '.jas')
     with open(file_name, 'r') as handle:
-      program = handle.read() 
-    ast = yacc.parse(program)
+        program = handle.read()
+    ast = parse_program(program)
     _, *fct_lst = ast
-    CmdLst      = []
+    CmdLst = []
     for fct in fct_lst:
-      L, _ = compile_fct(fct, base)
-      CmdLst += L + ['\n']
-    with open(directory + '/' + base + '.jas', 'w') as handle:
-      handle.write('.class public ' + base + '\n');
-      handle.write('.super java/lang/Object\n\n');
-      handle.write('.method public <init>()V\n');
-      handle.write(' aload 0\n');
-      handle.write(' invokenonvirtual java/lang/Object/<init>()V\n');
-      handle.write(' return\n');
-      handle.write('.end method\n\n');
-      for cmd in CmdLst:
-        handle.write(cmd + '\n')                
+        L, _ = compile_fct(fct, base)
+        CmdLst += L + ['\n']
+    with open(outfile, 'w') as handle:
+        handle.write('.class public ' + base + '\n');
+        handle.write('.super java/lang/Object\n\n');
+        handle.write('.method public <init>()V\n');
+        handle.write('    aload 0\n');
+        handle.write('    invokenonvirtual java/lang/Object/<init>()V\n');
+        handle.write('    return\n');
+        handle.write('.end method\n\n');
+        for cmd in CmdLst:
+            handle.write(cmd + '\n')
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Translation of a program.}
@@ -1211,12 +1213,12 @@ def compile_program(file_name):
       \item The function \mytt{dirname} takes a string specifying a \textsl{file path}, e.g.~something like
             \\[0.2cm]
             \hspace*{1.3cm}
-            \mytt{'\symbol{126}/Dropbox/Formal-Languages/Ply/Examples/Test.c'} 
+            \mytt{'\symbol{126}/Formal-Languages/Python/Chapter-13/Examples/Test.c'} 
             \\[0.2cm]
             and returns the name of the directory.  In the example given above it would return the string
             \\[0.2cm]
             \hspace*{1.3cm}
-            \mytt{'\symbol{126}/Dropbox/Formal-Languages/Ply/Examples'}. 
+            \mytt{'\symbol{126}/Formal-Languages/Python/Chapter-13/Examples'}. 
       \item The function \mytt{basename} takes a \textsl{file path}
             and returns the name of the filename of the directory.  In the example given previously
             it would return the string \mytt{'Test.c'}.
@@ -1224,17 +1226,19 @@ def compile_program(file_name):
       The module \mytt{os} is aware of the differences in naming directories that exist in different operating
       systems.     
 \item After computing the \mytt{directory} of the file and its \mytt{base} in line 4 and 5, we remove the 
-      file extension \mytt{'.c'} in line 6.
-\item Line 7 and 8 read the file and store its content into the string \mytt{program}.
-\item In line 9 our parser converts the program into an abstract syntax tree that is represented as a nested
-      tuple.  
+      file extension \mytt{'.c'} in line 6.  Line 7 computes the name of the output file.  The function
+      \mytt{os.path.join} combines the name of the directory and the name of the file using the separator of
+      the operating system.
+\item Line 8 and 9 read the file and store its content into the string \mytt{program}.
+\item In line 10 the function \mytt{parse\_program} shown in Figure \ref{fig:Compiler.ipynb-6} converts the
+      program into an abstract syntax tree that is represented as a nested tuple.  
 \item \mytt{fct\_lst} is a list of all function definitions occurring in the given program.
 \item \mytt{CmdLst} is a list of all assembler commands that will be generated. 
-\item The \mytt{for} loop in line 12--14 translates all function definitions into assembler code
+\item The \mytt{for} loop in line 13--15 translates all function definitions into assembler code
       and concatenates the assembler statements into the list \mytt{CmdLst}.
-\item In line 15 the output file is opened for writing.
-\item Line 16--22 write the initialization code to the output file.
-\item The \mytt{for} loop in line 23--24 writes the generated assembler commands to the output file.
+\item In line 16 the output file is opened for writing.
+\item Line 17--23 write the initialization code to the output file.
+\item The \mytt{for} loop in line 24--25 writes the generated assembler commands to the output file.
 \end{enumerate}
 Figure \ref{fig:MySum.c2} on page \pageref{fig:MySum.c2} shows an integer \mytt{C} program for computing the
 sum $\sum\limits_{i=1}^{6^2}i$.  When we translate this program using the compiler developed in this chapter,
