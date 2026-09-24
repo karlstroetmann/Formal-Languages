@@ -20,7 +20,7 @@ scanners have been produced by tools like \href{https://en.wikipedia.org/wiki/Le
 \index{Lex@\texttt{Lex}} or \href{https://www.dabeaz.com/ply/}{\texttt{Ply}}
 \index{Ply@\texttt{Ply}}, which read a scanner specification and generate the corresponding program. 
 As \textsl{Python} already provides regular expressions in its module
-\href{https://docs.python.org/3/library/re.html}{\texttt{re}}, \index{re@\texttt{re}} which is part of the
+\href{https://docs.python.org/3/library/re.html}{\texttt{re}}, \index{re@\texttt{re} (\textsl{Python} module)} which is part of the
 standard library,  we can do without such a tool: everything that is needed in order to build a scanner is
 contained in the module \texttt{re}.  This keeps the number of tools that have to be learned small and it makes
 the inner workings of a scanner much more visible.
@@ -46,13 +46,11 @@ As this chapter is rather long, we start with a road map.
       regular expressions are useful for much more than just building compilers.
 \item The section \emph{Converting \simtextsc{Html} to Text} solves the problem of extracting the text that is
       embedded in an \simtextsc{Html} document.  Interestingly, this problem is \emph{not} solved by building a
-      scanner.  Instead, the input is pushed through a \blue{pipeline of substitutions}\index{substitution
-      pipeline}.  This section also shows the limits of our approach: we will prove in the next chapter that no
+      scanner.  Instead, the input is pushed through a \blue{pipeline of substitutions}\index{substitution pipeline}.  This section also shows the limits of our approach: we will prove in the next chapter that no
       regular expression is able to describe the syntax of \simtextsc{Html}.
 \item The exercise that concludes that section asks you to translate a small subset of \LaTeX\ into
       \simtextsc{MathML}.  In order to solve this exercise, two techniques are needed that go beyond a plain
-      token specification: the scanner has to switch between different \blue{scanner states}\index{scanner
-      state}, and it has to maintain a \blue{stack}\index{stack} in order to keep track of the delimiters that
+      token specification: the scanner has to switch between different \blue{scanner states}\index{scanner state}, and it has to maintain a \blue{stack}\index{stack} in order to keep track of the delimiters that
       are currently open.
 \end{enumerate}
 All the programs that are discussed in this chapter are available as \textsl{Jupyter} notebooks.  As programming
@@ -231,7 +229,7 @@ To illustrate this approach, we develop a scanner that tokenizes simple arithmet
       keywords would have to precede the regular expression used for identifiers, since otherwise every keyword
       would incorrectly be recognized as an identifier.
       \eox
-\item Lines 20--21 define the class \texttt{Token}\index{Token} using the function
+\item Lines 20--21 define the class \texttt{Token}\index{Token@\texttt{Token} (class)} using the function
       \texttt{collections.namedtuple}.  Every object of this class has four attributes, namely \texttt{type},
       \texttt{value}, \texttt{line}, and \texttt{column}, which we discuss in more detail below.
 
@@ -274,7 +272,7 @@ for tok in tokenize(data):
 \label{fig:regexp-scanner.py-2}
 \end{figure}
 
-\item Lines 22--39 define the function \texttt{tokenize}, which is a \blue{generator function}: Instead of
+\item Lines 22--39 define the function \texttt{tokenize}, which is a \blue{generator function}\index{generator function}: Instead of
       returning a single value, it \texttt{yield}s a sequence of \texttt{Token} objects, one for every token
       found in its argument \texttt{code}.
       \begin{enumerate}
@@ -285,7 +283,7 @@ for tok in tokenize(data):
             the column of a token.
       \item Line 25 uses the function \texttt{finditer} from the module \texttt{re} to scan the input string
             \texttt{code} for non-overlapping matches of the \texttt{master\_pattern}.  This function returns
-            an iterator of \blue{match objects}, one for every token that is found, in the order in which these
+            an iterator of \blue{match objects}\index{match object}, one for every token that is found, in the order in which these
             tokens occur in the input.
       \item Line 26 uses the attribute \texttt{lastgroup} of the match object \texttt{mo} to determine the name
             of the named group that is responsible for the match, i.e.\ the name of the token that has been
@@ -323,7 +321,7 @@ yields the following output:
 \end{verbatim}
 The scanner returns tokens as instances of the class \texttt{Token}, which possess four distinct attributes:
 \begin{enumerate}
-\item The \blue{\texttt{type}} attribute indicates the type of the token. It holds a string value that
+\item The \blue{\texttt{type}}\index{token!attributes} attribute indicates the type of the token. It holds a string value that
       corresponds to one of the names occurring in the token specification.
 \item The \blue{\texttt{value}} attribute usually contains the recognized string. However, as shown in the case
       of the token \texttt{NUMBER}, this value can be transformed before the token is constructed.
@@ -388,7 +386,7 @@ The arguments are interpreted as follows:
 \item $\textrm{flags}$ is an optional argument of type \texttt{int} that defaults to $0$.
 
       This argument can be used to set flags that modify the interpretation of the regular expression $r$.  For
-      example, setting the flag \blue{\texttt{re.IGNORECASE}} makes the search case-insensitive.
+      example, setting the flag \blue{\texttt{re.IGNORECASE}}\index{IGNORECASE@\texttt{re.IGNORECASE}} makes the search case-insensitive.
 \end{enumerate}
 The function \texttt{findall} returns the list of all \emph{non-overlapping} substrings of $s$ that match the
 regular expression $r$.  These substrings are returned in the order in which they occur in $s$.  For example,
@@ -465,7 +463,7 @@ This call returns the list \texttt{['+', '+']}.
 \remarkEng
 In the example above we have used a \blue{raw string}\index{raw string}.  A string is a raw string if the
 opening quote character is preceded by the character ``\texttt{r}''.  Inside a raw string, the backslash
-character is not interpreted as the beginning of an \blue{escape sequence} of \textsl{Python} but is passed on
+character is not interpreted as the beginning of an \blue{escape sequence}\index{escape sequence} of \textsl{Python} but is passed on
 to the module \texttt{re} unchanged.  Since regular expressions use the backslash character extensively, it is
 good practice to always write regular expressions as raw strings.
 
@@ -544,7 +542,7 @@ character ``\texttt{a}'' stem from the words ``\texttt{and}'', ``\texttt{a}'', a
 \subsection{Quantifiers}
 \index{quantifier}
 The most interesting operators of regular expressions are the \blue{quantifiers}.  The official documentation
-calls them \blue{repetition qualifiers}, but in the following we use the shorter name.  Syntactically,
+calls them \blue{repetition qualifiers}\index{repetition qualifier|see{quantifier}}, but in the following we use the shorter name.  Syntactically,
 quantifiers are \blue{postfix operators}.
 \begin{enumerate}
 \setcounter{enumi}{4}
@@ -833,7 +831,7 @@ re.findall(r'[\dabcde]+', '11 abc12 1a2 2b3c4d5')
 \noindent
 This call returns the list \texttt{['11', 'abc12', '1a2', '2b3c4d5']}.
 
-A character class is \blue{negated} if the first character following the opening bracket ``\texttt{[}'' is the
+A character class is \blue{negated}\index{character class!negated} if the first character following the opening bracket ``\texttt{[}'' is the
 character ``\texttt{\symbol{94}}''.  For example, the regular expression \texttt{[\symbol{94}abc]} matches any
 character that is different from \texttt{a}, \texttt{b}, and \texttt{c}:
 
@@ -1573,7 +1571,7 @@ section.  Inspecting this excerpt, we can identify four different kinds of marku
       \texttt{</head>}, contains no text that is of any interest to the reader.  The same is true for any
       \textsl{JavaScript} code, which is enclosed in the tags \texttt{<script>} and \texttt{</script>}.
       Therefore, these parts have to be discarded \emph{completely}, including their contents.
-\item All remaining \blue{tags}, for example \texttt{<div id="row1">} or \texttt{<br/>}, have to be removed,
+\item All remaining \blue{tags}\index{HTML tag@\simtextsc{Html} tag}, for example \texttt{<div id="row1">} or \texttt{<br/>}, have to be removed,
       but the text that is enclosed by these tags has to be preserved.
 \item \blue{Named entities}\index{entity!named} like ``\texttt{\&uuml;}'' or ``\texttt{\&nbsp;}'' have to be
       replaced by the characters that they denote, in this case by the German umlaut ``\"u'' and by a

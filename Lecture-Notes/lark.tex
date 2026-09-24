@@ -20,7 +20,7 @@ be parsed using a so-called \simtextsc{Lalr}(1)-Parser\footnote{
   LALR(1) is an acronym that stands for \blue{Look-Ahead Left-to-Right} parsing with 1 token of lookahead.
   We will discuss the theory of \simtextsc{Lalr}(1) parsing at the end of Chapter \ref{chapter:bottom-up}.}.
 Therefore, this chapter introduces the parser generator
-\href{https://lark-parser.readthedocs.io/}{\simtextsc{Lark}}, which can be used to
+\href{https://lark-parser.readthedocs.io/}{\simtextsc{Lark}}\index{Lark@\simtextsc{Lark}}, which can be used to
 generate a parser for any language that has an \simtextsc{Lalr}(1) grammar.\footnote{
   \simtextsc{Lark} is a pure \textsl{Python} library that can be installed via the command
   \\[0.1cm]
@@ -46,7 +46,7 @@ We will discuss three examples that use \simtextsc{Lark} as a parser generator.
 \remarkEng
 Traditional parser generators for \textsl{Python}, for example
 \href{https://www.dabeaz.com/ply/}{\simtextsc{Ply}}, encode every grammar rule as a \textsl{Python}
-function whose \blue{document string} contains the rule, and the \blue{semantic action} associated with a
+function whose \blue{document string} contains the rule, and the \blue{semantic action}\index{semantic action} associated with a
 rule is the body of this function.  Therefore, syntax and semantics are interleaved.  \simtextsc{Lark}
 takes a different approach:  The grammar is written down as an ordinary string using a dialect of the
 \blue{extended Backus-Naur form} \simtextsc{Ebnf}, while the semantics is implemented separately.  This
@@ -56,7 +56,7 @@ reused for different purposes.  \eox
 
 \section{A Symbolic Calculator}
 Figure \ref{fig:calculator.g} on page \pageref{fig:calculator.g} shows the grammar of a simple 
-\blue{symbolic calculator}, i.e.~a calculator that supports the use of variables.  
+\blue{symbolic calculator}\index{calculator, symbolic}, i.e.~a calculator that supports the use of variables.  
 
 \begin{figure}[!ht]
 
@@ -158,7 +158,7 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       grammar.
 
       The prefix ``\texttt{?}'' that is attached to the variable \texttt{start} is an
-      \blue{inlining directive}:  If a rule that is marked with ``\texttt{?}'' produces a node that has
+      \blue{inlining directive}\index{inlining directive (Lark)@inlining directive (\simtextsc{Lark})}:  If a rule that is marked with ``\texttt{?}'' produces a node that has
       exactly one child, then this node is discarded and its child is used in its place.  Without this
       directive, the parse tree would contain a lot of nodes that have a single child and that carry no
       information.
@@ -175,7 +175,7 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       have used so far, and that literal strings like \squoted{:=} are simply written down as
       \textsl{Python} strings.
 
-      The construct ``\texttt{-> assign}'' is an \blue{alias}.  It specifies the name of the node that is
+      The construct ``\texttt{-> assign}'' is an \blue{alias}\index{alias (Lark)@alias (\simtextsc{Lark})}.  It specifies the name of the node that is
       created in the parse tree when this alternative is used.  Without an alias, all nodes created by the
       variable \texttt{stmnt} would be called \texttt{stmnt} and we would have no easy way to distinguish
       an assignment from an expression statement.  Note further that an alias also suppresses the inlining
@@ -183,7 +183,7 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       is created even though it has just one child.
 \item Line 9 -- 15 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
       transcriptions of the corresponding rules of Figure \ref{fig:calculator.g}.  In particular, they
-      encode the \blue{precedence} of the arithmetic operators, and they are \blue{left recursive}.
+      encode the \blue{precedence}\index{precedence!of arithmetic operators} of the arithmetic operators, and they are \blue{left recursive}.
       Left recursion is not a problem here, since \simtextsc{Lalr}(1) parsing is a \blue{bottom-up}
       technique.
 \item Line 17 -- 19 define the variable \texttt{factor}.  The first alternative in line 17 does not have
@@ -232,7 +232,7 @@ Note that the parse tree returned by \texttt{parser.parse} does not know anythin
 steps:
 \begin{enumerate}
 \item First, we convert the object of class \texttt{lark.Tree} into an \blue{abstract syntax tree} that is
-      represented as a \blue{nested tuple}.
+      represented as a \blue{nested tuple}\index{nested tuple}.
 \item Second, we evaluate this nested tuple.
 \end{enumerate}
 Admittedly, \simtextsc{Lark} offers the class \texttt{Transformer}, which could be used to evaluate the
@@ -357,7 +357,7 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
 \begin{enumerate}
 \item Line 1 initializes the dictionary \texttt{Names2Values}.  For every identifier $x$ that is defined
       interactively, \texttt{Names2Values[$x$]} is the value associated with $x$.
-\item Line 4 starts a \texttt{match} statement.  \blue{Structural pattern matching} is the natural way to
+\item Line 4 starts a \texttt{match} statement.  \blue{Structural pattern matching}\index{pattern matching} is the natural way to
       work with an abstract syntax tree that is represented as a nested tuple:  Every case of the
       \texttt{match} statement corresponds to one of the operators that occur in our abstract syntax tree.
 \item Line 5 -- 6 evaluate a number.  This is the place where the string produced by the scanner is
@@ -369,7 +369,7 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
       return a value.
 \item Line 14 -- 15 implement an expression statement:  The expression is evaluated and the resulting value
       is printed.
-\item Line 16 -- 22 evaluate the arithmetic operators.  The pattern in line 16 uses an \blue{or pattern} in
+\item Line 16 -- 22 evaluate the arithmetic operators.  The pattern in line 16 uses an \blue{or pattern}\index{pattern matching!or pattern} in
       order to capture all four binary operators at once.  The keyword \texttt{as} binds the operator that
       has actually been found to the variable \texttt{op}.  Then, both operands are evaluated recursively
       and the inner \texttt{match} statement in line 19 -- 23 selects the operation that has to be
@@ -409,7 +409,7 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
 
 \noindent
 Finally, Figure \ref{fig:01-Calculator.ipynb:main} on page \pageref{fig:01-Calculator.ipynb:main} shows
-the function \texttt{main}, which is a \blue{read-eval-print loop}:  It reads a string \texttt{s} from the
+the function \texttt{main}, which is a \blue{read-eval-print loop}\index{read-eval-print loop}:  It reads a string \texttt{s} from the
 command line and then performs the three steps that we have discussed:  Line 7 parses the string, line 8
 converts the resulting parse tree into an abstract syntax tree, and line 9 evaluates this tree.  The loop
 is terminated as soon as the user enters an empty line.
@@ -437,8 +437,8 @@ However, it is worthwhile to return to this part of the notebook once we have di
 
 \exerciseEng
 Extend the grammar shown in Figure \ref{fig:01-Calculator.ipynb:grammar} so that the calculator supports
-the \blue{exponentiation operator} \squoted{**} and the \blue{unary minus}.  The exponentiation operator
-binds stronger than multiplication and it is \blue{right associative}, i.e.~the expression
+the \blue{exponentiation operator} \squoted{**} and the \blue{unary minus}\index{unary minus}.  The exponentiation operator
+binds stronger than multiplication and it is \blue{right associative}\index{right associative}, i.e.~the expression
 \texttt{2 ** 3 ** 2} has the value $2^{(3^2)} = 512$.  Furthermore, extend the functions
 \texttt{ast\_to\_tuples} and \texttt{evaluate\_adt} accordingly.
 \\[0.2cm]
@@ -448,7 +448,7 @@ this variable right recursive.
 
 \section{Symbolic Differentiation  \label{section:differentiator}}
 Our second example shows how a parser can be used to construct an \blue{abstract syntax tree} that is
-afterwards transformed by a program.  Concretely, we implement \blue{symbolic differentiation}:  Given a
+afterwards transformed by a program.  Concretely, we implement \blue{symbolic differentiation}\index{symbolic differentiation}:  Given a
 string \texttt{s} that represents an arithmetic expression containing the variable \texttt{x}, we want to
 compute a string that represents the derivative
 \\[0.2cm]
@@ -568,7 +568,7 @@ discussed in the previous section, we only comment on those parts that are new.
       second operand of the operators \squoted{*} and \squoted{/} is now the variable \texttt{unary}
       instead of the variable \texttt{factor}.
 \item Line 14 -- 15 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
-      is \blue{right recursive}, since a unary operator can be applied repeatedly:  The string
+      is \blue{right recursive}\index{right recursive}, since a unary operator can be applied repeatedly:  The string
       \texttt{"-\,-x"} is a legal expression.
 \item Line 17 -- 18 define the variable \texttt{factor}, which implements exponentiation.  The interplay
       between \texttt{unary} and \texttt{factor} deserves a closer look, because it encodes two
@@ -669,7 +669,7 @@ operator, it is \blue{table driven}.
       literal in the grammar, it is discarded when the parse tree is built.  Therefore, the node
       \texttt{var} has no children at all and we simply return the string \squoted{x}.
 \item Line 12 is the most interesting line of this function.  The pattern \texttt{op\_name} is a
-      \blue{capture pattern}:  As \texttt{op\_name} is a plain variable name, this pattern matches
+      \blue{capture pattern}\index{pattern matching!capture pattern}:  As \texttt{op\_name} is a plain variable name, this pattern matches
       \emph{any} value and binds this value to the variable \texttt{op\_name}.  Hence, this case is the
       default case that deals with all remaining nodes, i.e.~with all nodes that represent an operator.
 \item Line 13 translates the name of the node into an operator symbol.  The second argument of the method
@@ -761,18 +761,18 @@ def diff(e):
 \noindent
 The function \texttt{diff} is discussed next.
 \begin{enumerate}
-\item Line 4 -- 6 implement the \blue{sum rule}
+\item Line 4 -- 6 implement the \blue{sum rule}\index{differentiation!sum rule}
       $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\bigl(f(x) + g(x)\bigr) 
        = \frac{\mathrm{d}\;}{\mathrm{d}x} f(x) + \frac{\mathrm{d}\;}{\mathrm{d}x} g(x)$,
       \\[0.1cm]
       while line 7 -- 9 implement the corresponding rule for the difference of two expressions.
-\item Line 10 -- 12 implement the \blue{product rule}
+\item Line 10 -- 12 implement the \blue{product rule}\index{differentiation!product rule}
       \\[0.2cm]
       \hspace*{1.3cm}
       $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\bigl(f(x) \cdot g(x)\bigr)
        = \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot g(x)
        + f(x) \cdot \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} g(x)\Bigr)$.
-\item Line 13 -- 15 implement the \blue{quotient rule}
+\item Line 13 -- 15 implement the \blue{quotient rule}\index{differentiation!quotient rule}
       \\[0.2cm]
       \hspace*{1.3cm}
       $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\left(\frac{f(x)}{g(x)}\right)
@@ -791,7 +791,7 @@ The function \texttt{diff} is discussed next.
 \item Line 18 -- 19 implement the rule
       $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\bigl(-f(x)\bigr) 
        = -\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)$.
-\item Line 20 -- 22 and line 23 -- 25 implement the \blue{chain rule} for the two functions that our
+\item Line 20 -- 22 and line 23 -- 25 implement the \blue{chain rule}\index{differentiation!chain rule} for the two functions that our
       language provides:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -942,10 +942,10 @@ The following table shows the results that are produced for a number of inputs.
 The last two rows of this table show the limits of our simplifier.  The derivative of \texttt{x*x} is
 computed as \texttt{x + x} instead of \texttt{2*x}, and the derivative of \texttt{ln(x ** x)} is not
 reduced to \texttt{ln(x) + 1}, although the factor $x^x/x^x$ obviously cancels.  The reason is that our
-function \texttt{simplify} is nothing but a finite collection of \blue{rewrite rules}:  It does not bring
-an expression into a \blue{normal form} and therefore it cannot recognize that two syntactically different
+function \texttt{simplify} is nothing but a finite collection of \blue{rewrite rules}\index{rewrite rule}:  It does not bring
+an expression into a \blue{normal form}\index{normal form} and therefore it cannot recognize that two syntactically different
 expressions are mathematically equal.  Computing normal forms of algebraic expressions is a hard problem
-that is studied in the field of \blue{computer algebra}.  \eox
+that is studied in the field of \blue{computer algebra}\index{computer algebra}.  \eox
 
 The Jupyter notebook \texttt{02-Differentiator}, which is available at
 \\[0.2cm]
@@ -975,7 +975,7 @@ Which changes are necessary in the function \texttt{toString}? \eox
 
 \section{Implementing a Simple Interpreter  \label{chapter:interpreter}}
 Figure \ref{fig:Pure.g} on page \pageref{fig:Pure.g} shows the grammar of a simple programming language.
-In this section, we will develop an \blue{interpreter} for this language.  This is our most ambitious
+In this section, we will develop an \blue{interpreter}\index{interpreter} for this language.  This is our most ambitious
 example:  In contrast to the calculator of Section \ref{chapter:ply} and the differentiator of Section
 \ref{section:differentiator}, the language now has \blue{statements} and hence a \blue{control flow}.
 
@@ -1232,7 +1232,7 @@ we only discuss those parts that are new.
       five alternatives of the grammar shown in Figure \ref{fig:Pure.g} and every alternative is given an
       alias.
 
-      The keywords \texttt{"if"} and \texttt{"while"} are written as \blue{anonymous literals}, i.e.~in
+      The keywords \texttt{"if"} and \texttt{"while"} are written as \blue{anonymous literals}\index{anonymous terminal (Lark)@anonymous terminal (\simtextsc{Lark})}, i.e.~in
       exactly the same way as the operator symbols.  In particular, we do \emph{not} have to declare tokens
       for them.  As the parentheses \squoted{(} and \squoted{)}, the braces \squoted{\{} and \squoted{\}},
       the assignment operator \squoted{:=}, and the semicolon \squoted{;} are anonymous literals as well,
@@ -1547,7 +1547,7 @@ executed.  Note that this function does not refer to \simtextsc{Lark} in any way
       if the first element of the tuple representing this statement is the string \squoted{.}.
 
       In this case, the statements following the string \squoted{.} are executed via the auxiliary function
-      \texttt{execute\_tuple}.  Observe that the pattern in line 3 uses a \blue{star pattern}:  The
+      \texttt{execute\_tuple}.  Observe that the pattern in line 3 uses a \blue{star pattern}\index{pattern matching!star pattern}:  The
       variable \texttt{SL} is bound to the list of all remaining components of the tuple.  This is
       necessary because a list of statements can have any length.
 \item If the statement is an assignment of the form
