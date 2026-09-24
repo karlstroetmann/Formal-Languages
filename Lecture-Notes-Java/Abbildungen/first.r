@@ -1,1 +1,0 @@
-/usr/local/fsa/bin/fsa -r '[a *, b, a *]' ed.d
