@@ -17,7 +17,7 @@ string that is to be interpreted as a program fragment.  A program that checks w
 string is an element of a context-free language is called a \blue{parser}\index{parser}.  The task of a parser is to build
 a \blue{parse tree} from a given string.  Parsing is therefore the first step in an interpreter or a compiler.
 In this chapter, we first define the notion of context-free languages.  Next, we discuss parse
-trees.  We conclude this chapter by introducing \blue{top down parsing}, which is one of the less complex
+trees.  We conclude this chapter by introducing \blue{top-down parsing}, which is one of the less complex
 algorithms that are available for parsing a string.
 
 \section{Context-Free Grammars \label{context-free}}
@@ -36,17 +36,17 @@ into single words, which we call tokens in this context.
 The parser receives a sequence of tokens from the scanner and has the task of constructing a so-called
 \blue{syntax tree}\index{syntax tree}.  For this purpose the parser uses a
 grammar which specifies how the input is to be structured.  As an example, consider parsing arithmetic
-expressions.  We define the set \textsl{arithExpr} of arithmetic expressions inductively.  
+expressions.  We define the set \textsl{expr} of arithmetic expressions inductively.  
 In order to correctly represent the structure of arithmetic expressions, we define
-simultaneously the sets \textsl{Product} and \textsl{Factor}.
-The set \textsl{Product} encompasses arithmetic expressions representing products and quotients, while the set
-\textsl{Factor} includes numbers and parenthesized expressions. Defining these additional sets is crucial for
+simultaneously the sets \textsl{product} and \textsl{factor}.
+The set \textsl{product} encompasses arithmetic expressions representing products and quotients, while the set
+\textsl{factor} includes numbers, variables, and parenthesized expressions. Defining these additional sets is crucial for
 ensuring the correct precedence of operators.  The basic building blocks of arithmetic expressions are
-variables, numbers, the operator symbols 
+variables, numbers, the operator symbols
 ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'',
 and the bracket symbols ``\texttt{(}'' and ``\texttt{)}''.  Based on these symbols
-the inductive definition of the sets \textsl{Factor}, \textsl{Product} and
-\textsl{arithExpr} proceeds as follows:
+the inductive definition of the sets \textsl{factor}, \textsl{product}, and
+\textsl{expr} proceeds as follows:
 \begin{enumerate}
 \item Each number is a factor:
       \\[0.2cm]
@@ -60,7 +60,7 @@ the inductive definition of the sets \textsl{Factor}, \textsl{Product} and
       we get an expression that we can use as a factor:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A \in \textsl{arithExpr} \Rightarrow \quoted{(}A\quoted{)} \in \textsl{factor}$. 
+      $A \in \textsl{expr} \Rightarrow \quoted{(}A\quoted{)} \in \textsl{factor}$. 
       \\[0.2cm]
       A note on notation: In the preceding formula, \( A \) serves as a meta-variable representing an arbitrary
       arithmetic expression. The strings ``\texttt{(}'' and ``\texttt{)}'' should be taken literally and are
@@ -79,38 +79,38 @@ the inductive definition of the sets \textsl{Factor}, \textsl{Product} and
 \item Each product is also an arithmetic expression
       \\[0.2cm]
       \hspace*{1.3cm}
-      $P \in \textsl{product} \Rightarrow P \in \textsl{arithExpr}$.
+      $P \in \textsl{product} \Rightarrow P \in \textsl{expr}$.
 \item If $A$ is an arithmetic expression and $P$ is a product, then
       the strings $A \quoted{+} P$ and $A \quoted{-} P$ are arithmetic expressions:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $A \in \textsl{arithExpr} \wedge P \in \textsl{product} \Rightarrow
-       A \squoted{+} P \in \textsl{arithExpr} \;\wedge\; A \squoted{-} P \in \textsl{arithExpr}$.
+      $A \in \textsl{expr} \wedge P \in \textsl{product} \Rightarrow
+       A \squoted{+} P \in \textsl{expr} \;\wedge\; A \squoted{-} P \in \textsl{expr}$.
 \end{enumerate}
-The sets \textsl{factor}, \textsl{product}, and \textsl{arithExpr} are defined above through mutual
+The sets \textsl{factor}, \textsl{product}, and \textsl{expr} are defined above through mutual
 recursion. This definition can be succinctly represented using what are known as \blue{grammar rules}. 
 \begin{eqnarray*}
-  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
-  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
-  \textsl{arithExpr} & \rightarrow & \textsl{product}                                \\[0.1cm]
+  \textsl{expr} & \rightarrow & \textsl{expr} \quoted{+} \textsl{product}  \\
+  \textsl{expr} & \rightarrow & \textsl{expr} \quoted{-} \textsl{product}  \\
+  \textsl{expr} & \rightarrow & \textsl{product}                                \\[0.1cm]
   \textsl{product} & \rightarrow & \textsl{product} \quoted{*} \textsl{factor}     \\
   \textsl{product} & \rightarrow & \textsl{product} \quoted{/} \textsl{factor}     \\
   \textsl{product} & \rightarrow & \textsl{factor}                                 \\[0.1cm]
-  \textsl{factor} & \rightarrow & \quoted{(} \textsl{arithExpr} \quoted{)}        \\
+  \textsl{factor} & \rightarrow & \quoted{(} \textsl{expr} \quoted{)}        \\
   \textsl{factor} & \rightarrow & \simtextsc{Variable}                               \\
   \textsl{factor} & \rightarrow & \simtextsc{Number} 
 \end{eqnarray*}
 Expressions on the left hand side of a grammar rule are known as \blue{syntactic variables}\index{syntactic variable} or \blue{non-terminals}\index{non-terminal}, while all other expressions are termed
 \blue{terminals}\index{terminal}. We adopt the convention of writing syntactic variables in lowercase to align
-with the syntax used by the parser generator \blue{\simtextsc{Ply}}, which we will
-explore later. However, it is worth noting that in much of the existing literature, the convention is reversed:
+with the syntax used by the parser generator \blue{\simtextsc{Lark}}, which we will
+explore in Chapter \ref{chapter:ply}. However, it is worth noting that in much of the existing literature, the convention is reversed:
 syntactic variables are typically capitalized, and terminals are presented in lowercase. Additionally,
 syntactic variables may occasionally be referred to as \blue{syntactic categories}\index{syntactic category}. 
 
-In the example, \textsl{arithExpr}, \textsl{product}, and \textsl{factor} function as the \blue{syntactic
+In the example, \textsl{expr}, \textsl{product}, and \textsl{factor} function as the \blue{syntactic
   variables}. The remaining elements, namely \simtextsc{Number}, \simtextsc{Variable}, and the symbols
 ``\texttt{+}'', ``\texttt{-}'', ``\texttt{*}'', ``\texttt{/}'', ``\texttt{(}'', and ``\texttt{)}'', are the
-\blue{terminals} or \blue{tokens}. These terminals are precisely the characters that are not found on the left
+\blue{terminals} or \blue{tokens}. These terminals are precisely the symbols that are not found on the left
 side of any grammar rule. Terminals can be classified into two types: 
 \begin{enumerate}
 \item Operator symbols and separators, like ``\texttt{/}'' and ``\texttt{(}'', are used in their literal sense.
@@ -120,13 +120,13 @@ Grammar rules are often expressed in a notation more compact than the notation u
 example, the compact notation is as follows:
 
 \begin{eqnarray*}
-  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \;\quoted{+}\; \textsl{product} \\
-                     & \mid        & \textsl{arithExpr} \;\quoted{-}\; \textsl{product} \\
+  \textsl{expr} & \rightarrow & \textsl{expr} \;\quoted{+}\; \textsl{product} \\
+                     & \mid        & \textsl{expr} \;\quoted{-}\; \textsl{product} \\
                      & \mid        & \textsl{product}                                   \\
   \textsl{product} & \rightarrow & \textsl{product} \;\quoted{*}\; \textsl{factor}      \\
                    & \mid        & \textsl{product} \;\quoted{/}\; \textsl{factor}      \\
                    & \mid        & \textsl{factor}                                      \\
-  \textsl{factor} & \rightarrow & \squoted{(}\,\; \textsl{arithExpr} \;\squoted{)}      \\
+  \textsl{factor} & \rightarrow & \squoted{(}\,\; \textsl{expr} \;\squoted{)}      \\
                   & \mid        & \simtextsc{Number}                                    \\
                   & \mid        & \simtextsc{Variable}
 \end{eqnarray*}
@@ -143,7 +143,7 @@ where
 \begin{enumerate}
 \item \( V \) is a set called \blue{syntactic variables} \index{syntactic variable} or \blue{non-terminals}\index{non-terminal}. In the preceding example, we have
       \[
-      V = \{ \textsl{arithExpr}, \textsl{product}, \textsl{factor} \}.
+      V = \{ \textsl{expr}, \textsl{product}, \textsl{factor} \}.
       \]
 
 \item \( T \) is a set referred to as \blue{terminals}\index{terminal} or \blue{tokens}\index{token}. The sets \( T \) and \( V \) are disjoint, hence
@@ -170,20 +170,20 @@ where
       \[
       R \subseteq V \times (V \cup T)^*.
       \]
-      A rule \( \langle x, \alpha \rangle \) is typically written as
+      A rule \( \langle A, \alpha \rangle \) is typically written as
       \[
-      x \rightarrow \alpha.
+      A \rightarrow \alpha.
       \]
       In the example, the first rule is
       \[
-      \textsl{arithExpr} \rightarrow \textsl{arithExpr} \quoted{+} \textsl{product},
+      \textsl{expr} \rightarrow \textsl{expr} \quoted{+} \textsl{product},
       \]
       which formally corresponds to the pair
       \[
-      \bigl\langle \textsl{arithExpr}, [\textsl{arithExpr}, \quoted{+}, \textsl{product}] \bigr\rangle.
+      \bigl\langle \textsl{expr}, [\textsl{expr}, \quoted{+}, \textsl{product}] \bigr\rangle.
       \]
 
-\item \( S \) is a member of \( V \) designated as the \blue{start symbol}\index{start symbol}. In the given example, \textsl{arithExpr} is the start symbol.
+\item \( S \) is a member of \( V \) designated as the \blue{start symbol}\index{start symbol}. In the given example, \textsl{expr} is the start symbol.
       \eox
 \end{enumerate}
 \end{Definition}
@@ -201,27 +201,27 @@ When presenting a grammar, we typically enumerate the grammar rules and apply th
 The set of grammar rules below defines arithmetic expressions constructed from numbers, variables, and the binary operators \quoted{+}, \quoted{-}, \quoted{*}, and \quoted{/}.
 
 \begin{eqnarray*}
-  \textsl{arithExpr} & \rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
-                     & \mid        & \textsl{arithExpr} \quoted{-} \textsl{product}  \\
+  \textsl{expr} & \rightarrow & \textsl{expr} \quoted{+} \textsl{product}  \\
+                     & \mid        & \textsl{expr} \quoted{-} \textsl{product}  \\
                      & \mid        & \textsl{product}                                \\[0.2cm]
   \textsl{product}   & \rightarrow & \textsl{product} \quoted{\(*\)} \textsl{factor} \\
                      & \mid        & \textsl{product} \quoted{/} \textsl{factor}     \\
                      & \mid        & \textsl{factor}                                 \\[0.2cm]
-  \textsl{factor}    & \rightarrow & \squoted{(} \textsl{arithExpr} \squoted{)}     \\
+  \textsl{factor}    & \rightarrow & \squoted{(} \textsl{expr} \squoted{)}     \\
                      & \mid        & \simtextsc{Number}                                 \\
                      & \mid        & \simtextsc{Variable}
 \end{eqnarray*}
 In this case, the following observations can be made:
 \begin{enumerate}
-\item The start symbol is \textsl{arithExpr}, as it is the syntactic variable on the left in the first grammar rule.
-\item \textsl{arithExpr}, \textsl{product}, and \textsl{factor} are recognized as syntactic variables because they start with a lowercase letter.
+\item The start symbol is \textsl{expr}, as it is the syntactic variable on the left in the first grammar rule.
+\item \textsl{expr}, \textsl{product}, and \textsl{factor} are recognized as syntactic variables because they start with a lowercase letter.
 \item The symbols \quoted{+}, \quoted{-}, \quoted{\(*\)}, and \quoted{/} are identified as terminals since they are enclosed in quotes.
 \item \simtextsc{Number} and \simtextsc{Variable} are terminals, indicated by their initial uppercase letters.
 \end{enumerate}
 
 \subsection{Derivations}
 Next, we aim to identify the \blue{language} defined by a given grammar \( G \). For this purpose, we first
-define the concept of a \blue{derivation step}\index{derivation-step}. Consider the following: 
+define the concept of a \blue{derivation step}\index{derivation step}. Consider the following: 
 \begin{enumerate}
 \item $G = \langle V, T, R, S \rangle$ is a grammar,
 \item $b$ is a syntactic variable in $V$,
@@ -243,12 +243,12 @@ When the grammar \( G \) is clear from the context, we may drop the subscript \(
 the non-terminal $b$ encompasses $n$ derivation steps, we write this as:
 \\[0.2cm]
 \hspace*{1.3cm}
-$b \Rightarrow^n w$
+$b \Rightarrow^n w$.
 \\[0.2cm]
 We illustrate this notation with an example:
 \begin{eqnarray*}
-\textsl{arithExpr} 
-& \Rightarrow & \textsl{arithExpr} \quoted{+} \textsl{product}  \\
+\textsl{expr} 
+& \Rightarrow & \textsl{expr} \quoted{+} \textsl{product}  \\
 & \Rightarrow & \textsl{product} \quoted{+} \textsl{product}  \\
 & \Rightarrow & \textsl{product} \quoted{$*$} \textsl{factor} \quoted{+} \textsl{product} \\
 & \Rightarrow & \textsl{factor} \quoted{$*$} \textsl{factor} \quoted{+} \textsl{product}  \\
@@ -258,34 +258,33 @@ We illustrate this notation with an example:
 & \Rightarrow & \simtextsc{Number} \quoted{$*$} \simtextsc{Number} \quoted{+} \simtextsc{Number}   
 \end{eqnarray*}
 Hence, we have demonstrated that
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-\textsl{arithExpr} \Rightarrow^* \simtextsc{Number} \quoted{$*$} \simtextsc{Number} \quoted{+} \simtextsc{Number}
-\]
+$\textsl{expr} \Rightarrow^* \simtextsc{Number} \quoted{$*$} \simtextsc{Number} \quoted{+} \simtextsc{Number}$
+\\[0.2cm]
 is valid. To be more precise, we could express this as
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-\textsl{arithExpr} \Rightarrow^8 \simtextsc{Number} \quoted{$*$} \simtextsc{Number} \quoted{+} \simtextsc{Number}
-\]
+$\textsl{expr} \Rightarrow^8 \simtextsc{Number} \quoted{$*$} \simtextsc{Number} \quoted{+} \simtextsc{Number}$
+\\[0.2cm]
 since the derivation comprises eight steps. By substituting the terminal \simtextsc{Number} with distinct numerals, we demonstrate that the string
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-2 * 3 + 4
-\]
+\texttt{2*3+4}
+\\[0.2cm]
 is an arithmetic expression. Generally, the language \( L(G) \) defined by a grammar \( G \) is the set of all
 strings that are exclusively composed of terminals and can be derived from the start symbol \( S \) of the
 grammar; that is, we define\glsadd{langofg}
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-L(G) := \{ w \in T^* \mid S \Rightarrow^* w \}.
-\]
+$L(G) := \{ w \in T^* \mid S \Rightarrow^* w \}$.
 
 
 \exampleEng
 The language
 \\[0.2cm]
 \hspace*{1.3cm}
-$L = \{ (^n )^n \mid n \in \mathbb{N} \}$
+$L = \bigl\{ \squoted{(}^n \squoted{)}^n \bigm| n \in \mathbb{N} \bigr\}$
 \\[0.2cm]
 is generated by the grammar
 \\[0.2cm]
@@ -293,10 +292,9 @@ is generated by the grammar
 $G = \langle \{s\}, \{ \squoted{(}, \squoted{)} \}, R, \textsl{s} \rangle$,
 \\[0.2cm]
 where the set of rules \( R \) is defined as:
-\[
+\\[0.2cm]
 \hspace*{1.3cm}
-\textsl{s} \rightarrow \squoted{(} \textsl{s} \squoted{)} \mid \lambda.
-\]
+$\textsl{s} \rightarrow \squoted{(} \textsl{s} \squoted{)} \mid \lambda$.
 
 % \proofEng
 % We first establish that each string \( w \) in \( L \) can be derived from the start symbol \( \textsl{s} \):
@@ -397,7 +395,7 @@ are both palindromes, while the string \texttt{abb} is not a palindrome. The
 strings in $\Sigma^*$ that are palindromes, i.e.~we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$L_\mathrm{palindrome} := \bigr\{ w \in \Sigma^* \mid w = w^R \bigr\}$.
+$L_\mathrm{palindrome} := \bigl\{ w \in \Sigma^* \mid w = w^R \bigr\}$.
 \renewcommand{\labelenumi}{(\alph{enumi})}
 \begin{enumerate}
 \item Prove that the language $L_\mathrm{palindrome}$ is a context-free language.
@@ -678,14 +676,15 @@ by building a \blue{parse tree}.  If a grammar is
 \hspace*{1.3cm}
 $G = \langle V, T, R, S \rangle$
 \\[0.2cm]
-given, a \blue{parse tree}\index{parse-tree} for this grammar is a tree satisfying the following
+given, a \blue{parse tree}\index{parse tree} for this grammar is a tree satisfying the following
 conditions:
 \begin{enumerate}
 \item The tree consists of two types of nodes:
       \begin{enumerate}
-      \item The \blue{leaf nodes}\index{parse-tree!leaf node} are those nodes that have no outgoing edges.
-      \item The \blue{inner nodes}\index{parse-tree!inner node} are all those nodes that have outgoing edges.
+      \item The \blue{leaf nodes}\index{parse tree!leaf node} are those nodes that have no outgoing edges.
+      \item The \blue{inner nodes}\index{parse tree!inner node} are all those nodes that have outgoing edges.
       \end{enumerate}
+\item The root is labeled with the start symbol $S$.
 \item Each \blue{inner node} is labeled with a variable.
 \item Each \blue{leaf node} is labeled with a terminal or with a variable.
 \item If a leaf node is labeled with a variable $a$, then the grammar contains a 
@@ -693,15 +692,15 @@ conditions:
       \\[0.2cm]
       \hspace*{1.3cm}
       $a \rightarrow \lambda$.
-\item If an inner node is labeled with a variable $a$ and the children of
+\item If an inner node is labeled with a variable $a$ and the children
       of this node are labeled with the symbols $X_1$, $X_2$, $\cdots$, $X_n$, then
       the grammar $G$ contains a rule of the form 
       \\[0.2cm]
       \hspace*{1.3cm}
       $a \rightarrow X_1 X_2 \cdots X_n$.
 \end{enumerate}
-If we read the leave nodes of a parse tree from left to right,  they yield a word
-that is derived from the grammar $G$.  Figure \ref{fig:parse-tree.dot} shows a
+If we read the leaf nodes of a parse tree from left to right and skip the leaves that are labeled with
+variables, we obtain a string $w \in L(G)$.  Figure \ref{fig:parse-tree.dot} shows a
 parse tree for the word ``\texttt{1+2*3}''.  It is derived using the grammar given above for
 arithmetic expressions.  
 
@@ -720,7 +719,7 @@ we simplify these trees using the following rules:
       then we remove this child and label the node $n$ instead with the
       terminal $o$.
 \item If an inner node has only one child, we replace that node with its child.
-\item If an outer node is labeled with either \texttt{'('} or \texttt{')'}, then it is dropped.
+\item If a leaf node is labeled with either \texttt{'('} or \texttt{')'}, then it is dropped.
 \end{enumerate}
 We call the tree obtained in this way the \blue{abstract syntax tree}\index{abstract syntax tree}.
 Figure \ref{fig:abstract-syntax-tree.dot} shows an abstract syntax tree that can be used to evaluate the
@@ -735,15 +734,15 @@ the order for evaluating the operators.
 \end{figure}
 
 \subsection{Ambiguous Grammars}
-The grammar given at the beginning of section \ref{context-free} to describe arithmetic
-expressions seems very complicated because it uses three different syntactic categories: \textsl{arithExpr},
+The grammar given at the beginning of Section \ref{context-free} to describe arithmetic
+expressions seems very complicated because it uses three different syntactic categories: \textsl{expr},
 \textsl{product}, and \textsl{factor}.  We introduce a simpler grammar $G$
 which describes the same language:
 \\[0.2cm]
 \hspace*{1.3cm}
 $G = \bigl\langle \{\textsl{expr}\}, \{ \simtextsc{Number}, \simtextsc{Variable}, \quoted{+}, \quoted{-}, \quoted{$*$}, \quoted{/}, \quoted{(}, \quoted{)} \}, R, \textsl{expr} \bigr\rangle$,
 \\[0.2cm]
-The rules $R$ are given as follows:
+where the rules $R$ are given as follows:
 \begin{eqnarray*}
   \textsl{expr} & \rightarrow & \textsl{expr} \quoted{+} \textsl{expr}  \\
                 & \mid & \textsl{expr} \quoted{-} \textsl{expr}  \\
@@ -753,7 +752,7 @@ The rules $R$ are given as follows:
                 & \mid & \simtextsc{Number}                         \\
                 & \mid & \simtextsc{Variable}                         
 \end{eqnarray*}
-In order to show that the string ``\texttt{2}$\,*\,${3+4}'' is in the language generated by this grammar,
+In order to show that the string ``\texttt{2$\,*\,$3+4}'' is in the language generated by this grammar,
 we give the following derivation:
 \begin{eqnarray*}
 \textsl{expr} & \Rightarrow & \textsl{expr} \quoted{+} \textsl{expr}                           \\
@@ -774,7 +773,7 @@ However, there is another derivation of the string ``\texttt{2$\,*\,$3+4}'' with
 \end{eqnarray*}
 This derivation corresponds to the abstract syntax tree shown in Fig.
 \ref{fig:abstract-syntax-tree-prod.dot}.
-In this derivation, the string ``\texttt{2$\,*\,$3+4}'' is apparently taken to be a product,
+In this derivation, the string ``\texttt{2$\,*\,$3+4}'' is taken to be a product,
 which contradicts the convention that the operator ``\texttt{$*$}'' binds stronger than the operator
 ``\texttt{+}''.  If we were to evaluate the string using the last syntax tree, we would
 obviously get the wrong result! 
@@ -789,10 +788,11 @@ The reason for this problem is the fact that the last specified grammar is
 An ambiguous grammar is unsuitable for parsing.  Unfortunately, the question of whether a given
 grammar is ambiguous is, in general, not
 \href{http://en.wikipedia.org/wiki/Ambiguous_grammar#Recognizing_ambiguous_grammars}{decidable}:
-It can be shown that this question is equivalent to the
-\href{http://en.wikipedia.org/wiki/post_correspondence_problem}{\blue{Post correspondence problem}}\index{Post correspondence problem}.
+It can be shown that the
+\href{http://en.wikipedia.org/wiki/post_correspondence_problem}{\blue{Post correspondence problem}}\index{Post correspondence problem}
+can be reduced to this question.
 Since Post's correspondence problem has been shown to be undecidable,  the
-question  whether a grammar is ambiguous is also unsolvable.
+question  whether a grammar is ambiguous is also undecidable.
 Proofs of these claims can be found, for example, in the book by Hopcroft, Motwani, and Ullman \cite{hopcroft:06}. 
 
 % \example
@@ -961,24 +961,24 @@ $r_1$, thus decomposing $r_1$ as $r_1 = w_2 r_2$ where
 $w_2 \in L(X_2)$ holds.  Continuing this process, we end up with the string $w$ being split as
 \\[0.2cm]
 \hspace*{1.3cm}
-$w = w_1 w_2 \cdots w_n$ \quad with $w_i \in L(X_i)$ for all $i=1,\cdots,n$.
+$w = w_1 w_2 \cdots w_n$ \quad with $w_i \in L(X_i)$ for all $i=1,\ldots,n$.
 \\[0.2cm]
 Unfortunately, this procedure does not work when the grammar is
-\blue{left-recursive}\index{left-recursive}, that is, a rule has the form
+\blue{left-recursive}\index{left-recursive}, that is, if it contains a rule of the form
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{a} \rightarrow \textsl{a}\, \beta$
 \\[0.2cm]
-because then to parse an $\textsl{a}$ we would immediately try again to parse an $a$ and thus we would be stuck in an infinite loop.
+because then to parse an $\textsl{a}$ we would immediately try again to parse an $\textsl{a}$ and thus we would be stuck in an infinite loop.
 There are two ways to deal with this kind of problem:
 \begin{enumerate}[(a)]
 \item We can rewrite the grammar so that it no longer is left-recursive.
 \item A simpler method is to extend the notion of a context-free grammar.
-      We will use the notion of a so called \blue{extended Backus Naur form}\index{extended Backus-Naur form} grammar
-      (abbreviated as \simtextsc{EBNF}-grammar).   Theoretically, the expressive power of
-      \simtextsc{EBNF} grammars is the same as the expressive power of context-free grammars.
+      We will use the notion of a so-called \blue{extended Backus-Naur form}\index{extended Backus-Naur form} grammar
+      (abbreviated as \simtextsc{Ebnf} grammar).   Theoretically, the expressive power of
+      \simtextsc{Ebnf} grammars is the same as the expressive power of context-free grammars.
       In practice, however, it turns out that the construction of top-down parsers for
-      \simtextsc{EBNF} grammars is easier, because in an \simtextsc{EBNF} grammar the left recursion can often be replaced
+      \simtextsc{Ebnf} grammars is easier, because in an \simtextsc{Ebnf} grammar the left recursion can often be replaced
       by iteration in a natural way. 
 \end{enumerate}
 In the rest of this chapter we will discuss the second of these two procedures in more detail using the grammar for
@@ -1420,14 +1420,14 @@ arithmetic expressions as an example.
 % a nested tuple that represents a regular expression.
 % \eox
 
-\subsection{Implementing a Recursive Descent Parser that Uses an \textsc{EBNF} Grammar}
+\subsection{Implementing a Recursive Descent Parser that Uses an \simtextsc{Ebnf} Grammar}
 In this section, we improve the convenience of context-free
 languages by admitting the regular expression operators \squoted{*}, \squoted{|}, and \squoted{?} on
 the right hand side of grammar rules.  The meaning of these operators is the same as when these operators are used in 
 the regular expressions of the programming language \textsl{Python}.  Furthermore, the right hand side of a
-grammar rule can be structured using parentheses.  These new type of grammars are known as
-\href{http://en.wikipedia.org/wiki/Extended_Backus_Naur_Form}{\emph{extended Backus Naur form}}
-\index{EBNF grammar@\simtextsc{Ebnf} grammar} grammars, which is abbreviated as \simtextsc{EBNF} grammars.
+grammar rule can be structured using parentheses.  Grammars of this new type are known as
+\href{http://en.wikipedia.org/wiki/Extended_Backus_Naur_Form}{\emph{extended Backus-Naur form}}
+\index{EBNF grammar@\simtextsc{Ebnf} grammar} grammars, which is abbreviated as \simtextsc{Ebnf} grammars.
 
 
 \begin{figure}[htbp]
@@ -1437,25 +1437,25 @@ grammar rule can be structured using parentheses.  These new type of grammars ar
   \begin{minipage}[t]{9cm}
 
   \begin{eqnarray*}
-  \mathrm{expr}    & \rightarrow & \mathrm{product}\;\;\bigl((\texttt{'+'}\;|\;\texttt{'-'})\;\; \mathrm{product}\bigr)^* \\[0.2cm]
-  \mathrm{product} & \rightarrow & \mathrm{factor} \;\;\bigl((\texttt{'*'}\;|\;\texttt{'/'})\;\; \mathrm{factor}\bigr)^*  \\[0.2cm]   
-  \mathrm{factor}  & \rightarrow & \texttt{'('} \;\;\mathrm{expr} \;\;\texttt{')'}                             \\
-                   & \mid        & \texttt{NUMBER} 
+  \textsl{expr}    & \rightarrow & \textsl{product}\;\;\bigl((\squoted{+}\;|\;\squoted{-})\;\; \textsl{product}\bigr)^* \\[0.2cm]
+  \textsl{product} & \rightarrow & \textsl{factor} \;\;\bigl((\squoted{*}\;|\;\squoted{/})\;\; \textsl{factor}\bigr)^*  \\[0.2cm]
+  \textsl{factor}  & \rightarrow & \squoted{(} \;\;\textsl{expr} \;\;\squoted{)}                             \\
+                   & \mid        & \simtextsc{Number} 
   \end{eqnarray*}
   \vspace*{-0.5cm}
 
   \end{minipage} \hspace*{1.cm}}}
   \end{center}
-  \caption{\simtextsc{EBNF} grammar for arithmetical expressions.}
+  \caption{\simtextsc{Ebnf} grammar for arithmetical expressions.}
   \label{fig:arith-expr-ebnf}
 \end{figure}
 
-It can be shown that the languages described by \simtextsc{EBNF} grammars are still context-free
+It can be shown that the languages described by \simtextsc{Ebnf} grammars are still context-free
 languages.  Therefore, these operators do not change the expressive power of context-free 
 grammars. 
-However, it is often much more \underline{convenient} to describe a language using an \simtextsc{EBNF}
+However, it is often much more \underline{convenient} to describe a language using an \simtextsc{Ebnf}
 grammar rather than using a context-free grammar.  Figure \ref{fig:arith-expr-ebnf}
-displays an \simtextsc{EBNF} grammar for arithmetical expressions.  
+displays an \simtextsc{Ebnf} grammar for arithmetical expressions.  
 
 % Obviously, the grammar in Figure \ref{fig:arith-expr-ebnf}  is
 % more concise than the context-free grammar shown in Figure \ref{fig:Expr2} on page \pageref{fig:Expr2}.
@@ -1468,7 +1468,7 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
 \item The function \texttt{parseExpr} recognizes a \texttt{product} in line 2. 
       The value of this \texttt{product} is stored in the variable 
       \texttt{result} together with the list \texttt{Rest} of those tokens that have not been consumed
-      yet.  If the list \texttt{Rest} is not empty and the first token in this
+      yet.  If the list \texttt{Rest} contains at least two tokens and the first token in this
       list is either the operator \squoted{+} or the operator \squoted{-},
       then the function \texttt{parseExpr} tries to recognize more products.
       These are added to or subtracted from the \texttt{result} computed so far in
@@ -1478,11 +1478,11 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
 \item The function \texttt{parseProduct} recognizes a \texttt{factor} in line 13. 
       The value of this \texttt{factor} is stored in the variable 
       \texttt{result} together with the list \texttt{Rest} of those tokens that have not been consumed
-      yet.  If the list \texttt{Rest} is not empty and the first token in this
+      yet.  If the list \texttt{Rest} contains at least two tokens and the first token in this
       list is either the operator \squoted{*} or the operator \squoted{/},
       then the function \texttt{parseProduct} tries to recognize more factors.
       The \texttt{result} computed so far is multiplied with or divided by these factors in
-      line 18 or 20.  If there are no more products to be parsed, the \texttt{while} loop 
+      line 18 or 20.  If there are no more factors to be parsed, the \texttt{while} loop 
       terminates and the function returns the \texttt{result} together with the list
       \texttt{Rest} of tokens that have not been consumed.
 \item The function \texttt{parseFactor} recognizes a \texttt{factor}.
@@ -1492,8 +1492,8 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
             an expression next.  This expression has to be followed by a closing parenthesis.
             The tokens following this closing parenthesis are not consumed but rather are returned 
             together with the result of evaluating the expression.
-      \item If the first token is a number, this number is returned together with the list
-            of all those tokens that have not been consumed.
+      \item Otherwise, the first token has to be a number.  It is converted into a floating point number,
+            which is returned together with the list of all those tokens that have not been consumed.
       \end{itemize}
 \end{enumerate}
 
@@ -1508,9 +1508,9 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
                 xleftmargin   = 0.3cm,
                 xrightmargin  = 0.3cm,
               ]{python3}
-    def parseExpr(TL):
+    def parseExpr(TL: list[str]) -> tuple[float, list[str]]:
         result, Rest = parseProduct(TL)
-        while len(Rest) > 1 and Rest[0] in {'+', '-'}: 
+        while len(Rest) >= 2 and Rest[0] in {'+', '-'}: 
             operator = Rest[0]
             arg, Rest = parseProduct(Rest[1:])
             if operator == '+': 
@@ -1519,9 +1519,9 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
                 result -= arg
         return result, Rest
     
-    def parseProduct(TL):
+    def parseProduct(TL: list[str]) -> tuple[float, list[str]]:
         result, Rest = parseFactor(TL)
-        while len(Rest) > 1 and Rest[0] in {'*', '/'}:
+        while len(Rest) >= 2 and Rest[0] in {'*', '/'}:
             operator = Rest[0]
             arg, Rest = parseFactor(Rest[1:])
             if operator == '*':
@@ -1530,15 +1530,14 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
                 result /= arg
         return result, Rest
     
-    def parseFactor(TL):
+    def parseFactor(TL: list[str]) -> tuple[float, list[str]]:
         if TL[0] == '(': 
-            expr, R = parseExpr(TL[1:])
-            assert R[0] == ')', f"ERROR: ')' expected, got {R[0]}"
-            return expr, R[1:]
+            expr, Rest = parseExpr(TL[1:])
+            assert Rest[0] == ')', \
+                   f"ERROR: ')' expected, got {Rest[0]}"
+            return expr, Rest[1:]
         else:
-            assert isinstance(TL[0], int), \
-                   f"ERROR: Number expected, got {TL[0]}"
-            return TL[0], TL[1:]
+            return float(TL[0]), TL[1:]
 \end{minted}
 \vspace*{-0.3cm}
 \caption{A recursive descent parser for the grammar in Figure \ref{fig:arith-expr-ebnf}.}
@@ -1546,13 +1545,15 @@ Figure \ref{fig:differentiate.stlx} shows a recursive descent parser\index{recur
 \end{figure}
 
 \exerciseEng
-Develop an \simtextsc{EBNF} grammar for regular
-expressions and implement a top down parser for this grammar.  The resulting grammar should return
+Develop an \simtextsc{Ebnf} grammar for regular
+expressions and implement a top-down parser for this grammar.  The resulting parser should return
 a nested tuple that represents a regular expression.
 \eox
 
 \paragraph{Historical Notes} The language \simtextsc{Algol} \cite{backus:1959,naur:1960} was the first
-programming language with a syntax that was based on an \simtextsc{EBNF} grammar.  
+programming language whose syntax was defined by a context-free grammar.  This grammar was written in
+\blue{Backus-Naur form}\index{Backus-Naur form} (\simtextsc{Bnf}), the notation that was later extended to
+\simtextsc{Ebnf}.  
 \pagebreak
 
 \section{Check your Understanding}
@@ -1567,7 +1568,7 @@ programming language with a syntax that was based on an \simtextsc{EBNF} grammar
 % \item How does a top-down parser work? 
 % \item Why do we have to eliminate left recursion from a grammar in order to build a top-down parser?
 \item Define the notion of an \simtextsc{Ebnf} grammar.
-\item Implement a top down parser for arithmetic expressions.
+\item Implement a top-down parser for arithmetic expressions.
 \end{enumerate}
 
 %%% Local Variables: 
