@@ -169,8 +169,53 @@ holds.  Then we would transform the \simtextsc{Nfa}s $F_1$ and $F_2$ into equiva
 \simtextsc{Dfa}s $\textsl{det}(F_1)$ and $\textsl{det}(F_2)$.  After that, we would build
 the product automaton of $\textsl{det}(F_1)$ and $\textsl{det}(F_2)$ as shown above.
 Finally, we would convert the \simtextsc{Dfa} $\textsl{det}(F_1) \times\textsl{det}(F_2)$ into an equivalent
-regular expression.  However, most of the time the resulting regular expression would be absurdly large. 
-Therefore, it is not practical to implement the function $\wedge$.
+regular expression.  The \textsl{Jupyter notebook}
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/11-Intersection.ipynb}{\texttt{Python/Chapter-04-05/11-Intersection.ipynb}}
+\\[0.2cm]
+implements the function $\wedge$ in this way.  In order to keep the product automaton small, it minimizes
+the \simtextsc{Dfa}s $\textsl{det}(F_1)$ and $\textsl{det}(F_2)$ before building their product.
+Nevertheless, the resulting regular expression is absurdly large.  The reason is that the algorithm converting a
+\simtextsc{Dfa} into a regular expression calls itself four times for every state of the \simtextsc{Dfa}.
+Therefore, the size of the regular expression computed for a \simtextsc{Dfa} with $n$ states grows like $4^n$.
+As the product automaton has $|Q_1| \cdot |Q_2|$ states, the size of $r_1 \wedge r_2$ grows exponentially in
+the \emph{product} of the numbers of states of $\textsl{det}(F_1)$ and $\textsl{det}(F_2)$.
+
+The following table shows this for the regular expressions $r_1$ describing the strings over the alphabet
+$\{\texttt{a}, \texttt{b}\}$ in which the number of occurrences of \texttt{a} is divisible by $k$ and $r_2$ describing the strings in
+which the number of occurrences of \texttt{b} is divisible by $m$.  For example, for $k = m = 2$ we have
+$r_1 = (\texttt{b}^*\texttt{a}\texttt{b}^*\texttt{a})^*\texttt{b}^*$ and
+$r_2 = (\texttt{a}^*\texttt{b}\texttt{a}^*\texttt{b})^*\texttt{a}^*$.
+The size of a regular expression is the number of nodes of its syntax tree, i.e.~every character, every
+occurrence of $\varepsilon$ and $\emptyset$, and every operator is counted.  The last column shows the size of
+$r_1 \wedge r_2$ after it has been simplified with the algebraic laws given in Chapter \ref{chapter:regular-expressions}.
+\\[0.2cm]
+\hspace*{1.3cm}
+\begin{tabular}{|c|c|r|r|r|r|r|}
+\hline
+$k$ & $m$ & \textbf{states} & \textbf{size of $r_1$} & \textbf{size of $r_2$} & \textbf{size of $r_1 \wedge r_2$}
+    & \textbf{simplified} \\
+\hline
+\hline
+2 & 2 & 4 & 13 & 13 &     784 &  195 \\
+\hline
+2 & 3 & 6 & 13 & 18 &  12\,304 &  502 \\
+\hline
+3 & 3 & 9 & 18 & 18 & 787\,456 & 2\,836 \\
+\hline
+\end{tabular}
+\\[0.2cm]
+Even though the regular expressions $r_1$ and $r_2$ are tiny, the regular expression $r_1 \wedge r_2$ has
+almost 800\,000 nodes when the product automaton has only nine states.  Simplification removes most of these
+nodes, but the result is still far from readable.  For comparison, for $k = m = 2$ the language $L(r_1) \cap L(r_2)$
+is also described by the regular expression
+\\[0.2cm]
+\hspace*{1.3cm}
+$\bigl(\texttt{aa} + \texttt{bb} + (\texttt{ab} + \texttt{ba})(\texttt{aa} + \texttt{bb})^*(\texttt{ab} + \texttt{ba})\bigr)^*$,
+\\[0.2cm]
+which has only 33 nodes.  Therefore, the function $\wedge$ is of no practical use:  If we need the intersection of
+two regular languages, we work with the product automaton instead.
 \eox
 
 \begin{Proposition}
