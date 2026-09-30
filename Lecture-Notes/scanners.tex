@@ -8,42 +8,46 @@
 \end{figure}
 
 \section{Overview}
-In the previous chapter we have investigated regular expressions from a theoretical point of view.  This chapter
-is devoted to their most important practical application: the construction of \blue{scanners}\index{scanner}.  A
-scanner is the program that splits a structured text into the smallest units that carry a meaning of their own.
-These units are called \blue{tokens}\index{token}.  Every compiler starts by running a scanner, but scanners are
-also useful in many situations that have nothing to do with compilers, and we will see several examples of this
-kind.
+In the previous chapter we have investigated regular expressions from a theoretical point of view.  This
+chapter is devoted to their most important practical application: the construction of
+\blue{scanners}\index{scanner}.  A scanner is the program that splits a structured text into the smallest
+units that carry a meaning of their own.  These units are called \blue{tokens}\index{token}.  Every compiler
+starts by running a scanner, but scanners are also useful in many situations that have nothing to do with
+compilers, and we will see several examples of this kind.
 
 It is worth pointing out that we do \emph{not} use any scanner generator in this chapter.  Traditionally,
 scanners have been produced by tools like \href{https://en.wikipedia.org/wiki/Lex_(software)}{\texttt{Lex}}
-\index{Lex@\texttt{Lex}} or \href{https://www.dabeaz.com/ply/}{\texttt{Ply}}
-\index{Ply@\texttt{Ply}}, which read a scanner specification and generate the corresponding program. 
-As \textsl{Python} already provides regular expressions in its module
-\href{https://docs.python.org/3/library/re.html}{\texttt{re}}, \index{re@\texttt{re} (\textsl{Python} module)} which is part of the
-standard library,  we can do without such a tool: everything that is needed in order to build a scanner is
-contained in the module \texttt{re}.  This keeps the number of tools that have to be learned small and it makes
-the inner workings of a scanner much more visible.
+\index{Lex@\texttt{Lex}} or \href{https://www.dabeaz.com/ply/}{\texttt{Ply}} \index{Ply@\texttt{Ply}}, which
+read a scanner specification and generate the corresponding program.  As \textsl{Python} already provides
+regular expressions in its module \href{https://docs.python.org/3/library/re.html}{\texttt{re}},
+\index{re@\texttt{re} (\textsl{Python} module)} which is part of the standard library, we
+can do without such a tool: everything that is needed in order to build a scanner is
+contained in the module \texttt{re}.  This keeps the number of tools that have to be
+learned small and it makes the inner workings of a scanner much more visible.
 
 As this chapter is rather long, we start with a road map.
 \begin{enumerate}
-\item Section \ref{section:scanner-introduction}, \emph{Introduction}, discusses what a scanner is supposed to
-      do.  It presents the kinds of tokens that occur in a typical programming language and shows how a small
-      \texttt{C} program is split into its tokens.
+\item Section \ref{section:scanner-introduction}, \emph{Introduction}, discusses what a
+      scanner is supposed to do.  It presents the kinds of tokens that occur in a typical
+      programming language and shows how a small \texttt{C} program is split into its tokens.
 \item Section \ref{section:regexp-scanner}, \emph{Building a Scanner with Regular Expressions}, develops the
       recipe that is used throughout this chapter: every token is described by a regular expression, all of
-      these regular expressions are combined into a single \blue{master pattern}\index{master pattern} built from
-      \blue{named groups}\index{named group}, and this pattern is then used in order to scan the input from left
+      these regular expressions are combined into a single \blue{master
+        pattern}\index{master pattern} built from 
+      \blue{named groups}\index{named group}, and this pattern is then used in order to
+      scan the input from left 
       to right.  The running example of this section is a scanner for arithmetic expressions.
-\item Section \ref{section:python-regexp-syntax}, \emph{The Syntax of Regular Expressions in \textsl{Python}},
-      discusses the syntax that is supported by the module \texttt{re} in a systematic way.  Among other things,
+\item Section \ref{section:python-regexp-syntax},
+      \emph{The Syntax of Regular Expressions in \textsl{Python}}, 
+      discusses the syntax that is supported by the module \texttt{re} in a systematic
+      way.  Among other things, 
       it covers meta-characters, quantifiers and their non-greedy variants, character classes, groups and
       back-references, the dot, named groups, the anchors that match the start and the end of a line, and
       lookahead assertions.  The section concludes with some examples that analyze the book \emph{Alice's
-      Adventures in Wonderland} and with Exercise \ref{exercise:dollar-to-euro}, which converts dollar amounts
-      into euros.  If you are already acquainted with regular expressions, this section can be skimmed on first
-      reading and used as a reference later on.
-\item Section \ref{section:exam}, \emph{A Complex Example: Evaluating an Exam}, presents a program that I use in
+      Adventures in Wonderland} and with Exercise \ref{exercise:dollar-to-euro}, which
+      converts dollar amounts into euros.  
+\item Section \ref{section:exam}, \emph{A Complex Example: Evaluating an Exam}, presents a
+      program that I use in 
       order to evaluate the exams that you have to write.  This program reads a file that contains the number of
       points that the students have achieved, computes the corresponding marks, and prints the mark of every
       student.  Along the way, this section introduces the functions \texttt{re.search} and
