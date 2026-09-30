@@ -1,4 +1,3 @@
-
 \chapter{Regular Expressions \label{chapter:regular-expressions}}
 
 \begin{figure}[h]  % 'h' suggests placement "here"
@@ -29,21 +28,29 @@ programming languages (e.g.~\href{https://www.python.org/}{\textsl{Python}},
 \href{https://www.typescriptlang.org/}{\texttt{TypeScript}},
 \href{https://www.php.net/}{\texttt{PHP}},
 \href{https://www.ruby-lang.org/}{\texttt{Ruby}},
-\href{https://www.tcl-lang.org/}{\texttt{Tcl}}) support regular expressions.  In the programming language \texttt{C} regular
-expressions are available via the \simtextsc{Posix} library.  
+\href{https://www.tcl-lang.org/}{\texttt{Tcl}}) support regular expressions via corresponding libraries.  In
+the programming language \href{https://en.wikipedia.org/wiki/C_(programming_language)}{\texttt{C}} regular
+expressions are available via the
+\href{https://en.wikipedia.org/wiki/C_POSIX_library}{\texttt{C} \simtextsc{Posix}} library.    
 
-Moreover, various \simtextsc{Unix} utilities, including \href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}},
+Moreover, various \simtextsc{Unix} utilities, including
+\href{http://en.wikipedia.org/wiki/Grep}{\texttt{grep}}, 
 \href{http://en.wikipedia.org/wiki/Sed}{\texttt{sed}}, and
 \href{http://en.wikipedia.org/wiki/Awk}{\texttt{awk}}, are based on regular
-expressions. Consequently, proficiency in regular expressions is indispensable for a budding computer scientist.
+expressions. Consequently, proficiency in regular expressions is indispensable for a budding computer
+scientist. 
 
-In this chapter, we will introduce a definition of regular expressions that is more concise than those typically found in programming languages. This streamlined definition will facilitate our theoretical examination of regular languages in Chapters \ref{chapter:finite-state-machines} and \ref{chapter:regular-languages}. The syntax of regular expressions as used in \textsl{Python} will be covered in the subsequent chapter.
+In this chapter, we will introduce a definition of regular expressions that is more concise than those
+typically used in programming languages. This streamlined definition will facilitate our theoretical
+examination of regular languages in Chapters \ref{chapter:finite-state-machines} and
+\ref{chapter:regular-languages}. The syntax of regular expressions as used in \textsl{Python} will be covered
+in the subsequent chapter. 
 
 \section{Preliminary Definitions}
 Before delving into the syntax and semantics of regular expressions, we need to introduce some preliminary definitions.
 
 \begin{Definition}[Product of Languages]
-  Given an alphabet $ \Sigma $ and formal languages $ L_1, L_2 \subseteq \Sigma^* $, the
+  Given an alphabet $\Sigma$ and formal languages $ L_1, L_2 \subseteq \Sigma^* $, the
   \blue{product}\index{product of languages}\glsadd{product} of $ L_1 $ and $ L_2 $ is denoted as $ L_1 \cdot L_2 $ and
   is defined as the set of all concatenations $ w_1 \cdot w_2 $ where $ w_1 \in L_1 $ and $ w_2 \in L_2
   $. Formally,  
@@ -82,7 +89,7 @@ For $ \Sigma = \{ \texttt{a}, \texttt{b} \} $ and $ L = \{ \texttt{ab}, \texttt{
 
 \begin{Definition}[Kleene Closure]
   Given an alphabet $ \Sigma $ and a formal language $ L \subseteq \Sigma^* $, the \blue{Kleene
-    closure}\index{Kleene closure}\glsadd{kleene} of $ L $, denoted as $ L^* $, is the union of all $ L^n $ for $ n \in \mathbb{N} $:
+    closure}\index{Kleene closure}\glsadd{kleene} of $ L $, denoted as $ L^* $, is the union of all languages $ L^n $ for $ n \in \mathbb{N} $:
   \[
   L^* := \bigcup_{n \in \mathbb{N}} L^n = L^0 \cup L^1 \cup L^2 \cup \cdots
   \]
@@ -191,13 +198,13 @@ which interprets each regular expression $ r $ as a formal language $ L(r) \in 2
         $L(r^*) := \bigl(L(r)\bigr)^*$.
 
         We have to assume that $\squoted{$^*$} \not\in \Sigma$. 
-  \item $r \in \texttt{RegExp}_\Sigma \rightarrow (r) \in \texttt{RegExp}_\Sigma$
+  \item $r \in \texttt{RegExp}_\Sigma \rightarrow \texttt{(}r\texttt{)} \in \texttt{RegExp}_\Sigma$
 
         Regular expressions can be surrounded by parentheses.  This does not change the language
         denoted by the regular expression:
         \\[0.2cm]
         \hspace*{1.3cm}
-        $L\bigl((r)\bigr) := L(r)$. 
+        $L\bigl(\texttt{(}r\texttt{)}\bigr) := L(r)$. 
 
         We have to assume that the parentheses  \qote{(} and \qote{)} do not occur
         in the alphabet $\Sigma$, i.e.~we have $\squoted{(} \not\in \Sigma$  and $\squoted{)} \not\in \Sigma$. \eox
@@ -293,7 +300,17 @@ will be discussed later.
 
 \exerciseEng
 \begin{enumerate}[(a)]
-\item Assume $ \Sigma = \{ \mathtt{a}, \mathtt{b}, \mathtt{c} \} $. Define a regular expression for the language $ L \subseteq \Sigma^* $ that consists of those strings that contain at least one occurrence of the letter ``\texttt{a}'' and at least one occurrence of the letter ``\texttt{b}''.
+\item Assume $ \Sigma = \{ \mathtt{a}, \mathtt{b}, \mathtt{c} \} $. Define a regular expression for the
+  language $ L \subseteq \Sigma^* $ that consists of those strings that contain at least one occurrence of the
+  letter ``\texttt{a}'' and at least one occurrence of the letter ``\texttt{b}''. 
+\item Assume $ \Sigma = \{ \mathtt{a}, \mathtt{b} \} $.  Give a concise mathematical description for the
+  language generated  by the regular expression
+  \\[0.2cm]
+  \hspace*{1.3cm}
+  $\texttt{b}^*(\texttt{ab}^*\texttt{ab}^*)^*$.
+
+  \textbf{Hint}: Use the function $\texttt{count}(s, c)$ that counts the number of occurrences of the character
+  $c$ in the string $s$. 
 
 \item Assume $ \Sigma = \{ 0, 1 \} $. Specify a regular expression for the language $ L \subseteq \Sigma^* $ that consists of those strings $ s $ such that the \href{https://dictionary.cambridge.org/dictionary/english/antepenultimate}{antepenultimate} character is the symbol ``$ 1 $''.
 
