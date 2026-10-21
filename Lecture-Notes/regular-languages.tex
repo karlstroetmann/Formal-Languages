@@ -218,9 +218,7 @@ which has only 33 nodes.  Therefore, the function $\wedge$ is of no practical us
 two regular languages, we work with the product automaton instead.
 \eox
 
-
-\noindent
-\textbf{Remark:}
+\remarkEng
 The programming language \href{https://raku.org}{\textsl{Raku}}  supports the operator $\wedge$ for regular expressions.
 
 \begin{Proposition}
@@ -229,39 +227,34 @@ The programming language \href{https://raku.org}{\textsl{Raku}}  supports the op
 \end{Proposition}
 
 \proofEng
-We assume that $r$ is a regular expression describing the language $L$, i.e.~$L=L(r)$. 
-We construct an \simtextsc{Nfa} $F$ such that $L(F) = L(r) = L$.  
-We transform this \simtextsc{Nfa} into the \simtextsc{Dfa} $\textsl{det}(F)$ as discussed
-in the previous chapter and note that this \simtextsc{Dfa} is complete.
+We assume that $F$ is a complete  \simtextsc{Dfa} such that $L = L(F)$.
 Assume that we then have
 \\[0.2cm]
-\hspace*{1.3cm} $\textsl{det}(F) = \langle Q, \Sigma, \delta, q_0, A \rangle$.
+\hspace*{1.3cm} $F = \langle Q, \Sigma, \delta, q_0, A \rangle$.
 \\[0.2cm]
-We define the  \simtextsc{Dfa} $\overline{\textsl{det}(F)}$ as follows:
+We define the  \simtextsc{Dfa} $\overline{F}$ as follows:
 \\[0.2cm]
-\hspace*{1.3cm} $\overline{\textsl{det}(F)} = \langle Q, \Sigma, \delta, q_0, Q \backslash A \rangle$,
+\hspace*{1.3cm} $\overline{F} = \langle Q, \Sigma, \delta, q_0, Q \backslash A \rangle$,
 \\[0.2cm]
-i.e.~the set of accepting states of $\overline{\textsl{det}(F)}$ is the complement of the set of accepting
-states of $\textsl{det}(F)$.  Then we have
+i.e.~the set of accepting states of $\overline{F}$ is the complement of the set of accepting
+states of $F$.  Then we have
 $$
 \begin{array}[t]{cl}
-                  & w \in L\Bigl(\overline{\textsl{det}(F)}\Bigr)                      \\[0.2cm]
+                  & w \in L\Bigl(\overline{F}\Bigr)                      \\[0.2cm]
   \Leftrightarrow & \delta^*(q_0, w) \in Q \backslash A     \\[0.2cm]
   \Leftrightarrow & \delta^*(q_0, w) \not\in A \\[0.2cm]
-  \Leftrightarrow & w \not\in L\bigl(\textsl{det}(F)\bigr) \\[0.2cm]
   \Leftrightarrow & w \not\in L(F) \\[0.2cm]
-  \Leftrightarrow & w \not\in L(r) \\[0.2cm]
-  \Leftrightarrow & w \not\in L \\[0.2cm]
-  \Leftrightarrow & w \in \Sigma^* \backslash L 
+   \Leftrightarrow & w \in \Sigma^* \backslash L 
  \end{array}
 $$
-This shows that the language $\Sigma^* \backslash L$ is accepted by the \simtextsc{Dfa} $\overline{\textsl{det}(F)}$
+This shows that the language $\Sigma^* \backslash L$ is accepted by the \simtextsc{Dfa} $\overline{F}$
 and hence it is a regular language.
  \qed
 
 \remarkEng
 The proof given above shows how to compute a regular expression that describes the complement of the language
-$L(r)$:  We convert the \simtextsc{Dfa} $\overline{\textsl{det}(F)}$ into an equivalent regular expression.  The
+$L(r)$:  We convert the regular expression into a complete \simtextsc{Dfa} $F$ and then build the
+\simtextsc{Dfa}  $\overline{F}$.  From this \simtextsc{Dfa} we can then extract an equivalent regular expression.  The
 \textsl{Jupyter notebook}
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -293,7 +286,7 @@ too, we see that $L_1 \backslash L_2$ is also regular.
 \qed
 \vspace*{0.3cm}
 
-In summary, we have demonstrated that regular languages are closed under the operations of Boolean algebra on sets.
+In summary, we have demonstrated that regular languages are closed under the operations of a Boolean algebra.
 
 
 \exerciseEng
@@ -307,7 +300,7 @@ For instance, if $s = \mathtt{abc}$, then $s^R = \mathtt{cba}$.  The reversal $L
 $L \subseteq \Sigma^*$ is formally defined as:
 \\[0.2cm]
 \hspace*{1.3cm}
-$L^R := \{ s^R \mid s \in L \}$.
+$L^R := \bigl\{ s^R \mid s \in L \bigr\}$.
 \\[0.2cm]
 Assume that the language $L \subseteq \Sigma^*$ is regular.  Prove that $L^R$ is also a regular language.
 
@@ -451,11 +444,11 @@ In this section we present a theorem that can be used to show that certain langu
   \end{enumerate}
   This theorem can be written as a single formula:  If $L$ is a regular language, then 
   \\[0.2cm]
-  \hspace*{1.3cm}
-  $\exists n \in \mathbb{N}:\forall s \in L : \bigl(|s| \geq n \rightarrow \exists u,v,w\in \Sigma^* :
-   s = uvw \wedge v \not= \lambda \wedge |uv| \leq n \wedge 
-    \forall h \in \mathbb{N}: uv^h w \in L
-   \bigr)
+  \hspace*{0.3cm}
+  $\exists n \in \mathbb{N}:\forall s \in L : \Bigl(|s| \geq n \rightarrow \exists u,v,w\in \Sigma^* :
+   \bigl(s = uvw \wedge v \not= \lambda \wedge |uv| \leq n \wedge 
+    \forall h \in \mathbb{N}: uv^h w \in L\bigr)
+   \Bigr)
   $.
 \end{Theorem}
 
@@ -515,6 +508,14 @@ $u := c_1 \cdots c_k$, \quad $v := c_{k+1} \cdots c_l$, \quad and \quad $w := c_
 \\[0.2cm]
 As $k < l$ we have that $v \not= \lambda$ and $l \leq n$ implies $|uv| \leq n$.
 Furthermore, we have the following:
+
+\begin{figure}[h] 
+\centering
+  \includegraphics[width=10.5cm]{Abbildungen/pumping-lemma-proof.png}
+\caption{The construction of the Pumping Lemma.}
+\label{fig:pumping-lemma-proof.png}
+\end{figure}
+
 \begin{enumerate}
 \item Reading the string $u$ changes the state of the \simtextsc{Dfa} $F$ from the start state $q_0$ to
       the state $q_k$, we have
@@ -561,17 +562,9 @@ and since the state $q_m$ is an accepting state we conclude that $uv^hw \in L$ h
 Figure \ref{fig:pumping-lemma-proof.png} shows the gist of the proof.
 \qed
 
-\begin{figure}[h] 
-\centering
-  \includegraphics[width=10.5cm]{Abbildungen/pumping-lemma-proof.png}
-\caption{The construction of the Pumping Lemma.}
-\label{fig:pumping-lemma-proof.png}
-\end{figure}
-
-
 
 \begin{Proposition}
-  The alphabet  $\Sigma$ is defined as $\Sigma = \{ \quoted{a}, \quoted{b} \}$.
+  The alphabet  $\Sigma$ is defined as $\Sigma = \{ \texttt{a}, \texttt{b} \}$.
   Define the language $L$ as the set of all strings of the form $\mathtt{a}^k\mathtt{b}^k$ where $k$
   is some natural number:
   \\[0.2cm]
@@ -626,14 +619,14 @@ Given a  string $t$ and a character $c$ the function $\textsl{count}(t,c)$ count
 character $c$ occurs in the string $t$.  For the language  $L$ we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$t \in L \Rightarrow \textsl{count}(t,\texttt{'a'}) = \textsl{count}(t, \texttt{'b'})$. 
+$t \in L \Rightarrow \textsl{count}(t,\texttt{a}) = \textsl{count}(t, \texttt{b})$. 
 \\[0.2cm]
 On one hand we have:
 \[  
 \begin{array}{lcl}
-\textsl{count}(uw,\texttt{'a'}) & = & \textsl{count}(uvw,\texttt{'a'}) - \textsl{count}(v,\texttt{'a'}) \\
- & = & \textsl{count}(s,\texttt{'a'}) - \textsl{count}(v,\texttt{'a'}) \\
- & = & \textsl{count}(\mathtt{a}^n\mathtt{b}^n,\texttt{'a'}) - \textsl{count}(\mathtt{a}^k,\texttt{'a'}) \\
+\textsl{count}(uw,\texttt{a}) & = & \textsl{count}(uvw,\texttt{a}) - \textsl{count}(v,\texttt{a}) \\
+ & = & \textsl{count}(s,\texttt{a}) - \textsl{count}(v,\texttt{a}) \\
+ & = & \textsl{count}(\mathtt{a}^n\mathtt{b}^n,\texttt{a}) - \textsl{count}(\mathtt{a}^k,\texttt{a}) \\
  & = & n - k  \\
  & < & n   \\
 \end{array}
@@ -641,9 +634,9 @@ On one hand we have:
 But on the other hand we have
 \[  
 \begin{array}{lcl}
-\textsl{count}(uw,\texttt{'b'}) & = & \textsl{count}(uvw,\texttt{'b'}) - \textsl{count}(v,\texttt{'b'}) \\
-                               & = & \textsl{count}(s,\texttt{'b'}) - \textsl{count}(v,\texttt{'b'}) \\
- & = & \textsl{count}(\mathtt{a}^n\mathtt{b}^n,\texttt{'b'}) - \textsl{count}(\mathtt{a}^k,\texttt{'b'}) \\
+\textsl{count}(uw,\texttt{b}) & = & \textsl{count}(uvw,\texttt{b}) - \textsl{count}(v,\texttt{b}) \\
+                               & = & \textsl{count}(s,\texttt{b}) - \textsl{count}(v,\texttt{b}) \\
+ & = & \textsl{count}(\mathtt{a}^n\mathtt{b}^n,\texttt{b}) - \textsl{count}(\mathtt{a}^k,\texttt{b}) \\
                                & = & n  - 0\\
                                & = & n  
 \end{array}
@@ -651,7 +644,7 @@ But on the other hand we have
 Therefore, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{count}(uw,\texttt{'a'}) < \textsl{count}(uw,\texttt{'b'})$
+$\textsl{count}(uw,\texttt{a}) < \textsl{count}(uw,\texttt{b})$
 \\[0.2cm]
 and this shows that the string $uw$ is not a member of the language $L$ because for all strings in $L$ 
 the number of occurrences of the character ``\texttt{a}'' is the same as the number of
@@ -664,18 +657,18 @@ Let us define the language $L$ as the set of all those strings that contain an e
 occurrences of the characters ``\texttt{a}'' and  ``\texttt{b}'':
 \\[0.2cm]
 \hspace*{1.3cm}
-$\ds L := \bigl\{ w \in \{\texttt{'a'}, \texttt{'b'}\}^* \bigm| \textsl{count}(w, \texttt{'a'})=\textsl{count}(w, \texttt{'b'}) \bigr\}$
+$\ds L := \bigl\{ w \in \{\texttt{a}, \texttt{b}\}^* \bigm| \textsl{count}(w, \texttt{a})=\textsl{count}(w, \texttt{b}) \bigr\}$
 \\[0.2cm]
 Prove that the language $L$ is not regular. \eox
 
 \remarkEng
 Regular expressions are unable to check even such a simple property as whether the parentheses in an
 expression are balanced.  To see this, let $D$ be the language of all strings over the alphabet
-$\{ \squoted{(}, \squoted{)} \}$ in which the parentheses are balanced.  If $D$ were regular, then the
+$\{ \texttt{(}, \texttt{)} \}$ in which the parentheses are balanced.  If $D$ were regular, then the
 intersection
 \\[0.2cm]
 \hspace*{1.3cm}
-$D \cap L\bigl(\squoted{(}^* \cdot \squoted{)}^*\bigr) = \bigl\{ \squoted{(}^k \squoted{)}^k \bigm| k \in \mathbb{N} \bigr\}$
+$D \cap L\bigl(\texttt{(}^* \cdot \texttt{)}^*\bigr) = \bigl\{ \texttt{(}^k \texttt{)}^k \bigm| k \in \mathbb{N} \bigr\}$
 \\[0.2cm]
 would be regular, too.  But if we write ``\texttt{a}'' instead of ``\texttt{(}'' and ``\texttt{b}'' instead of
 ``\texttt{)}'', this is the language $\{ \mathtt{a}^k\mathtt{b}^k \mid k \in \mathbb{N} \}$, which we have
@@ -869,7 +862,7 @@ Prove that the language $L_{\mathrm{power}}$ is not regular.
 \item Can you prove that the language
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\ds L := \bigl\{ w \in \{\texttt{'a'}, \texttt{'b'}\}^* \bigm| \textsl{count}(w, \texttt{'a'})=\textsl{count}(w, \texttt{'b'}) \bigr\}$
+      $\ds L := \bigl\{ w \in \{\texttt{a}, \texttt{b}\}^* \bigm| \textsl{count}(w, \texttt{a})=\textsl{count}(w, \texttt{b}) \bigr\}$
       \\[0.2cm]
       is not regular?
 \end{enumerate}
