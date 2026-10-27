@@ -18,7 +18,8 @@ cd "$(dirname "$0")"
 nfas="aLeer aEpsilon aChar aConcat aPlus aStar"
 others="abstara abstarbabab abstarbabab-nd ab-or-ba-star a2 exercise-13
         nicht-gleichwertig gleichwertig
-        abstract-syntax-tree abstract-syntax-tree-prod cc-LR cc-LALR"
+        parse-tree abstract-syntax-tree abstract-syntax-tree-prod abstract-syntax-tree-vars
+        cc-LR cc-LALR"
 if [ $# -eq 0 ]; then
     set -- $nfas $others
 fi
@@ -31,7 +32,7 @@ trap 'rm -f "$conf"' EXIT
     echo '<fontconfig>'
     echo '  <include ignore_missing="yes">/opt/homebrew/etc/fonts/fonts.conf</include>'
     for font in latinmodern-math.otf lmmono10-regular.otf \
-                Atkinson-Hyperlegible-Regular-102.otf; do
+                AtkinsonHyperlegibleNext-Regular.otf; do
         echo "  <dir>$(dirname "$(kpsewhich $font)")</dir>"
     done
     echo '</fontconfig>'
