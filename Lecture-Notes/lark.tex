@@ -399,6 +399,8 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
                 raw_tree   = parser.parse(s)
                 adt_tuples = ast_to_tuples(raw_tree)
                 evaluate_adt(adt_tuples)
+            except (EOFError, NotImplementedError):
+                break
             except Exception as e:
                 print(f'Error: {e}')
 \end{minted}
@@ -412,14 +414,16 @@ Finally, Figure \ref{fig:01-Calculator.ipynb:main} on page \pageref{fig:01-Calcu
 the function \texttt{main}, which is a \blue{read-eval-print loop}\index{read-eval-print loop}:  It reads a string \texttt{s} from the
 command line and then performs the three steps that we have discussed:  Line 7 parses the string, line 8
 converts the resulting parse tree into an abstract syntax tree, and line 9 evaluates this tree.  The loop
-is terminated as soon as the user enters an empty line.
+is terminated as soon as the user enters an empty line.  It is also terminated if no input can be read at
+all:  Then the function \texttt{input} raises an \texttt{EOFError} or, inside a Jupyter notebook that is
+executed automatically, a \texttt{NotImplementedError}.  Line 10 -- 11 catch these exceptions.
 
 Observe how \simtextsc{Lark} reports errors:  Instead of calling an error function that has been provided
 by the user, \simtextsc{Lark} raises an \blue{exception}.  Both lexical errors and syntax errors are
 signalled by subclasses of the class \texttt{lark.exceptions.UnexpectedInput}.  As these exceptions carry
 the position where the error has occurred, the messages produced by \simtextsc{Lark} are usually much more
 informative than the messages that we could produce ourselves with a modest amount of effort.  The
-\texttt{try}-\texttt{except} statement in line 3 and line 10 -- 11 catches these exceptions so that a
+\texttt{try}-\texttt{except} statement in line 3 and line 12 -- 13 catches these exceptions so that a
 single erroneous input does not terminate the calculator.
 
 The Jupyter notebook \texttt{01-Calculator}, which is available at
