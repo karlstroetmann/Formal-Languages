@@ -1,22 +1,24 @@
-\chapter{Advanced Features of \textsc{Lark}}
+\chapter{Advanced Features of \textsc{Larkita}}
 
-\begin{figure}[h] 
+\begin{figure}[h]
   \centering
     \includegraphics[width=17cm]{Abbildungen/larkhall.jpg}
   \caption{Larkhall in South Lanarkshire, Scotland.}
   \label{fig:larkhall.jpg}
   \end{figure}
 
-When we discussed the parser generator \simtextsc{Lark} in chapter 7, we were not able to discuss all the features of
-\simtextsc{Lark}, since the underlying theory, which is the theory of \simtextsc{Lalr} parsing, had not been developed.
-Since we have acquainted ourselves with this theory in the previous chapter, we are finally able to discuss some of the
-more advanced features of \simtextsc{Lark}.
+When we discussed the parser generator \simtextsc{Larkita} in chapter 7, we were not able to discuss all the
+features of \simtextsc{Larkita}, since the underlying theory, which is the theory of LR parsing, had not been
+developed.  Since we have acquainted ourselves with this theory in the previous chapter, we are finally able to
+discuss some of the more advanced features of \simtextsc{Larkita}.
 \begin{enumerate}
-\item First, we show how shift-reduce and reduce-reduce conflicts are reported by \simtextsc{Lark} and how the
-      \simtextsc{Lalr} states that \simtextsc{Lark} computes can be inspected.
-\item Then we discuss how these conflicts can be resolved.  As \simtextsc{Lark} resolves every shift-reduce
+\item First, we show how shift-reduce and reduce-reduce conflicts are reported by \simtextsc{Larkita} and how the
+      states of the canonical LR(1) parser that \simtextsc{Larkita} computes can be inspected.
+\item Then we discuss how these conflicts can be resolved.  As \simtextsc{Larkita} resolves every shift-reduce
       conflict in favour of shifting and offers no way to change this decision, the precedences and
       associativities of the operators have to be encoded into the grammar itself.
+\item Finally, we see that \simtextsc{Larkita} has no problem with a grammar that is an LR(1) grammar but not an
+      \simtextsc{Lalr}(1) grammar.
 \end{enumerate}
 All examples of this chapter are available as Jupyter notebooks in the following directory:
 \\[0.2cm]
@@ -36,32 +38,32 @@ All examples of this chapter are available as Jupyter notebooks in the following
     \hline
     \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/03-Look-Ahead.ipynb}{\texttt{03-Look-Ahead.ipynb}}           & a reduce-reduce conflict caused by insufficient look-ahead \\
     \hline
-    \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/04-Look-Ahead-Solved.ipynb}{\texttt{04-Look-Ahead-Solved.ipynb}}    & the same grammar, rewritten so that it is \simtextsc{Lalr}(1) \\
+    \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/04-Look-Ahead-Solved.ipynb}{\texttt{04-Look-Ahead-Solved.ipynb}}    & the same grammar, rewritten so that it is LR(1) \\
     \hline
-    \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/05-Mysterious-Conflicts.ipynb}{\texttt{05-Mysterious-Conflicts.ipynb}} & a mysterious reduce-reduce conflict                  \\
+    \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/05-Mysterious-Conflicts.ipynb}{\texttt{05-Mysterious-Conflicts.ipynb}} & a grammar that is LR(1), but not \simtextsc{Lalr}(1) \\
     \hline
   \end{tabular}
 \end{center}
 
 \section{Shift-Reduce and Reduce-Reduce Conflicts}
-In this section we show how shift-reduce and reduce-reduce conflicts are dealt with in \simtextsc{Lark}.
+In this section we show how shift-reduce and reduce-reduce conflicts are dealt with in \simtextsc{Larkita}.
 Figure \ref{fig:Conflicts.ipynb} on page \pageref{fig:Conflicts.ipynb} shows a grammar for arithmetical
 expressions that is ambiguous because it does not specify the precedence of the different arithmetical
-operators.  
+operators.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
               ]{text}
-    expr : expr "+" expr  -> add
-         | expr "*" expr  -> mul
-         | NUMBER         -> number
+    expr : expr "+" expr
+         | expr "*" expr
+         | NUMBER
 
     NUMBER : /0|[1-9][0-9]*/
 
@@ -75,88 +77,96 @@ operators.
 \FloatBarrier
 
 \noindent
-Note that in a \simtextsc{Lark} grammar the syntactical variables are written in lower case, while the names of
-the token classes are written in upper case.  The operators \squoted{+} and \squoted{*} occur as
-\blue{anonymous terminals}\index{anonymous terminal (Lark)@anonymous terminal (\simtextsc{Lark})}: they are given as string literals inside the grammar rules and \simtextsc{Lark}
-invents the names \texttt{PLUS} and \texttt{STAR} for them.  These invented names show up in the messages that
-we discuss below.  The three alternatives additionally carry the \blue{aliases}
-\texttt{add}, \texttt{mul} and \texttt{number}, which are attached with the operator ``\texttt{->}''.  These
-aliases only determine the names of the nodes of the parse tree, they have no influence on the parse table.
-They are discussed in the remark on page \pageref{remark:tree-shape}. 
+Note that in a \simtextsc{Larkita} grammar the syntactical variables are written in lower case, while the names of
+the token classes are written in upper case.  The operators \squoted{+} and \squoted{*} occur as string literals
+inside the grammar rules.  As we have seen in Chapter \ref{chapter:ply}, these literals form the heads of the
+abstract syntax trees, e.g.~the first alternative yields a tuple of the form \texttt{('+', $\textsl{lhs}$,
+$\textsl{rhs}$)}.  The way the abstract syntax tree is built has no influence on the parse table.
 
 This grammar does not specify whether the string
 \\[0.2cm]
-\hspace*{1.3cm} 
+\hspace*{1.3cm}
 ``\texttt{1 + 2 * 3}'' \quad is interpreted as \quad  ``\texttt{(1 + 2) * 3}'' \quad or as \quad ``\texttt{1 +
-  (2 * 3)}''. 
+  (2 * 3)}''.
 \\[0.2cm]
-Since every \simtextsc{Lalr} grammar is unambiguous, but the grammar shown in Figure \ref{fig:Conflicts.ipynb} is
+Since every LR(1) grammar is unambiguous, but the grammar shown in Figure \ref{fig:Conflicts.ipynb} is
 ambiguous, it has to have at least one shift-reduce or reduce-reduce conflict.  This grammar is part of the
-jupyter notebook  
+jupyter notebook
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/01-Conflicts.ipynb}{Python/Chapter-11/01-Conflicts.ipynb}.
 \\[0.2cm]
 
-\subsection{Making \textsc{Lark} Talk About Its Conflicts}
-By default, \simtextsc{Lark} is remarkably tight-lipped about shift-reduce conflicts: the parser is built, the
-conflicts are resolved silently, and nothing is printed.  There are two reasons for this silence.
+\subsection{How \textsc{Larkita} Reports Its Conflicts}
+\simtextsc{Larkita} reports the conflicts of a grammar in two ways.
 \begin{enumerate}
-\item The conflict messages are written to the logger object \texttt{lark.logger}, and the level of this logger
-      is set to \texttt{logging.CRITICAL} when \simtextsc{Lark} is imported.  Therefor only critical errors
-      are printed but warnings are discarded.
-\item The messages are only issued with the severity \texttt{warning} if the keyword argument
-      \texttt{debug=True} is given when the parser is constructed.  Otherwise they are issued with the severity
-      \texttt{debug}.
+\item If the parse table has shift-reduce conflicts, \simtextsc{Larkita} resolves them in favour of shifting and
+      issues a \blue{warning} of the class \texttt{ConflictWarning}.  In a Jupyter notebook, this warning is
+      shown below the cell that creates the parser.  A reduce-reduce conflict raises an \blue{exception} of the
+      class \texttt{GrammarError}.
+\item \simtextsc{Larkita} always writes a description of all states of the parser into an \blue{output
+      file}\index{output file (Larkita)@output file (\simtextsc{Larkita})}.  The name of this file is specified by
+      the keyword argument \texttt{out\_file}.  Among other things, the section \texttt{Conflicts} of this file
+      lists all conflicts.
 \end{enumerate}
-Therefore, in order to see the conflicts of the grammar given in Figure \ref{fig:Conflicts.ipynb}, we have to
-create the parser as shown in Figure \ref{fig:conflicts-code} on page \pageref{fig:conflicts-code}.
+Figure \ref{fig:conflicts-code} on page \pageref{fig:conflicts-code} shows how the parser for the grammar given
+in Figure \ref{fig:Conflicts.ipynb} is created.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.3cm,
                 xrightmargin = 0.3cm,
               ]{python3}
-    import logging
-    from lark import Lark, logger
+    from larkita import Larkita, ConflictWarning, GrammarError
 
-    logger.setLevel(logging.DEBUG)
-
-    parser = Lark(grammar, start='expr', parser='lalr', debug=True)
+    parser = Larkita(grammar, out_file='conflicts.out')
 \end{minted}
 \vspace*{-0.3cm}
-\caption{Creating a parser so that conflicts are reported.}
+\caption{Creating a parser.}
 \label{fig:conflicts-code}
 \end{figure}
 \FloatBarrier
 
 \noindent
-When we run this code with the grammar of Figure \ref{fig:Conflicts.ipynb}, we get the output that is shown in
-Figure \ref{fig:Conflicts.warnings} on page \pageref{fig:Conflicts.warnings}.
+When we run this code with the grammar of Figure \ref{fig:Conflicts.ipynb}, \simtextsc{Larkita} issues the
+warning
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{ConflictWarning: 4 shift/reduce conflict(s) were resolved as shift, see conflicts.out}
+\\[0.2cm]
+and the section \texttt{Conflicts} of the file \texttt{conflicts.out} contains the text that is shown in Figure
+\ref{fig:Conflicts.warnings} on page \pageref{fig:Conflicts.warnings}.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.3cm,
                 xrightmargin = 0.3cm,
               ]{text}
-    Shift/Reduce conflict for terminal PLUS: (resolving as shift)
-     * <expr : expr PLUS expr>
-    Shift/Reduce conflict for terminal STAR: (resolving as shift)
-     * <expr : expr PLUS expr>
-    Shift/Reduce conflict for terminal PLUS: (resolving as shift)
-     * <expr : expr STAR expr>
-    Shift/Reduce conflict for terminal STAR: (resolving as shift)
-     * <expr : expr STAR expr>
+    State 5, shift/reduce conflict on "+", resolved as shift
+        - shift and go to state 3
+        - reduce using rule (1) expr → expr "+" expr
+
+    State 5, shift/reduce conflict on "*", resolved as shift
+        - shift and go to state 4
+        - reduce using rule (1) expr → expr "+" expr
+
+    State 6, shift/reduce conflict on "+", resolved as shift
+        - shift and go to state 3
+        - reduce using rule (2) expr → expr "*" expr
+
+    State 6, shift/reduce conflict on "*", resolved as shift
+        - shift and go to state 4
+        - reduce using rule (2) expr → expr "*" expr
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The conflicts reported for the grammar of Figure \ref{fig:Conflicts.ipynb}.}
@@ -165,135 +175,114 @@ Figure \ref{fig:Conflicts.warnings} on page \pageref{fig:Conflicts.warnings}.
 \FloatBarrier
 
 \noindent
-Hence there are four shift-reduce conflicts.  Every one of these messages names
+Hence there are four shift-reduce conflicts.  Every one of these entries names
 \begin{enumerate}
-\item the terminal $o$ for which the entry $\textsl{action}(s,o)$ of the action table is ambiguous, and
-\item the grammar rule $r$ that could have been used to reduce the symbol stack in this situation.
+\item the state $s$ and the terminal $o$ for which the entry $\textsl{action}(s,o)$ of the action table is
+      ambiguous,
+\item the action that has been chosen, and
+\item the alternatives, i.e.~the state that the parser could shift to and the grammar rule $r$ that could have
+      been used to reduce the symbol stack in this situation.
 \end{enumerate}
-Unfortunately, the message does not name the state $s$ in which the conflict occurs, and it does not show the
-follow sets of the rules involved.  We will remedy this in the next subsection.
+The rules are referred to by their numbers in the section \texttt{Rules} at the beginning of the output file.
 
-The important observation is the parenthesised remark ``\blue{\texttt{(resolving as shift)}}\index{shift-reduce conflict!resolution by Lark@resolution by \simtextsc{Lark}}'': \simtextsc{Lark} resolves
+The important observation is the remark ``\blue{\texttt{resolved as shift}}\index{shift-reduce conflict!resolution by Larkita@resolution by \simtextsc{Larkita}}'': \simtextsc{Larkita} resolves
 \emph{every} shift-reduce conflict in favour of shifting.  There is no way to change this decision for an
 individual conflict.  The only choice we have is to declare that we do not want to tolerate conflicts at all.
-If the parser is created with the keyword argument \blue{\texttt{strict=True}}, then the first shift-reduce conflict
-raises an exception of class \texttt{GrammarError} whose message is
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{Shift/Reduce conflict for terminal PLUS. [strict-mode]}
-\\
-\hspace*{1.3cm}
-\texttt{ * <expr : expr PLUS expr>}
-\\[0.2cm]
-It is a good idea to develop a grammar with \texttt{strict=True}: this way, a conflict cannot be overlooked.
-Note that \texttt{strict=True} additionally checks the terminals for collisions and that this check needs the
-package \texttt{interegular}, which is not installed together with \simtextsc{Lark} by default.  If it is
-missing, an exception of class \texttt{LexError} is raised as soon as the grammar is free of conflicts.
-
-Reduce-reduce conflicts are treated much more severely.  A reduce-reduce conflict always raises an exception of
-class \texttt{GrammarError}, regardless of the value of \texttt{strict}.  We will see an example of this in
-Section \ref{section:resolving-conflicts}.
-
-\subsection{Inspecting the \textsc{L\small{ALR}} States}
-\simtextsc{Lark} provides no method that would print the \simtextsc{Lalr} states it has computed.  However, if
-the parser is created with \texttt{debug=True}, then the parse table is kept in a form in which the states are
-still the sets of marked rules that we have discussed in the previous chapter, so we can print them ourselves.
-Figure \ref{fig:dump-states} on page \pageref{fig:dump-states} shows a function that does this.  The same
-function is used in all notebooks of this chapter.
+The module \texttt{warnings} of \textsl{Python} can turn the \texttt{ConflictWarning} into an exception, as
+shown in Figure \ref{fig:conflicts-strict} on page \pageref{fig:conflicts-strict}.  Then the message of the
+exception is the text of the warning.  It is a good idea to develop a grammar this way, for then a conflict
+cannot be overlooked.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
-                numbersep    = 0.4cm,
-                xleftmargin  = 0.0cm,
-                xrightmargin = 0.0cm,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.3cm,
               ]{python3}
-from lark.parsers.lalr_analysis import Shift
+    import warnings
 
-def dump_states(lark_parser):
-  table  = lark_parser.parser.parser.parser.parse_table
-  key    = lambda state: sorted(str(rule) for rule in state)
-  start  = next(iter(table.start_states.values()))
-  rest   = sorted((s for s in table.states if s != start), key=key)
-  order  = [start] + rest
-  number = { state: i for i, state in enumerate(order) }
-  for state in order:
-    print(f'state {number[state]}')
-    for marked_rule in sorted(state, key=str):
-      print(f'    {marked_rule}')
-    print()
-    for token, (action, arg) in sorted(table.states[state].items()):
-      if action is Shift:
-        print(f'    {token:<8} shift and go to state {number[arg]}')
-      else:
-        print(f'    {token:<8} reduce using rule {arg}')
-    print()
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', ConflictWarning)
+        try:
+            Larkita(grammar, out_file='conflicts.out')
+        except ConflictWarning as e:
+            print(e)
 \end{minted}
 \vspace*{-0.3cm}
-\caption{A function that prints the \simtextsc{Lalr} states computed by \simtextsc{Lark}.}
-\label{fig:dump-states}
+\caption{Turning shift-reduce conflicts into errors.}
+\label{fig:conflicts-strict}
 \end{figure}
 \FloatBarrier
 
 \noindent
-The chain of attributes \texttt{lark\_parser.parser.parser.parser} looks confusing, but it is easily explained: the
-object returned by \texttt{Lark} delegates to a \blue{parsing frontend}, which delegates to an object of class
-\texttt{LALR\_Parser}, which finally contains the object of class \texttt{\_Parser} that stores the attribute
-\texttt{parse\_table}.  The states of this table are \emph{frozen sets of marked rules}, which is exactly the
-notion that we have developed in the previous chapter.  They are not numbered, so the dictionary
-\texttt{number} assigns a number to every state in order to make the output readable.  Since the states are
-sets, iterating over them is not reproducible from one run to the next.  Therefore, the states are sorted
-before they are numbered and the start state is put first, so that it receives the number $0$.
+Reduce-reduce conflicts are treated much more severely.  A reduce-reduce conflict always raises an exception of
+class \texttt{GrammarError}.  We will see an example of this in Section \ref{section:resolving-conflicts}.
 
-Given the grammar shown in Figure \ref{fig:Conflicts.ipynb}, \simtextsc{Lark} creates seven different states.
+\subsection{Inspecting the LR(1) States}
+The section \texttt{States} of the output file describes all states of the canonical LR(1) parser that has been
+computed by \simtextsc{Larkita}.  Every state lists its \blue{marked rules} together with their
+\blue{follow sets}, i.e.~the tokens that may follow the rule.  A marked rule of the form
+$A \rightarrow \alpha \bullet \beta: L$ is written as
+\\[0.2cm]
+\hspace*{1.3cm}
+$A$ \texttt{→} $\alpha$ \texttt{•} $\beta$ \texttt{\{} $L$ \texttt{\}}
+\\[0.2cm]
+and the marked rules that are added by computing the closure of a state are marked with the character
+``\texttt{+}''.  Below the marked rules, the actions and the gotos of the state are listed and, if the state has
+conflicts, these conflicts are listed below its actions.
+
+Given the grammar shown in Figure \ref{fig:Conflicts.ipynb}, \simtextsc{Larkita} creates seven different states.
 Figure \ref{fig:Conflicts.ipynb:state5} on page \pageref{fig:Conflicts.ipynb:state5} shows the most interesting
 of these, together with its actions.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
-                xleftmargin  = 0.8cm,
-                xrightmargin = 0.8cm,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.3cm,
               ]{text}
-    state 5
-        <expr : expr * PLUS expr>
-        <expr : expr * STAR expr>
-        <expr : expr PLUS expr * >
+    State 5
 
-        $END     reduce using rule <expr : expr PLUS expr>
-        PLUS     shift and go to state 2
-        STAR     shift and go to state 3
+        (1)  expr → expr • "+" expr  { "*", "+", $END }
+        (1)  expr → expr "+" expr •  { "*", "+", $END }
+        (2)  expr → expr • "*" expr  { "*", "+", $END }
+
+        "*"   shift and go to state 4
+        "+"   shift and go to state 3
+        $END  reduce using rule (1) expr → expr "+" expr
+
+        shift/reduce conflict on "+", resolved as shift
+            - shift and go to state 3
+            - reduce using rule (1) expr → expr "+" expr
+        shift/reduce conflict on "*", resolved as shift
+            - shift and go to state 4
+            - reduce using rule (1) expr → expr "+" expr
 \end{minted}
 \vspace*{-0.3cm}
 \caption{One of the states with a conflict.}
 \label{fig:Conflicts.ipynb:state5}
-\end{figure} %$
-
+\end{figure}
 
 \noindent
-Note that \simtextsc{Lark} marks the position of the parser inside a rule with the character
-``\texttt{*}'' instead of the bullet ``$\bullet$'' that we have been using so far.  The state shown in Figure
+The end of the input is called \texttt{\$END} by \simtextsc{Larkita}.  The state shown in Figure
 \ref{fig:Conflicts.ipynb:state5} is reached after an expression of the form
 $\textsl{expr}\; \aquoted{+} \;\textsl{expr}$ has been read.  There are two shift-reduce conflicts in this
-state: both for the token \texttt{PLUS} and for the token \texttt{STAR}, the parser could either reduce with
-the rule
+state: both the token \aquoted{+} and the token \aquoted{*} are elements of the follow set of the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr}$
+$\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr} \bullet$,
 \\[0.2cm]
-or shift the operator.  We see that both conflicts have been decided in favour of shifting: the only reduce
-action that is left in this state is the one for the end of input, which is called \texttt{\$END} by
-\simtextsc{Lark}.  Note that the printed state no longer shows the discarded reduce actions, nor does it show
-the follow sets of the marked rules: the parse table only records the decision that has actually been taken.
-If we want to know which actions have been discarded, we have to read the warnings shown in Figure
-\ref{fig:Conflicts.warnings}.
+so for both of these tokens the parser could either reduce with this rule or shift the operator.  We see that
+both conflicts have been decided in favour of shifting: the only reduce action that is left in this state is
+the one for the end of input.  The discarded reduce actions are listed below the actions of the state.
 
 Of course, resolving these conflicts in favour of shifting is wrong: the string
 \\[0.2cm]
@@ -301,7 +290,7 @@ Of course, resolving these conflicts in favour of shifting is wrong: the string
 \texttt{1 * 2 + 3}
 \\[0.2cm]
 is then interpreted as ``\texttt{1 * (2 + 3)}'' and not as ``\texttt{(1 * 2) + 3}''.  You can convince yourself
-of this by inspecting the parse tree that \simtextsc{Lark} produces for this string.
+of this by inspecting the abstract syntax tree that \simtextsc{Larkita} produces for this string.
 
 \section{Operator Precedence \label{section:operator-precedence}}
 
@@ -346,7 +335,7 @@ the previous section: it does not specify the precedences and associativities of
   right=0.5cm,                   % 0.5 cm distance from text to right frame
   boxsep=0pt                     % Resets default internal spacing so your 0.5cm is exact
 ]
-  \textbf{There is no way to declare the precedence of an operator in \simtextsc{Lark}.}
+  \textbf{There is no way to declare the precedence of an operator in \simtextsc{Larkita}.}
   Neither a precedence nor an associativity can be attached to a terminal, and the resolution of an
   individual shift-reduce conflict cannot be influenced. Every shift-reduce conflict is resolved in favour
   of shifting.
@@ -386,27 +375,27 @@ collects the expressions that bind most tightly, that is, numbers and parenthesi
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
               ]{text}
-    ?expr : expr "+" prod  -> add
-          | expr "-" prod  -> sub
-          | prod
+    expr : expr "+" prod
+         | expr "-" prod
+         | prod
 
-    ?prod : prod "*" fact  -> mul
-          | prod "/" fact  -> div
-          | fact
+    prod : prod "*" fact
+         | prod "/" fact
+         | fact
 
-    ?fact : atom "^" fact  -> power
-          | atom
+    fact : atom "^" fact
+         | atom
 
-    ?atom : "(" expr ")"
-          | NUMBER         -> number
+    atom : "(" expr ")"    %ignore "(", ")"
+         | NUMBER
 
     NUMBER : /0|[1-9][0-9]*/
 
@@ -414,7 +403,7 @@ collects the expressions that bind most tightly, that is, numbers and parenthesi
     %ignore WS
 \end{minted}
 \vspace*{-0.3cm}
-\caption{An unambiguous \simtextsc{Lark} grammar for arithmetical expressions.}
+\caption{An unambiguous \simtextsc{Larkita} grammar for arithmetical expressions.}
 \label{fig:grammar-layered}
 \end{figure}
 \FloatBarrier
@@ -426,46 +415,40 @@ because the additive and multiplicative operators associate to the left, while t
 \hspace*{1.3cm}
 \texttt{fact : atom "\symbol{94}" fact}
 \\[0.2cm]
-is right recursive, because exponentiation associates to the right.  This grammar is an \simtextsc{Lalr}(1)
-grammar: if we build a parser for it with \texttt{strict=True}, no exception is raised and no warning is
-printed.  The Jupyter notebook
+is right recursive, because exponentiation associates to the right.  This grammar is an LR(1)
+grammar: if we build a parser for it after turning the \texttt{ConflictWarning} into an exception as shown in
+Figure \ref{fig:conflicts-strict}, no exception is raised.  The Jupyter notebook
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/02-Conflicts-Resolved.ipynb}{Python/Chapter-11/02-Conflicts-Resolved.ipynb}
 \\[0.2cm]
 contains this grammar.  Checking a few examples confirms that the generated parser behaves as intended:
 \begin{enumerate}[(a)]
-\item ``\texttt{1-2-3}'' is parsed as ``\texttt{(1-2)-3}'', 
-\item ``\texttt{1-2*3}'' is parsed as ``\texttt{1-(2*3)}'', and 
-\item ``\texttt{2\symbol{94}3\symbol{94}4}'' is parsed as ``\texttt{2\symbol{94}(3\symbol{94}4)}''.  
+\item ``\texttt{1-2-3}'' is parsed as ``\texttt{(1-2)-3}'',
+\item ``\texttt{1-2*3}'' is parsed as ``\texttt{1-(2*3)}'', and
+\item ``\texttt{2\symbol{94}3\symbol{94}4}'' is parsed as ``\texttt{2\symbol{94}(3\symbol{94}4)}''.
 \end{enumerate}
 
 
 \remarkEng\label{remark:tree-shape}
-Encoding the precedences into the grammar has a price: the parse trees get deeper, since every expression is
-now wrapped into one node per precedence level.  This is a nuisance if the parse tree is processed further.
-\simtextsc{Lark} offers two remedies for this.
+Encoding the precedences into the grammar makes the grammar larger, since we need one syntactical variable per
+precedence level.  Nevertheless, the abstract syntax trees do not get deeper.
 \begin{enumerate}
-\item If the name of a syntactical variable is prefixed with a question mark, as in
-      \texttt{?expr}, then a node of this variable is removed from the tree whenever it has exactly one child.
-      This inlines the chains \texttt{expr} $\rightarrow$ \texttt{prod} $\rightarrow$ \texttt{fact}
-      $\rightarrow$ \texttt{atom} that carry no information.
-\item Individual alternatives can be given a name using the operator ``\texttt{->}'', as in
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{?expr : expr "+" prod -> add}
-      \\[0.2cm]
-      so that the resulting tree node is labelled \texttt{add} instead of \texttt{expr}.
+\item An alternative that consists of a single symbol, like \texttt{expr : prod}, does not build a tuple of its
+      own but returns the abstract syntax tree of this symbol.  Therefore, the chains \texttt{expr}
+      $\rightarrow$ \texttt{prod} $\rightarrow$ \texttt{fact} $\rightarrow$ \texttt{atom} carry no information and
+      leave no trace in the abstract syntax tree.
+\item The annotation \texttt{\%ignore "(", ")"} removes the parentheses from the head of the alternative
+      \texttt{"(" expr ")"}.  Hence, this alternative consists of a single symbol, too, and a parenthesized
+      expression is represented by the abstract syntax tree of the expression inside the parentheses.
 \end{enumerate}
-Note that an alternative carrying an alias is never inlined, even if it has a single child.  This is why the
-alternative \texttt{NUMBER -> number} survives although \texttt{?atom} begins with a question mark.
-
-The notebook uses both devices: it writes \texttt{?expr}, \texttt{?prod}, \texttt{?fact} and \texttt{?atom},
-and it labels the alternatives with the aliases \texttt{add}, \texttt{sub}, \texttt{mul}, \texttt{div},
-\texttt{power} and \texttt{number}.  An object of class \texttt{Transformer} that provides one method per
-alias then converts the parse tree into the nested tuples that we have been using as abstract syntax trees.
-
-Both features concern the shape of the parse tree only, they have no influence on the parse table and
+As the operators are the heads of the tuples, the grammar needs no aliases:  For example, the string
+``\texttt{1-2*3}'' is parsed into the nested tuple
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{('-', ('NUMBER', '1'), ('*', ('NUMBER', '2'), ('NUMBER', '3')))}.
+\\[0.2cm]
+Both features concern the shape of the abstract syntax tree only, they have no influence on the parse table and
 therefore cannot introduce or remove conflicts.
 \eox
 
@@ -479,7 +462,7 @@ We start our discussion by categorizing conflicts with respect to their origin.
       to describe the syntax of arithmetic expressions without the syntactic
       categories \textsl{product} and \textsl{factor}.
 
-      In \simtextsc{Lark}, such conflicts are resolved by rewriting the grammar as shown in the previous
+      In \simtextsc{Larkita}, such conflicts are resolved by rewriting the grammar as shown in the previous
       section.
 \item \emph{Look-Ahead Conflicts} are Reduce-Reduce conflicts where the grammar is
       technically unambiguous, but for which a look-ahead of one token is
@@ -487,7 +470,8 @@ We start our discussion by categorizing conflicts with respect to their origin.
 \item \emph{Mysterious Conflicts} arise only during the transition from LR states to \simtextsc{Lalr} states
       by merging states with the same core. These conflicts therefore occur
       precisely when the concept of an \simtextsc{Lalr} grammar is insufficient to describe the syntax of the
-      language to be parsed.
+      language to be parsed.  As \simtextsc{Larkita} computes the states of canonical LR(1) parsers, it never
+      runs into mysterious conflicts.
 \end{enumerate}
 We will now look at the last two cases in detail and show ways in which the conflicts can be resolved.
 
@@ -548,29 +532,28 @@ $a \rightarrow c \;\saquoted{U}\; \saquoted{W}$
 \\[0.2cm]
 and consequently the $\saquoted{X}$ is to be read as $c$.
 
-\simtextsc{Lark} refuses to build a parser for this grammar.  Instead, an exception of class
+\simtextsc{Larkita} refuses to build a parser for this grammar.  Instead, an exception of class
 \texttt{GrammarError} is raised whose message is shown in Figure \ref{fig:Look-Ahead.error} on page
-\pageref{fig:Look-Ahead.error}.  Note that the part of the message that shows the state is only printed if the
-parser is created with \texttt{debug=True}.
+\pageref{fig:Look-Ahead.error}.  As \simtextsc{Larkita} writes the output file \emph{before} it raises this
+exception, we can nevertheless inspect the state that causes the conflict.  This state is shown in Figure
+\ref{fig:Look-Ahead.state4}.  Its marked rules and their follow sets are exactly those that we have computed
+above.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
+                gobble       = 4,
+                breaklines   = true,
                 firstnumber  = 1,
                 numbers      = left,
                 numbersep    = 0.4cm,
-                xleftmargin  = 0.0cm,
+                xleftmargin  = 0.3cm,
                 xrightmargin = 0.0cm,
               ]{text}
-Reduce/Reduce collision in Terminal('U') between the following rules: 
-    - <c : X>
-    - <b : X>
-    collision occurred in state: {
-        <c : X * >
-        <b : X * >
-    }
+    The grammar has 1 unresolved reduce/reduce conflict(s), see look-ahead.out:
+      * state 4 on "U"
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The error message produced for the grammar of Figure \ref{fig:lr-conflict.g}.}
@@ -579,8 +562,35 @@ Reduce/Reduce collision in Terminal('U') between the following rules:
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                gobble       = 4,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.0cm,
+              ]{text}
+    State 4
+
+        (3)  b → "X" •  { "U" }
+        (4)  c → "X" •  { "U" }
+
+        "U"  reduce using rule (3) b → "X"
+
+        reduce/reduce conflict on "U", NOT RESOLVED (this is an error)
+            - reduce using rule (3) b → "X"
+            - reduce using rule (4) c → "X"
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The state of the grammar of Figure \ref{fig:lr-conflict.g} that has a conflict.}
+\label{fig:Look-Ahead.state4}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 firstnumber  = 1,
                 numbers      = left,
@@ -590,8 +600,8 @@ Reduce/Reduce collision in Terminal('U') between the following rules:
               ]{text}
     a : b "V"
       | c "W"
-    b : "X" "U"
-    c : "X" "U"
+    b : "X" "U"     -> b
+    c : "X" "U"     -> c
 \end{minted}
 \vspace*{-0.3cm}
 \caption{An LR(1) grammar equivalent to Figure \ref{fig:lr-conflict.g}.}
@@ -627,16 +637,18 @@ instead.  Figure
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/04-Look-Ahead-Solved.ipynb}{\texttt{Python/Chapter-11/04-Look-Ahead-Solved.ipynb}}
 \\[0.2cm]
-on the web.  For this grammar, \simtextsc{Lark} builds a parser without complaining.  Applying the function
-\texttt{dump\_states} to this parser shows the decisive state, which is reproduced in Figure
-\ref{fig:Look-Ahead-Solved.state7} on page \pageref{fig:Look-Ahead-Solved.state7}.  The follow sets of the two
-rules are now disjoint and therefore the action table of this state offers exactly one reduce action per
-token: a \saquoted{V} reduces with the rule for $b$, while a \saquoted{W} reduces with the rule for $c$.
+on the web.  The aliases \texttt{b} and \texttt{c} have no influence on the parse table.  Without them, the
+abstract syntax trees of $b$ and $c$ would both be the tuple \texttt{(('X', 'U'),)} and we could not see which of
+the two rules has been used.  For this grammar, \simtextsc{Larkita} builds a parser without complaining.  The
+output file shows the decisive state, which is reproduced in Figure \ref{fig:Look-Ahead-Solved.state7} on page
+\pageref{fig:Look-Ahead-Solved.state7}.  The follow sets of the two rules are now disjoint and therefore the
+action table of this state offers exactly one reduce action per token: a \saquoted{V} reduces with the rule for
+$b$, while a \saquoted{W} reduces with the rule for $c$.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 firstnumber  = 1,
                 numbers      = left,
@@ -644,12 +656,13 @@ token: a \saquoted{V} reduces with the rule for $b$, while a \saquoted{W} reduce
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
               ]{text}
-    state 7
-        <b : X U * >
-        <c : X U * >
+    State 7
 
-        V        reduce using rule <b : X U>
-        W        reduce using rule <c : X U>
+        (3)  b → "X" "U" •  { "V" }
+        (4)  c → "X" "U" •  { "W" }
+
+        "V"  reduce using rule (3) b → "X" "U"
+        "W"  reduce using rule (4) c → "X" "U"
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The state that had caused the conflict, now free of conflicts.}
@@ -657,38 +670,21 @@ token: a \saquoted{V} reduces with the rule for $b$, while a \saquoted{W} reduce
 \end{figure}
 \FloatBarrier
 
-\remarkEng
-There is a second way out: the grammar can be parsed with the \simtextsc{Earley} parser, which is the default
-parser of \simtextsc{Lark}.  If the parser is created with
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{Lark(grammar, start='a', parser='earley', keep\_all\_tokens=True)}
-\\[0.2cm]
-then the grammar of Figure \ref{fig:lr-conflict.g} is accepted as it stands, because the
-\simtextsc{Earley} algorithm does not need a bounded look-ahead.  The keyword argument
-\texttt{keep\_all\_tokens} keeps the anonymous terminals in the parse tree, which would otherwise be filtered
-out.  Notebook
-\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/03-Look-Ahead.ipynb}{\texttt{03-Look-Ahead.ipynb}}
-demonstrates this: the \simtextsc{Earley} parser recognizes the 
-\saquoted{X} of the string \aquoted{XUV} as a $b$ and the \saquoted{X} of the string \aquoted{XUW} as a $c$.
-The price is a parser that is considerably slower than an \simtextsc{Lalr} parser.
-\eox
-
 \subsection{Mysterious Reduce-Reduce Conflicts}
 A conflict is called a  \blue{mysterious reduce-reduce conflict}\index{reduce-reduce conflict!mysterious} if the conflict results from the merger of
 states that happens when we go from an LR parsing table to an \simtextsc{Lalr} parsing table.  The grammar in Figure
 \ref{fig:Mysterious-Conflicts.ipynb} on page \pageref{fig:Mysterious-Conflicts.ipynb} is the same as the
 grammar shown in Figure \ref{fig:lr-but-notlalr.g} on page \pageref{fig:lr-but-notlalr.g} in the previous
 chapter.  Then we had seen that this grammar is an LR grammar, but not an \simtextsc{Lalr} grammar.  Let us see what happens
-if we use \simtextsc{Lark} to generate the states for this grammar.  This example is discussed in the notebook
+if we use \simtextsc{Larkita} to generate the states for this grammar.  This example is discussed in the notebook
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/05-Mysterious-Conflicts.ipynb}{\texttt{Python/Chapter-11/05-Mysterious-Conflicts.ipynb}}.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 firstnumber  = 1,
                 numbers      = left,
@@ -701,19 +697,21 @@ if we use \simtextsc{Lark} to generate the states for this grammar.  This exampl
       | "v" b "z"
       | "w" a "z"
 
-    a : X
+    a : X     -> a
 
-    b : X
+    b : X     -> b
 
     X : "x"
 \end{minted}
 \vspace*{-0.3cm}
-\caption{A grammar that generates a mysterious reduce-reduce conflict.}
+\caption{A grammar that is LR(1), but not \simtextsc{Lalr}(1).}
 \label{fig:Mysterious-Conflicts.ipynb}
 \end{figure}
 \vspace*{0.3cm}
 
-When we compute the LR(1) states of this grammar, we find the two states
+\noindent
+As in the previous example, the aliases \texttt{a} and \texttt{b} only serve to make the abstract syntax trees of
+the rules for $a$ and $b$ distinguishable.  When we compute the LR(1) states of this grammar, we find the two states
 \\[0.2cm]
 \hspace*{1.3cm}
 $\bigl\{ a \rightarrow X \bullet: \saquoted{y},\;
@@ -734,65 +732,60 @@ $\bigl\{ a \rightarrow X \bullet:\{\saquoted{y}, \saquoted{z} \},
 \bigr\}$
 \\[0.2cm]
 and obviously has a reduce-reduce conflict if the next token is either \saquoted{y} or \saquoted{z}.
+Therefore, a parser generator that computes \simtextsc{Lalr} tables has to reject this grammar.
 
-\simtextsc{Lark} performs this merger and therefore reports two reduce-reduce collisions, one for the token
-\saquoted{y} and one for the token \saquoted{z}.  Figure \ref{fig:Mysterious-Conflicts.error} on page
-\pageref{fig:Mysterious-Conflicts.error} shows the resulting error message.  In other words,
-\simtextsc{Lark} really does construct \simtextsc{Lalr} tables and therefore rejects this grammar, as the
-theory of the previous chapter predicts.
+\simtextsc{Larkita}, however, computes the states of a \emph{canonical} LR(1) parser and never merges states.
+Hence, it builds a parser for this grammar without complaining.  Figure \ref{fig:Mysterious-Conflicts.states}
+on page \pageref{fig:Mysterious-Conflicts.states} shows the two states from the output file:  The state 6 is
+reached after reading \aquoted{vx}, while the state 9 is reached after reading \aquoted{wx}.  Each of these states
+reduces a \saquoted{y} with one of the rules and a \saquoted{z} with the other one.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 firstnumber  = 1,
                 numbers      = left,
-                numbersep    = 0.4cm,
-                xleftmargin  = 0.0cm,
-                xrightmargin = 0.0cm,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
               ]{text}
-Reduce/Reduce collision in Terminal('Z') between the following rules: 
-    - <a : X>
-    - <b : X>
-    collision occurred in state: {
-        <a : X * >
-        <b : X * >
-    }
+    State 6
 
-Reduce/Reduce collision in Terminal('Y') between the following rules: 
-    - <a : X>
-    - <b : X>
-    collision occurred in state: {
-        <a : X * >
-        <b : X * >
-    }
+        (5)  a → X •  { "y" }
+        (6)  b → X •  { "z" }
+
+        "y"  reduce using rule (5) a → X
+        "z"  reduce using rule (6) b → X
+
+    State 9
+
+        (5)  a → X •  { "z" }
+        (6)  b → X •  { "y" }
+
+        "y"  reduce using rule (6) b → X
+        "z"  reduce using rule (5) a → X
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The error message for the grammar of Figure \ref{fig:Mysterious-Conflicts.ipynb}.}
-\label{fig:Mysterious-Conflicts.error}
+\caption{The two states of the grammar of Figure \ref{fig:Mysterious-Conflicts.ipynb} that would be merged
+  by an \simtextsc{Lalr} parser generator.}
+\label{fig:Mysterious-Conflicts.states}
 \end{figure}
 \vspace*{0.3cm}
-
-Note that the error message shows the merged state, but it does not show the follow sets of the two rules.
-These have to be reconstructed by hand, as we have just done.
 
 \remarkEng
 A mysterious conflict cannot be repaired by rewriting the grammar in the way that we have used for the
 look-ahead conflict of the previous subsection, for the grammar is already an LR(1) grammar: the defect is not
-in the grammar but in the compression of the LR states into the \simtextsc{Lalr} states.  Hence, the only way
-to parse this language with \simtextsc{Lark} is to use the \simtextsc{Earley} parser:
-\\[0.2cm]
-\hspace*{1.3cm}
-\texttt{Lark(grammar, start='s', parser='earley', keep\_all\_tokens=True)}
-\\[0.2cm]
-The \simtextsc{Earley} algorithm builds no parse table at all and therefore never merges any states.  The
-notebook shows that all four strings of the language are then parsed correctly: the \saquoted{x} in the middle
-is recognized as an $a$ in \aquoted{vxy} and \aquoted{wxz}, but as a $b$ in \aquoted{vxz} and \aquoted{wxy}.
+in the grammar but in the compression of the LR states into the \simtextsc{Lalr} states.  This is the reason why
+\simtextsc{Larkita} computes canonical LR(1) parsers, although these parsers can have many more states than
+\simtextsc{Lalr} parsers.  The notebook shows that all four strings of the language are parsed correctly: the
+\saquoted{x} in the middle is recognized as an $a$ in \aquoted{vxy} and \aquoted{wxz}, but as a $b$ in
+\aquoted{vxz} and \aquoted{wxy}.
 \eox
 
 \exerciseEng
-Use \simtextsc{Lark} to implement a \textsl{Python} parser that is able to evaluate formulas from propositional logic.
+Use \simtextsc{Larkita} to implement a \textsl{Python} parser that is able to evaluate formulas from propositional logic.
 The language should support the operators
 \begin{itemize}
 \item ``\texttt{<->}'' (equivalence), 
@@ -810,12 +803,12 @@ The precedences and associativities are defined as follows:
 \item The operator ``\texttt{<->}'' is not associative and binds weaker than the operator ``\texttt{->}''.
 \end{enumerate}
 Furthermore, the language should support parenthesis, variables, and the constants ``$\top$'' and ``$\bot$''.
-Since \simtextsc{Lark} does not support precedence declarations, you have to introduce one syntactical variable
-for every precedence level.  Create the parser with \texttt{parser='lalr'} and \texttt{strict=True} so that you
-notice immediately if your grammar has a conflict.
+Since \simtextsc{Larkita} does not support precedence declarations, you have to introduce one syntactical variable
+for every precedence level.  Turn the \texttt{ConflictWarning} into an exception as shown in Figure
+\ref{fig:conflicts-strict} so that you notice immediately if your grammar has a conflict.
 
 \exerciseEng
-Implement a parser (using \simtextsc{Lark}) that evaluates operations on sets of integers.
+Implement a parser (using \simtextsc{Larkita}) that evaluates operations on sets of integers.
 Your parser must accept strings containing integer sets and operators.
 A set literal is defined as a comma-separated list of integers enclosed in curly braces.
 An empty set is allowed.
@@ -840,34 +833,35 @@ You must support the following operators. The table is ordered from \textbf{high
 \end{table}
 
 \noindent
-Again, the precedences have to be encoded into the grammar.  Note that the parser has to be an
-\simtextsc{Lalr} parser: if you use the default \simtextsc{Earley} parser, an ambiguous grammar will not be
-rejected but will produce ambiguous parse trees instead.
+Again, the precedences have to be encoded into the grammar.  Make sure that \simtextsc{Larkita} reports no
+conflicts for your grammar.
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
-\item What do you have to do in order to see shift-reduce conflicts when using \simtextsc{Lark}?
-\item How does \simtextsc{Lark} resolve a shift-reduce conflict?  How does it deal with a reduce-reduce
+\item How does \simtextsc{Larkita} report shift-reduce conflicts?
+\item How does \simtextsc{Larkita} resolve a shift-reduce conflict?  How does it deal with a reduce-reduce
       conflict?
-\item What is the effect of the keyword argument \texttt{strict=True}?
-\item Are you able to inspect the \simtextsc{Lalr} states that \simtextsc{Lark} has computed?  Which keyword
-      argument is needed for this?
+\item How can you make sure that a grammar with a shift-reduce conflict is rejected?
+\item Where can you inspect the LR(1) states that \simtextsc{Larkita} has computed and which information is
+      given for every state?
 \item Why is the string ``\texttt{1*2+3}'' parsed as ``\texttt{1*(2+3)}'' if the grammar does not
       specify the precedences of the arithmetical operators?
 \item Given the precedences and associativities of a set of operators, can you write down a grammar that is an
-      \simtextsc{Lalr}(1) grammar and that respects these precedences and associativities?
+      LR(1) grammar and that respects these precedences and associativities?
 \item How does the grammar rule for an operator of a given precedence level depend on whether this operator is
       \blue{left associative}, \blue{right associative}, or \blue{non-associative}?
-\item What is the purpose of the question mark in a rule of the form ``\texttt{?expr : \dots}'' and what is the
-      purpose of an \blue{alias} that is introduced with the operator ``\texttt{->}''?
+\item Why do the abstract syntax trees not get deeper when the precedences of the operators are encoded into the
+      grammar?
 
-      Can these features introduce or remove a conflict?
+      Can the features of \simtextsc{Larkita} that determine the shape of the abstract syntax tree introduce or
+      remove a conflict?
 \item Which three kinds of conflicts have we distinguished according to their origin?
 \item How is the concept of a \blue{look-ahead conflict} defined?
-\item How is the concept of a \blue{mysterious reduce-reduce conflict} defined?  
+\item How is the concept of a \blue{mysterious reduce-reduce conflict} defined?  Why does \simtextsc{Larkita}
+      never report a mysterious reduce-reduce conflict?
 \end{enumerate}
-    
-%%% Local Variables: 
+
+%%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "formal-languages"
 %%% End:

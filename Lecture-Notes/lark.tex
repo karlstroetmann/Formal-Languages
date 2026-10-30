@@ -1,55 +1,59 @@
-\chapter{Using \textsc{Lark} as a Parser Generator  \label{chapter:ply}}
+\chapter{Using \textsc{Larkita} as a Parser Generator  \label{chapter:ply}}
 \epigraph{\blue{\large\calligfont Give a man a parser and he can read one programming language.} \\
           \blue{\large\calligfont Give a man a parser generator and he can read all programming languages.}}{--- Carlos Ben Yussuf}
 
 \epigraph{\red{\large\calligfont Build a witch a fire and you keep her warm for one night.} \\
           \red{\large\calligfont Set a witch on fire and you keep her warm for the rest of her life.}}{--- Pope
         Hugo The Terrible}
-        
 
-\begin{figure}[h] 
+
+\begin{figure}[h]
 \centering
   \includegraphics[width=17.0cm]{Abbildungen/lark.png}
-\caption{The Lark parser generator in action.}
+\caption{The Larkita parser generator in action.}
 \label{fig:lark.png}
 \end{figure}
 
 
 Many modern programming languages, e.g.~\texttt{C}, \textsl{Java}, or \textsc{Go} can
-be parsed using a so-called \simtextsc{Lalr}(1)-Parser\footnote{
-  LALR(1) is an acronym that stands for \blue{Look-Ahead Left-to-Right} parsing with 1 token of lookahead.
-  We will discuss the theory of \simtextsc{Lalr}(1) parsing at the end of Chapter \ref{chapter:bottom-up}.}.
+be parsed using a so-called \blue{canonical LR(1)-Parser}\footnote{
+  LR(1) is an acronym:  The input is read from \underline{L}eft to right, the parser constructs a
+  \underline{R}ightmost derivation in reverse, and it uses \underline{1} token of lookahead.
+  We will discuss the theory of canonical LR(1) parsing in Chapter \ref{chapter:bottom-up}.}.
 Therefore, this chapter introduces the parser generator
-\href{https://lark-parser.readthedocs.io/}{\simtextsc{Lark}}\index{Lark@\simtextsc{Lark}}, which can be used to
-generate a parser for any language that has an \simtextsc{Lalr}(1) grammar.\footnote{
-  \simtextsc{Lark} is a pure \textsl{Python} library that can be installed via the command
+\href{https://github.com/karlstroetmann/Larkita}{\simtextsc{Larkita}}\index{Larkita@\simtextsc{Larkita}}, which can
+be used to generate a parser for any language that has an LR(1) grammar.\footnote{
+  \simtextsc{Larkita} is a light-weight version of the parser generator
+  \href{https://lark-parser.readthedocs.io/}{\simtextsc{Lark}}.  It is a pure \textsl{Python} library that can
+  be installed via the command
   \\[0.1cm]
   \hspace*{1.3cm}
-  \textcolor{amethyst}{\texttt{pip install lark}}.
-  \\[0.1cm]
-  Besides \simtextsc{Lalr}(1) parsing, \simtextsc{Lark} also implements the \blue{Earley} algorithm, which is
-  able to parse \emph{every} context-free grammar.  We will discuss the Earley algorithm in a later chapter.}
+  \textcolor{amethyst}{\texttt{pip install git+https://github.com/karlstroetmann/Larkita.git}}.}
 In Chapter \ref{chapter:ply-lex} we have already seen how a scanner can be implemented with the help of the
-module \texttt{re}.  \simtextsc{Lark} goes one step further:  Both the \blue{lexical structure} and the
-\blue{syntactical structure} of a language are described in a \emph{single} grammar, and \simtextsc{Lark}
+module \texttt{re}.  \simtextsc{Larkita} goes one step further:  Both the \blue{lexical structure} and the
+\blue{syntactical structure} of a language are described in a \emph{single} grammar, and \simtextsc{Larkita}
 generates the scanner \emph{and} the parser from this description.  Hence, this chapter no longer has to
-distinguish between the specification of a scanner and the specification of a parser.
-We will discuss two examples that use \simtextsc{Lark} as a parser generator.
+distinguish between the specification of a scanner and the specification of a parser.  Furthermore, the
+grammar also determines the \blue{abstract syntax tree} that the parser returns:  This tree is represented as a
+\blue{nested tuple}\index{nested tuple}, i.e.~it is an ordinary \textsl{Python} object.
+We will discuss two examples that use \simtextsc{Larkita} as a parser generator.
 \begin{enumerate}
 \item First, we implement a symbolic calculator.
 \item In our second example, we develop a program for symbolic differentiation.
-      This example shows how a parser can be used to construct an abstract syntax tree.
+      This example shows how the abstract syntax tree that is returned by a parser can be transformed by a
+      program.
 \end{enumerate}
-In Chapter \ref{chapter:interpreter} we will then use \simtextsc{Lark} to create an interpreter for a language
+In Chapter \ref{chapter:interpreter} we will then use \simtextsc{Larkita} to create an interpreter for a language
 that is a small fragment of the programming language \texttt{C}.
 
 \remarkEng
 Traditional parser generators for \textsl{Python}, for example
 \href{https://www.dabeaz.com/ply/}{\simtextsc{Ply}}, encode every grammar rule as a \textsl{Python}
 function whose \blue{document string} contains the rule, and the \blue{semantic action}\index{semantic action} associated with a
-rule is the body of this function.  Therefore, syntax and semantics are interleaved.  \simtextsc{Lark}
+rule is the body of this function.  Therefore, syntax and semantics are interleaved.  \simtextsc{Larkita}
 takes a different approach:  The grammar is written down as an ordinary string using a dialect of the
-\blue{extended Backus-Naur form} \simtextsc{Ebnf}, while the semantics is implemented separately.  This
+\blue{extended Backus-Naur form} \simtextsc{Ebnf}, and the grammar itself determines the abstract syntax tree
+that is built.  The semantics is then implemented separately by functions that process this tree.  This
 separation has two advantages:  The grammar remains readable as a grammar, and the same grammar can be
 reused for different purposes.  \eox
 
@@ -86,83 +90,69 @@ Figure \ref{fig:calculator.g} on page \pageref{fig:calculator.g} shows the gramm
 
 In order to generate a symbolic calculator that is based on this grammar, we have to transcribe the
 grammar shown in Figure \ref{fig:calculator.g} into the \simtextsc{Ebnf} dialect that is understood by
-\simtextsc{Lark}.  Figure \ref{fig:01-Calculator.ipynb:grammar} on
+\simtextsc{Larkita}.  Figure \ref{fig:01-Calculator.ipynb:grammar} on
 page \pageref{fig:01-Calculator.ipynb:grammar} shows the result.  Note that there is no separate scanner
 specification:  The terminals are declared inside the very same string that also declares the grammar
 rules.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
               ]{python3}
-    from lark import Lark, Token
+    from larkita import Larkita
 
-    calc_grammar = """
-    ?start: stmnt
+    calc_grammar = r"""
+    stmnt: IDENTIFIER ":=" expr ";"
+         | expr ";"
 
-    ?stmnt: IDENTIFIER ":=" expr ";" -> assign
-          | expr ";"                 -> expr_stmnt
+    expr: expr "+" product
+        | expr "-" product
+        | product
 
-    ?expr: expr "+" product          -> add
-         | expr "-" product          -> sub
-         | product
+    product: product "*" factor
+           | product "/" factor
+           | factor
 
-    ?product: product "*" factor     -> mul
-            | product "/" factor     -> div
-            | factor
-
-    ?factor: "(" expr ")"
-           | NUMBER                  -> number
-           | IDENTIFIER              -> var
+    factor: "(" expr ")"    %ignore "(", ")"
+          | NUMBER
+          | IDENTIFIER
 
     // Lexical definitions
     %import common.CNAME -> IDENTIFIER
     %import common.NUMBER
     %import common.WS
 
-    ASSIGN: ":="
-    SEMI:   ";"
-
     // Ignore whitespace
     %ignore WS
     """
 
-    parser = Lark(calc_grammar, parser='lalr')
+    parser = Larkita(calc_grammar, out_file='calc.out')
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The grammar of the symbolic calculator, written for \simtextsc{Lark}.}
+\caption{The grammar of the symbolic calculator, written for \simtextsc{Larkita}.}
 \label{fig:01-Calculator.ipynb:grammar}
 \end{figure}
 
 \noindent
 Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
 \begin{enumerate}
-\item Line 1 imports the class \texttt{Lark}, which is responsible for computing the parse table, and the
-      class \texttt{Token}.  A \texttt{Token} represents a leaf of the parse tree, i.e.~an object that has
-      been produced by the scanner.
-\item Line 3 -- 31 define the string \texttt{calc\_grammar}.  Note that this is an ordinary
+\item Line 1 imports the class \texttt{Larkita}, which is responsible for computing the parse table and for
+      generating the parser.
+\item Line 3 -- 26 define the string \texttt{calc\_grammar}.  Note that this is an ordinary
       \textsl{Python} string:  As far as \textsl{Python} is concerned, it has no structure at all.  Only
-      when this string is handed to \simtextsc{Lark} in line 33 is it interpreted as a grammar.
+      when this string is handed to \simtextsc{Larkita} in line 28 is it interpreted as a grammar.
 
-      \simtextsc{Lark} distinguishes syntactical variables from tokens by their spelling:  The names of
+      \simtextsc{Larkita} distinguishes syntactical variables from tokens by their spelling:  The names of
       \blue{syntactical variables} have to be written in \textsl{lower case}, while the names of
       \blue{tokens} have to be written in \textsl{upper case}.  Therefore, \texttt{expr} is a syntactical
       variable, while \texttt{NUMBER} is a token.
-\item Line 4 specifies that the syntactical variable \texttt{stmnt} is the \blue{start symbol} of the
-      grammar.
-
-      The prefix ``\texttt{?}'' that is attached to the variable \texttt{start} is an
-      \blue{inlining directive}\index{inlining directive (Lark)@inlining directive (\simtextsc{Lark})}:  If a rule that is marked with ``\texttt{?}'' produces a node that has
-      exactly one child, then this node is discarded and its child is used in its place.  Without this
-      directive, the parse tree would contain a lot of nodes that have a single child and that carry no
-      information.
-\item Line 6 -- 7 define the syntactical variable \texttt{stmnt}.  This definition corresponds to the two
+\item Line 4 -- 5 define the syntactical variable \texttt{stmnt}.  This definition corresponds to the two
       grammar rules
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -175,25 +165,15 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       have used so far, and that literal strings like \squoted{:=} are simply written down as
       \textsl{Python} strings.
 
-      The construct ``\texttt{-> assign}'' is an \blue{alias}\index{alias (Lark)@alias (\simtextsc{Lark})}.  It specifies the name of the node that is
-      created in the parse tree when this alternative is used.  Without an alias, all nodes created by the
-      variable \texttt{stmnt} would be called \texttt{stmnt} and we would have no easy way to distinguish
-      an assignment from an expression statement.  Note further that an alias also suppresses the inlining
-      that is requested by the prefix ``\texttt{?}''.  Therefore, a node of the form \texttt{expr\_stmnt}
-      is created even though it has just one child.
-\item Line 9 -- 15 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
+      As \texttt{stmnt} is the first syntactical variable of the grammar, it is the \blue{start symbol}.
+\item Line 7 -- 13 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
       transcriptions of the corresponding rules of Figure \ref{fig:calculator.g}.  In particular, they
       encode the \blue{precedence}\index{precedence!of arithmetic operators} of the arithmetic operators, and they are \blue{left recursive}.
-      Left recursion is not a problem here, since \simtextsc{Lalr}(1) parsing is a \blue{bottom-up}
-      technique.
-\item Line 17 -- 19 define the variable \texttt{factor}.  The first alternative in line 17 does not have
-      an alias.  The reason is that the tokens \squoted{(} and \squoted{)} are discarded by
-      \simtextsc{Lark} and hence this alternative produces a node with a single child.  As the variable
-      \texttt{factor} is marked with the prefix ``\texttt{?}'', this node is inlined and the parentheses
-      leave no trace in the parse tree.  This is exactly what we want, because the only purpose of the
-      parentheses is to override the precedence of the operators.
-\item Line 22 -- 24 import predefined token definitions from the library \texttt{common} that is shipped
-      with \simtextsc{Lark}.  Instead of writing our own regular expressions we reuse the following
+      Left recursion is not a problem here, since LR parsing is a \blue{bottom-up} technique.
+\item Line 15 -- 17 define the variable \texttt{factor}.  The annotation \texttt{\%ignore "(", ")"} at the end
+      of line 15 is explained below, when we discuss the abstract syntax tree.
+\item Line 20 -- 22 import predefined token definitions from the library \texttt{common} that is shipped
+      with \simtextsc{Larkita}.  Instead of writing our own regular expressions we reuse the following
       definitions:
       \begin{enumerate}
       \item \texttt{CNAME} matches an identifier in the sense of the language \texttt{C}.  The construct
@@ -201,15 +181,14 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       \item \texttt{NUMBER} matches both integers and floating point numbers.
       \item \texttt{WS} matches \blue{white space}, i.e.~blanks, tabulators, and newlines.
       \end{enumerate}
-\item Line 26 -- 27 give explicit names to the tokens \squoted{:=} and \squoted{;}.  These two
-      declarations do not change the language that is accepted:  Both of these tokens are still discarded
-      when the parse tree is built.  Their only purpose is to ensure that these tokens have readable names
-      instead of the names that \simtextsc{Lark} would generate automatically.  This is convenient once we
-      start to inspect the \simtextsc{Lalr}(1) parse table.
-\item Line 30 instructs the scanner to discard all white space.
-\item Line 33 creates the parser.  The keyword argument \texttt{parser='lalr'} selects the
-      \simtextsc{Lalr}(1) algorithm.  It is at this point that the parse table is computed.  If the given
-      grammar is not an \simtextsc{Lalr}(1) grammar, then this line raises an exception.
+\item Line 25 instructs the scanner to discard all white space.
+\item Line 28 creates the parser.  It is at this point that the parse table is computed.
+      \simtextsc{Larkita} always computes the parse table of a \blue{canonical LR(1) parser}.  If the given
+      grammar is not an LR(1) grammar, then the parse table has conflicts.  We will discuss in Chapter
+      \ref{chapter:bottom-up} what this means and how \simtextsc{Larkita} deals with conflicts.
+
+      Furthermore, \simtextsc{Larkita} writes a description of all states of the parser into the file that is
+      specified by the keyword argument \texttt{out\_file}, which is the file \texttt{calc.out} here.
 \end{enumerate}
 \FloatBarrier
 
@@ -219,74 +198,41 @@ Once the parser has been created, a string \texttt{s} can be parsed by evaluatin
 \hspace*{1.3cm}
 \texttt{parser.parse(s)}.
 \\[0.2cm]
-This expression returns an object of class \texttt{lark.Tree}.  A \texttt{Tree} has two attributes:
+This expression returns the \blue{abstract syntax tree} of \texttt{s}, which is represented as a
+\blue{nested tuple}.  The shape of this tuple is determined by the grammar.  If a string has been parsed with
+an alternative of a grammar rule, then the tuple that is built for this alternative is constructed as follows.
 \begin{enumerate}
-\item \texttt{data} is the name of the node.  This is either the name of the syntactical variable that has
-      produced this node, or, if an alias has been specified, the name given by this alias.
-\item \texttt{children} is the list of the subtrees of this node.  The elements of this list are either
-      objects of class \texttt{Tree} or objects of class \texttt{Token}.  As the class \texttt{Token} is a
-      subclass of \texttt{str}, a token can be used like a string.
+\item The string literals of the alternative form the \blue{head}\index{head (Larkita)@head (\simtextsc{Larkita})}
+      of the tuple, i.e.~its first component.  If the alternative contains exactly one literal, the head is
+      this literal.  If it contains several literals, the head is the tuple of these literals in the order in
+      which they are written.
+\item All other symbols of the alternative become the \blue{children} of the tuple, i.e.~its remaining
+      components:  For a syntactical variable, the child is its abstract syntax tree, while a named token like
+      \texttt{NUMBER} yields a pair consisting of the name of the token and the text that has been read.
+      For example, the number 42 yields the pair
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('NUMBER', '42')}.
+\item If an alternative has no head and consists of a single symbol, then no new tuple is built.  Instead,
+      the abstract syntax tree of this symbol is returned.  Hence, alternatives like \texttt{expr: product} or
+      \texttt{product: factor} leave no trace in the abstract syntax tree.
+\item The annotation \texttt{\%ignore "(", ")"} at the end of an alternative removes the given literals from
+      the head of this alternative.  Hence, the alternative \texttt{"(" expr ")"} in line 15 consists of a
+      single symbol and returns the abstract syntax tree of \texttt{expr}.  This is exactly what we want,
+      because the only purpose of the parentheses is to override the precedence of the operators.  Note
+      that this annotation is unrelated to the directive \texttt{\%ignore WS} in line 25, which tells the
+      scanner to discard white space.
 \end{enumerate}
-Note that the parse tree returned by \texttt{parser.parse} does not know anything about the
-\emph{meaning} of the program that has been parsed.  Providing this meaning is our job and we do it in two
-steps:
-\begin{enumerate}
-\item First, we convert the object of class \texttt{lark.Tree} into an \blue{abstract syntax tree} that is
-      represented as a \blue{nested tuple}\index{nested tuple}.
-\item Second, we evaluate this nested tuple.
-\end{enumerate}
-Admittedly, \simtextsc{Lark} offers the class \texttt{Transformer}, which could be used to evaluate the
-parse tree directly.  However, the two-step approach has the advantage that the abstract syntax tree is a
-\blue{pure} \textsl{Python} object:  It does not depend on \simtextsc{Lark} in any way and we can inspect
-it, print it, or store it without having to know anything about the internals of the parser.
-
-\begin{figure}[!ht]
-\centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
-                bgcolor      = sepia,
-                numbers      = left,
-                numbersep    = 0.3cm,
-                xleftmargin  = 0.0cm,
-                xrightmargin = 0.0cm,
-              ]{python3}
-    def ast_to_tuples(node):
-        if isinstance(node, Token):
-            return str(node)
-        operator_map = {
-            'assign':     ':=',
-            'expr_stmnt': 'eval',
-            'add':        '+',
-            'sub':        '-',
-            'mul':        '*',
-            'div':        '/',
-            'number':     'num',
-            'var':        'var'
-        }
-        op       = operator_map[node.data]
-        children = [ast_to_tuples(child) for child in node.children]
-        return (op, *children)
-\end{minted}
-\vspace*{-0.3cm}
-\caption{Converting a parse tree into an abstract syntax tree.}
-\label{fig:01-Calculator.ipynb:ast}
-\end{figure}
-
-\noindent
-Figure \ref{fig:01-Calculator.ipynb:ast} on page \pageref{fig:01-Calculator.ipynb:ast} shows the function
-\texttt{ast\_to\_tuples} that performs the first of these steps.  This function is discussed next.
-\begin{enumerate}
-\item Line 2 -- 3 deal with the base case:  If the given node is a \texttt{Token}, then it is a leaf of the
-      parse tree.  In this case we return the string that is stored in this token.
-\item Line 4 -- 13 define the dictionary \texttt{operator\_map}.  This dictionary translates the node names
-      that are used by \simtextsc{Lark} into the operator symbols that we want to use in our abstract
-      syntax tree.  For example, the node name \texttt{add}, which has been introduced as an alias in line
-      9 of Figure \ref{fig:01-Calculator.ipynb:grammar}, is translated into the string \squoted{+}.
-\item Line 14 looks up the name of the given node.  
-\item Line 15 converts all children of the given node recursively.
-\item Line 16 returns the resulting nested tuple:  The first component is the operator, the remaining
-      components are the converted children.
-\end{enumerate}
+For example, the alternative \texttt{expr "+" product} yields the tuple
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{('+', $\textsl{ast}_1$, $\textsl{ast}_2$)},
+\\[0.2cm]
+where $\textsl{ast}_1$ and $\textsl{ast}_2$ are the abstract syntax trees of \texttt{expr} and \texttt{product},
+while the alternative \texttt{IDENTIFIER ":=" expr ";"} yields
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{((':=', ';'), ('IDENTIFIER', $\textsl{name}$), $\textsl{ast}$)}.
 
 \exampleEng
 The string
@@ -294,57 +240,66 @@ The string
 \hspace*{1.3cm}
 \texttt{"x := 2 * (y + 1);"}
 \\[0.2cm]
-is converted into the nested tuple
+is parsed into the nested tuple
 \\[0.2cm]
 \hspace*{0.3cm}
-\texttt{(':=', 'x', ('*', ('num', '2'), ('+', ('var', 'y'), ('num', '1'))))}.
+\texttt{((':=', ';'), ('IDENTIFIER', 'x'),}
+\\
+\hspace*{0.8cm}
+\texttt{('*', ('NUMBER', '2'), ('+', ('IDENTIFIER', 'y'), ('NUMBER', '1'))))}.
 \\[0.2cm]
 Note the following details:
 \begin{enumerate}
 \item The parentheses of the input string have disappeared, since they are already reflected by the
       structure of the tuple.
-\item The identifier \texttt{x} on the left hand side of the assignment operator is represented by the
-      plain string \squoted{x}, while the identifier \texttt{y} is represented by the tuple
-      \texttt{('var', 'y')}.  The reason is that \texttt{x} is the \emph{name} of the variable that is
-      assigned to, while \texttt{y} denotes the \emph{value} of a variable and hence has to be looked up.
+\item The tokens are represented as pairs.  Hence, the identifier \texttt{x} on the left hand side of the
+      assignment operator is represented by the tuple \texttt{('IDENTIFIER', 'x')}.
 \item The numbers are still represented as strings.  They are converted into floating point numbers only
       when the abstract syntax tree is evaluated. \eox
 \end{enumerate}
 
+\noindent
+Note that the abstract syntax tree returned by \texttt{parser.parse} does not know anything about the
+\emph{meaning} of the program that has been parsed.  Providing this meaning is our job:  We have to evaluate
+the nested tuple.  As the abstract syntax tree is a \blue{pure} \textsl{Python} object, we can inspect it, print
+it, or store it without having to know anything about the internals of the parser.
+
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.0cm,
                 xrightmargin = 0.0cm,
+                gobble       = 3,
               ]{python3}
    Names2Values = {}
 
    def evaluate_adt(adt):
        match adt:
-           case ('num', value):
+           case ('NUMBER', value):
                return float(value)
-           case ('var', name):
-               if name not in Names2Values:
-                   print(f"Error: variable '{name}' is undefined.")
+           case ('IDENTIFIER', var_name):
+               if var_name not in Names2Values:
+                   print(f"Error: variable '{var_name}' is undefined.")
                    return 0.0
                return Names2Values[var_name]
-           case (':=', var_name, expr):
+           case ((':=', ';'), ('IDENTIFIER', var_name), expr):
                Names2Values[var_name] = evaluate_adt(expr)
-           case ('eval', expr):
+           case (';', expr):
                print(evaluate_adt(expr))
            case (('+' | '-' | '*' | '/') as op, left, right):
-               val_left, val_right = map(evaluate_adt, [left, right])
-               match op:               
+               val_left  = evaluate_adt(left )
+               val_right = evaluate_adt(right)
+               match op:
                    case '+': return val_left + val_right
                    case '-': return val_left - val_right
                    case '*': return val_left * val_right
                    case '/': return val_left / val_right
            case _:
-               raise ValueError(f'Unknown ADT structure: {adt}')
+               raise ValueError(f"Unknown ADT structure: {adt}")
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Evaluating the abstract syntax tree.}
@@ -359,36 +314,38 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
       interactively, \texttt{Names2Values[$x$]} is the value associated with $x$.
 \item Line 4 starts a \texttt{match} statement.  \blue{Structural pattern matching}\index{pattern matching} is the natural way to
       work with an abstract syntax tree that is represented as a nested tuple:  Every case of the
-      \texttt{match} statement corresponds to one of the operators that occur in our abstract syntax tree.
+      \texttt{match} statement corresponds to one of the shapes that occur in our abstract syntax tree.
 \item Line 5 -- 6 evaluate a number.  This is the place where the string produced by the scanner is
       converted into a floating point number.
 \item Line 7 -- 11 evaluate a variable.  If the variable has not been defined previously, an error message
       is printed and the value $0.0$ is returned.
 \item Line 12 -- 13 implement an assignment:  The expression on the right hand side is evaluated and the
-      resulting value is stored in the dictionary \texttt{Names2Values}.  Note that an assignment does not
-      return a value.
+      resulting value is stored in the dictionary \texttt{Names2Values}.  Note that the pattern in line 12
+      extracts the name of the variable from the token \texttt{('IDENTIFIER', var\_name)} and that an
+      assignment does not return a value.
 \item Line 14 -- 15 implement an expression statement:  The expression is evaluated and the resulting value
       is printed.
-\item Line 16 -- 22 evaluate the arithmetic operators.  The pattern in line 16 uses an \blue{or pattern}\index{pattern matching!or pattern} in
+\item Line 16 -- 23 evaluate the arithmetic operators.  The pattern in line 16 uses an \blue{or pattern}\index{pattern matching!or pattern} in
       order to capture all four binary operators at once.  The keyword \texttt{as} binds the operator that
       has actually been found to the variable \texttt{op}.  Then, both operands are evaluated recursively
       and the inner \texttt{match} statement in line 19 -- 23 selects the operation that has to be
       performed.
-\item Line 23 -- 24 catch the case that the abstract syntax tree has a shape that is not supported.  If
+\item Line 24 -- 25 catch the case that the abstract syntax tree has a shape that is not supported.  If
       this happens, we have made a mistake, either in the grammar or in the function
-      \texttt{ast\_to\_tuples}.
+      \texttt{evaluate\_adt}.
 \end{enumerate}
 \FloatBarrier
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
+                gobble       = 4,
                 numbers      = left,
                 numbersep    = 0.3cm,
-                xleftmargin  = 0.8cm,
-                xrightmargin = 0.8cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
               ]{python3}
     def main():
         while True:
@@ -396,13 +353,14 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
                 s = input('calc> ')
                 if s == '':
                     break
-                raw_tree   = parser.parse(s)
-                adt_tuples = ast_to_tuples(raw_tree)
-                evaluate_adt(adt_tuples)
-            except (EOFError, NotImplementedError):
+                # 1. Parse the string into a nested tuple
+                adt = parser.parse(s)
+                # 2. Evaluate the nested tuple
+                evaluate_adt(adt)
+            except (EOFError, NotImplementedError):  # no input possible
                 break
             except Exception as e:
-                print(f'Error: {e}')
+                print(f"Error: {e}")
 \end{minted}
 \vspace*{-0.3cm}
 \caption{A read-eval-print loop for the symbolic calculator.}
@@ -412,18 +370,18 @@ function \texttt{evaluate\_adt} that implements the semantics of our calculator.
 \noindent
 Finally, Figure \ref{fig:01-Calculator.ipynb:main} on page \pageref{fig:01-Calculator.ipynb:main} shows
 the function \texttt{main}, which is a \blue{read-eval-print loop}\index{read-eval-print loop}:  It reads a string \texttt{s} from the
-command line and then performs the three steps that we have discussed:  Line 7 parses the string, line 8
-converts the resulting parse tree into an abstract syntax tree, and line 9 evaluates this tree.  The loop
-is terminated as soon as the user enters an empty line.  It is also terminated if no input can be read at
-all:  Then the function \texttt{input} raises an \texttt{EOFError} or, inside a Jupyter notebook that is
-executed automatically, a \texttt{NotImplementedError}.  Line 10 -- 11 catch these exceptions.
+command line and then performs the two steps that we have discussed:  Line 8 parses the string into a nested
+tuple and line 10 evaluates this tuple.  The loop is terminated as soon as the user enters an empty line.  It is
+also terminated if no input can be read at all:  Then the function \texttt{input} raises an \texttt{EOFError}
+or, inside a Jupyter notebook that is executed automatically, a \texttt{NotImplementedError}.  Line 11 -- 12
+catch these exceptions.
 
-Observe how \simtextsc{Lark} reports errors:  Instead of calling an error function that has been provided
-by the user, \simtextsc{Lark} raises an \blue{exception}.  Both lexical errors and syntax errors are
-signalled by subclasses of the class \texttt{lark.exceptions.UnexpectedInput}.  As these exceptions carry
-the position where the error has occurred, the messages produced by \simtextsc{Lark} are usually much more
+Observe how \simtextsc{Larkita} reports errors:  Instead of calling an error function that has been provided
+by the user, \simtextsc{Larkita} raises an \blue{exception}.  Both lexical errors and syntax errors are
+signalled by subclasses of the class \texttt{larkita.UnexpectedInput}.  As these exceptions carry
+the position where the error has occurred, the messages produced by \simtextsc{Larkita} are usually much more
 informative than the messages that we could produce ourselves with a modest amount of effort.  The
-\texttt{try}-\texttt{except} statement in line 3 and line 12 -- 13 catches these exceptions so that a
+\texttt{try}-\texttt{except} statement in line 3 and line 13 -- 14 catches these exceptions so that a
 single erroneous input does not terminate the calculator.
 
 The Jupyter notebook \texttt{01-Calculator}, which is available at
@@ -434,21 +392,22 @@ The Jupyter notebook \texttt{01-Calculator}, which is available at
 implements the symbolic calculator discussed in this section.
 
 \remarkEng
-The notebook \texttt{01-Calculator} also demonstrates how the \simtextsc{Lalr}(1) states that have been
-computed by \simtextsc{Lark} can be printed.  At this point, these states will not make much sense.
-However, it is worthwhile to return to this part of the notebook once we have discussed the theory of
-\simtextsc{Lalr}(1) parsing in Chapter \ref{chapter:bottom-up}.  \eox
+The notebook \texttt{01-Calculator} also prints the file \texttt{calc.out}, which describes all states of the
+LR(1) parser that has been computed by \simtextsc{Larkita}.  At this point, these states will not make much
+sense.  However, it is worthwhile to return to this part of the notebook once we have discussed the theory of
+LR(1) parsing in Chapter \ref{chapter:bottom-up}.  \eox
 
 \exerciseEng
 Extend the grammar shown in Figure \ref{fig:01-Calculator.ipynb:grammar} so that the calculator supports
 the \blue{exponentiation operator} \squoted{**} and the \blue{unary minus}\index{unary minus}.  The exponentiation operator
 binds stronger than multiplication and it is \blue{right associative}\index{right associative}, i.e.~the expression
-\texttt{2 ** 3 ** 2} has the value $2^{(3^2)} = 512$.  Furthermore, extend the functions
-\texttt{ast\_to\_tuples} and \texttt{evaluate\_adt} accordingly.
+\texttt{2 ** 3 ** 2} has the value $2^{(3^2)} = 512$.  Furthermore, extend the function
+\texttt{evaluate\_adt} accordingly.
 \\[0.2cm]
 \hint
 Introduce a new syntactical variable \texttt{power} between \texttt{product} and \texttt{factor} and make
-this variable right recursive.
+this variable right recursive.  The section on symbolic differentiation shows how an \blue{alias} can be used
+to distinguish the unary minus from the binary minus.
 
 \section{Symbolic Differentiation  \label{section:differentiator}}
 Our second example shows how a parser can be used to construct an \blue{abstract syntax tree} that is
@@ -512,52 +471,50 @@ functions $\exp$ and $\ln$.  For the sake of simplicity, \texttt{x} is the only 
 
 \noindent
 Figure \ref{fig:02-Differentiator.ipynb:grammar} on page \pageref{fig:02-Differentiator.ipynb:grammar}
-shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \simtextsc{Lark}.
+shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \simtextsc{Larkita}.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
               ]{python3}
-    from lark import Lark, Token
+    from larkita import Larkita
 
-    calc_grammar = """
-    ?start: expr
+    calc_grammar = r"""
+    expr: expr "+" product
+        | expr "-" product
+        | product
 
-    ?expr: expr "+" product   -> add
-         | expr "-" product   -> sub
-         | product
+    product: product "*" unary
+           | product "/" unary
+           | unary
 
-    ?product: product "*" unary -> mul
-            | product "/" unary -> div
-            | unary
+    unary: "-" unary            -> neg
+         | factor
 
-    ?unary: "-" unary           -> neg
-          | factor
+    factor: base "**" unary
+          | base
 
-    ?factor: base "**" unary    -> pow
-           | base
-
-    ?base: "exp" "(" expr ")"    -> exp
-         | "ln" "(" expr ")"     -> ln
-         | "(" expr ")"
-         | NUMBER                -> number
-         | "x"                   -> var
+    base: "exp" "(" expr ")"    -> exp
+        | "ln" "(" expr ")"     -> ln
+        | "(" expr ")"          %ignore "(", ")"
+        | NUMBER
+        | "x"
 
     %import common.NUMBER
     %import common.WS
     %ignore WS
     """
 
-    parser = Lark(calc_grammar, parser='lalr')
+    parser = Larkita(calc_grammar, out_file='diff.out')
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The grammar of the differentiator, written for \simtextsc{Lark}.}
+\caption{The grammar of the differentiator, written for \simtextsc{Larkita}.}
 \label{fig:02-Differentiator.ipynb:grammar}
 \end{figure}
 
@@ -565,21 +522,26 @@ shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \si
 As the general structure of this grammar is the same as the structure of the grammar that we have
 discussed in the previous section, we only comment on those parts that are new.
 \begin{enumerate}
-\item Line 4 declares the variable \texttt{expr} as the start symbol.  In contrast to the calculator,
-      this language has no statements:  The input is a single expression and there is no terminating
-      semicolon.
-\item Line 6 -- 12 define the variables \texttt{expr} and \texttt{product} in the usual way.  Note that the
-      second operand of the operators \squoted{*} and \squoted{/} is now the variable \texttt{unary}
-      instead of the variable \texttt{factor}.
-\item Line 14 -- 15 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
+\item Line 4 -- 10 define the variables \texttt{expr} and \texttt{product} in the usual way.  As
+      \texttt{expr} is the first variable of the grammar, it is the start symbol.  In contrast to the
+      calculator, this language has no statements:  The input is a single expression and there is no
+      terminating semicolon.  Note that the second operand of the operators \squoted{*} and \squoted{/} is
+      now the variable \texttt{unary} instead of the variable \texttt{factor}.
+\item Line 12 -- 13 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
       is \blue{right recursive}\index{right recursive}, since a unary operator can be applied repeatedly:  The string
       \texttt{"-\,-x"} is a legal expression.
-\item Line 17 -- 18 define the variable \texttt{factor}, which implements exponentiation.  The interplay
+
+      The construct ``\texttt{-> neg}'' at the end of line 12 is an
+      \blue{alias}\index{alias (Larkita)@alias (\simtextsc{Larkita})}.  An alias replaces the head of the tuple that is
+      built for the alternative.  Without this alias, the head would be the literal \squoted{-} and a negation
+      could only be distinguished from a subtraction by the number of components of its tuple.  With the alias,
+      a negation is represented by a tuple of the form \texttt{('neg', $\textsl{ast}$)}.
+\item Line 15 -- 16 define the variable \texttt{factor}, which implements exponentiation.  The interplay
       between \texttt{unary} and \texttt{factor} deserves a closer look, because it encodes two
       conventions that every mathematician takes for granted:
       \begin{enumerate}
       \item The left operand of the operator \squoted{**} is a \texttt{base}, not a \texttt{unary} operator.
-            Therefore, the string 
+            Therefore, the string
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{"-x ** 2"}
@@ -587,7 +549,7 @@ discussed in the previous section, we only comment on those parts that are new.
             is parsed as $-\bigl(x^2\bigr)$ and not as
             $(-x)^2$, i.e.~exponentiation binds stronger than the unary minus.
       \item The right operand of the operator \squoted{**} is a \texttt{unary}, not a \texttt{base}.
-            Therefore, the string 
+            Therefore, the string
             \\[0.2cm]
             \hspace*{1.3cm}
             \texttt{"x ** -x"}
@@ -599,100 +561,90 @@ discussed in the previous section, we only comment on those parts that are new.
             \texttt{"x ** x ** x"}
             \\[0.2cm] is parsed as the expression $x^{\left(x^x\right)}$.
       \end{enumerate}
-\item Line 20 -- 24 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
-      line 20 and line 21 are ordinary literals, i.e.~are recognized in exactly the same way as the operator
-      symbols.  The nodes \texttt{exp} and \texttt{ln} have a single child.
-\item Line 24 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
-      as a literal string, we do not need a token for identifiers at all.
+\item Line 18 -- 22 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
+      line 18 and line 19 are ordinary literals, i.e.~they are recognized in exactly the same way as the
+      operator symbols.  Without the aliases \texttt{exp} and \texttt{ln}, the heads of these alternatives
+      would be the tuples
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('exp', '(', ')')} \quad and \quad \texttt{('ln', '(', ')')}.
+      \\[0.2cm]
+      With the aliases, the abstract syntax tree of the string \texttt{"exp(x)"} is the pair
+      \texttt{('exp', $\textsl{ast}$)}.
+\item Line 22 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
+      as a literal string, we do not need a token for identifiers at all.  As this alternative consists of a
+      single literal, its abstract syntax tree is the tuple \texttt{('x',)}, which has the head \squoted{x} and
+      no children.
 \end{enumerate}
 \FloatBarrier
 
 \noindent
+For example, the string \texttt{"ln(x ** x) + exp(x * -x)"} is parsed into the nested tuple
+\\[0.2cm]
+\hspace*{0.3cm}
+\texttt{('+', ('ln', ('**', ('x',), ('x',))),}
+\\
+\hspace*{0.8cm}
+\texttt{('exp', ('*', ('x',), ('neg', ('x',)))))}.
+\\[0.2cm]
+The heads of these tuples are already the operator symbols that we want to use.  Only the \emph{leaves} of this
+tree differ from the representation that our program for symbolic differentiation is going to use:  We want to
+represent a number by the number itself and the variable \texttt{x} by the string \squoted{x}.
 Figure \ref{fig:02-Differentiator.ipynb:ast} on page \pageref{fig:02-Differentiator.ipynb:ast} shows the
-function \texttt{ast\_to\_tuples} that converts the parse tree produced by \simtextsc{Lark} into a nested
-tuple, together with the function \texttt{parse} that combines both steps.
+function \texttt{convert\_leaves} that converts the leaves, together with the function \texttt{parse} that
+combines parsing and conversion.
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame        = lines, 
-                framesep     = 0.3cm, 
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
                 bgcolor      = sepia,
                 numbers      = left,
                 numbersep    = 0.3cm,
-                xleftmargin  = 0.0cm,
-                xrightmargin = 0.0cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
                 ]{python3}
-    operatorTable = {'add': '+', 'sub': '-',
-                     'mul': '*', 'div': '/', 'pow': '**'}
-                    
-    def ast_to_tuples(node):
-        if isinstance(node, Token):
-            return str(node)
-        match node.data:
-            case 'number': 
-                return int(node.children[0])
-            case 'var':    
+    def convert_leaves(ast):
+        match ast:
+            case ('NUMBER', digits):
+                return int(digits)
+            case ('x',):
                 return 'x'
-            case op_name:
-                op_sym = operatorTable.get(op_name, op_name)
-                return (op_sym, *map(ast_to_tuples, node.children))                
-    
+            case (op, *args):
+                return (op, *map(convert_leaves, args))
+
     def parse(s):
-        return ast_to_tuples(parser.parse(s))
+        return convert_leaves(parser.parse(s))
 \end{minted}
 \vspace*{-0.3cm}
-\caption{Converting the parse tree into an abstract syntax tree.}
+\caption{Converting the leaves of the abstract syntax tree.}
 \label{fig:02-Differentiator.ipynb:ast}
 \end{figure}
 
-
 \noindent
-This function serves the same purpose as the function of the same name that we have discussed in the
-previous section.  However, it is organized differently:  Instead of providing a separate case for every
-operator, it is \blue{table driven}.
+The function \texttt{convert\_leaves} is discussed next.
 \begin{enumerate}
-\item Line 1 -- 2 define the dictionary \texttt{operatorTable}.  This dictionary maps the names of the nodes
-      that are created by \simtextsc{Lark} to the operator symbols that we want to use in our abstract
-      syntax tree.  For example, the node name \texttt{add}, which has been introduced as an alias in
-      line 6 of Figure \ref{fig:02-Differentiator.ipynb:grammar}, is mapped to the string \squoted{+}.
-
-      Observe that the node names \texttt{neg}, \texttt{exp}, and \texttt{ln} do \emph{not} occur in this
-      dictionary.  The reason is that we want to use these names unchanged in the abstract syntax tree.
-      Line 13 shows how this is achieved.
-\item Line 5 -- 6 deal with the base case:  If the given node is a \texttt{Token}, then it is a leaf of
-      the parse tree and hence we return the string that is stored in this token.
-\item Line 7 starts a \texttt{match} statement that inspects the attribute \texttt{node.data}, i.e.~the
-      name of the node.  As this name is an ordinary string, all patterns of this \texttt{match} statement
-      are patterns for strings.
-\item Line 8 -- 9 convert a number.  In contrast to the calculator of the previous section, the conversion
+\item Line 3 -- 4 convert a number.  In contrast to the calculator of the previous section, the conversion
       of a string into a number happens already at this point, because the abstract syntax tree is not
       evaluated later but rather transformed symbolically.
 
       We will tacitly assume that all numbers are integers.
-\item Line 10 -- 11 convert the variable \texttt{x}.  Since the string \texttt{"x"} occurs as an anonymous
-      literal in the grammar, it is discarded when the parse tree is built.  Therefore, the node
-      \texttt{var} has no children at all and we simply return the string \squoted{x}.
-\item Line 12 is the most interesting line of this function.  The pattern \texttt{op\_name} is a
-      \blue{capture pattern}\index{pattern matching!capture pattern}:  As \texttt{op\_name} is a plain variable name, this pattern matches
-      \emph{any} value and binds this value to the variable \texttt{op\_name}.  Hence, this case is the
-      default case that deals with all remaining nodes, i.e.~with all nodes that represent an operator.
-\item Line 13 translates the name of the node into an operator symbol.  The second argument of the method
-      \texttt{get} is the value that is returned if the given key is not present in the dictionary.  Here,
-      this default value is the name of the node itself.  This is the trick that has been announced above:
-      Every node name that is not listed in \texttt{operatorTable} is used unchanged.  Consequently, the
-      nodes \texttt{neg}, \texttt{exp}, and \texttt{ln} are converted into tuples that start with the
-      strings \squoted{neg}, \squoted{exp}, and \squoted{ln}, respectively.
-\item Line 14 converts all children recursively and prepends the operator symbol.  The expression
+\item Line 5 -- 6 convert the variable \texttt{x}.
+\item Line 7 is the most interesting line of this function.  The pattern \texttt{(op, *args)} matches every
+      tuple that has at least one component.  The \blue{capture pattern}\index{pattern matching!capture pattern} \texttt{op}
+      binds the head of the tuple to the variable \texttt{op}, while the \blue{star pattern}
+      \texttt{*args} binds the list of the remaining components to the variable \texttt{args}.  Hence, this
+      case is the default case that deals with all tuples that represent an operator or a function.
+\item Line 8 converts all children recursively and prepends the head.  The expression
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{map(ast\_to\_tuples, node.children)}
+      \texttt{map(convert\_leaves, args)}
       \\[0.2cm]
-      applies the function \texttt{ast\_to\_tuples} to every child of the given node, while the operator
-      ``\texttt{*}'' unpacks the resulting iterator into the tuple that is created.  Note that this works
-      for unary and for binary operators alike:  The number of components of the resulting tuple is
-      determined by the number of children of the node.
-\item Line 16 -- 17 define the function \texttt{parse}, which combines both steps:  It parses the string
-      \texttt{s} and immediately converts the resulting parse tree into an abstract syntax tree.
+      applies the function \texttt{convert\_leaves} to every child, while the operator ``\texttt{*}'' unpacks
+      the resulting iterator into the tuple that is created.  Note that this works for unary and for binary
+      operators alike.
+\item Line 10 -- 11 define the function \texttt{parse}, which combines both steps:  It parses the string
+      \texttt{s} and immediately converts the leaves of the resulting abstract syntax tree.
 \end{enumerate}
 
 \exampleEng
@@ -703,11 +655,10 @@ The string \texttt{"ln(x ** x) + exp(x * -x)"} is converted into the nested tupl
 \hspace*{\fill} $\diamond$
 
 \remarkEng
-The table driven organization of the function \texttt{ast\_to\_tuples} pays off as soon as the language is
-extended.  In order to support an additional operator or an additional function, it is usually sufficient
-to extend the grammar:  If the alias of the new grammar rule is already the symbol that we want to use in
-the abstract syntax tree, then the function \texttt{ast\_to\_tuples} does not have to be changed at all.
-Otherwise, a single entry has to be added to the dictionary \texttt{operatorTable}.  \eox
+As the heads of the tuples are determined by the grammar, it is usually sufficient to extend the grammar in
+order to support an additional operator or an additional function:  If the alias of the new alternative is
+already the symbol that we want to use in the abstract syntax tree, then the function
+\texttt{convert\_leaves} does not have to be changed at all.  \eox
 \vspace*{0.1cm}
 
 \noindent
@@ -961,16 +912,15 @@ implements the symbolic differentiator that has been discussed in this section.
 \exerciseEng
 Extend the differentiator so that it supports the trigonometric functions $\sin$ and $\cos$.  You have to
 \begin{enumerate}
-\item add two alternatives to the variable \texttt{base} in the grammar shown in Figure
-      \ref{fig:02-Differentiator.ipynb:grammar},
-\item add the corresponding cases to the function \texttt{ast\_to\_tuples}, and
+\item add two alternatives with suitable aliases to the variable \texttt{base} in the grammar shown in Figure
+      \ref{fig:02-Differentiator.ipynb:grammar} and
 \item add the rules
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\sin\bigl(f(x)\bigr) 
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\sin\bigl(f(x)\bigr)
        = \Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot \cos\bigl(f(x)\bigr)$
       \quad and \quad
-      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\cos\bigl(f(x)\bigr) 
+      $\ds\frac{\mathrm{d}\;}{\mathrm{d}x}\cos\bigl(f(x)\bigr)
        = -\Bigl(\frac{\mathrm{d}\;}{\mathrm{d}x} f(x)\Bigr) \cdot \sin\bigl(f(x)\bigr)$
       \\[0.2cm]
       to the function \texttt{diff}.
@@ -979,20 +929,23 @@ Which changes are necessary in the function \texttt{toString}? \eox
 
 \section{Check your Understanding}
 \begin{enumerate}[(a)]
-\item How does \simtextsc{Lark} distinguish the names of \blue{syntactical variables} from the names of
+\item How does \simtextsc{Larkita} distinguish the names of \blue{syntactical variables} from the names of
       \blue{tokens}?
-\item What is the purpose of the prefix ``\texttt{?}'' that can be attached to a syntactical variable, and
-      under which circumstances does this prefix have no effect?
+\item How does \simtextsc{Larkita} determine the \blue{head} and the \blue{children} of the tuple that is built
+      for an alternative of a grammar rule?
+\item Under which circumstances does an alternative return the abstract syntax tree of one of its symbols
+      instead of building a new tuple?
 \item What is an \blue{alias}, i.e.~what is the effect of the construct ``\texttt{-> name}'' that can be
       attached to an alternative of a grammar rule?
-\item Which parts of a grammar rule are discarded by \simtextsc{Lark} when the parse tree is built?
-\item Would you be able to write a \simtextsc{Lark} grammar for propositional formulas together with a
-      function that converts the resulting parse tree into nested tuples?
-\item How does \simtextsc{Lark} report lexical errors and syntax errors?
+\item What is the effect of an annotation of the form \texttt{\%ignore "(", ")"} at the end of an alternative,
+      and how does it differ from a directive of the form \texttt{\%ignore WS}?
+\item Would you be able to write a \simtextsc{Larkita} grammar for propositional formulas together with a
+      function that evaluates the nested tuples returned by the generated parser?
+\item How does \simtextsc{Larkita} report lexical errors and syntax errors?
 \end{enumerate}
 
 
-%%% Local Variables: 
+%%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "formal-languages.tex"
 %%% End:
