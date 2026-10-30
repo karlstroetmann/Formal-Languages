@@ -18,7 +18,8 @@ discuss some of the more advanced features of \simtextsc{Larkita}.
       conflict in favour of shifting and offers no way to change this decision, the precedences and
       associativities of the operators have to be encoded into the grammar itself.
 \item Finally, we see that \simtextsc{Larkita} has no problem with a grammar that is an LR(1) grammar but not an
-      \simtextsc{Lalr}(1) grammar.
+      \simtextsc{Lalr}(1) grammar, and we show how \simtextsc{Larkita} can reduce the number of states by merging
+      those states that can be merged safely.
 \end{enumerate}
 All examples of this chapter are available as Jupyter notebooks in the following directory:
 \\[0.2cm]
@@ -41,6 +42,8 @@ All examples of this chapter are available as Jupyter notebooks in the following
     \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/04-Look-Ahead-Solved.ipynb}{\texttt{04-Look-Ahead-Solved.ipynb}}    & the same grammar, rewritten so that it is LR(1) \\
     \hline
     \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/05-Mysterious-Conflicts.ipynb}{\texttt{05-Mysterious-Conflicts.ipynb}} & a grammar that is LR(1), but not \simtextsc{Lalr}(1) \\
+    \hline
+    \href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/06-Merging-States.ipynb}{\texttt{06-Merging-States.ipynb}} & merging states with the same core \\
     \hline
   \end{tabular}
 \end{center}
@@ -471,7 +474,8 @@ We start our discussion by categorizing conflicts with respect to their origin.
       by merging states with the same core. These conflicts therefore occur
       precisely when the concept of an \simtextsc{Lalr} grammar is insufficient to describe the syntax of the
       language to be parsed.  As \simtextsc{Larkita} computes the states of canonical LR(1) parsers, it never
-      runs into mysterious conflicts.
+      runs into mysterious conflicts.  Even if it is asked to merge states, it only merges states as long as
+      this does not cause a conflict.
 \end{enumerate}
 We will now look at the last two cases in detail and show ways in which the conflicts can be resolved.
 
@@ -734,7 +738,8 @@ $\bigl\{ a \rightarrow X \bullet:\{\saquoted{y}, \saquoted{z} \},
 and obviously has a reduce-reduce conflict if the next token is either \saquoted{y} or \saquoted{z}.
 Therefore, a parser generator that computes \simtextsc{Lalr} tables has to reject this grammar.
 
-\simtextsc{Larkita}, however, computes the states of a \emph{canonical} LR(1) parser and never merges states.
+\simtextsc{Larkita}, however, computes the states of a \emph{canonical} LR(1) parser and, unless it is asked
+to do so, it never merges states.
 Hence, it builds a parser for this grammar without complaining.  Figure \ref{fig:Mysterious-Conflicts.states}
 on page \pageref{fig:Mysterious-Conflicts.states} shows the two states from the output file:  The state 6 is
 reached after reading \aquoted{vx}, while the state 9 is reached after reading \aquoted{wx}.  Each of these states
@@ -779,9 +784,150 @@ A mysterious conflict cannot be repaired by rewriting the grammar in the way tha
 look-ahead conflict of the previous subsection, for the grammar is already an LR(1) grammar: the defect is not
 in the grammar but in the compression of the LR states into the \simtextsc{Lalr} states.  This is the reason why
 \simtextsc{Larkita} computes canonical LR(1) parsers, although these parsers can have many more states than
-\simtextsc{Lalr} parsers.  The notebook shows that all four strings of the language are parsed correctly: the
+\simtextsc{Lalr} parsers.  However, \simtextsc{Larkita} can merge those states that can be merged safely, as
+we will see in the next subsection.  The notebook shows that all four strings of the language are parsed correctly: the
 \saquoted{x} in the middle is recognized as an $a$ in \aquoted{vxy} and \aquoted{wxz}, but as a $b$ in
 \aquoted{vxz} and \aquoted{wxy}.
+\eox
+
+\subsection{Merging States \label{section:merging-states}}
+The price for the power of canonical LR(1) parsers is the size of their parse tables:  As we have seen in
+Section \ref{section:lalr}, a canonical LR(1) parser often has many more states than an \simtextsc{Lalr} parser
+for the same grammar, since it keeps apart states that only differ in the follow tokens of their marked rules.
+Such states have the same \blue{core}\index{core of a set of extended marked rules}.  An \simtextsc{Lalr} parser generator merges all states with the same core,
+and we have just seen that this can cause mysterious conflicts.  \simtextsc{Larkita} takes a middle course:
+If it is called with the keyword argument \texttt{merge\_states=True}, it merges states with the same core as long
+as this is safe.  This is the case if the following two conditions are satisfied:
+\begin{enumerate}
+\item Merging does not cause a conflict.  This has to hold not only for the merged states, but also for their
+      successors:  As the function $\textsl{goto}()$ is compatible with the core, the successors of two states with
+      the same core have the same core, too.  As a merged state has just one successor for every symbol, these
+      successors have to be merged as well.
+\item Merging does not change the tokens that are produced by the scanner.  The scanner of \simtextsc{Larkita}
+      is \blue{contextual}\index{contextual scanner}:  In every state of the parser, it only tries those tokens
+      that the parser can accept in this state.  For example, in a state where the keyword \texttt{else} cannot
+      occur, the string ``\texttt{else}'' is read as an identifier.  If this state was merged with a state that
+      accepts the keyword \texttt{else}, the string ``\texttt{else}'' would be read as a keyword instead.  Hence,
+      two states are not merged if one of them accepts a token that the scanner could confuse with a token
+      accepted by the other one.
+\end{enumerate}
+If both conditions are satisfied, the parser with merged states accepts the same strings and returns the same
+abstract syntax trees as the canonical parser.  It even detects a syntax error at the same token, although it
+might perform some additional reductions before it reports the error.  Hence, merging states is a pure
+optimization.  This is demonstrated in the notebook
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/tree/master/Python/Chapter-11/06-Merging-States.ipynb}{\texttt{Python/Chapter-11/06-Merging-States.ipynb}}.
+\\[0.2cm]
+Figure \ref{fig:Merging-States.ipynb} on page \pageref{fig:Merging-States.ipynb} shows how this notebook
+generates a canonical parser and a parser with merged states for the grammar for arithmetical expressions that
+is shown in Figure \ref{fig:grammar-layered} on page \pageref{fig:grammar-layered}.  The canonical parser has 36
+states, while the parser with merged states has only 19 states.  For this grammar, all states with the same core
+are merged, so the result is the \simtextsc{Lalr} parser.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                firstnumber  = 1,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+canonical = Larkita(grammar, out_file='arith.out')
+merged    = Larkita(grammar, out_file='arith-merged.out',
+                    merge_states=True)
+print('canonical:', len(canonical.parse_table.states), 'states')
+print('merged:   ', len(merged.parse_table.states), 'states')
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Generating a canonical parser and a parser with merged states.}
+\label{fig:Merging-States.ipynb}
+\end{figure}
+
+The output file of the parser with merged states describes the merged states.  For example, Figure
+\ref{fig:Merging-States.state6} on page \pageref{fig:Merging-States.state6} shows the state that reduces with the
+rule $\textsl{atom} \rightarrow \texttt{NUMBER}$.  It has been obtained by merging the states 6 and 17 of the
+canonical parser.  State 6 is reached outside of parentheses and its follow tokens contain \texttt{\$END}, while
+state 17 is reached inside parentheses and its follow tokens contain \saquoted{)}.  The follow tokens of the
+merged state are the union of these sets.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                firstnumber  = 1,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.0cm,
+              ]{text}
+State 6   (merged from the LR(1) states 6, 17)
+
+    (10)  atom → NUMBER •  { ")", "*", "+", "-", "/", "^", $END }
+
+    ")"   reduce using rule (10) atom → NUMBER
+    "*"   reduce using rule (10) atom → NUMBER
+    "+"   reduce using rule (10) atom → NUMBER
+    "-"   reduce using rule (10) atom → NUMBER
+    "/"   reduce using rule (10) atom → NUMBER
+    "^"   reduce using rule (10) atom → NUMBER
+    $END  reduce using rule (10) atom → NUMBER
+\end{minted}
+\vspace*{-0.3cm}
+\caption{A merged state of the parser for arithmetical expressions.}
+\label{fig:Merging-States.state6}
+\end{figure}
+
+For the grammar with the mysterious conflict shown in Figure \ref{fig:Mysterious-Conflicts.ipynb}, merging the
+states 6 and 9 shown in Figure \ref{fig:Mysterious-Conflicts.states} would cause two reduce-reduce conflicts.
+Therefore, \simtextsc{Larkita} keeps these states apart.  The output file contains a section
+\texttt{Merged states}, which explains why states with the same core have not been merged.
+Figure \ref{fig:Merging-States.mysterious} on page \pageref{fig:Merging-States.mysterious} shows this section for
+our grammar.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                firstnumber  = 1,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{text}
+States with the same core have been merged, unless this would cause
+a conflict: 14 LR(1) states have been merged into 14 states.
+
+The following states have the same core, but they have been kept
+apart.  Either merging them would cause a conflict, or one of them
+accepts a token that collides with a token of the other one, i.e.
+the scanner could read the same text as either of these tokens.
+
+States 6 and 9
+    on "y":
+        state 6 reduces using rule (5) a → X
+        state 9 reduces using rule (6) b → X
+    on "z":
+        state 6 reduces using rule (6) b → X
+        state 9 reduces using rule (5) a → X
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Why the states 6 and 9 of the grammar of Figure \ref{fig:Mysterious-Conflicts.ipynb} are not merged.}
+\label{fig:Merging-States.mysterious}
+\end{figure}
+
+\remarkEng
+By default, \simtextsc{Larkita} does not merge states, since the output file of the canonical parser is easier
+to understand:  There, the follow tokens of every marked rule are exactly the tokens that can follow the rule
+in the given state.  States should only be merged if the size of the parse table matters.  If the parser uses
+the basic scanner, i.e.~if \simtextsc{Larkita} is called with the keyword argument \texttt{lexer='basic'}, the
+second condition given above is always satisfied, as the basic scanner always tries all tokens.  Then, for an
+\simtextsc{Lalr} grammar, merging states yields the \simtextsc{Lalr} parser.
 \eox
 
 \exerciseEng
@@ -859,6 +1005,9 @@ conflicts for your grammar.
 \item How is the concept of a \blue{look-ahead conflict} defined?
 \item How is the concept of a \blue{mysterious reduce-reduce conflict} defined?  Why does \simtextsc{Larkita}
       never report a mysterious reduce-reduce conflict?
+\item What is the \blue{core} of an LR(1) state?  Which states are merged if \simtextsc{Larkita} is called with
+      the keyword argument \texttt{merge\_states=True}?
+\item Why does \simtextsc{Larkita} have to take the scanner into account when it merges states?
 \end{enumerate}
 
 %%% Local Variables:
