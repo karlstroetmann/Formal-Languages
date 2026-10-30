@@ -5,9 +5,7 @@ conda install -y -c conda-forge graphviz
 conda install -y -c conda-forge python-graphviz
 pip install basedpyright      # type checker based on Pyright, used by all notebooks
 pip install jupyterlab-lsp    # shows the errors found by basedpyright in JupyterLab while typing
-pip install lark              # the original Lark, used by the notebooks named *-lark.ipynb
 pip install larkita           # canonical LR(1) parser generator, used by the notebooks
-pip install interegular
 pip install matplotlib        # plots, e.g. in Chapter-03/03-Exam-Evaluation.ipynb
 
 
