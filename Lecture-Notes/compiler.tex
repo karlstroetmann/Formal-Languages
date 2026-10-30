@@ -364,21 +364,13 @@ Figure \ref{fig:Compiler.ipynb-1} on page \pageref{fig:Compiler.ipynb-1} shows t
     negation: "!" negation
             | bool_atom
 
-    bool_atom: expr "==" expr
-             | expr "!=" expr
-             | expr "<=" expr
-             | expr ">=" expr
-             | expr "<"  expr
-             | expr ">"  expr
+    bool_atom: expr ("==" | "!=" | "<=" | ">=" | "<" | ">") expr
              | "(" bool_expr ")"
 
-    expr: expr "+" product
-        | expr "-" product
+    expr: expr ("+" | "-") product
         | product
 
-    product: product "*" factor
-           | product "/" factor
-           | product "%" factor
+    product: product ("*" | "/" | "%") factor
            | factor
 
     factor: NUMBER
@@ -398,7 +390,7 @@ arithmetic expressions.  \simtextsc{Larkita} does not support precedence declara
 precedences and associativities of the operators into the grammar by introducing one syntactical variable per
 precedence level, as discussed in Section \ref{section:operator-precedence}.
 \begin{enumerate}
-\item Line 2--17 define Boolean expressions:
+\item Line 2--12 define Boolean expressions:
       \begin{enumerate}[(a)]
       \item A \mytt{bool\_expr} is a list of \mytt{conjunction}s that are separated by the operator
             \quoted{||}, which represents \blue{logical or}.
@@ -422,12 +414,14 @@ precedence level, as discussed in Section \ref{section:operator-precedence}.
       yields a tuple of the form $(\squoted{||}, \textsl{lhs}, \textsl{rhs})$.  An alternative that consists of a
       single symbol, like \mytt{bool\_expr: conjunction}, returns the tuple of this symbol.  Without this rule,
       the abstract syntax tree of the expression \mytt{x == 1} would contain a chain of four nested tuples.
-\item Line 19--31 define arithmetic expressions in the same way:  The operators \quoted{+} and \quoted{-}
+      Line 11 uses an inner alternative, which abbreviates six alternatives, one for every comparison operator.
+      Hence, the comparison operator that has been read is the head of the tuple.
+\item Line 14--23 define arithmetic expressions in the same way:  The operators \quoted{+} and \quoted{-}
       have a lower precedence than the operators \quoted{*}, \quoted{/}, and \quoted{\%}.  As all of these
       operators are left associative, all rules are left recursive.  As the parentheses are ignored, the last
       alternative of the rule for \mytt{factor} consists of a single symbol, so a parenthesized expression does not
       create a tuple of its own.
-\item Line 30 describes a function call.  Its arguments are written inline as a possibly empty list of
+\item Line 22 describes a function call.  Its arguments are written inline as a possibly empty list of
       expressions that are separated by commas.  The children of an optional part and of a repetition are spliced
       into the tuple of the alternative and the alias \quoted{call} replaces the head.  Hence, a function call is
       represented as a tuple of the form $(\squoted{call}, \textsl{name}, \textsl{arg}_1, \cdots,
