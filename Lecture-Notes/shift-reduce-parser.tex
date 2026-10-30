@@ -286,19 +286,33 @@ then there is a case distinction according to the value of $\textsl{action}(q_m,
 
 \begin{figure}[!ht]
 \centering
-\begin{minted}[ frame         = lines, 
-                framesep      = 0.3cm, 
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
                 firstnumber   = 1,
                 bgcolor       = sepia,
+                gobble        = 4,
                 numbers       = left,
                 numbersep     = 0.3cm,
                 xleftmargin   = 0.8cm,
                 xrightmargin  = 0.8cm,
               ]{python3}
+    Token       = str
+    Variable    = str
+    Symbol      = Token | Variable
+    State       = str
+    Rule        = tuple[Variable, tuple[Symbol, ...]]
+    Action      = str | tuple[str, State] | tuple[str, Rule]
+    ActionTable = dict[tuple[State, Token], Action]
+    GotoTable   = dict[tuple[State, Variable], State]
+
     class ShiftReduceParser():
-        def __init__(self, actionTable, gotoTable):
-            self.mActionTable = actionTable
-            self.mGotoTable   = gotoTable
+        def __init__(self, actionTable: ActionTable,
+                     gotoTable: GotoTable) -> None:
+            self.mActionTable: ActionTable = actionTable
+            self.mGotoTable  : GotoTable   = gotoTable
+
+        def parse(self, TL: list[Token]) -> bool:
+            ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Implementation of a shift-reduce parser in \textsl{Python}}
@@ -306,12 +320,21 @@ then there is a case distinction according to the value of $\textsl{action}(q_m,
 \end{figure}
 
 \noindent
-Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb} on page \pageref{fig:Shift-Reduce-Parser-Pure.ipynb} shows the class 
-\texttt{ShiftReduceParser}, which
-maintains two dictionaries.
-\begin{enumerate}[(a)]
-\item \texttt{mActionTable} stores the function $\textsl{action}: Q \times T \rightarrow \textsl{Action}$.
-\item \texttt{mGotoTable} stores the function $\textsl{goto}: Q \times V \rightarrow Q$.
+Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb} on page \pageref{fig:Shift-Reduce-Parser-Pure.ipynb} shows the class
+\texttt{ShiftReduceParser} together with the type aliases that are used in its type annotations.
+\begin{enumerate}
+\item Line 1 -- 8 define these type aliases.  Tokens, syntactical variables, and states are represented as
+      strings.  A grammar rule $A \rightarrow X_1 \cdots X_n$ is represented as the pair
+      \texttt{($A$, ($X_1$, $\cdots$, $X_n$))}.  An action is either a pair of the form \texttt{('shift', $s$)},
+      where $s$ is a state, a pair of the form \texttt{('reduce', $r$)}, where $r$ is a grammar rule, or one of
+      the strings \texttt{'accept'} and \texttt{'error'}.
+\item The class \texttt{ShiftReduceParser} maintains two dictionaries.
+      \begin{enumerate}[(a)]
+      \item \texttt{mActionTable} stores the function $\textsl{action}: Q \times T \rightarrow \textsl{Action}$.
+      \item \texttt{mGotoTable} stores the function $\textsl{goto}: Q \times V \rightarrow Q$.
+      \end{enumerate}
+\item Line 16 -- 17 only declare the method \texttt{parse}.  This method is implemented as a function that is
+      attached to the class afterwards.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -324,33 +347,36 @@ maintains two dictionaries.
                 numbersep     = 0.3cm,
                 xleftmargin   = 0.5cm,
                 xrightmargin  = 0.5cm,
-              ]{python3}      
-    def parse(self, TL):
-        index   = 0        # points to next token
-        Symbols = []       # stack of symbols
-        States  = ['s0']   # stack of states, s0 is start state
-        TL     += ['EOF']  # token list
+                gobble        = 4,
+              ]{python3}
+    def parse(self, TL: list[Token]) -> bool:
+        index                 = 0      # points to next token
+        Symbols: list[Symbol] = []     # stack of tokens and variables
+        States:  list[State]  = ['s0'] # stack of states
+        TL += ['EOF']
         while True:
             q = States[-1]
             t = TL[index]
-            # undefined table entries are interpreted as 'error'
+            # undefined table entries are interpreted as errors
             match self.mActionTable.get((q, t), 'error'):
-                case 'error': 
+                case 'error':
                     return False
                 case 'accept':
                     return True
-                case 'shift', s: 
+                case 'shift', s:
                     Symbols += [t]
                     States  += [s]
                     index   += 1
-                case 'reduce', rule:
-                    head, body = rule
-                    n       = len(body)
-                    Symbols = Symbols[:-n]
-                    States  = States [:-n] 
-                    Symbols = Symbols + [head]
-                    state   = States[-1]
-                    States += [ self.mGotoTable[state, head] ]
+                case 'reduce', (head, body):
+                    n          = len(body)
+                    Symbols    = Symbols[:-n]
+                    States     = States [:-n]
+                    Symbols    = Symbols + [head]
+                    state      = States[-1]
+                    States    += [ self.mGotoTable[state, head] ]
+
+    ShiftReduceParser.parse = parse
+    del parse
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Implementation of a shift-reduce parser in \textsl{Python}}
@@ -402,9 +428,9 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
             \hspace*{1.3cm}
             $r = (A \rightarrow X_1 \cdots X_n)$
             \\[0.2cm]
-            to reduce the symbol stack.  The  variable \textsl{head} represents the left
-            hand side $A$ of this rule, while the list $[X_1, \cdots,X_n]$ is represented
-            by the variable \textsl{body}.
+            to reduce the symbol stack.  The pattern in line 19 binds the variable \textsl{head} to the left
+            hand side $A$ of this rule and the variable \textsl{body} to the tuple $(X_1, \cdots,X_n)$ of the
+            symbols on its right hand side.
 
             In this case, it can be shown that the symbols $X_1$, $\cdots$, $X_n$ are on top of the
             symbol stack.  As we are going to reduce the symbol stack with the rule $r$,
@@ -414,9 +440,19 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
             Furthermore, we have to remove $n$ states from the stack of states.
             After that, we set the variable \textsl{state} to the state that is on top of the
             stack of states after we have removed $n$ states.  Next, the new state
-            $\textsl{goto}(\textsl{state}, A)$ is put on top of the stack of states in line 26.
+            $\textsl{goto}(\textsl{state}, A)$ is put on top of the stack of states in line 25.
       \end{enumerate}
+\item Line 27 -- 28 attach the function \texttt{parse} to the class \texttt{ShiftReduceParser} as a method and
+      remove the global name \texttt{parse}.
 \end{enumerate}
+The Jupyter notebook \texttt{Shift-Reduce-Parser-Pure}, which is available at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Shift-Reduce-Parser-Pure.ipynb}{Python/Chapter-10/Shift-Reduce-Parser-Pure.ipynb}
+\\[0.2cm]
+implements the shift-reduce parser discussed in this section and tests it with a number of arithmetic
+expressions.
+
 In order to make the method \texttt{parse} work we have to provide an implementation
 of the functions $\textsl{action}$ and $\textsl{goto}$.
 The Tables \ref{tab:action} and \ref{tab:goto} show these functions for the grammar given
@@ -440,8 +476,15 @@ been baptized as $s_0$, $s_1$, $\cdots$, $s_{15}$.  The tables use two different
 The corresponding grammar is shown in Figure \ref{fig:Expr.grammar}.  The definition of the grammar rules
 and the coding of the
 functions \textsl{action} and \textsl{goto} is shown in the Figures
-\ref{fig:parse-table.stlx:grammar}, \ref{fig:parse-table.stlx:action}, and
-\ref{fig:parse-table.stlx:goto} on the following pages.   Of course, at present we do not have any
+\ref{fig:Parse-Table.ipynb:grammar}, \ref{fig:Parse-Table.ipynb:action}, and
+\ref{fig:Parse-Table.ipynb:goto} on the following pages.  Figure \ref{fig:Parse-Table.ipynb:action} only shows
+the entries of the action table for the states $s_0$, $\cdots$, $s_4$.  The complete tables are defined in the
+Jupyter notebook \texttt{Parse-Table}, which is available at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Parse-Table.ipynb}{Python/Chapter-10/Parse-Table.ipynb}.
+\\[0.2cm]
+Of course, at present we do not have any
 idea how the functions \textsl{action} and \textsl{goto} are computed.  This requires some theory
 that will be presented in the next section.
 
@@ -561,126 +604,112 @@ $s_{15}$ &              &                  &                 \\
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    r1 = ('e', ('e', '+', 'p'))
-    r2 = ('e', ('e', '-', 'p'))
-    r3 = ('e', ('p'))
-    
-    r4 = ('p', ('p', '*', 'f'))
-    r5 = ('p', ('p', '/', 'f'))
-    r6 = ('p', ('f'))
-    
-    r7 = ('f', ('(', 'e', ')'))
-    r8 = ('f', ('NUMBER',))               
-\end{Verbatim}
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                bgcolor       = sepia,
+                gobble        = 4,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{python3}
+    r1: Rule = ('e', ('e', '+', 'p'))
+    r2: Rule = ('e', ('e', '-', 'p'))
+    r3: Rule = ('e', ('p',))
+
+    r4: Rule = ('p', ('p', '*', 'f'))
+    r5: Rule = ('p', ('p', '/', 'f'))
+    r6: Rule = ('p', ('f',))
+
+    r7: Rule = ('f', ('(', 'e', ')'))
+    r8: Rule = ('f', ('NUMBER',))
+\end{minted}
 \vspace*{-0.3cm}
 \caption{Grammar rules coded in \textsl{Python}.}
-\label{fig:parse-table.stlx:grammar}
+\label{fig:Parse-Table.ipynb:grammar}
 \end{figure}
 
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = left,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.8cm,
-                  xrightmargin  = 0.8cm,
-                ]
-    gotoTable   := {};
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                bgcolor       = sepia,
+                gobble        = 4,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{python3}
+    gotoTable: dict[tuple[State, Variable], State]   = {}
 
-    gotoTable["s0", "e"] := "s4";
-    gotoTable["s0", "p"] := "s3";
-    gotoTable["s0", "f"] := "s1";
-    
-    gotoTable["s5", "e"] := "s6";
-    gotoTable["s5", "p"] := "s3";
-    gotoTable["s5", "f"] := "s1";
-    
-    gotoTable["s8", "p"] := "s15";
-    gotoTable["s8", "f"] := "s1";
-    
-    gotoTable["s9", "p"] := "s10";
-    gotoTable["s9", "f"] := "s1";
-    
-    gotoTable["s11", "f"] := "s14";
-    gotoTable["s12", "f"] := "s13";
-\end{Verbatim}
+    gotoTable['s0', 'e'] = 's4'
+    gotoTable['s0', 'p'] = 's3'
+    gotoTable['s0', 'f'] = 's1'
+
+    gotoTable['s5', 'e'] = 's6'
+    gotoTable['s5', 'p'] = 's3'
+    gotoTable['s5', 'f'] = 's1'
+
+    gotoTable['s8', 'p'] = 's15'
+    gotoTable['s8', 'f'] = 's1'
+
+    gotoTable['s9', 'p'] = 's10'
+    gotoTable['s9', 'f'] = 's1'
+
+    gotoTable['s11', 'f'] = 's14'
+    gotoTable['s12', 'f'] = 's13'
+\end{minted}
 \vspace*{-0.3cm}
-\caption{Goto table coded in \simtextsc{Python}.}
-\label{fig:parse-table.stlx:goto}
+\caption{Goto table coded in \textsl{Python}.}
+\label{fig:Parse-Table.ipynb:goto}
 \end{figure}
 
 
 \begin{figure}[!ht]
 \centering
-\begin{Verbatim}[ frame         = lines, 
-                  framesep      = 0.3cm, 
-                  firstnumber   = 1,
-                  labelposition = bottomline,
-                  numbers       = none,
-                  numbersep     = -0.2cm,
-                  xleftmargin   = 0.0cm,
-                  xrightmargin  = 0.0cm,
-                ]
-actionTable = {}
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                bgcolor       = sepia,
+                gobble        = 4,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.8cm,
+                xrightmargin  = 0.8cm,
+              ]{python3}
+    actionTable: dict[tuple[State, Token], Action] = {}
 
-actionTable[s0, '('] = (shft, s5)  actionTable[s8, '('] = (shft, s5)   
-actionTable[s0, NBR] = (shft, s2)  actionTable[s8, NBR] = (shft, s2)   
- 
-actionTable[s1, EOF] = (rdc, r6)   actionTable[s9, '('] = (shft, s5)   
-actionTable[s1, '+'] = (rdc, r6)   actionTable[s9, NBR] = (shft, s2)   
-actionTable[s1, '-'] = (rdc, r6) 
-actionTable[s1, '*'] = (rdc, r6)   actionTable[s0, EOF] = (rdc, r2)   
-actionTable[s1, '/'] = (rdc, r6)   actionTable[s0, '+'] = (rdc, r2)    
-actionTable[s1, ')'] = (rdc, r6)   actionTable[s0, '-'] = (rdc, r2)    
-                                   actionTable[s0, '*'] = (shft, s2)
-actionTable[s2, EOF] = (rdc, r8)   actionTable[s10, '/'] = (shft, s11) 
-actionTable[s2, '+'] = (rdc, r8)   actionTable[s10, ')'] = (rdc, r2)    
-actionTable[s2, '-'] = (rdc, r8) 
-actionTable[s2, '*'] = (rdc, r8)   actionTable[s11, '('] = (shft, s5)  
-actionTable[s2, '/'] = (rdc, r8)   actionTable[s11, NBR] = (shft, s2)  
-actionTable[s2, ')'] = (rdc, r8) 
-                                   actionTable[s12, '('] = (shft, s5)  
-actionTable[s3, EOF] = (rdc, r3)   actionTable[s12, NBR] = (shft, s2)  
-actionTable[s3, '+'] = (rdc, r3) 
-actionTable[s3, '-'] = (rdc, r3)   actionTable[s13, EOF] = (rdc, r4)   
-actionTable[s3, '*'] = (shft, s12) actionTable[s13, '+'] = (rdc, r4)   
-actionTable[s3, '/'] = (shft, s11) actionTable[s13, '-'] = (rdc, r4)   
-actionTable[s3, ')'] = (rdc, r3)   actionTable[s13, '*'] = (rdc, r4)   
-                                   actionTable[s13, '/'] = (rdc, r4)   
-actionTable[s4, EOF] = 'accept'    actionTable[s13, ')'] = (rdc, r4)   
-actionTable[s4, '+'] = (shft, s8) 
-actionTable[s4, '-'] = (shft, s9)  actionTable[s14, EOF] = (rdc, r5)   
-                                   actionTable[s14, '+'] = (rdc, r5)   
-actionTable[s5, '('] = (shft, s5)  actionTable[s14, '-'] = (rdc, r5)   
-actionTable[s5, NBR] = (shft, s2)  actionTable[s14, '*'] = (rdc, r5)   
-                                   actionTable[s14, '/'] = (rdc, r5)   
-actionTable[s6, '+'] = (shft, s8)  actionTable[s14, ')'] = (rdc, r5)   
-actionTable[s6, '-'] = (shft, s9) 
-actionTable[s6, ')'] = (shft, s7)  actionTable[s15, EOF] = (rdc, r1)   
-                                   actionTable[s15, '+'] = (rdc, r1)   
-actionTable[s7, EOF] = (rdc, r7)   actionTable[s15, '-'] = (rdc, r1)   
-actionTable[s7, '+'] = (rdc, r7)   actionTable[s15, '*'] = (shft, s12) 
-actionTable[s7, '-'] = (rdc, r7)   actionTable[s15, '/'] = (shft, s11) 
-actionTable[s7, '*'] = (rdc, r7)   actionTable[s15, ')'] = (rdc, r1)   
-actionTable[s7, '/'] = (rdc, r7)
-actionTable[s7, ')'] = (rdc, r7)
-\end{Verbatim}
+    actionTable['s0', '('  ]    = ('shift', 's5')
+    actionTable['s0', 'NUMBER'] = ('shift', 's2')
+
+    actionTable['s1', 'EOF'] = ('reduce', r6)
+    actionTable['s1', '+'  ] = ('reduce', r6)
+    actionTable['s1', '-'  ] = ('reduce', r6)
+    actionTable['s1', '*'  ] = ('reduce', r6)
+    actionTable['s1', '/'  ] = ('reduce', r6)
+    actionTable['s1', ')'  ] = ('reduce', r6)
+
+    actionTable['s2', 'EOF'] = ('reduce', r8)
+    actionTable['s2', '+'  ] = ('reduce', r8)
+    actionTable['s2', '-'  ] = ('reduce', r8)
+    actionTable['s2', '*'  ] = ('reduce', r8)
+    actionTable['s2', '/'  ] = ('reduce', r8)
+    actionTable['s2', ')'  ] = ('reduce', r8)
+
+    actionTable['s3', 'EOF'] = ('reduce', r3)
+    actionTable['s3', '+'  ] = ('reduce', r3)
+    actionTable['s3', '-'  ] = ('reduce', r3)
+    actionTable['s3', '*'  ] = ('shift', 's12')
+    actionTable['s3', '/'  ] = ('shift', 's11')
+    actionTable['s3', ')'  ] = ('reduce', r3)
+
+    actionTable['s4', 'EOF'] = 'accept'
+    actionTable['s4', '+'  ] = ('shift', 's8')
+    actionTable['s4', '-'  ] = ('shift', 's9')
+\end{minted}
 \vspace*{-0.3cm}
-\caption{The action table for our shift/reduce parser.}
-\label{fig:parse-table.stlx:action}
+\caption{The beginning of the action table for our shift/reduce parser.}
+\label{fig:Parse-Table.ipynb:action}
 \end{figure}
 
  
