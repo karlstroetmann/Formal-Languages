@@ -38,7 +38,8 @@ grammar also determines the \blue{abstract syntax tree} that the parser returns:
 \blue{nested tuple}\index{nested tuple}, i.e.~it is an ordinary \textsl{Python} object.
 We will discuss two examples that use \simtextsc{Larkita} as a parser generator.
 \begin{enumerate}
-\item First, we implement a symbolic calculator.
+\item First, we implement a symbolic calculator.  We implement it twice:  The first version uses a
+      left-recursive grammar, while the second version uses a grammar with the operators of \simtextsc{Ebnf}.
 \item In our second example, we develop a program for symbolic differentiation.
       This example shows how the abstract syntax tree that is returned by a parser can be transformed by a
       program.
@@ -408,6 +409,199 @@ binds stronger than multiplication and it is \blue{right associative}\index{righ
 Introduce a new syntactical variable \texttt{power} between \texttt{product} and \texttt{factor} and make
 this variable right recursive.  The section on symbolic differentiation shows how an \blue{alias} can be used
 to distinguish the unary minus from the binary minus.
+
+\section{A Calculator with an \texorpdfstring{\simtextsc{Ebnf}}{EBNF} Grammar  \label{section:calculator-ebnf}}
+The grammar shown in Figure \ref{fig:01-Calculator.ipynb:grammar} is a literal transcription of the
+left-recursive grammar of Figure \ref{fig:calculator.g}.  In Section \ref{section:recursive-descent-ebnf} we
+have seen that an expression can also be described as a sequence of products that are separated by the
+operators \squoted{+} and \squoted{-}, and that a product can be described as a sequence of factors that are
+separated by the operators \squoted{*} and \squoted{/}.  This leads to the \simtextsc{Ebnf} grammar shown in
+Figure \ref{fig:arith-expr-ebnf} on page \pageref{fig:arith-expr-ebnf}.  As \simtextsc{Larkita} supports
+the operators of \simtextsc{Ebnf}, we can use this grammar directly.  Figure
+\ref{fig:01-Calculator-EBNF.ipynb:grammar} shows the grammar of the symbolic calculator written in this
+style.  Only the rules for \texttt{expr} and \texttt{product} have changed.  The lexical definitions are the
+same as in Figure \ref{fig:01-Calculator.ipynb:grammar} and are therefore not shown again.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                gobble       = 4,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{python3}
+    calc_grammar = r"""
+    stmnt: IDENTIFIER ":=" expr ";"
+         | expr ";"
+
+    expr: product (("+" | "-") product)*
+
+    product: factor (("*" | "/") factor)*
+
+    factor: "(" expr ")"    %ignore "(", ")"
+          | NUMBER
+          | IDENTIFIER
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The grammar of the symbolic calculator, written with \simtextsc{Ebnf} operators.}
+\label{fig:01-Calculator-EBNF.ipynb:grammar}
+\end{figure}
+
+\noindent
+The rules in line 5 and line 7 use two operators of \simtextsc{Ebnf}.
+\begin{enumerate}
+\item The postfix operator ``\texttt{*}'' denotes a \blue{repetition}\index{repetition (\simtextsc{Ebnf})}:
+      The part in parentheses can occur any number of times, including zero times.  Similarly, the postfix
+      operator ``\texttt{+}'' denotes one or more repetitions, while a part that is enclosed in square brackets
+      is optional.  These operators are used in Chapter \ref{chapter:interpreter}.
+\item The part \verb!("+" | "-")! is an \blue{inner alternative}\index{inner alternative}, i.e.~an
+      alternative that occurs inside an alternative of a grammar rule.  An inner alternative has to be enclosed
+      in parentheses.
+\end{enumerate}
+Hence, line 5 states that an expression is a product that is followed by any number of pairs, where every
+pair consists of one of the operators \squoted{+} or \squoted{-} and another product.  This single rule
+replaces the three rules for \texttt{expr} in Figure \ref{fig:01-Calculator.ipynb:grammar}.
+
+When an alternative contains repetitions or inner alternatives, the rules for building the abstract syntax
+tree that have been given in Section \ref{section:calculator} are complemented as follows.
+\begin{enumerate}
+\item The children that are produced by the repeated parts are \blue{spliced}\index{splicing (\simtextsc{Larkita})}
+      into the tuple of the alternative.  Hence, the alternative in line 5 builds a single \emph{flat} tuple
+      that contains all products of the expression, no matter how many products there are.
+\item The head of a tuple is determined by the grammar, not by the input.  Inside a repetition, the head
+      cannot record which operator has been read, since a single tuple contains all the operators.
+      Therefore, the literals of an inner alternative that occurs inside a repetition do not belong to the
+      head.  Instead, the literal that has actually been read becomes a child of the tuple.  As it is a literal
+      and not a named token, it is represented by a plain string like \texttt{'-'} rather than by a pair.
+\item The alternative in line 5 has no literal that belongs to the head.  As it contains a repetition, it does
+      not return the abstract syntax tree of one of its symbols either.  In this case, the name of the rule is
+      used as the head.  Therefore, the alternative in line 5 builds tuples of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('expr', $p_1$, $o_1$, $p_2$, $\cdots$, $o_{n-1}$, $p_n$)},
+      \\[0.2cm]
+      where $p_1$, $\cdots$, $p_n$ are the abstract syntax trees of the products and $o_1$, $\cdots$,
+      $o_{n-1}$ are the operators.  Since the shape of the tuple is determined by the grammar, an expression
+      that consists of a single product is represented as \texttt{('expr', $p_1$)}.
+\item An inner alternative that does \emph{not} occur inside a repetition or inside an optional part is
+      nothing but an abbreviation.  For example, the alternative
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \verb!expr: expr ("+" | "-") product!
+      \\[0.2cm]
+      stands for the two alternatives \texttt{expr "+" product} and \texttt{expr "-" product}.  Hence, the
+      operator that has been read is the head, and this alternative yields the same tuples as the rules for
+      \texttt{expr} in Figure \ref{fig:01-Calculator.ipynb:grammar}.  Chapter \ref{chapter:interpreter} uses
+      inner alternatives in this way.
+\end{enumerate}
+
+\exampleEng
+The string
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{"1 - 2 * 3 - 4;"}
+\\[0.2cm]
+is parsed into the nested tuple
+\\[0.2cm]
+\hspace*{0.3cm}
+\texttt{(';', ('expr',}
+\\
+\hspace*{0.8cm}
+\texttt{('product', ('NUMBER', '1')),}
+\\
+\hspace*{0.8cm}
+\texttt{'-', ('product', ('NUMBER', '2'), '*', ('NUMBER', '3')),}
+\\
+\hspace*{0.8cm}
+\texttt{'-', ('product', ('NUMBER', '4'))))}.
+\\[0.2cm]
+The three products and the two operators are the children of a single tuple with the head \squoted{expr}. \eox
+
+\noindent
+The flat tuples do not specify how the operands are grouped.  As discussed in Section
+\ref{section:recursive-descent-ebnf}, the \simtextsc{Ebnf} rule for \texttt{expr} merely states that an expression
+is a sequence of products.  It no longer expresses that the operator \squoted{-} is left associative.
+Therefore, we have to group the operands ourselves.  The function \texttt{to\_binary} that is shown in
+Figure \ref{fig:01-Calculator-EBNF.ipynb:to_binary} on page \pageref{fig:01-Calculator-EBNF.ipynb:to_binary}
+converts the flat tuples into the binary tuples of Section \ref{section:calculator}.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                gobble       = 4,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
+              ]{python3}
+    def to_binary(ast):
+        match ast:
+            case ('NUMBER' | 'IDENTIFIER', _):
+                return ast
+            case ('expr' | 'product', first, *rest):
+                # Combine the operands of a flat tuple from left to right
+                result = to_binary(first)
+                for op, operand in zip(rest[0::2], rest[1::2]):
+                    result = (op, result, to_binary(operand))
+                return result
+            case (head, *children):
+                return (head, *[to_binary(child) for child in children])
+\end{minted}
+\vspace*{-0.3cm}
+\caption{Converting the flat tuples into binary tuples.}
+\label{fig:01-Calculator-EBNF.ipynb:to_binary}
+\end{figure}
+
+\begin{enumerate}
+\item Line 3 -- 4 return the tuples that represent tokens unchanged.
+\item Line 5 -- 10 convert a flat tuple.  The pattern in line 5 binds the first operand to the variable
+      \texttt{first} and the list of all remaining children to the variable \texttt{rest}.  This list has the
+      form $[o_1, p_2, o_2, p_3, \cdots, o_{n-1}, p_n]$.  Hence, the slice \texttt{rest[0::2]} contains the
+      operators, while the slice \texttt{rest[1::2]} contains the remaining operands.  Line 9 builds a new
+      binary tuple whose left operand is the tree that has been built so far.  This is exactly what the
+      \texttt{while} loop of the function \texttt{parseExpr} shown in Figure \ref{fig:2-EBNF-Parser-AST.ipynb}
+      does:  The operands are grouped from left to right.  If the flat tuple contains a single operand, then
+      the loop is not executed and the abstract syntax tree of this operand is returned.  Therefore, a tuple
+      like \texttt{('expr', $p_1$)} leaves no trace in the result.
+\item Line 11 -- 12 convert all other tuples, i.e.~the tuples that represent statements:  Their head is kept and
+      their children are converted recursively.
+\end{enumerate}
+For example, the nested tuple of the previous example is converted into
+\\[0.2cm]
+\hspace*{0.3cm}
+\texttt{(';', ('-', ('-', ('NUMBER', '1'),}
+\\
+\hspace*{4.68cm}
+\texttt{('*', ('NUMBER', '2'), ('NUMBER', '3'))),}
+\\
+\hspace*{3.21cm}
+\texttt{('NUMBER', '4')))},
+\\[0.2cm]
+which represents the expression \texttt{(1 - 2 * 3) - 4}.  This is the same tuple that is returned by the
+parser of Section \ref{section:calculator}.  Therefore, the function \texttt{evaluate\_adt} shown in Figure
+\ref{fig:01-Calculator.ipynb:eval} can be used without any change.  The read-eval-print loop differs from the
+one shown in Figure \ref{fig:01-Calculator.ipynb:main} only in that it applies the function
+\texttt{to\_binary} to the nested tuple before it evaluates the tuple.
+
+The Jupyter notebook \texttt{01-Calculator-EBNF}, which is available at
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-07/01-Calculator-EBNF.ipynb}{Python/Chapter-07/01-Calculator-EBNF.ipynb}
+\\[0.2cm]
+implements the calculator discussed in this section.
+
+\remarkEng
+The parse table of an LR(1) parser is computed from grammar rules that do not use the operators of
+\simtextsc{Ebnf}.  Therefore, \simtextsc{Larkita} translates the repetition in line 5 into a new syntactical
+variable \texttt{\_\_expr\_star\_0} that is defined by left-recursive rules.  These rules show up in the file
+\texttt{calc-ebnf.out}, which is printed by the notebook.  The reductions with these rules do not build tuples
+of their own.  Instead, they collect the children of the repeated parts in a list, which is then spliced into
+the tuple of the alternative in line 5.  \eox
 
 \section{Symbolic Differentiation  \label{section:differentiator}}
 Our second example shows how a parser can be used to construct an \blue{abstract syntax tree} that is
@@ -937,6 +1131,11 @@ Which changes are necessary in the function \texttt{toString}? \eox
       instead of building a new tuple?
 \item What is an \blue{alias}, i.e.~what is the effect of the construct ``\texttt{-> name}'' that can be
       attached to an alternative of a grammar rule?
+\item How does \simtextsc{Larkita} build the abstract syntax tree of an alternative that contains a
+      \blue{repetition}?  Why does the calculator of Section \ref{section:calculator-ebnf} convert these tuples
+      before it evaluates them?
+\item What is an \blue{inner alternative}?  When is it an abbreviation for several alternatives, and when does
+      the literal that has been read become a child of the tuple?
 \item What is the effect of an annotation of the form \texttt{\%ignore "(", ")"} at the end of an alternative,
       and how does it differ from a directive of the form \texttt{\%ignore WS}?
 \item Would you be able to write a \simtextsc{Larkita} grammar for propositional formulas together with a
