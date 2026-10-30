@@ -43,13 +43,14 @@ is computed using a \texttt{while} loop.  Finally, this sum is printed.
   \begin{center}
   \framebox{
   \framebox{
-  \begin{minipage}[t]{11.4cm}
+  \begin{minipage}[t]{12.4cm}
   \begin{eqnarray*}
   \textsl{program}      & \rightarrow & \;\varepsilon                                                              \\
                         & \mid        & \;\textsl{stmnt}\; \textsl{program}                                        \\[0.2cm]
-  \textsl{stmnt}        & \rightarrow &   \quoted{if} \quoted{(} \textsl{bool\_expr} \quoted{)} \textsl{stmnt}     \\
-                        & \mid        &   \quoted{while} \quoted{(} \textsl{bool\_expr} \quoted{)} \textsl{stmnt}  \\
-                        & \mid        &   \quoted{\{} \textsl{program} \quoted{\}}                                 \\
+  \textsl{stmnt}        & \rightarrow &   \quoted{if} \quoted{(} \textsl{bool\_expr} \quoted{)}
+                                          \quoted{\{} \textsl{program} \quoted{\}}                                 \\
+                        & \mid        &   \quoted{while} \quoted{(} \textsl{bool\_expr} \quoted{)}
+                                          \quoted{\{} \textsl{program} \quoted{\}}                                 \\
                         & \mid        & \;\simtextsc{Identifier} \quoted{:=} \textsl{expr} \quoted{;}              \\
                         & \mid        & \;\textsl{expr} \quoted{;}                                                 \\[0.2cm]
   \textsl{bool\_expr}   & \rightarrow & \;\textsl{expr} \quoted{==} \textsl{expr}                                  \\
@@ -96,6 +97,13 @@ Arithmetic expressions can use the arithmetic operators
 In the base case, arithmetic expressions are built from numbers, variables, and function calls.
 Although the language supports the calling of predefined functions like \texttt{read} and \texttt{print},
 it does not support user defined functions.
+
+In contrast to the language \texttt{C}, the body of an \texttt{if} statement or a \texttt{while} loop always
+has to be enclosed in braces, even if it consists of a single statement.  Hence, the body is a
+\textsl{program}, i.e.~a possibly empty sequence of statements.  A pair of braces can only occur as part of an
+\texttt{if} statement or a \texttt{while} loop.  If the language is extended by \texttt{else} branches, this rule
+ensures that the dangling else problem, which is discussed in Chapter \ref{chapter:compiler}, cannot
+arise.
 
 
 Similar to our program for symbolic differentiation, we represent the individual statements as
@@ -163,9 +171,8 @@ contains its \blue{lexical} part.
     sl_grammar = r"""
     program: stmnt*
 
-    stmnt: "if" "(" bool_expr ")" stmnt
-         | "while" "(" bool_expr ")" stmnt
-         | "{" program "}"
+    stmnt: "if" "(" bool_expr ")" "{" program "}"
+         | "while" "(" bool_expr ")" "{" program "}"
          | IDENTIFIER ":=" expr ";"
          | expr ";"                           -> "expr"
 
@@ -195,7 +202,7 @@ contains its \blue{lexical} part.
 \begin{minted}[ frame        = lines,
                 framesep     = 0.3cm,
                 bgcolor      = sepia,
-                firstnumber  = 28,
+                firstnumber  = 27,
                 numbers      = left,
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.3cm,
@@ -231,7 +238,7 @@ we only discuss those parts that are new.
 \item Line 3 opens the string \texttt{sl\_grammar}.  Note the prefix ``\texttt{r}'':  This string is a
       \blue{raw string}.  In a raw string, the backslash loses its special meaning, i.e.~it does not start
       an \blue{escape sequence} but rather denotes itself.  This is necessary because the regular
-      expression in line 35 contains the character sequence ``\verb$\/$'', %$
+      expression in line 34 contains the character sequence ``\verb$\/$'', %$
       which is \emph{not} a valid
       escape sequence of \textsl{Python}.  Inside an ordinary string, this sequence would provoke a
       warning.
@@ -253,49 +260,50 @@ we only discuss those parts that are new.
       \texttt{('program', $s_1$, $\cdots$, $s_n$)}.  Note that the head of a tuple is determined by the grammar
       and not by the input:  Even a program that consists of a single statement is represented by a tuple
       with the head \squoted{program}.
-\item Line 6 -- 10 define the variable \texttt{stmnt}.  The five alternatives correspond one to one to the
-      five alternatives of the grammar shown in Figure \ref{fig:Pure.g}.  The keywords \texttt{"if"} and
+\item Line 6 -- 9 define the variable \texttt{stmnt}.  The four alternatives correspond one to one to the
+      four alternatives of the grammar shown in Figure \ref{fig:Pure.g}.  The keywords \texttt{"if"} and
       \texttt{"while"} are written as literals, i.e.~in exactly the same way as the operator symbols.  In
       particular, we do \emph{not} have to declare tokens for them.
-\item Line 26 is a variant of the directive \texttt{\%ignore} that is written with a colon:  The directive
+\item Line 25 is a variant of the directive \texttt{\%ignore} that is written with a colon:  The directive
       \\[0.2cm]
       \hspace*{1.3cm}
       \verb|%ignore: "(", ")", "{", "}", ";"|
       \\[0.2cm]
       removes the given literals from the heads of \emph{all} alternatives of the grammar, since the
       parentheses, the braces, and the semicolon carry no information.  Therefore, the alternative in line 6
-      yields a tuple of the form \texttt{('if', $\textsl{test}$, $\textsl{stmnt}$)}, while the assignment in
-      line 9 yields a tuple of the form
+      yields a tuple of the form \texttt{('if', $\textsl{test}$, $\textsl{body}$)}, where $\textsl{body}$ is
+      the abstract syntax tree of the \texttt{program} in braces, while the assignment in line 8 yields a tuple
+      of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{(':=', ('IDENTIFIER', $\textsl{name}$), $\textsl{expr}$)}.
       \\[0.2cm]
-      As the braces are ignored, the alternative \texttt{"\{" program "\}"} in line 8, which describes a
-      \blue{block}, consists of a single symbol and returns the abstract syntax tree of \texttt{program}.
-      This is the reason why the body of the \texttt{while} loop in Figure \ref{fig:sum.ast} is a tuple
-      that starts with the string \squoted{program}.  Similarly, the alternative \texttt{expr ";"} in line 10
-      consists of a single symbol.  Without the alias \texttt{"expr"}, it would return the abstract syntax tree
+      As the body of an \texttt{if} statement or a \texttt{while} loop is a \texttt{program}, it is
+      represented by a tuple that starts with the string \squoted{program}, even if it consists of a single
+      statement.  This is the reason why the body of the \texttt{while} loop in Figure \ref{fig:sum.ast} is a
+      tuple that starts with the string \squoted{program}.  The alternative \texttt{expr ";"} in line 9
+      consists of a single symbol, since the semicolon is ignored.  Without the alias \texttt{"expr"}, it would return the abstract syntax tree
       of the expression and we could not distinguish an expression statement from an expression.  The alias
       replaces the head, so an expression statement is represented as \texttt{('expr', $\textsl{expr}$)}.
       Note that an alias may be written with or without double quotes.
-\item Line 12 defines the variable \texttt{bool\_expr}.  The part
+\item Line 11 defines the variable \texttt{bool\_expr}.  The part
       \\[0.2cm]
       \hspace*{1.3cm}
       \verb+("==" | "!=" | "<=" | ">=" | "<" | ">")+
       \\[0.2cm]
       is an inner alternative.  As it does not occur inside a repetition, it is an abbreviation (see
-      Section \ref{section:calculator-ebnf}):  Line 12 stands for
+      Section \ref{section:calculator-ebnf}):  Line 11 stands for
       the six alternatives \texttt{expr "==" expr}, $\cdots$, \texttt{expr ">" expr}, one for every
       comparison operator.  Therefore, the comparison operator that has been read is the head of the
       resulting tuple, e.g.~a test of the form $\textsl{lhs}$ \texttt{==} $\textsl{rhs}$ yields the tuple
       \texttt{('==', $\textsl{lhs}$, $\textsl{rhs}$)}.
-\item Line 14 -- 18 define the variables \texttt{expr} and \texttt{product}.  These rules encode the
+\item Line 13 -- 17 define the variables \texttt{expr} and \texttt{product}.  These rules encode the
       \blue{precedence} of the arithmetic operators in the usual way.  Again, inner alternatives are used:
-      Line 14 stands for the two alternatives \texttt{expr "+" product} and \texttt{expr "-" product}.  In
+      Line 13 stands for the two alternatives \texttt{expr "+" product} and \texttt{expr "-" product}.  In
       addition to the four basic arithmetic operators, our language supports the
       \blue{modulo operator} \squoted{\%}.
-\item Line 20 -- 23 define the variable \texttt{factor}.  As the parentheses are ignored, the alternative in
-      line 20 returns the abstract syntax tree of the expression in parentheses.  Line 23 describes a
+\item Line 19 -- 22 define the variable \texttt{factor}.  As the parentheses are ignored, the alternative in
+      line 19 returns the abstract syntax tree of the expression in parentheses.  Line 22 describes a
       \blue{function call}.  The list of arguments is written as
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -310,18 +318,18 @@ we only discuss those parts that are new.
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('call', ('IDENTIFIER', $f$), $a_1$, $\cdots$, $a_n$)}.
-\item Line 29 -- 31 import three token definitions from the library \texttt{common}.  In contrast to the
+\item Line 28 -- 30 import three token definitions from the library \texttt{common}.  In contrast to the
       calculator of Section \ref{section:calculator}, we import the token \texttt{INT} and rename it to
       \texttt{NUMBER}, because the language that we implement only supports integers.
-\item Line 35 -- 36 define the tokens \texttt{CPP\_COMMENT} and \texttt{C\_COMMENT}.  In \simtextsc{Larkita},
+\item Line 34 -- 35 define the tokens \texttt{CPP\_COMMENT} and \texttt{C\_COMMENT}.  In \simtextsc{Larkita},
       a \blue{regular expression} is written between two slashes, exactly as in the language
       \textsl{JavaScript}.  Our language supports two kinds of comments.
       \begin{enumerate}
-      \item Line 35 describes \blue{one line comments} that start with the character sequence
+      \item Line 34 describes \blue{one line comments} that start with the character sequence
             ``\texttt{//}'' and extend to the end of the line.  Note that the two slashes that start the
             comment have to be escaped inside the regular expression, since an unescaped slash would
             terminate it.  This is the reason why \texttt{sl\_grammar} has to be a raw string.
-      \item Line 36 describes \blue{multiline comments}, i.e.~text that is surrounded by ``\texttt{/*}''
+      \item Line 35 describes \blue{multiline comments}, i.e.~text that is surrounded by ``\texttt{/*}''
             and ``\texttt{*/}''.
 
             Here, we have to use the so-called \emph{non-greedy} version of the Kleene operator
@@ -340,8 +348,8 @@ we only discuss those parts that are new.
             \\[0.2cm]
             two separate comments are recognized.
       \end{enumerate}
-\item Line 39 -- 41 instruct the scanner to discard white space and both kinds of comments.
-\item Line 44 creates the LR(1) parser.  A description of the states of this parser is written into the file
+\item Line 38 -- 40 instruct the scanner to discard white space and both kinds of comments.
+\item Line 43 creates the LR(1) parser.  A description of the states of this parser is written into the file
       \texttt{sl.out}.
 \end{enumerate}
 \FloatBarrier
@@ -353,10 +361,10 @@ The following table summarizes the shapes of the nested tuples that are returned
 \hline
 \textbf{construct}     & \textbf{nested tuple} \\
 \hline
-program, block         & \texttt{('program', $\textsl{stmnt}_1$, $\cdots$, $\textsl{stmnt}_n$)} \\
+program, body          & \texttt{('program', $\textsl{stmnt}_1$, $\cdots$, $\textsl{stmnt}_n$)} \\
 assignment             & \texttt{(':=', ('IDENTIFIER', $\textsl{name}$), $\textsl{expr}$)} \\
 expression statement   & \texttt{('expr', $\textsl{expr}$)} \\
-conditional, loop      & \texttt{('if', $\textsl{test}$, $\textsl{stmnt}$)}, \texttt{('while', $\textsl{test}$, $\textsl{stmnt}$)} \\
+conditional, loop      & \texttt{('if', $\textsl{test}$, $\textsl{body}$)}, \texttt{('while', $\textsl{test}$, $\textsl{body}$)} \\
 binary operator        & \texttt{($\textsl{op}$, $\textsl{lhs}$, $\textsl{rhs}$)}, for example \texttt{('+', $\textsl{lhs}$, $\textsl{rhs}$)} \\
 number, variable       & \texttt{('NUMBER', $\textsl{digits}$)}, \texttt{('IDENTIFIER', $\textsl{name}$)} \\
 function call          & \texttt{('call', ('IDENTIFIER', $\textsl{name}$), $\textsl{arg}_1$, $\cdots$, $\textsl{arg}_n$)} \\
@@ -394,7 +402,7 @@ recognized as an identifier.  \eox
 
 \remarkEng
 The library \texttt{common} already provides the definitions \texttt{C\_COMMENT} and \texttt{CPP\_COMMENT}.
-Hence, line 35 -- 36 of Figure \ref{fig:03-Interpreter.ipynb:grammar-2} could be replaced with two
+Hence, line 34 -- 35 of Figure \ref{fig:03-Interpreter.ipynb:grammar-2} could be replaced with two
 \texttt{\%import} directives.  We have written these tokens ourselves in order to show how a
 regular expression is specified in \simtextsc{Larkita}.  \eox
 \vspace*{0.2cm}
@@ -517,7 +525,8 @@ executed.  Note that this function does not refer to \simtextsc{Larkita} in any 
       \hspace*{1.3cm}
       \texttt{('if', test, stmnt)}
       \\[0.2cm]
-      then \texttt{test} is a nested tuple representing a Boolean expression, while \texttt{stmnt} is a statement.
+      then \texttt{test} is a nested tuple representing a Boolean expression, while \texttt{stmnt} is the body,
+      i.e.~a list of statements.
       In this case, the expression \texttt{test} is first evaluated using the function \texttt{evaluate\_bool}.
       If this evaluation yields the value \texttt{True}, then \texttt{stmnt} is executed.
 \item If the statement is of the form
@@ -525,7 +534,7 @@ executed.  Note that this function does not refer to \simtextsc{Larkita} in any 
       \hspace*{1.3cm}
       \texttt{('while', test, stmnt)}
       \\[0.2cm]
-      then \texttt{test} is a Boolean expression and \texttt{stmnt} is a statement.
+      then \texttt{test} is a Boolean expression and \texttt{stmnt} is the body of the loop.
       In this case, the expression \texttt{test} is first evaluated using the function \texttt{evaluate\_bool}.
       If this evaluation yields the value \texttt{True}, then \texttt{stmnt} is executed.
       Then the expression \texttt{test} is evaluated again.  If the result is
@@ -710,7 +719,8 @@ Both the \texttt{for} loop and the logical operators can be added by extending t
 \texttt{execute} and \texttt{evaluate\_bool}.  Make sure that the heads of the tuples that are built for the
 new alternatives are the ones that your interpreter expects.  If necessary, give the new alternatives
 aliases.  For the logical operators, introduce the syntactical variables \texttt{disjunction},
-\texttt{conjunction}, and \texttt{negation} in order to encode the precedences.
+\texttt{conjunction}, and \texttt{negation} in order to encode the precedences.  As for \texttt{if} statements and
+\texttt{while} loops, the bodies of \texttt{for} loops and of functions have to be enclosed in braces.
 \eox
 
 \begin{figure}[!ht]
