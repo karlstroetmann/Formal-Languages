@@ -51,7 +51,7 @@ is computed using a \texttt{while} loop.  Finally, this sum is printed.
                                           \quoted{\{} \textsl{program} \quoted{\}}                                 \\
                         & \mid        &   \quoted{while} \quoted{(} \textsl{bool\_expr} \quoted{)}
                                           \quoted{\{} \textsl{program} \quoted{\}}                                 \\
-                        & \mid        & \;\simtextsc{Identifier} \quoted{:=} \textsl{expr} \quoted{;}              \\
+                        & \mid        & \;\simtextsc{Id} \quoted{:=} \textsl{expr} \quoted{;}                      \\
                         & \mid        & \;\textsl{expr} \quoted{;}                                                 \\[0.2cm]
   \textsl{bool\_expr}   & \rightarrow & \;\textsl{expr} \quoted{==} \textsl{expr}                                  \\
                         & \mid        & \;\textsl{expr} \quoted{!=} \textsl{expr}                                  \\
@@ -67,9 +67,9 @@ is computed using a \texttt{while} loop.  Finally, this sum is printed.
                         & \mid        & \;\textsl{product} \quoted{\%} \textsl{factor}                             \\
                         & \mid        & \;\textsl{factor}                                                          \\[0.2cm]
   \textsl{factor}       & \rightarrow &   \quoted{(} \textsl{expr} \quoted{)}                                      \\
-                        & \mid        & \;\simtextsc{Number}                                                       \\
-                        & \mid        & \;\simtextsc{Identifier}                                                   \\
-                        & \mid        & \;\simtextsc{Identifier} \quoted{(} \textsl{expr\_list} \quoted{)}         \\[0.2cm]
+                        & \mid        & \;\simtextsc{Int}                                                          \\
+                        & \mid        & \;\simtextsc{Id}                                                           \\
+                        & \mid        & \;\simtextsc{Id} \quoted{(} \textsl{expr\_list} \quoted{)}                 \\[0.2cm]
   \textsl{expr\_list}   & \rightarrow & \;\varepsilon                                                              \\
                         & \mid        & \;\textsl{ne\_expr\_list}                                                  \\[0.2cm]
   \textsl{ne\_expr\_list} & \rightarrow & \;\textsl{expr}                                                          \\
@@ -124,21 +124,17 @@ that start with the string \squoted{program}.
                   gobble        = 4,
                 ]
     ('program',
-        (':=', ('IDENTIFIER', 'n'), ('call', ('IDENTIFIER', 'read'))),
-        (':=', ('IDENTIFIER', 's'), ('NUMBER', '0')),
-        (':=', ('IDENTIFIER', 'i'), ('NUMBER', '0')),
+        (':=', ('ID', 'n'), ('call', ('ID', 'read'))),
+        (':=', ('ID', 's'), ('INT', '0')),
+        (':=', ('ID', 'i'), ('INT', '0')),
         ('while',
-            ('<', ('IDENTIFIER', 'i'),
-                ('*', ('IDENTIFIER', 'n'), ('IDENTIFIER', 'n'))),
+            ('<', ('ID', 'i'), ('*', ('ID', 'n'), ('ID', 'n'))),
             ('program',
-                (':=', ('IDENTIFIER', 'i'),
-                    ('+', ('IDENTIFIER', 'i'), ('NUMBER', '1'))),
-                (':=', ('IDENTIFIER', 's'),
-                    ('+', ('IDENTIFIER', 's'), ('IDENTIFIER', 'i')))
+                (':=', ('ID', 'i'), ('+', ('ID', 'i'), ('INT', '1'))),
+                (':=', ('ID', 's'), ('+', ('ID', 's'), ('ID', 'i')))
             )
         ),
-        ('expr', ('call', ('IDENTIFIER', 'print'),
-            ('IDENTIFIER', 's')))
+        ('expr', ('call', ('ID', 'print'), ('ID', 's')))
     )
 \end{Verbatim}
 \vspace*{-0.3cm}
@@ -148,12 +144,12 @@ that start with the string \squoted{program}.
 \FloatBarrier
 
 \noindent
-The figures \ref{fig:03-Interpreter.ipynb:grammar-1} and \ref{fig:03-Interpreter.ipynb:grammar-2} on page
-\pageref{fig:03-Interpreter.ipynb:grammar-1} show the transcription of the grammar of Figure
+The figures \ref{fig:01-Interpreter.ipynb:grammar-1} and \ref{fig:01-Interpreter.ipynb:grammar-2} on page
+\pageref{fig:01-Interpreter.ipynb:grammar-1} show the transcription of the grammar of Figure
 \ref{fig:Pure.g} into the \simtextsc{Ebnf} dialect of \simtextsc{Larkita}.  Recall that there is no separate
 scanner specification:  Both the lexical structure and the syntactical structure of our language are
-described by the single string \texttt{sl\_grammar}.  Figure \ref{fig:03-Interpreter.ipynb:grammar-1}
-contains the \blue{syntactical} part of this string, while Figure \ref{fig:03-Interpreter.ipynb:grammar-2}
+described by the single string \texttt{sl\_grammar}.  Figure \ref{fig:01-Interpreter.ipynb:grammar-1}
+contains the \blue{syntactical} part of this string, while Figure \ref{fig:01-Interpreter.ipynb:grammar-2}
 contains its \blue{lexical} part.
 
 \begin{figure}[!ht]
@@ -171,10 +167,10 @@ contains its \blue{lexical} part.
     sl_grammar = r"""
     program: stmnt*
 
-    stmnt: "if" "(" bool_expr ")" "{" program "}"
+    stmnt: "if"    "(" bool_expr ")" "{" program "}"
          | "while" "(" bool_expr ")" "{" program "}"
-         | IDENTIFIER ":=" expr ";"
-         | expr ";"                           -> "expr"
+         | ID ":=" expr ";"
+         | expr ";"                                 -> "expr"
 
     bool_expr: expr ("==" | "!=" | "<=" | ">=" | "<" | ">") expr
 
@@ -185,16 +181,16 @@ contains its \blue{lexical} part.
            | factor
 
     factor: "(" expr ")"
-          | NUMBER
-          | IDENTIFIER
-          | IDENTIFIER "(" [expr ("," expr)*] ")" -> "call"
+          | INT
+          | ID
+          | ID "(" [expr ("," expr)*] ")" -> "call"
 
     // These literals are left out of the heads of all tuples.
     %ignore: "(", ")", "{", "}", ";"
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The grammar of our programming language, part \texttt{I}: syntax.}
-\label{fig:03-Interpreter.ipynb:grammar-1}
+\label{fig:01-Interpreter.ipynb:grammar-1}
 \end{figure}
 
 \begin{figure}[!ht]
@@ -209,8 +205,8 @@ contains its \blue{lexical} part.
                 xrightmargin = 0.0cm,
               ]{text}
     // Lexical definitions
-    %import common.CNAME -> IDENTIFIER
-    %import common.INT   -> NUMBER
+    %import common.CNAME -> ID
+    %import common.INT
     %import common.WS
 
     // In order to show how it's done, I have defined the tokens
@@ -228,7 +224,7 @@ contains its \blue{lexical} part.
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The grammar of our programming language, part \texttt{II}: lexical definitions.}
-\label{fig:03-Interpreter.ipynb:grammar-2}
+\label{fig:01-Interpreter.ipynb:grammar-2}
 \end{figure}
 
 \noindent
@@ -276,7 +272,7 @@ we only discuss those parts that are new.
       of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{(':=', ('IDENTIFIER', $\textsl{name}$), $\textsl{expr}$)}.
+      \texttt{(':=', ('ID', $\textsl{name}$), $\textsl{expr}$)}.
       \\[0.2cm]
       As the body of an \texttt{if} statement or a \texttt{while} loop is a \texttt{program}, it is
       represented by a tuple that starts with the string \squoted{program}, even if it consists of a single
@@ -317,10 +313,11 @@ we only discuss those parts that are new.
       form $f(a_1, \cdots\!, a_n)$ is represented as the tuple
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{('call', ('IDENTIFIER', $f$), $a_1$, $\cdots$, $a_n$)}.
+      \texttt{('call', ('ID', $f$), $a_1$, $\cdots$, $a_n$)}.
 \item Line 28 -- 30 import three token definitions from the library \texttt{common}.  In contrast to the
-      calculator of Section \ref{section:calculator}, we import the token \texttt{INT} and rename it to
-      \texttt{NUMBER}, because the language that we implement only supports integers.
+      calculator of Section \ref{section:calculator}, we rename the token \texttt{CNAME} to the shorter name
+      \texttt{ID}, and we import the token \texttt{INT} instead of the token \texttt{NUMBER}, because the
+      language that we implement only supports integers.
 \item Line 34 -- 35 define the tokens \texttt{CPP\_COMMENT} and \texttt{C\_COMMENT}.  In \simtextsc{Larkita},
       a \blue{regular expression} is written between two slashes, exactly as in the language
       \textsl{JavaScript}.  Our language supports two kinds of comments.
@@ -362,12 +359,12 @@ The following table summarizes the shapes of the nested tuples that are returned
 \textbf{construct}     & \textbf{nested tuple} \\
 \hline
 program, body          & \texttt{('program', $\textsl{stmnt}_1$, $\cdots$, $\textsl{stmnt}_n$)} \\
-assignment             & \texttt{(':=', ('IDENTIFIER', $\textsl{name}$), $\textsl{expr}$)} \\
+assignment             & \texttt{(':=', ('ID', $\textsl{name}$), $\textsl{expr}$)} \\
 expression statement   & \texttt{('expr', $\textsl{expr}$)} \\
 conditional, loop      & \texttt{('if', $\textsl{test}$, $\textsl{body}$)}, \texttt{('while', $\textsl{test}$, $\textsl{body}$)} \\
 binary operator        & \texttt{($\textsl{op}$, $\textsl{lhs}$, $\textsl{rhs}$)}, for example \texttt{('+', $\textsl{lhs}$, $\textsl{rhs}$)} \\
-number, variable       & \texttt{('NUMBER', $\textsl{digits}$)}, \texttt{('IDENTIFIER', $\textsl{name}$)} \\
-function call          & \texttt{('call', ('IDENTIFIER', $\textsl{name}$), $\textsl{arg}_1$, $\cdots$, $\textsl{arg}_n$)} \\
+number, variable       & \texttt{('INT', $\textsl{digits}$)}, \texttt{('ID', $\textsl{name}$)} \\
+function call          & \texttt{('call', ('ID', $\textsl{name}$), $\textsl{arg}_1$, $\cdots$, $\textsl{arg}_n$)} \\
 \hline
 \end{tabular}
 \end{center}
@@ -381,18 +378,18 @@ The string
 is parsed into the nested tuple
 \\[0.2cm]
 \hspace*{0.3cm}
-\texttt{('program', (':=', ('IDENTIFIER', 'x'),}
+\texttt{('program', (':=', ('ID', 'x'),}
 \\
 \hspace*{0.8cm}
-\texttt{('call', ('IDENTIFIER', 'f'), ('NUMBER', '1'),}
+\texttt{('call', ('ID', 'f'), ('INT', '1'),}
 \\
 \hspace*{1.3cm}
-\texttt{('+', ('NUMBER', '2'), ('NUMBER', '3')), ('IDENTIFIER', 'y'))))}.
+\texttt{('+', ('INT', '2'), ('INT', '3')), ('ID', 'y'))))}.
 \hspace*{\fill} $\diamond$
 
 \remarkEng
 The treatment of the keywords ``\texttt{if}'' and ``\texttt{while}'' deserves a closer look.  Both of these
-strings also match the token \texttt{IDENTIFIER}, which has been imported as \blue{\texttt{common.CNAME}}.  A
+strings also match the token \texttt{ID}, which has been imported as \blue{\texttt{common.CNAME}}.  A
 scanner that is generated with the module \texttt{re} would therefore have to recognize these keywords as
 identifiers first and then look them up in a dictionary of keywords in order to change the type of the
 token.  With \simtextsc{Larkita}, none of this is necessary:  Tokens that are given as \blue{literal strings}
@@ -402,7 +399,7 @@ recognized as an identifier.  \eox
 
 \remarkEng
 The library \texttt{common} already provides the definitions \texttt{C\_COMMENT} and \texttt{CPP\_COMMENT}.
-Hence, line 34 -- 35 of Figure \ref{fig:03-Interpreter.ipynb:grammar-2} could be replaced with two
+Hence, line 34 -- 35 of Figure \ref{fig:01-Interpreter.ipynb:grammar-2} could be replaced with two
 \texttt{\%import} directives.  We have written these tokens ourselves in order to show how a
 regular expression is specified in \simtextsc{Larkita}.  \eox
 \vspace*{0.2cm}
@@ -471,7 +468,7 @@ The function \texttt{main} performs the steps that are by now familiar.
         match stmnt:
             case ('program', *SL):
                 execute_tuple(tuple(SL), Values)
-            case (':=', ('IDENTIFIER', var), value):
+            case (':=', ('ID', var), value):
                 Values[var] = evaluate(value, Values)
             case ('expr', expr):
                 evaluate(expr, Values)
@@ -509,7 +506,7 @@ executed.  Note that this function does not refer to \simtextsc{Larkita} in any 
 \item If the statement is an assignment of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{(':=', ('IDENTIFIER', var), value)}
+      \texttt{(':=', ('ID', var), value)}
       \\[0.2cm]
       then the value of the expression \texttt{value} is computed using the function \texttt{evaluate}.
       This value is then stored in the dictionary \texttt{Values} under the key \texttt{var}.  Note that the
@@ -609,13 +606,13 @@ This function receives a boolean expression and a dictionary storing the current
               ]{python3}
 def evaluate(expr: NestedTuple, Values: dict[str, Number]) -> Number:
     match expr:
-        case ('NUMBER', digits):
+        case ('INT', digits):
             return int(digits)
-        case ('IDENTIFIER', name):
+        case ('ID', name):
             return Values[name]
-        case ('call', ('IDENTIFIER', 'read')):
+        case ('call', ('ID', 'read')):
             return int(input('Please enter a natural number: '))
-        case ('call', ('IDENTIFIER', 'print'), expr):
+        case ('call', ('ID', 'print'), expr):
             print(evaluate(expr, Values))
             return 0
         case ('+', lhs, rhs):
@@ -645,13 +642,13 @@ the values of our variables.
 \item If the expression to be evaluated is a number, i.e.~a token of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{('NUMBER', digits)},
+      \texttt{('INT', digits)},
       \\[0.2cm]
       we convert the string \texttt{digits} into an integer and return this integer as the result.
 \item If the expression to be evaluated is a variable, i.e.~a token of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{('IDENTIFIER', name)},
+      \texttt{('ID', name)},
       \\[0.2cm]
       we look up the value of this variable in the dictionary \texttt{Values} and return this value as the
       result.
@@ -662,7 +659,7 @@ the values of our variables.
       children at all and therefore the tuple representing the call \texttt{read()} is
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{('call', ('IDENTIFIER', 'read'))}.
+      \texttt{('call', ('ID', 'read'))}.
 \item If the expression to be evaluated is a call to the function \texttt{print}, we evaluate the argument and
       print it.  Furthermore, we return 0 since the evaluation of an expression always has to return a value.
 \item If the expression to be evaluated is a sum of the form
@@ -678,10 +675,10 @@ the values of our variables.
 \FloatBarrier
 
 \noindent
-The Jupyter notebook \texttt{03-Interpreter}, which is available at
+The Jupyter notebook \texttt{01-Interpreter}, which is available at
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-08/03-Interpreter.ipynb}{Python/Chapter-08/03-Interpreter.ipynb}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-08/01-Interpreter.ipynb}{Python/Chapter-08/01-Interpreter.ipynb}
 \\[0.2cm]
 implements the interpreter that has been discussed in this chapter.
 
@@ -715,7 +712,7 @@ as a starting point for your solution.
 \\[0.2cm]
 \hint
 Both the \texttt{for} loop and the logical operators can be added by extending the grammar shown in Figure
-\ref{fig:03-Interpreter.ipynb:grammar-1} and by adding the corresponding cases to the functions
+\ref{fig:01-Interpreter.ipynb:grammar-1} and by adding the corresponding cases to the functions
 \texttt{execute} and \texttt{evaluate\_bool}.  Make sure that the heads of the tuples that are built for the
 new alternatives are the ones that your interpreter expects.  If necessary, give the new alternatives
 aliases.  For the logical operators, introduce the syntactical variables \texttt{disjunction},
