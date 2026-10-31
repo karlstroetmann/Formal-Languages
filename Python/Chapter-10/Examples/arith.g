@@ -1,13 +1,10 @@
-expr: expr '+' product
-    | expr '-' product
+expr: expr "+" product
+    | expr "-" product
     | product
-    ;
- 
-product: product '*' factor
-       | product '/' factor
+
+product: product "*" factor
+       | product "/" factor
        | factor
-       ;
-       
-factor: '(' expr ')'
+
+factor: "(" expr ")"
       | NUMBER
-      ;

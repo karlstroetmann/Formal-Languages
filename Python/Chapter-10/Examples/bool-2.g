@@ -1,15 +1,11 @@
-expr: expr '|' conjunction
+expr: expr "|" conjunction
     | conjunction
-    ;
 
-conjunction: conjunction '&' negation
+conjunction: conjunction "&" negation
            | negation
-           ;
 
-negation: '!' negation
+negation: "!" negation
         | atom
-        ;
 
-atom: '(' expr ')'
+atom: "(" expr ")"
     | VAR
-    ;

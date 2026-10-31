@@ -1,4 +1,4 @@
-expr: expr '+' expr;
-expr: expr '*' expr;
-expr: '(' expr ')';
-expr: NUMBER;
+expr: expr "+" expr
+    | expr "*" expr
+    | "(" expr ")"
+    | NUMBER
