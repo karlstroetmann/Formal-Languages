@@ -10,8 +10,10 @@ pdflatex -shell-escape formal-languages.tex
 - Run it 2–3 times so that references, the index, and the list of notation settle.  A clean build has
   0 errors and no "multiply defined" or "undefined reference" warnings.
 - The bibliography needs `bibtex formal-languages` only when `cs.bib` or the `\cite`s change.
-- The tracked build outputs `formal-languages.pdf` and `formal-languages.idx` are committed together with
-  source changes.
+- The tracked build output `formal-languages.idx` is committed together with source changes.
+- The PDF is not tracked, since every version would stay in the history.  It is published as the asset of
+  the GitHub release `lecture-notes`: `gh release upload lecture-notes formal-languages.pdf --clobber`.
+  Keep the images small (about 200 dpi at the printed width), since the PDF contains all of them.
 
 ## Structure
 
