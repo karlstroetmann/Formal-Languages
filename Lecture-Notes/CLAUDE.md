@@ -18,8 +18,8 @@ pdflatex -shell-escape formal-languages.tex
 - `formal-languages.tex` is the main file: preamble (grouped by purpose, `hyperref`/`glossaries` last),
   then the `\include`d chapters.  Figures are included as `\includegraphics{Abbildungen/...}`.
 - Chapter order: introduction, regular-expressions, scanners, finite-state-machines, regular-languages,
-  context-free-languages, lark, lark-interpreter (chapter 8), earley-parser, shift-reduce-parser +
-  lr-parser (chapter 10), lark-lalr, jasmin, compiler + compiler-2 (chapter 13).
+  context-free-languages, larkita, larkita-interpreter (chapter 8), earley-parser, shift-reduce-parser +
+  lr-parser (chapter 10), larkita-lalr, jasmin, compiler + compiler-2 (chapter 13).
 - `notation.tex` holds the entries of the *List of Notation* (package `glossaries`).
 - The Python notebooks live in `../Python/Chapter-NN/`, numbered like the chapters
   (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl`, e.g.
