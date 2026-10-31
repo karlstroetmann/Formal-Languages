@@ -1,0 +1,33 @@
+program: stmnt*
+
+stmnt: "if"    "(" bool_expr ")" "{" program "}"
+     | "while" "(" bool_expr ")" "{" program "}"
+     | ID ":=" expr ";"
+     | expr ";"                                 -> "expr"
+
+bool_expr: expr ("==" | "!=" | "<=" | ">=" | "<" | ">") expr
+
+expr: expr ("+" | "-") product
+    | product
+
+product: product ("*" | "/" | "%") factor
+       | factor
+
+factor: "(" expr ")"
+      | INT
+      | ID
+      | ID "(" [expr ("," expr)*] ")" -> "call"
+
+// These literals are left out of the heads of all tuples.
+%ignore: "(", ")", "{", "}", ";"
+
+// Lexical definitions
+%import common.CNAME -> ID, common.INT, common.WS
+
+// In order to show how it's done, I have defined the tokens
+// CPP_COMMENT and C_COMMENT describing comments myself.
+CPP_COMMENT: /\/\/[^\n]*/
+C_COMMENT:   "/*" /(.|\n)*?/ "*/"
+
+// Ignore whitespace and comments
+%ignore WS, C_COMMENT, CPP_COMMENT

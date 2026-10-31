@@ -143,15 +143,15 @@ We construct both the scanner and the parser using \simtextsc{Larkita}.  In cont
 \simtextsc{Ply}, which separate the specification of the scanner from the specification of the parser,
 \simtextsc{Larkita} reads a \emph{single} grammar that specifies both the tokens and the grammar rules.  Recall that
 the names of terminals are written in upper case, while the names of syntactical variables are written in
-lower case.  We build this grammar as a string: The part of the grammar that describes the scanner is collected in
-the variable \mytt{terminal\_definitions}, while the grammar rules are collected in the variable \mytt{syntax}.
-At the end, both strings are concatenated.  The notebook
+lower case.  We store this grammar in small files in the directory \mytt{Grammar}:  The files that describe the
+scanner are joined into the string \mytt{terminal\_definitions}, while the files containing the grammar rules are
+joined into the string \mytt{syntax}.  At the end, both strings are concatenated.  The notebook
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-13/Compiler.ipynb}{\texttt{Python/Chapter-13/Compiler.ipynb}}
 \\[0.2cm]
-contains the complete compiler.  In this notebook, the strings \mytt{terminal\_definitions} and \mytt{syntax}
-are built step by step.  For the presentation in these lecture notes, we have combined these steps.
+contains the complete compiler.  This notebook displays and explains the files one after the other.  For the
+presentation in these lecture notes, we show the files of the scanner and of the grammar rules together.
 
 \begin{figure}[!ht]
 \centering
@@ -164,10 +164,7 @@ are built step by step.  For the presentation in these lecture notes, we have co
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
-              ]{larkita_lexer.py:PythonLarkitaLexer}
-    from larkita import Larkita, UnexpectedInput
-
-    terminal_definitions = r"""
+              ]{larkita_lexer.py:LarkitaLexer}
     NUMBER: /0|[1-9][0-9]*/
 
     EQ : "=="
@@ -179,15 +176,16 @@ are built step by step.  For the presentation in these lecture notes, we have co
 
     COMMENT: /\/\*(.|\n)*?\*\//
            | /\/\/[^\n]*/
+
     %ignore COMMENT
 
     NAME: /[a-zA-Z][a-zA-Z0-9_]*/
 
     %ignore /[ \t\r\n]+/
-    """
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The scanner for \textsl{Integer}-\mytt{C}.}
+\caption{The scanner for \textsl{Integer}-\mytt{C}:  the files \mytt{number.lark}, \mytt{operators.lark},
+         \mytt{comment.lark}, \mytt{name.lark}, and \mytt{whitespace.lark}.}
 \label{fig:Compiler.ipynb:lex}
 \end{figure}
 
@@ -195,9 +193,9 @@ are built step by step.  For the presentation in these lecture notes, we have co
 Figure \ref{fig:Compiler.ipynb:lex} on page \pageref{fig:Compiler.ipynb:lex} shows the specification of the
 scanner.
 \begin{enumerate}
-\item Line 4 defines the token \mytt{NUMBER}, which specifies a natural number.  In \simtextsc{Larkita}, a regular
+\item Line 1 defines the token \mytt{NUMBER}, which specifies a natural number.  In \simtextsc{Larkita}, a regular
       expression is enclosed in forward slashes.
-\item Line 6--11 define the tokens for those operators that consist of more than one character.  Strictly
+\item Line 3--8 define the tokens for those operators that consist of more than one character.  Strictly
       speaking, these definitions are not necessary: A string that occurs literally inside a grammar rule, for
       example \quoted{==}, is automatically turned into an \blue{anonymous terminal}.  However, the name that
       \simtextsc{Larkita} generates for an anonymous terminal built from a symbol like \quoted{==} has the form
@@ -211,7 +209,7 @@ scanner.
       The operators that consist of a single character need no declaration at all:  \simtextsc{Larkita} gives
       the corresponding anonymous terminals names like \mytt{PLUS}, \mytt{LPAR}, or \mytt{SEMICOLON}.
 \item Our version of \texttt{C} supports both single-line comments and multi-line comments.  These are
-      defined by the token \mytt{COMMENT} in line 13 and 14, which shows that a terminal can be defined as an
+      defined by the token \mytt{COMMENT} in line 10 and 11, which shows that a terminal can be defined as an
       alternative of several regular expressions.
       \begin{enumerate}[(a)]
       \item Multi-line comments start with the string \quoted{/*} and end with the string \quoted{*/}.
@@ -225,11 +223,11 @@ scanner.
       \end{enumerate}
       As the forward slash is the delimiter of a regular expression in \simtextsc{Larkita}, every occurrence of
       the character \quoted{/} inside a regular expression has to be escaped as \quoted{\symbol{92}/}.
-      The directive \mytt{\%ignore} in line 15 tells the scanner to discard all comments, so that they never
+      The directive \mytt{\%ignore} in line 13 tells the scanner to discard all comments, so that they never
       show up in the token stream.
 \item The most interesting aspect is the implementation of keywords like \quoted{while} or \quoted{return}.
       Syntactically, all keywords are identifiers, i.e.~they are also matched by the regular expression defining
-      the token \mytt{NAME} in line 17.  In the grammar of Figure \ref{fig:compiler.ebnf}, this token has been
+      the token \mytt{NAME} in line 15.  In the grammar of Figure \ref{fig:compiler.ebnf}, this token has been
       called \simtextsc{Id}.  \simtextsc{Larkita} deals with keywords automatically:  If a string terminal
       like \quoted{if} is also matched by the regular expression of another terminal, then \simtextsc{Larkita}
       first scans a \mytt{NAME} and afterwards checks whether the resulting string is one of the keywords.  If
@@ -237,7 +235,7 @@ scanner.
       \mytt{iffy} is scanned as a single \mytt{NAME} and not as the keyword \mytt{if} followed by the
       identifier \mytt{fy}.  Therefore, the keywords do not need to be declared as tokens.  They are simply
       written as strings inside the grammar rules.
-\item Finally, line 19 specifies that white space is ignored.  \simtextsc{Larkita} keeps track of line numbers
+\item Finally, line 17 specifies that white space is ignored.  \simtextsc{Larkita} keeps track of line numbers
       and column numbers on its own:  every token $t$ provides the attributes \mytt{t.line} and \mytt{t.column},
       which are used in error messages.
 \end{enumerate}
@@ -253,8 +251,7 @@ scanner.
                 fontsize     = \footnotesize,
                 xleftmargin  = 0.0cm,
                 xrightmargin = 0.0cm,
-              ]{larkita_lexer.py:PythonLarkitaLexer}
-    syntax = r"""
+              ]{larkita_lexer.py:LarkitaLexer}
     program: function+                                                      -> "."
 
     function: "int" NAME "(" parameters ")" "{" declarations statements "}" -> "fct"
@@ -274,10 +271,10 @@ scanner.
              | "while" "(" bool_expr ")" statement
              | "return" expr ";"
              | expr ";"
-    """
 \end{minted}
 \vspace*{-0.3cm}
-\caption{Grammar for Integer-\texttt{C}, part 1: programs, functions, and statements.}
+\caption{Grammar for Integer-\texttt{C}, part 1: programs, functions, and statements (the files
+         \mytt{program.lark}, \mytt{lists.lark}, and \mytt{statement.lark}).}
 \label{fig:Compiler.ipynb-1}
 \end{figure}
 
@@ -290,7 +287,7 @@ choose the aliases and the literals that are ignored in such a way that the pars
 tuples that are processed by our code generator.
 Figure \ref{fig:Compiler.ipynb-1} on page \pageref{fig:Compiler.ipynb-1} shows the first part of the grammar.
 \begin{enumerate}
-\item Line 2 specifies that a \mytt{program} is a non-empty list of function definitions.  The alias
+\item Line 1 specifies that a \mytt{program} is a non-empty list of function definitions.  The alias
       \quoted{.} replaces the head of the tuple, so a program consisting of the functions $f_1$, $\cdots$, $f_n$
       is represented as the tuple $(\squoted{.}, f_1, \cdots, f_n)$.
 \item A \mytt{function} definition starts with the keyword \quoted{int} that is followed by the name of the
@@ -305,24 +302,24 @@ Figure \ref{fig:Compiler.ipynb-1} on page \pageref{fig:Compiler.ipynb-1} shows t
       ``\emph{The C Programming Language}'' \cite{kernighan:1978}, required that all variable declarations
       precede any statements, prohibiting the mixing of declarations and statements. While this limitation was
       lifted in subsequent versions of the language, our implementation still enforces this restriction.
-\item The directive in line 6 removes the parentheses, the braces, and the semicolon from the heads of
+\item The directive in line 5 removes the parentheses, the braces, and the semicolon from the heads of
       \emph{all} alternatives of the grammar, since these literals carry no information.
 \item The syntactical variables \mytt{parameters}, \mytt{declarations}, and \mytt{statements} defined in line
-      8, 10, and 12 describe lists.  Using the \simtextsc{Ebnf} operators \quoted{*} and \quoted{?}, one rule per
+      7, 9, and 11 describe lists.  Using the \simtextsc{Ebnf} operators \quoted{*} and \quoted{?}, one rule per
       list suffices.  Note that a parameter list may be empty and that different parameters are separated by
       commas, while every declaration is terminated by a semicolon.  The children of a repetition are spliced
       into the tuple of the alternative, and the alias \quoted{.} replaces the head.  Hence, every list is
       represented as a tuple of the form $(\squoted{.}, \textsl{item}_1, \cdots, \textsl{item}_n)$.  The tuples
       of \mytt{parameters} and \mytt{declarations} contain only the tokens of type \mytt{NAME}, since all other
       symbols occurring in these rules are literals.
-\item Line 14--20 define the syntactical variable \mytt{statement}.  As the parentheses and the semicolon are
+\item Line 13--19 define the syntactical variable \mytt{statement}.  As the parentheses and the semicolon are
       ignored, the heads of the tuples are the keywords \squoted{if}, \squoted{while}, and \squoted{return} and
-      the operator \squoted{=}.  The alternative in line 17 gets the alias \quoted{if-else}, since otherwise its
+      the operator \squoted{=}.  The alternative in line 16 gets the alias \quoted{if-else}, since otherwise its
       head would be the tuple \mytt{('if', 'else')}.  As the braces and the semicolon are ignored, a block and an
       expression statement consist of a single symbol.  Therefore, a block is represented by the list of its
       statements, while an expression statement is represented by the expression itself.
 
-      The two alternatives in line 16 and line 17 cause the \blue{dangling else}
+      The two alternatives in line 15 and line 16 cause the \blue{dangling else}
       problem:  When the parser has read a statement of the form
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -353,8 +350,7 @@ Figure \ref{fig:Compiler.ipynb-1} on page \pageref{fig:Compiler.ipynb-1} shows t
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
-              ]{larkita_lexer.py:PythonLarkitaLexer}
-    syntax = syntax + r"""
+              ]{larkita_lexer.py:LarkitaLexer}
     bool_expr: bool_expr "||" conjunction
              | conjunction
 
@@ -377,10 +373,10 @@ Figure \ref{fig:Compiler.ipynb-1} on page \pageref{fig:Compiler.ipynb-1} shows t
           | NAME
           | NAME "(" [expr ("," expr)*] ")"   -> "call"
           | "(" expr ")"
-    """
 \end{minted}
 \vspace*{-0.3cm}
-\caption{Grammar for Integer-\texttt{C}, part 2: Boolean and arithmetic expressions.}
+\caption{Grammar for Integer-\texttt{C}, part 2: Boolean and arithmetic expressions (the files
+         \mytt{bool-expr.lark} and \mytt{expr.lark}).}
 \label{fig:Compiler.ipynb-2}
 \end{figure}
 
@@ -390,7 +386,7 @@ arithmetic expressions.  \simtextsc{Larkita} does not support precedence declara
 precedences and associativities of the operators into the grammar by introducing one syntactical variable per
 precedence level, as discussed in Section \ref{section:operator-precedence}.
 \begin{enumerate}
-\item Line 2--12 define Boolean expressions:
+\item Line 1--11 define Boolean expressions:
       \begin{enumerate}[(a)]
       \item A \mytt{bool\_expr} is a list of \mytt{conjunction}s that are separated by the operator
             \quoted{||}, which represents \blue{logical or}.
@@ -410,18 +406,22 @@ precedence level, as discussed in Section \ref{section:operator-precedence}.
       \quoted{>=}, \quoted{<}, and \quoted{>} are non-associative, since our programming language disallows
       the chaining of comparison operators.  Therefore, the rules for \mytt{bool\_atom} are not recursive at
       all and an expression of the form $x < y < z$ is syntactically invalid.
-\item The operators are the heads of the tuples, for example the alternative \mytt{bool\_expr "||" conjunction}
+\item The operators are the heads of the tuples, for example the alternative
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \mytt{bool\_expr "||" conjunction}
+      \\[0.2cm]
       yields a tuple of the form $(\squoted{||}, \textsl{lhs}, \textsl{rhs})$.  An alternative that consists of a
       single symbol, like \mytt{bool\_expr: conjunction}, returns the tuple of this symbol.  Without this rule,
       the abstract syntax tree of the expression \mytt{x == 1} would contain a chain of four nested tuples.
-      Line 11 uses an inner alternative, which abbreviates six alternatives, one for every comparison operator.
+      Line 10 uses an inner alternative, which abbreviates six alternatives, one for every comparison operator.
       Hence, the comparison operator that has been read is the head of the tuple.
-\item Line 14--23 define arithmetic expressions in the same way:  The operators \quoted{+} and \quoted{-}
+\item Line 13--22 define arithmetic expressions in the same way:  The operators \quoted{+} and \quoted{-}
       have a lower precedence than the operators \quoted{*}, \quoted{/}, and \quoted{\%}.  As all of these
       operators are left associative, all rules are left recursive.  As the parentheses are ignored, the last
       alternative of the rule for \mytt{factor} consists of a single symbol, so a parenthesized expression does not
       create a tuple of its own.
-\item Line 22 describes a function call.  Its arguments are written inline as a possibly empty list of
+\item Line 21 describes a function call.  Its arguments are written inline as a possibly empty list of
       expressions that are separated by commas.  The children of an optional part and of a repetition are spliced
       into the tuple of the alternative and the alias \quoted{call} replaces the head.  Hence, a function call is
       represented as a tuple of the form $(\squoted{call}, \textsl{name}, \textsl{arg}_1, \cdots,
@@ -437,10 +437,12 @@ precedence level, as discussed in Section \ref{section:operator-precedence}.
                 fontsize     = \small,
                 numbers      = left,
                 numbersep    = 0.3cm,
-                xleftmargin  = 0.8cm,
-                xrightmargin = 0.8cm,
+                xleftmargin  = 0.0cm,
+                xrightmargin = 0.0cm,
               ]{python3}
-    grammar = syntax + terminal_definitions
+    syntax  = read_grammar('program', 'lists', 'statement', 'bool-expr', 'expr')
+    grammar = syntax + '\n' + terminal_definitions
+    Code(grammar, language='larkita')
 
     parser = Larkita(grammar, start='program', out_file='compiler.out')
 \end{minted}
@@ -451,7 +453,10 @@ precedence level, as discussed in Section \ref{section:operator-precedence}.
 
 \noindent
 Figure \ref{fig:Compiler.ipynb-3} on page \pageref{fig:Compiler.ipynb-3} shows how the parser is created.
-Line 1 concatenates the grammar rules and the terminal definitions.  In line 3, the keyword argument
+Line 1 reads the files containing the grammar rules.  The function \mytt{read\_grammar} joins the given files
+of the directory \mytt{Grammar}; the terminal definitions have been read in the same way.  Line 2 appends the
+terminal definitions to the grammar rules, and line 3 displays the complete grammar.  In line 5, the keyword
+argument
 \mytt{start='program'} declares \mytt{program} to be the start variable of our grammar.  This argument could be
 omitted, since the first rule of the grammar defines the start variable.  \simtextsc{Larkita} writes a description
 of all states of the generated LR(1) parser into the file \mytt{compiler.out}, and it issues a

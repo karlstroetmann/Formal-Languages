@@ -113,7 +113,7 @@ jupyter notebook
       lists all conflicts.
 \end{enumerate}
 Figure \ref{fig:conflicts-code} on page \pageref{fig:conflicts-code} shows how the parser for the grammar given
-in Figure \ref{fig:Conflicts.ipynb} is created.
+in Figure \ref{fig:Conflicts.ipynb} is created.  This grammar is stored in the file \texttt{conflicts.lark}.
 
 \begin{figure}[!ht]
 \centering
@@ -127,7 +127,7 @@ in Figure \ref{fig:Conflicts.ipynb} is created.
               ]{python3}
     from larkita import Larkita, ConflictWarning, GrammarError
 
-    parser = Larkita(grammar, out_file='conflicts.out')
+    parser = Larkita.open('conflicts.lark', out_file='conflicts.out')
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Creating a parser.}
@@ -140,7 +140,10 @@ When we run this code with the grammar of Figure \ref{fig:Conflicts.ipynb}, \sim
 warning
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{ConflictWarning: 4 shift/reduce conflict(s) were resolved as shift, see conflicts.out}
+\texttt{ConflictWarning: 4 shift/reduce conflict(s) were resolved as shift,}
+\\
+\hspace*{1.3cm}
+\texttt{see conflicts.out}
 \\[0.2cm]
 and the section \texttt{Conflicts} of the file \texttt{conflicts.out} contains the text that is shown in Figure
 \ref{fig:Conflicts.warnings} on page \pageref{fig:Conflicts.warnings}.
@@ -211,7 +214,7 @@ cannot be overlooked.
     with warnings.catch_warnings():
         warnings.simplefilter('error', ConflictWarning)
         try:
-            Larkita(grammar, out_file='conflicts.out')
+            Larkita.open('conflicts.lark', out_file='conflicts.out')
         except ConflictWarning as e:
             print(e)
 \end{minted}
@@ -836,9 +839,10 @@ are merged, so the result is the \simtextsc{Lalr} parser.
                 xleftmargin  = 0.3cm,
                 xrightmargin = 0.0cm,
               ]{python3}
-canonical = Larkita(grammar, out_file='arith.out')
-merged    = Larkita(grammar, out_file='arith-merged.out',
-                    merge_states=True)
+file_name = 'conflicts-resolved.lark'
+canonical = Larkita.open(file_name, out_file='arith.out')
+merged    = Larkita.open(file_name, out_file='arith-merged.out',
+                         merge_states=True)
 print('canonical:', len(canonical.parse_table.states), 'states')
 print('merged:   ', len(merged.parse_table.states), 'states')
 \end{minted}

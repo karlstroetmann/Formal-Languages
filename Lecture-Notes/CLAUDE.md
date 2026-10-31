@@ -60,6 +60,12 @@ pdflatex -shell-escape formal-languages.tex
   Larkita's tutorial uses an identical copy of the lexer.  After a change of the lexer, update the hash
   (list both hashes while the copies differ) and delete `_minted-formal-languages`, since minted's cache
   does not notice changes of a lexer.
+- The notebooks keep their grammars in `.lark` files next to them (chapter 13: one file per piece in
+  `../Python/Chapter-13/Grammar/`), display them with `Code(filename=..., language='larkita')`, and load
+  them with `Larkita.open`.  Listings of these grammars show the contents of the files, so line numbers in
+  the text count from the first line of the file.
+- Inline code with spaces (`\texttt`, `\mytt`, `\verb`) can be broken across two lines.  The author wants
+  such code displayed on a line of its own (`\\[0.2cm]` `\hspace*{1.3cm}` ... `\\[0.2cm]`).
 - The page layout is A4 with a 17cm text block.  The author does not want text or fonts to become smaller.
 
 ## Pitfalls

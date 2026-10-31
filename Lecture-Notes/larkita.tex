@@ -98,9 +98,9 @@ Figure \ref{fig:calculator.g} on page \pageref{fig:calculator.g} shows the gramm
 In order to generate a symbolic calculator that is based on this grammar, we have to transcribe the
 grammar shown in Figure \ref{fig:calculator.g} into the \simtextsc{Ebnf} dialect that is understood by
 \simtextsc{Larkita}.  Figure \ref{fig:01-Calculator.ipynb:grammar} on
-page \pageref{fig:01-Calculator.ipynb:grammar} shows the result.  Note that there is no separate scanner
-specification:  The terminals are declared inside the very same string that also declares the grammar
-rules.
+page \pageref{fig:01-Calculator.ipynb:grammar} shows the result, which is stored in the file
+\texttt{calc.lark}.  Note that there is no separate scanner specification:  The terminals are declared in the
+very same file that also declares the grammar rules.
 
 \begin{figure}[!ht]
 \centering
@@ -111,10 +111,7 @@ rules.
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.3cm,
                 xrightmargin = 0.3cm,
-              ]{larkita_lexer.py:PythonLarkitaLexer}
-    from larkita import Larkita
-
-    calc_grammar = r"""
+              ]{larkita_lexer.py:LarkitaLexer}
     stmnt: IDENTIFIER ":=" expr ";"
          | expr ";"
 
@@ -135,29 +132,19 @@ rules.
 
     // Ignore whitespace
     %ignore WS
-    """
-
-    parser = Larkita(calc_grammar, out_file='calc.out')
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The grammar of the symbolic calculator, written for \simtextsc{Larkita}.}
+\caption{The grammar \texttt{calc.lark} of the symbolic calculator, written for \simtextsc{Larkita}.}
 \label{fig:01-Calculator.ipynb:grammar}
 \end{figure}
 
 \noindent
-Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
+\simtextsc{Larkita} distinguishes syntactical variables from tokens by their spelling:  The names of
+\blue{syntactical variables} have to be written in \textsl{lower case}, while the names of \blue{tokens} have
+to be written in \textsl{upper case}.  Therefore, \texttt{expr} is a syntactical variable, while
+\texttt{NUMBER} is a token.  Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
 \begin{enumerate}
-\item Line 1 imports the class \texttt{Larkita}, which is responsible for computing the parse table and for
-      generating the parser.
-\item Line 3 -- 24 define the string \texttt{calc\_grammar}.  Note that this is an ordinary
-      \textsl{Python} string:  As far as \textsl{Python} is concerned, it has no structure at all.  Only
-      when this string is handed to \simtextsc{Larkita} in line 26 is it interpreted as a grammar.
-
-      \simtextsc{Larkita} distinguishes syntactical variables from tokens by their spelling:  The names of
-      \blue{syntactical variables} have to be written in \textsl{lower case}, while the names of
-      \blue{tokens} have to be written in \textsl{upper case}.  Therefore, \texttt{expr} is a syntactical
-      variable, while \texttt{NUMBER} is a token.
-\item Line 4 -- 5 define the syntactical variable \texttt{stmnt}.  This definition corresponds to the two
+\item Line 1 -- 2 define the syntactical variable \texttt{stmnt}.  This definition corresponds to the two
       grammar rules
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -167,34 +154,46 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       \\[0.2cm]
       of the grammar shown in Figure \ref{fig:calculator.g}.  Observe that the different alternatives of a
       rule are separated by the symbol ``\texttt{|}'', exactly as in the mathematical notation that we
-      have used so far, and that literal strings like \squoted{:=} are simply written down as
-      \textsl{Python} strings.
+      have used so far, and that literal strings like \squoted{:=} are simply written down as strings
+      enclosed in double quotes.
 
       As \texttt{stmnt} is the first syntactical variable of the grammar, it is the \blue{start symbol}.
-\item Line 7 -- 13 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
+\item Line 4 -- 10 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
       transcriptions of the corresponding rules of Figure \ref{fig:calculator.g}.  In particular, they
       encode the \blue{precedence}\index{precedence!of arithmetic operators} of the arithmetic operators, and they are \blue{left recursive}.
       Left recursion is not a problem here, since LR parsing is a \blue{bottom-up} technique.
-\item Line 15 -- 17 define the variable \texttt{factor}.  The annotation \texttt{\%ignore "(", ")"} at the end
-      of line 15 is explained below, when we discuss the abstract syntax tree.
-\item Line 20 imports predefined token definitions from the library \texttt{common} that is shipped
+\item Line 12 -- 14 define the variable \texttt{factor}.  The annotation \texttt{\%ignore "(", ")"} at the end
+      of line 12 is explained below, when we discuss the abstract syntax tree.
+\item Line 17 imports predefined token definitions from the library \texttt{common} that is shipped
       with \simtextsc{Larkita}.  Several imports are separated by commas.  Instead of writing our own regular
       expressions we reuse the following definitions:
       \begin{enumerate}
       \item \texttt{CNAME} matches an identifier in the sense of the language \texttt{C}.  The construct
-            ``\texttt{-> IDENTIFIER}'' renames this token to \texttt{IDENTIFIER}.
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{-> IDENTIFIER}
+            \\[0.2cm]
+            renames this token to \texttt{IDENTIFIER}.
       \item \texttt{NUMBER} matches both integers and floating point numbers.
       \item \texttt{WS} matches \blue{white space}, i.e.~blanks, tabulators, and newlines.
       \end{enumerate}
-\item Line 23 instructs the scanner to discard all white space.
-\item Line 26 creates the parser.  It is at this point that the parse table is computed.
-      By default, \simtextsc{Larkita} computes the parse table of a \blue{canonical LR(1) parser}.  If the given
-      grammar is not an LR(1) grammar, then the parse table has conflicts.  We will discuss in Chapter
-      \ref{chapter:bottom-up} what this means and how \simtextsc{Larkita} deals with conflicts.
-
-      Furthermore, \simtextsc{Larkita} writes a description of all states of the parser into the file that is
-      specified by the keyword argument \texttt{out\_file}, which is the file \texttt{calc.out} here.
+\item Line 20 instructs the scanner to discard all white space.
 \end{enumerate}
+The notebook reads this file and creates the parser with the commands
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{from larkita import Larkita}
+\\[0.1cm]
+\hspace*{1.3cm}
+\texttt{parser = Larkita.open('calc.lark', out\_file='calc.out')}
+\\[0.2cm]
+The class \texttt{Larkita} is responsible for computing the parse table and for generating the parser, and its
+method \texttt{open} reads the grammar from the given file.  It is at this point that the parse table is
+computed.  By default, \simtextsc{Larkita} computes the parse table of a \blue{canonical LR(1) parser}.  If the
+given grammar is not an LR(1) grammar, then the parse table has conflicts.  We will discuss in Chapter
+\ref{chapter:bottom-up} what this means and how \simtextsc{Larkita} deals with conflicts.  Furthermore,
+\simtextsc{Larkita} writes a description of all states of the parser into the file that is specified by the
+keyword argument \texttt{out\_file}, which is the file \texttt{calc.out} here.
 \FloatBarrier
 
 \noindent
@@ -222,10 +221,10 @@ an alternative of a grammar rule, then the tuple that is built for this alternat
       the abstract syntax tree of this symbol is returned.  Hence, alternatives like \texttt{expr: product} or
       \texttt{product: factor} leave no trace in the abstract syntax tree.
 \item The annotation \texttt{\%ignore "(", ")"} at the end of an alternative removes the given literals from
-      the head of this alternative.  Hence, the alternative \texttt{"(" expr ")"} in line 15 consists of a
+      the head of this alternative.  Hence, the alternative \texttt{"(" expr ")"} in line 12 consists of a
       single symbol and returns the abstract syntax tree of \texttt{expr}.  This is exactly what we want,
       because the only purpose of the parentheses is to override the precedence of the operators.  Note
-      that this annotation is unrelated to the directive \texttt{\%ignore WS} in line 23, which tells the
+      that this annotation is unrelated to the directive \texttt{\%ignore WS} in line 20, which tells the
       scanner to discard white space.
 \end{enumerate}
 For example, the alternative \texttt{expr "+" product} yields the tuple
@@ -436,8 +435,7 @@ same as in Figure \ref{fig:01-Calculator.ipynb:grammar} and are therefore not sh
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
-              ]{larkita_lexer.py:PythonLarkitaLexer}
-    calc_grammar = r"""
+              ]{larkita_lexer.py:LarkitaLexer}
     stmnt: IDENTIFIER ":=" expr ";"
          | expr ";"
 
@@ -450,12 +448,12 @@ same as in Figure \ref{fig:01-Calculator.ipynb:grammar} and are therefore not sh
           | IDENTIFIER
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The grammar of the symbolic calculator, written with \simtextsc{Ebnf} operators.}
+\caption{The grammar \texttt{calc-ebnf.lark} of the symbolic calculator, written with \simtextsc{Ebnf} operators.}
 \label{fig:01-Calculator-EBNF.ipynb:grammar}
 \end{figure}
 
 \noindent
-The rules in line 5 and line 7 use two operators of \simtextsc{Ebnf}.
+The rules in line 4 and line 6 use two operators of \simtextsc{Ebnf}.
 \begin{enumerate}
 \item The postfix operator ``\texttt{*}'' denotes a \blue{repetition}\index{repetition (\simtextsc{Ebnf})}:
       The part in parentheses can occur any number of times, including zero times.  Similarly, the postfix
@@ -465,7 +463,7 @@ The rules in line 5 and line 7 use two operators of \simtextsc{Ebnf}.
       alternative that occurs inside an alternative of a grammar rule.  An inner alternative has to be enclosed
       in parentheses.
 \end{enumerate}
-Hence, line 5 states that an expression is a product that is followed by any number of pairs, where every
+Hence, line 4 states that an expression is a product that is followed by any number of pairs, where every
 pair consists of one of the operators \squoted{+} or \squoted{-} and another product.  This single rule
 replaces the three rules for \texttt{expr} in Figure \ref{fig:01-Calculator.ipynb:grammar}.
 
@@ -473,16 +471,16 @@ When an alternative contains repetitions or inner alternatives, the rules for bu
 tree that have been given in Section \ref{section:calculator} are complemented as follows.
 \begin{enumerate}
 \item The children that are produced by the repeated parts are \blue{spliced}\index{splicing (\simtextsc{Larkita})}
-      into the tuple of the alternative.  Hence, the alternative in line 5 builds a single \emph{flat} tuple
+      into the tuple of the alternative.  Hence, the alternative in line 4 builds a single \emph{flat} tuple
       that contains all products of the expression, no matter how many products there are.
 \item The head of a tuple is determined by the grammar, not by the input.  Inside a repetition, the head
       cannot record which operator has been read, since a single tuple contains all the operators.
       Therefore, the literals of an inner alternative that occurs inside a repetition do not belong to the
       head.  Instead, the literal that has actually been read becomes a child of the tuple.  As it is a literal
       and not a named token, it is represented by a plain string like \texttt{'-'} rather than by a pair.
-\item The alternative in line 5 has no literal that belongs to the head.  As it contains a repetition, it does
+\item The alternative in line 4 has no literal that belongs to the head.  As it contains a repetition, it does
       not return the abstract syntax tree of one of its symbols either.  In this case, the name of the rule is
-      used as the head.  Therefore, the alternative in line 5 builds tuples of the form
+      used as the head.  Therefore, the alternative in line 4 builds tuples of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('expr', $p_1$, $o_1$, $p_2$, $\cdots$, $o_{n-1}$, $p_n$)},
@@ -601,11 +599,11 @@ implements the calculator discussed in this section.
 
 \remarkEng
 The parse table of an LR(1) parser is computed from grammar rules that do not use the operators of
-\simtextsc{Ebnf}.  Therefore, \simtextsc{Larkita} translates the repetition in line 5 into a new syntactical
+\simtextsc{Ebnf}.  Therefore, \simtextsc{Larkita} translates the repetition in line 4 into a new syntactical
 variable \texttt{\_\_expr\_star\_0} that is defined by left-recursive rules.  These rules show up in the file
 \texttt{calc-ebnf.out}, which is printed by the notebook.  The reductions with these rules do not build tuples
 of their own.  Instead, they collect the children of the repeated parts in a list, which is then spliced into
-the tuple of the alternative in line 5.  \eox
+the tuple of the alternative in line 4.  \eox
 
 \section{Symbolic Differentiation  \label{section:differentiator}}
 Our second example shows how a parser can be used to construct an \blue{abstract syntax tree} that is
@@ -669,7 +667,9 @@ functions $\exp$ and $\ln$.  For the sake of simplicity, \texttt{x} is the only 
 
 \noindent
 Figure \ref{fig:02-Differentiator.ipynb:grammar} on page \pageref{fig:02-Differentiator.ipynb:grammar}
-shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \simtextsc{Larkita}.
+shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \simtextsc{Larkita}.  It is
+stored in the file \texttt{diff.lark}, and the notebook creates the parser with the command
+\texttt{Larkita.open('diff.lark', out\_file='diff.out')}.
 
 \begin{figure}[!ht]
 \centering
@@ -680,10 +680,7 @@ shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \si
                 numbersep    = 0.3cm,
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
-              ]{larkita_lexer.py:PythonLarkitaLexer}
-    from larkita import Larkita
-
-    calc_grammar = r"""
+              ]{larkita_lexer.py:LarkitaLexer}
     expr: expr "+" product
         | expr "-" product
         | product
@@ -706,12 +703,9 @@ shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \si
 
     %import common.NUMBER, common.WS
     %ignore WS
-    """
-
-    parser = Larkita(calc_grammar, out_file='diff.out')
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The grammar of the differentiator, written for \simtextsc{Larkita}.}
+\caption{The grammar \texttt{diff.lark} of the differentiator, written for \simtextsc{Larkita}.}
 \label{fig:02-Differentiator.ipynb:grammar}
 \end{figure}
 
@@ -719,21 +713,21 @@ shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \si
 As the general structure of this grammar is the same as the structure of the grammar that we have
 discussed in the previous section, we only comment on those parts that are new.
 \begin{enumerate}
-\item Line 4 -- 10 define the variables \texttt{expr} and \texttt{product} in the usual way.  As
+\item Line 1 -- 7 define the variables \texttt{expr} and \texttt{product} in the usual way.  As
       \texttt{expr} is the first variable of the grammar, it is the start symbol.  In contrast to the
       calculator, this language has no statements:  The input is a single expression and there is no
       terminating semicolon.  Note that the second operand of the operators \squoted{*} and \squoted{/} is
       now the variable \texttt{unary} instead of the variable \texttt{factor}.
-\item Line 12 -- 13 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
+\item Line 9 -- 10 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
       is \blue{right recursive}\index{right recursive}, since a unary operator can be applied repeatedly:  The string
       \texttt{"-\,-x"} is a legal expression.
 
-      The construct ``\texttt{-> neg}'' at the end of line 12 is an
+      The construct ``\texttt{-> neg}'' at the end of line 9 is an
       \blue{alias}\index{alias (Larkita)@alias (\simtextsc{Larkita})}.  An alias replaces the head of the tuple that is
       built for the alternative.  Without this alias, the head would be the literal \squoted{-} and a negation
       could only be distinguished from a subtraction by the number of components of its tuple.  With the alias,
       a negation is represented by a tuple of the form \texttt{('neg', $\textsl{ast}$)}.
-\item Line 15 -- 16 define the variable \texttt{factor}, which implements exponentiation.  The interplay
+\item Line 12 -- 13 define the variable \texttt{factor}, which implements exponentiation.  The interplay
       between \texttt{unary} and \texttt{factor} deserves a closer look, because it encodes two
       conventions that every mathematician takes for granted:
       \begin{enumerate}
@@ -758,8 +752,8 @@ discussed in the previous section, we only comment on those parts that are new.
             \texttt{"x ** x ** x"}
             \\[0.2cm] is parsed as the expression $x^{\left(x^x\right)}$.
       \end{enumerate}
-\item Line 18 -- 22 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
-      line 18 and line 19 are ordinary literals, i.e.~they are recognized in exactly the same way as the
+\item Line 15 -- 19 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
+      line 15 and line 16 are ordinary literals, i.e.~they are recognized in exactly the same way as the
       operator symbols.  Without the aliases \texttt{exp} and \texttt{ln}, the heads of these alternatives
       would be the tuples
       \\[0.2cm]
@@ -768,7 +762,7 @@ discussed in the previous section, we only comment on those parts that are new.
       \\[0.2cm]
       With the aliases, the abstract syntax tree of the string \texttt{"exp(x)"} is the pair
       \texttt{('exp', $\textsl{ast}$)}.
-\item Line 22 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
+\item Line 19 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
       as a literal string, we do not need a token for identifiers at all.  As this alternative consists of a
       single literal, its abstract syntax tree is the tuple \texttt{('x',)}, which has the head \squoted{x} and
       no children.
@@ -1093,7 +1087,12 @@ The following table shows the results that are produced for a number of inputs.
 \remarkEng
 The last two rows of this table show the limits of our simplifier.  The derivative of \texttt{x*x} is
 computed as \texttt{x + x} instead of \texttt{2*x}, and the derivative of \texttt{ln(x ** x)} is not
-reduced to \texttt{ln(x) + 1}, although the factor $x^x/x^x$ obviously cancels.  The reason is that our
+reduced to
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{ln(x) + 1},
+\\[0.2cm]
+although the factor $x^x/x^x$ obviously cancels.  The reason is that our
 function \texttt{simplify} is nothing but a finite collection of \blue{rewrite rules}\index{rewrite rule}:  It does not bring
 an expression into a \blue{normal form}\index{normal form} and therefore it cannot recognize that two syntactically different
 expressions are mathematically equal.  Computing normal forms of algebraic expressions is a hard problem

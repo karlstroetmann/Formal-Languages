@@ -1,0 +1,44 @@
+program: stmnt*
+
+stmnt: "if" "(" bool_expr ")" "{" program "}"
+     | "while" "(" bool_expr ")" "{" program "}"
+     // your code here: for loops
+     // your code here: function definitions and return statements
+     | assign ";"
+     | expr ";"                           -> "expr"
+
+assign: ID ":=" expr
+
+// your code here: the logical operators ||, &&, and !
+bool_expr: expr ("==" | "!=" | "<=" | ">=" | "<" | ">") expr
+
+expr: expr ("+" | "-") product
+    | product
+
+product: product ("*" | "/" | "%") factor
+       | factor
+
+factor: "(" expr ")"
+      | INT
+      | FLOAT
+      | STRING
+      | ID
+      | ID "(" [expr ("," expr)*] ")" -> "call"
+
+// These literals are left out of the heads of all tuples.
+%ignore: "(", ")", "{", "}", ";"
+
+// Lexical definitions
+%import common.CNAME -> ID, common.WS
+
+FLOAT:  /[0-9](_?[0-9])*\.[0-9](_?[0-9])*([eE][+-]?[0-9]+)?/
+INT:    /[0-9](_?[0-9])*/
+STRING: /"(\\.|[^"\\])*"/
+
+// In order to show how it's done, I have defined the tokens
+// CPP_COMMENT and C_COMMENT describing comments myself.
+CPP_COMMENT: /\/\/[^\n]*/
+C_COMMENT:   "/*" /(.|\n)*?/ "*/"
+
+// Ignore whitespace and comments
+%ignore WS, C_COMMENT, CPP_COMMENT
