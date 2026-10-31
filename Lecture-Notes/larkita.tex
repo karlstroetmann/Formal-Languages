@@ -125,9 +125,7 @@ rules.
           | IDENTIFIER
 
     // Lexical definitions
-    %import common.CNAME -> IDENTIFIER
-    %import common.NUMBER
-    %import common.WS
+    %import common.CNAME -> IDENTIFIER, common.NUMBER, common.WS
 
     // Ignore whitespace
     %ignore WS
@@ -145,9 +143,9 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
 \begin{enumerate}
 \item Line 1 imports the class \texttt{Larkita}, which is responsible for computing the parse table and for
       generating the parser.
-\item Line 3 -- 26 define the string \texttt{calc\_grammar}.  Note that this is an ordinary
+\item Line 3 -- 24 define the string \texttt{calc\_grammar}.  Note that this is an ordinary
       \textsl{Python} string:  As far as \textsl{Python} is concerned, it has no structure at all.  Only
-      when this string is handed to \simtextsc{Larkita} in line 28 is it interpreted as a grammar.
+      when this string is handed to \simtextsc{Larkita} in line 26 is it interpreted as a grammar.
 
       \simtextsc{Larkita} distinguishes syntactical variables from tokens by their spelling:  The names of
       \blue{syntactical variables} have to be written in \textsl{lower case}, while the names of
@@ -173,17 +171,17 @@ Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
       Left recursion is not a problem here, since LR parsing is a \blue{bottom-up} technique.
 \item Line 15 -- 17 define the variable \texttt{factor}.  The annotation \texttt{\%ignore "(", ")"} at the end
       of line 15 is explained below, when we discuss the abstract syntax tree.
-\item Line 20 -- 22 import predefined token definitions from the library \texttt{common} that is shipped
-      with \simtextsc{Larkita}.  Instead of writing our own regular expressions we reuse the following
-      definitions:
+\item Line 20 imports predefined token definitions from the library \texttt{common} that is shipped
+      with \simtextsc{Larkita}.  Several imports are separated by commas.  Instead of writing our own regular
+      expressions we reuse the following definitions:
       \begin{enumerate}
       \item \texttt{CNAME} matches an identifier in the sense of the language \texttt{C}.  The construct
             ``\texttt{-> IDENTIFIER}'' renames this token to \texttt{IDENTIFIER}.
       \item \texttt{NUMBER} matches both integers and floating point numbers.
       \item \texttt{WS} matches \blue{white space}, i.e.~blanks, tabulators, and newlines.
       \end{enumerate}
-\item Line 25 instructs the scanner to discard all white space.
-\item Line 28 creates the parser.  It is at this point that the parse table is computed.
+\item Line 23 instructs the scanner to discard all white space.
+\item Line 26 creates the parser.  It is at this point that the parse table is computed.
       By default, \simtextsc{Larkita} computes the parse table of a \blue{canonical LR(1) parser}.  If the given
       grammar is not an LR(1) grammar, then the parse table has conflicts.  We will discuss in Chapter
       \ref{chapter:bottom-up} what this means and how \simtextsc{Larkita} deals with conflicts.
@@ -221,7 +219,7 @@ an alternative of a grammar rule, then the tuple that is built for this alternat
       the head of this alternative.  Hence, the alternative \texttt{"(" expr ")"} in line 15 consists of a
       single symbol and returns the abstract syntax tree of \texttt{expr}.  This is exactly what we want,
       because the only purpose of the parentheses is to override the precedence of the operators.  Note
-      that this annotation is unrelated to the directive \texttt{\%ignore WS} in line 25, which tells the
+      that this annotation is unrelated to the directive \texttt{\%ignore WS} in line 23, which tells the
       scanner to discard white space.
 \end{enumerate}
 For example, the alternative \texttt{expr "+" product} yields the tuple
@@ -700,8 +698,7 @@ shows the transcription of this grammar into the \simtextsc{Ebnf} dialect of \si
         | NUMBER
         | "x"
 
-    %import common.NUMBER
-    %import common.WS
+    %import common.NUMBER, common.WS
     %ignore WS
     """
 
