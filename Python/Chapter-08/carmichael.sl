@@ -20,34 +20,34 @@ function power(a, n, m) {
 
 function is_prime(n) {
     t := 2;
-    while (t * t < n) {
+    while (t * t <= n) {
 	if (n % t == 0) {
-	    return 0;
+	    return false;
 	}
 	t := t + 1;
     }
-    return 1;
+    return true;
 }
 
 function is_carmichael(n) {
-    if (n == 1 || is_prime(n) == 1) {
-	return 0;   // Carmichael numbers are composite
+    if (n == 1 || is_prime(n)) {
+	return false;   // Carmichael numbers are composite
     }
-    for (a := 3; a <= n; a := a + 1) { 
+    for (a := 3; a <= n; a := a + 1) {
         if (gcd(a, n) == 1 && power(a, n - 1, n) != 1) {
-            return 0;
+            return false;
 	}
     }
-    return 1;
+    return true;
 }
 
-carmichaels := { n : n in {2 .. 10_000} | is_carmichael(n) == 1 };
+carmichaels := { n : n in {2 .. 10_000} | is_carmichael(n) };
 print("The Carmichael numbers less than 10,000 are ", carmichaels);
 
 function factors(n) {
     result := { 2 .. 1 }; // empty set
     t := 2;
-    while (t * t < n) {
+    while (t * t <= n) {
 	if (n % t == 0) {
 	    result := result + { t };
 	}
