@@ -13,7 +13,6 @@ function printPower(n) {
     print("The power set of the set, {1..", n, "}, is: ");
     print(P);
     print("It has ", len(P), " elements.");
-    return 1;  // every functions has to return a value.
 }
 
 printPower(4);
