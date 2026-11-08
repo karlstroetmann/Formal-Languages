@@ -1,0 +1,115 @@
+program: statement*
+
+statement: "function" ID "(" [ID ("," ID)*] ")" block
+         | "if" "(" expr ")" block
+         | "if" "(" expr ")" block "else" block                    -> "if-else"
+         | "while" "(" expr ")" block
+         | "for" "(" assignment ";" expr ";" assignment ")" block
+         | "match" expr "{" case* "}"
+         | "return" [expr] ";"
+         | assignment ";"
+         | expr ";"                                                -> "expr"
+         | LOAD
+
+block:      "{" program "}"
+
+// The left hand side of an assignment is a variable, an element of a list, or a pattern like (x, y).
+assignment: postfix ":=" expr
+
+// A case of a match statement, optionally guarded by a condition.
+case: "case" pattern ["if" expr] ":" block       -> "case"
+
+expr: disjunction
+
+disjunction: disjunction "||" conjunction
+           | conjunction
+
+conjunction: conjunction "&&" negation
+           | negation
+
+negation: "!" negation
+        | comparison
+
+comparison: sum ("==" | "!=" | "<=" | ">=" | "<" | ">" | "in") sum
+          | sum
+
+sum: sum ("+" | "-") product
+   | product
+
+product: product ("*" | "/" | "%") factor
+       | factor
+
+// The prefix operator # computes the number of elements of a set, a tuple, a list, or a string.
+factor: "-" factor -> neg
+      | "#" factor
+      | postfix
+
+postfix: postfix "[" expr "]"                      -> "index"
+       | atom
+
+atom: "(" expr ")"
+    | "(" ")"                                      -> "tuple"
+    | "(" expr "," ")"                             -> "tuple"
+    | "(" expr "," expr ("," expr)* ")"            -> "tuple"
+    | INT
+    | FLOAT
+    | STRING
+    | ID
+    | ID "(" [expr ("," expr)*] ")" -> "call"
+    | "true"
+    | "false"
+    | set_expr
+    | list_expr
+
+// Sets: the empty set, an enumeration, a range, and two forms of set comprehension.
+set_expr: "{" "}"                              -> "set"
+        | "{" expr ".." expr "}"
+        | "{" expr ("," expr)* "}"             -> "set"
+        | "{" expr ":" generators "}"          -> "comprehension"
+        | "{" expr ":" generators "|" expr "}" -> "comprehension"
+
+// Lists: the same four forms as for sets, but written with square brackets.
+// In addition, [x | R] is the list whose first element is x, followed by the elements of the list R.
+list_expr: "[" "]"                              -> "list"
+         | "[" expr ".." expr "]"               -> "list-range"
+         | "[" expr ("," expr)* "]"             -> "list"
+         | "[" expr ("," expr)* "|" expr "]"     -> "|"
+         | "[" expr ":" generators "]"          -> "list-comprehension"
+         | "[" expr ":" generators "|" expr "]" -> "list-comprehension"
+
+generators: generator ("," generator)*
+generator:  pattern "in" expr
+
+// Patterns: variables (the variable _ matches everything), literals, tuples, and lists.
+// They are used in match statements and in the generators of comprehensions.
+// The pattern [p1, ..., pn | r] matches a list with at least n elements; r matches the rest of the list.
+pattern: ID
+       | INT
+       | FLOAT
+       | STRING
+       | "true"
+       | "false"
+       | "-" INT                                         -> neg
+       | "-" FLOAT                                       -> neg
+       | "(" ")"                                         -> "tuple"
+       | "(" pattern "," ")"                             -> "tuple"
+       | "(" pattern "," pattern ("," pattern)* ")"      -> "tuple"
+       | "[" "]"                                         -> "list"
+       | "[" pattern ("," pattern)* "]"                  -> "list"
+       | "[" pattern ("," pattern)* "|" pattern "]"      -> "|"
+
+// These literals are left out of the heads of all tuples.
+%ignore: "(", ")", "{", "}", "[", "]", ";", ","
+
+// Lexical definitions
+%import common.CNAME -> ID, common.WS, common.CPP_COMMENT, common.C_COMMENT
+
+FLOAT:  /[0-9](_?[0-9])*\.[0-9](_?[0-9])*([eE][+-]?[0-9]+)?/
+INT:    /[0-9](_?[0-9])*/
+STRING: /"(\\.|[^"\\])*"/
+
+// The directive #load(file.py) is a single token that contains the name of the file.
+LOAD:   /#load\([^)]*\)/
+
+// Ignore whitespace and comments
+%ignore WS, C_COMMENT, CPP_COMMENT
