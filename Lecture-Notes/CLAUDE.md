@@ -30,7 +30,8 @@ pdflatex -shell-escape formal-languages.tex
 - Type checking of notebooks: all notebooks use basedpyright (`conda run -n fl basedpyright X.ipynb`; live in
   JupyterLab via jupyterlab-lsp).
   The settings are in `../Python/pyrightconfig.json` (mode "standard"; the default mode warns about every
-  unused return value, e.g. of `outfile.write`).  JupyterLab is started in `../Python`, so the language
+  unused return value, e.g. of `outfile.write`; `extraPaths` names the Larkita checkout, because basedpyright
+  cannot follow the import hook of its editable install).  JupyterLab is started in `../Python`, so the language
   server finds this file.  Recursive types are written as `type X = ...`; no forward declarations are
   needed.  The author does not want `# type: ignore` or other suppressions; errors are fixed by declarations:
   - basedpyright cannot follow `%run`.  After a `%run X.ipynb`, a cell `if TYPE_CHECKING:` declares the
