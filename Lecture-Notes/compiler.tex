@@ -489,6 +489,8 @@ been eliminated by stratifying the grammar.
                 return ('Number', digits)
             case (head, *children):
                 return (head, *[simplify_leaves(child) for child in children])
+            case _:
+                assert False, f'Error in simplify_leaves({ast})'
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Simplifying the leaves of the abstract syntax tree.}
@@ -518,7 +520,8 @@ and its text.  Hence, the parser represents a variable as a pair of the form $(\
 \mytt{simplify\_leaves} that is shown in Figure \ref{fig:Compiler.ipynb-4} on page
 \pageref{fig:Compiler.ipynb-4} converts these pairs into the representation that is expected by the code
 generator.  The pattern \mytt{(head, *children)} in line 7 matches all other tuples:  Their head is kept,
-while their children are simplified recursively.
+while their children are simplified recursively.  The remaining case in line 9 -- 10 cannot occur for a tree
+produced by the parser and is treated as an error.
 
 \begin{figure}[!ht]
 \centering
