@@ -78,3 +78,4 @@ pdflatex -shell-escape formal-languages.tex
 - Ask before changes whose outcome is a matter of taste or content; the author prefers to be asked when
   in doubt.
 - Commit and push only after the author has agreed.
+- Commits go directly to `master`:  The author does not want branches or pull requests.
