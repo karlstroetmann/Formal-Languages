@@ -10,10 +10,14 @@ pdflatex -shell-escape formal-languages.tex
 - Run it 2–3 times so that references, the index, and the list of notation settle.  A clean build has
   0 errors and no "multiply defined" or "undefined reference" warnings.
 - The bibliography needs `bibtex formal-languages` only when `cs.bib` or the `\cite`s change.
-- The tracked build output `formal-languages.idx` is committed together with source changes.
+- The tracked build output `formal-languages.idx` is committed together with source changes.  iCloud once
+  emptied it right after a build, so check `git status` after building.
 - The PDF is not tracked, since every version would stay in the history.  It is published as the asset of
   the GitHub release `lecture-notes`: `gh release upload lecture-notes formal-languages.pdf --clobber`.
   Keep the images small (about 200 dpi at the printed width), since the PDF contains all of them.
+- The figures drawn with Graphviz are rebuilt with `Abbildungen/dot-figures.sh [NAME ...]`.  Their `.dot`
+  files must name the font `Atkinson Hyperlegible Next`, since TeX Live 2026 only ships this version; for an
+  unknown font name, Graphviz silently uses a substitute (check with `pdffonts`).
 
 ## Structure
 
@@ -51,6 +55,14 @@ pdflatex -shell-escape formal-languages.tex
 - Notation gets an entry in `notation.tex` plus `\glsadd{key}` at the place where it is defined
   (`\glsadd` prints nothing).
 - `\simtextsc{...}` fakes small caps (the font Atkinson Hyperlegible has none).
+- Tokens of a grammar are quoted: `lr-parser.tex` and `larkita-lalr.tex` use single quotes (`\aquoted`,
+  `\saquoted`), the rest of the notes double quotes (`\quoted`, `\squoted`).  The end marker `$` is not a
+  literal of the grammar and is never quoted, neither in the text nor in the figures nor in the List of
+  Notation.
+- Chapter 10 writes SLR, LR, and LALR in plain capitals; chapter 11 keeps `\simtextsc{Lalr}`.
+- Action names of shift-reduce parsers are set as `\texttt{shift}`, `\texttt{reduce}`, `\texttt{accept}`, and
+  `\texttt{error}`.  "Extended marked rule" is abbreviated "e.m.r.", written `e.m.r.\@` before a blank or a
+  brace, since the notes do not use `\frenchspacing`.
 - Code listings use `minted`.  Listings that show notebook code must match the notebook
   (`../Python/Chapter-13/Compiler.ipynb` for chapter 13).
 - Grammars for Larkita are set with the Pygments lexers in `larkita_lexer.py`:
