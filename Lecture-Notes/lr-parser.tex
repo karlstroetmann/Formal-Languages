@@ -1573,8 +1573,14 @@ an SLR parse table for it results in a number of
 so that an SLR parser for this grammar does not work. In contrast, a canonical
 LR parser for this grammar has 1572 states, as you can see
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Examples/c-grammar-lr-table.txt}{here}.
+Even this table contains a shift-reduce conflict, which occurs in two of its states:  If the parser has read
+an \texttt{if} statement without an \texttt{else} branch and the next token is \texttt{else}, it can either
+shift this token or reduce with the rule for an \texttt{if} statement without \texttt{else}.  This conflict is
+caused by the \emph{dangling else problem}, which is discussed in Chapter \ref{chapter:compiler}:  The grammar
+is ambiguous at this point.  Parser generators like \simtextsc{Larkita} resolve this conflict by shifting, so
+that every \texttt{else} belongs to the nearest \texttt{if}.
 In the seventies, when the available main memory of most computers was still modestly sized compared to today,
-LR parsers therefore had a size that was problematic in practice. A detailed analysis of the set of states of LR parsers showed that it is often possible to 
+the large number of states of LR parsers was a problem in practice. A detailed analysis of the set of states of LR parsers showed that it is often possible to 
 combine certain states. This can significantly reduce the number of states in most cases.
 We illustrate the concept with an example and consider the grammar shown in
 Figure \ref{fig:dragon-book.grammar}, which I have taken from the \blue{Dragon Book}
