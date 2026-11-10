@@ -1347,6 +1347,38 @@ new rule $\widehat{s} \rightarrow s$ to the set of rules. Further, we add the sy
 $q_0 := \textsl{closure}\bigl(\bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36}\bigr\}\bigr)$,
 \\[0.2cm]
 because the file end symbol ``\symbol{36}'' must follow the start symbol.
+
+The closure of a set of extended marked rules can contain several rules that differ only in their sets of
+follow tokens.  For example, for the grammar for arithmetic expressions shown in Figure \ref{fig:Expr.grammar}
+on page \pageref{fig:Expr.grammar}, the start state
+$\textsl{closure}\bigl(\bigl\{ \widehat{s} \rightarrow \bullet\, \textsl{expr}:\symbol{36}\bigr\}\bigr)$ contains
+the three rules
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{l}
+   \textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: \symbol{36}, \\[0.1cm]
+   \textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: \saquoted{+}, \\[0.1cm]
+   \textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: \saquoted{-}.
+ \end{array}$
+\\[0.2cm]
+The first of these rules results from the rule $\widehat{s} \rightarrow \bullet\, \textsl{expr}:\symbol{36}$,
+while the second and the third result from rules of the form
+$\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: L$ and
+$\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{-} \textsl{product}: L$, respectively.
+We combine extended marked rules that differ only in their sets of follow tokens into a single rule whose set
+of follow tokens is the union of these sets.  In the example, we obtain the rule
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}:
+ \{ \saquoted{+}, \saquoted{-}, \symbol{36} \}$.
+\\[0.2cm]
+This does not change the actions of the parser, since the function $\textsl{goto}()$ moves the dot in all of
+these rules in the same way and a reduction with a rule $a \rightarrow \beta$ is performed if the next token
+is an element of one of the sets of follow tokens.  However, it ensures that two states that describe the same
+situation are represented by the same set of extended marked rules.  Therefore, in the following, a state contains
+at most one extended marked rule $a \rightarrow \beta \bullet \gamma: L$ for every marked rule
+$a \rightarrow \beta \bullet \gamma$.
+
 Finally, we show how the definition of the function $\textsl{action}()$ must be changed.
 We specify the computation of this function through the following conditional equations.
 \begin{enumerate}
