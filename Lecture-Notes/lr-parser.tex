@@ -9,8 +9,8 @@ For this purpose, we first clarify what information the states contained in the 
 define these states in such a way that they contain information about which rule the shift-reduce parser is
 attempting to apply, which part of the right hand side of a grammar rule has already been recognized, and what
 are the symbols that are still expected. To this end, we define the concept of a \textcolor{blue}{marked rule}.
-Unfortunately, the original English literature \cite{knuth:65} uses the rather meaningless term
-``\textcolor{blue}{item}'' instead of the notion of a \emph{marked rule}. 
+In the literature on LR parsing, which goes back to Knuth \cite{knuth:65}, marked rules are usually called
+``\textcolor{blue}{items}''\index{item|see{marked rule}}.
 
 \begin{Definition}[Marked Rule]
   A \textcolor{blue}{marked rule} \index{marked rule}\glsadd{marked} of a context-free grammar $G = \langle V, T, R, s\rangle$
@@ -258,7 +258,7 @@ We consider a given context-free grammar \(G = \langle V, T, R, s \rangle\).
 \begin{Definition}[$\lambda$-generating]
 Let \(G = \langle V, T, R, s \rangle\) be a context-free grammar and \(\textsl{a}\) be a
 syntactic variable, i.e., \(\textsl{a} \in V\). The variable \(\textsl{a}\) is called 
-\blue{$\lambda$-generating}\index{$\lambda$-generating} precisely when
+\blue{$\lambda$-generating}\index{lambda-generating@$\lambda$-generating} precisely when
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\textsl{a} \Rightarrow^* \lambda\)
@@ -636,13 +636,10 @@ first, we want to examine a grammar where no conflicts occur and actually comput
 \(\textsl{goto}()\) and \(\textsl{action}()\) for it. We use the grammar for arithmetic expressions that is shown in Figure \ref{fig:Expr.grammar}
 as a basis. 
 
-Since the syntactic variable \textsl{expr} appears on the right side of grammar rules, we define \textsl{start}
-as a new start symbol and add the rule 
+As described above, we augment the grammar with the new start symbol \(\widehat{s}\) and the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-\(\textsl{start} \rightarrow \textsl{expr}\; \symbol{36}\)
-\\[0.2cm]
-to the grammar. This step corresponds to the previously discussed process of \textcolor{blue}{augmenting} the grammar.
+\(\widehat{s} \rightarrow \textsl{expr}\; \symbol{36}\).
 
 First, we compute the set of states \(Q\). We had previously provided the following formula for this:
 \\[0.2cm]
@@ -655,15 +652,15 @@ using the function \(\textsl{goto}()\). To avoid making the calculation too word
 following abbreviations: 
 \\[0.2cm]
 \hspace*{1.3cm}
-\(s := \textsl{start},\; e := \textsl{expr},\; p := \textsl{product},\; 
+\(e := \textsl{expr},\; p := \textsl{product},\; 
    f := \textsl{factor}\), and \(N := \simtextsc{Number}\). 
 \\[0.2cm]
 We begin with the start state:
 \begin{enumerate}
 \item $ 
 \begin{array}[t]{lcrl}
-s_0 & := & \textsl{closure}\bigl(\{ & s \rightarrow \bullet\, e\, \symbol{36}\quad \}\bigr) \\
-    &  = & \{ & s \rightarrow \bullet\, e \,\symbol{36},                \\[0.1cm]
+s_0 & := & \textsl{closure}\bigl(\{ & \widehat{s} \rightarrow \bullet\, e\, \symbol{36}\quad \}\bigr) \\
+    &  = & \{ & \widehat{s} \rightarrow \bullet\, e \,\symbol{36},                \\[0.1cm]
     &    &    & e \rightarrow \bullet\, e \aquoted{+} p,\; 
                 e \rightarrow \bullet\, e \aquoted{-} p,\;
                 e \rightarrow \bullet\, p, \\[0.1cm]
@@ -702,11 +699,11 @@ $
 \begin{array}[t]{lcl}
 s_4 & := & \textsl{goto}(s_0, e ) \\
     &  = & \textsl{closure}(\{ 
-           s \rightarrow e \bullet\,\symbol{36},\;  
+           \widehat{s} \rightarrow e \bullet\,\symbol{36},\;  
            e \rightarrow e \bullet \aquoted{+} p,\; 
            e \rightarrow e \bullet \aquoted{-} p\;
        \}) \\
-    &  = & \{\;  s \rightarrow e \bullet\,\symbol{36},\;
+    &  = & \{\;  \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
                  e \rightarrow e \bullet \aquoted{+} p,\; 
                  e \rightarrow e \bullet \aquoted{-} p \; \}.
 \end{array}
@@ -900,7 +897,7 @@ Next, we calculate the \(\textsl{action}\) function. We consider two cases as ex
       \begin{array}[t]{lcl}
       \textsl{action}(s_1, \aquoted{+}) & = & 
             \textsl{action}(\{p \rightarrow f \bullet\}, \aquoted{+}) \\
-      & = & \langle \textsl{reduce}, p \rightarrow f \rangle,
+      & = & \langle \texttt{reduce}, p \rightarrow f \rangle,
       \end{array}
       \)
 \\[0.2cm]
@@ -911,11 +908,11 @@ Next, we calculate the \(\textsl{action}\) function. We consider two cases as ex
       \( 
       \begin{array}[t]{lcl}
       \textsl{action}(s_4, \aquoted{+}) & = & 
-            \textsl{action}(\{ s \rightarrow e \bullet\,\symbol{36},\;
+            \textsl{action}(\{ \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
                  e \rightarrow e \bullet \aquoted{+} p,\; 
                  e \rightarrow e \bullet \aquoted{-} p \; \}, \aquoted{+}) \\
-      & = & \langle \textsl{shift}, \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p\}) \rangle \\
-      & = & \langle \textsl{shift}, s_8 \rangle.
+      & = & \langle \texttt{shift}, \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p\}) \rangle \\
+      & = & \langle \texttt{shift}, s_8 \rangle.
       \end{array}
       \)
 \\[0.2cm]
@@ -989,8 +986,8 @@ We augment the grammar and calculate the start state \(s_0\):
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\begin{array}[t]{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ s \rightarrow \bullet\, e\,\symbol{36} \}\bigr) \\[0.1cm]
-     & = & \bigl\{ s \rightarrow \bullet\, e\,\symbol{36},\;
+ s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, e\,\symbol{36} \}\bigr) \\[0.1cm]
+     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, e\,\symbol{36},\;
                    e \rightarrow \bullet\, e \saquoted{+} e,\;
                    e \rightarrow \bullet\, e \saquoted{*} e,\;
                    e \rightarrow \bullet\, N\;
@@ -1004,11 +1001,11 @@ Next, we calculate \(s_1 := \textsl{goto}(s_0, e)\):
 \(\begin{array}[t]{lcl}
   s_1 & = & \textsl{goto}(s_0, e)  \\
       & = & \textsl{closure}\bigl(\{  
-                   s \rightarrow e \bullet\,\symbol{36},\;
+                   \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
                    e \rightarrow e \bullet \saquoted{+}\; e,\;
                    e \rightarrow e \bullet \saquoted{*}\; e \;
             \}\bigr) \\
-      & = & \{ s \rightarrow e \bullet\,\symbol{36},\;
+      & = & \{ \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
                e \rightarrow e \bullet \saquoted{+}\; e,\;
                e \rightarrow e \bullet \saquoted{*}\; e \;
             \} 
@@ -1199,7 +1196,7 @@ This definition resolves the reduce-reduce conflict. The central idea is to incl
 appears in the closure calculation. To do this, we expand the definition of a marked rule next.
 
 \begin{Definition}[Extended Marked Rule] \hspace*{\fill}\linebreak
-  An \textcolor{blue}{extended marked rule} \index{extended marked rule}\glsadd{extmarked} (abbreviated: \textcolor{blue}{e.m.R.}) \index{e.m.R.|see{extended marked rule}}
+  An \textcolor{blue}{extended marked rule} \index{extended marked rule}\glsadd{extmarked} (abbreviated: \textcolor{blue}{e.m.r.\@}) \index{e.m.r.|see{extended marked rule}}
   of a grammar 
   $G = \langle V, T, R, s \rangle$ is a quadruple 
   \\[0.2cm]
@@ -1224,13 +1221,13 @@ appears in the closure calculation. To do this, we expand the definition of a ma
 \end{Definition}
 
 \noindent
-Intuitively, we interpret the e.m.R. $a \rightarrow \beta \bullet \gamma: L$ as a state in which the following applies:
+Intuitively, we interpret the e.m.r.\@ $a \rightarrow \beta \bullet \gamma: L$ as a state in which the following applies:
 \begin{enumerate}[(a)]
 \item The parser attempts to recognize an $a$ using the grammar rule $a \rightarrow \beta \gamma$.
 \item So far, $\beta$ has been recognized. For the rule $a \rightarrow \beta \gamma$ to be applied, $\gamma$ must now be recognized.
 \item Additionally, we know that a token from the set $L$ must follow the syntactic variable $a$.
 
-      Therefore, we refer to the set $L$ as the set of \textcolor{blue}{Follow Tokens}.
+      Therefore, we refer to the set $L$ as the set of \textcolor{blue}{follow tokens}\index{follow token}.
 \end{enumerate}
 
 Working with extended marked rules is quite similar to working with marked rules, however, we need to modify the definitions of the functions $\textsl{closure}$, $\textsl{goto}$, and $\textsl{action}$ slightly. We begin with the function $\textsl{closure}$.
@@ -1247,13 +1244,13 @@ Working with extended marked rules is quite similar to working with marked rules
         \hspace*{1.3cm}
         $a \rightarrow \beta \bullet c\, \delta: L$
         \\[0.2cm]
-        is an e.m.R.~from the set $\mathcal{K}$, where $c$ is a syntactic
+        is an e.m.r.~from the set $\mathcal{K}$, where $c$ is a syntactic
         variable, and on the other hand, if
         \\[0.2cm]
         \hspace*{1.3cm}
         $c \rightarrow \gamma$
         \\[0.2cm]
-        is a grammar rule of the underlying grammar $G$, then the e.m.R.
+        is a grammar rule of the underlying grammar $G$, then the e.m.r.\@
         \\[0.2cm]
         \hspace*{1.3cm}
         $c \rightarrow \bullet\, \gamma: \bigcup \{ \textsl{First}(\delta\, t) \mid t \in L \}$
@@ -1275,11 +1272,11 @@ also play a role, because if $\delta \Rightarrow^* \lambda$ is true, then a foll
 can also follow the $c$. \eox 
 \vspace*{0.1cm}
 
-For a given set of e.m.R.s $\mathcal{M}$, the computation of $\mathcal{K} := \textsl{closure}(\mathcal{M})$ can
+For a given set of e.m.r.s $\mathcal{M}$, the computation of $\mathcal{K} := \textsl{closure}(\mathcal{M})$ can
 be done iteratively. Figure \ref{fig:closure} shows the computation of $\textsl{closure}(\mathcal{M})$. The
-main difference compared to the earlier computation of $\textsl{closure}()$ is that in the e.m.R.s that we
+main difference compared to the earlier computation of $\textsl{closure}()$ is that in the e.m.r.s that we
 include for a variable $c$ in $\textsl{closure}(\mathcal{M})$, we consider the context in which $c$ appears in
-the set of Follow Tokens. This makes it possible to describe the states of the parser more precisely than with
+the set of follow tokens. This makes it possible to describe the states of the parser more precisely than with
 marked rules. 
 
 \begin{figure}[!ht]
@@ -1395,7 +1392,7 @@ If a conflict occurs in these equations, because both the condition
 of the first equation and the condition of the second equation are met, then we speak
 again of a \textcolor{blue}{shift-reduce conflict}\index{shift-reduce conflict}.  
 A shift-reduce conflict thus occurs in the computation of
-$\textsl{action}(\mathcal{M},t)$ when there are two e.m.R.s 
+$\textsl{action}(\mathcal{M},t)$ when there are two e.m.r.s 
 \\[0.2cm]
 \hspace*{1.3cm}
 $(a \rightarrow \beta \bullet t\, \delta:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
@@ -1411,7 +1408,7 @@ SLR parser, a shift-reduce conflict already occurs if $t \in \textsl{Follow}(c)$
 smaller than the set $\textsl{Follow}(c)$. \eox  
 \vspace*{0.3cm}
 
-A \textcolor{blue}{reduce-reduce conflict}\index{reduce-reduce conflict} occurs when there are two e.m.R.s 
+A \textcolor{blue}{reduce-reduce conflict}\index{reduce-reduce conflict} occurs when there are two e.m.r.s 
 \\[0.2cm]
 \hspace*{1.3cm}
 $(a \rightarrow \beta\, \bullet:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
@@ -1525,7 +1522,7 @@ because
 \hspace*{1.3cm}
 $\textsl{Follow}(a) \cap \textsl{Follow}(b) = \{ \saquoted{x}, \saquoted{y} \} \not= \{\}$
 \\[0.2cm]
-holds. This conflict has now disappeared, as there is no conflict between the e.m.R.s
+holds. This conflict has now disappeared, as there is no conflict between the e.m.r.s
 \\[0.2cm]
 \hspace*{1.3cm}
 $a \rightarrow \bullet\,: \saquoted{x}$ \quad \mbox{and} \quad 
@@ -1663,14 +1660,14 @@ obtain the goto-graph shown in Figure \ref{fig:cc-LALR.eps}.
 
 To generalize and formalize the observations made while examining the grammar shown in Figure 
 \ref{fig:dragon-book.grammar}, we define a function 
-$\textsl{core}()$, which calculates the core of a set of e.m.R.s (extended marked rules) and thus transforms this set into 
+$\textsl{core}()$, which calculates the core of a set of e.m.r.s (extended marked rules) and thus transforms this set into 
 a set of marked rules:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{core}(\mathcal{M}) := 
    \{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \bullet \gamma:L) \in \mathcal{M} \}$. 
 \\[0.2cm]
-Thus, the function $\textsl{core}()$ simply removes the set of follow tokens from the e.m.R.s.
+Thus, the function $\textsl{core}()$ simply removes the set of follow tokens from the e.m.r.s.
 We had defined the function $\textsl{goto}()$ for a set $\mathcal{M}$ of extended
 marked rules and a symbol $x$ as
 \\[0.2cm]
@@ -1681,7 +1678,7 @@ $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{
 $.
 \\[0.2cm]
 Clearly, the set of follow tokens plays no role in the calculation of
-$\textsl{goto}(\mathcal{M}, x)$, formally for two e.m.R.-sets
+$\textsl{goto}(\mathcal{M}, x)$, formally for two e.m.r.-sets
 $\mathcal{M}_1$ and $\mathcal{M}_2$ and a symbol $x$, the formula holds:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -1691,7 +1688,7 @@ $\textsl{core}(\mathcal{M}_1) = \textsl{core}(\mathcal{M}_2) \;\Rightarrow\;
 $.
 \vspace*{0.2cm}
 
-For two sets of e.m.R.s (extended marked rules) $\mathcal{M}$ and $\mathcal{N}$ that
+For two sets of e.m.r.s (extended marked rules) $\mathcal{M}$ and $\mathcal{N}$ that
 have the same core, we define the \blue{extended union}\index{extended union}\glsadd{uplus}  
 $\mathcal{M} \uplus \mathcal{N}$ of $\mathcal{M}$ and $\mathcal{N}$ as
 \\[0.2cm]
@@ -1704,8 +1701,8 @@ $\mathcal{M} \uplus \mathcal{N} :=
 $.
 \\[0.2cm] 
 We generalize this definition to an operation $\biguplus$, 
-defined on a set of sets of e.m.R.s: If $\frak{I}$
-is a set of sets of e.m.R.s, all having the same core, i.e.,
+defined on a set of sets of e.m.r.s: If $\frak{I}$
+is a set of sets of e.m.r.s, all having the same core, i.e.,
 \[ \frak{I} = \{ \mathcal{M}_1, \cdots, \mathcal{M}_k \} \quad \mbox{with} \quad
    \textsl{core}(\mathcal{M}_i) = \textsl{core}(\mathcal{M}_j) \quad 
    \mbox{for all $i,j\in\{1,\cdots,k\}$,} 
@@ -1955,12 +1952,12 @@ $s_{\{4,5\}} = \bigl\{ a \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saqu
 Here, there is obviously a reduce-reduce conflict, as on one hand we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\textsl{reduce}, a \rightarrow \saquoted{x})$,
+$\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\texttt{reduce}, a \rightarrow \saquoted{x})$,
 \\[0.2cm]
 but on the other hand, it also holds that
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\textsl{reduce}, b \rightarrow \saquoted{x})$.
+$\textsl{action}(s_{\{4,5\}}, \saquoted{y}) = \pair(\texttt{reduce}, b \rightarrow \saquoted{x})$.
 
 \exerciseEng
 Let $G = \langle V, T, R, s \rangle$ be an LR grammar and $\mathcal{N}$ be the set of LALR states of the grammar. Explain why there can be no shift-reduce conflicts in the set $\mathcal{N}$. \eox
@@ -1987,7 +1984,7 @@ use a parser generator like \simtextsc{Larkita} for \textsl{Python}, which we ha
 \item How does a shift-reduce parser work?
 \item How is the concept of a \blue{marked rule} defined?  How is a marked rule interpreted?
 \item Can you compute the closure of a set of marked rules?
-\item Are you able to define the functions \texttt{First} and \texttt{Follow} for an SLR parser?
+\item Are you able to define the functions \textsl{First} and \textsl{Follow} for a grammar?
 \item Are you able to compute the states of an SLR parser?
 \item Given the set of all states of an SLR parser, can you compute both the action table and the goto
       table? 
