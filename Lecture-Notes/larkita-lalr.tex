@@ -14,9 +14,9 @@ discuss some of the more advanced features of \simtextsc{Larkita}.
 \begin{enumerate}
 \item First, we show how shift-reduce and reduce-reduce conflicts are reported by \simtextsc{Larkita} and how the
       states of the canonical LR(1) parser that \simtextsc{Larkita} computes can be inspected.
-\item Then we discuss how these conflicts can be resolved.  As \simtextsc{Larkita} resolves every shift-reduce
-      conflict in favour of shifting and offers no way to change this decision, the precedences and
-      associativities of the operators have to be encoded into the grammar itself.
+\item Then we discuss how these conflicts can be resolved:  Either the precedences and associativities of the
+      operators are encoded into the grammar itself, or they are specified by precedence declarations, as in the
+      parser generator \textsl{Bison}.
 \item Finally, we see that \simtextsc{Larkita} has no problem with a grammar that is an LR(1) grammar but not an
       \simtextsc{Lalr}(1) grammar, and we show how \simtextsc{Larkita} can reduce the number of states by merging
       those states that can be merged safely.
@@ -37,13 +37,15 @@ All examples of this chapter are available as Jupyter notebooks in the following
     \hline
     \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/02-Conflicts-Resolved.ipynb}{\texttt{02-Conflicts-Resolved.ipynb}}   & encoding operator precedences into the grammar       \\
     \hline
-    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/03-Look-Ahead.ipynb}{\texttt{03-Look-Ahead.ipynb}}           & a reduce-reduce conflict caused by insufficient look-ahead \\
+    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/03-Precedence-Declarations.ipynb}{\texttt{03-Precedence-Declarations.ipynb}} & declaring the precedences of the operators \\
     \hline
-    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/04-Look-Ahead-Solved.ipynb}{\texttt{04-Look-Ahead-Solved.ipynb}}    & the same grammar, rewritten so that it is LR(1) \\
+    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/04-Look-Ahead.ipynb}{\texttt{04-Look-Ahead.ipynb}}           & a reduce-reduce conflict caused by insufficient look-ahead \\
     \hline
-    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/05-Mysterious-Conflicts.ipynb}{\texttt{05-Mysterious-Conflicts.ipynb}} & a grammar that is LR(1), but not \simtextsc{Lalr}(1) \\
+    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/05-Look-Ahead-Solved.ipynb}{\texttt{05-Look-Ahead-Solved.ipynb}}    & the same grammar, rewritten so that it is LR(1) \\
     \hline
-    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/06-Merging-States.ipynb}{\texttt{06-Merging-States.ipynb}} & merging states with the same core \\
+    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/06-Mysterious-Conflicts.ipynb}{\texttt{06-Mysterious-Conflicts.ipynb}} & a grammar that is LR(1), but not \simtextsc{Lalr}(1) \\
+    \hline
+    \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/07-Merging-States.ipynb}{\texttt{07-Merging-States.ipynb}} & merging states with the same core \\
     \hline
   \end{tabular}
 \end{center}
@@ -103,7 +105,8 @@ jupyter notebook
 \subsection{How \textsc{Larkita} Reports Its Conflicts}
 \simtextsc{Larkita} reports the conflicts of a grammar in two ways.
 \begin{enumerate}
-\item If the parse table has shift-reduce conflicts, \simtextsc{Larkita} resolves them in favour of shifting and
+\item If the parse table has shift-reduce conflicts that are not resolved by precedence declarations (see
+      Section \ref{section:precedence-declarations}), \simtextsc{Larkita} resolves them in favour of shifting and
       issues a \blue{warning} of the class \texttt{ConflictWarning}.  In a Jupyter notebook, this warning is
       shown below the cell that creates the parser.  A reduce-reduce conflict raises an \blue{exception} of the
       class \texttt{GrammarError}.
@@ -191,9 +194,10 @@ Hence there are four shift-reduce conflicts.  Every one of these entries names
 \end{enumerate}
 The rules are referred to by their numbers in the section \texttt{Rules} at the beginning of the output file.
 
-The important observation is the remark ``\blue{\texttt{resolved as shift}}\index{shift-reduce conflict!resolution by Larkita@resolution by \simtextsc{Larkita}}'': \simtextsc{Larkita} resolves
-\emph{every} shift-reduce conflict in favour of shifting.  There is no way to change this decision for an
-individual conflict.  The only choice we have is to declare that we do not want to tolerate conflicts at all.
+The important observation is the remark ``\blue{\texttt{resolved as shift}}\index{shift-reduce conflict!resolution by Larkita@resolution by \simtextsc{Larkita}}'':  As our grammar does not
+declare the precedences of its operators, \simtextsc{Larkita} resolves \emph{every} shift-reduce conflict in favour
+of shifting.  We will see in Section \ref{section:precedence-declarations} how precedence declarations change this
+decision.  Furthermore, we can declare that we do not want to tolerate conflicts at all.
 The module \texttt{warnings} of \textsl{Python} can turn the \texttt{ConflictWarning} into an exception, as
 shown in Figure \ref{fig:conflicts-strict} on page \pageref{fig:conflicts-strict}.  Then the message of the
 exception is the text of the warning.  It is a good idea to develop a grammar this way, for then a conflict
@@ -326,36 +330,18 @@ Consider the grammar for arithmetical expressions shown in Figure \ref{fig:gramm
 \pageref{fig:grammar-resolved.g}.  This grammar is ambiguous for the same reason as the grammar discussed in
 the previous section: it does not specify the precedences and associativities of the operators.
 
-\begin{tcolorbox}[
-  enhanced,                      % Enables advanced features like borderlines
-  width=0.95\textwidth,          % Sets the width 
-  center,                        % Centers the box on the page
-  colback=yellow!20,             % A light yellow background for the text
-  colframe=blue,                 % Blue color for the main outer frame
-  boxrule=1pt,                   % Thickness of the outer frame
-  borderline={1pt}{3pt}{blue},   % Draws the inner second frame (1pt thick, 3pt inward)
-  sharp corners,                 % Keeps the square corners (like \framebox)
-  top=0.5cm,                     % 0.5 cm distance from text to top frame
-  bottom=0.5cm,                  % 0.5 cm distance from text to bottom frame
-  left=0.5cm,                    % 0.5 cm distance from text to left frame
-  right=0.5cm,                   % 0.5 cm distance from text to right frame
-  boxsep=0pt                     % Resets default internal spacing so your 0.5cm is exact
-]
-  \textbf{There is no way to declare the precedence of an operator in \simtextsc{Larkita}.}
-  Neither a precedence nor an associativity can be attached to a terminal, and the resolution of an
-  individual shift-reduce conflict cannot be influenced. Every shift-reduce conflict is resolved in favour
-  of shifting.
-\end{tcolorbox}
 
 \noindent
-As every shift-reduce conflict is resolved in favour of shifting, all operators effectively have the same
-precedence and, moreover, they all associate to the right, since shifting an operator of the same precedence
+As this grammar does not declare the precedences of its operators, every shift-reduce conflict is resolved in
+favour of shifting.  Hence, all operators effectively have the same precedence and, moreover, they all associate to the right, since shifting an operator of the same precedence
 is exactly what a right associative operator requires.  This explains the parse trees that we have seen in the
 previous section: the string ``\texttt{1*2+3}'' is read as ``\texttt{1*(2+3)}'' because an operator
 that groups to the right collects everything that follows it.
 
-Hence, if we want the operators to have different precedences, we have to encode these precedences into the
-grammar itself.  This is done by introducing one syntactical variable for every precedence level.
+There are two ways to give the operators different precedences:  We can either encode these precedences into
+the grammar itself, or we can declare them, as we will see in Section \ref{section:precedence-declarations}.  In
+this section, we discuss the first approach, which works with every parser generator.  The precedences are
+encoded by introducing one syntactical variable for every precedence level.
 The technique is the one that we have already used in the chapter on context-free languages, and it should by
 now be familiar: the variable of a given precedence level is defined in terms of the variable of the next
 higher precedence level.
@@ -458,6 +444,217 @@ Both features concern the shape of the abstract syntax tree only, they have no i
 therefore cannot introduce or remove conflicts.
 \eox
 
+\section{Precedence Declarations \label{section:precedence-declarations}}
+Encoding the precedences into the grammar has a drawback:  We need one syntactical variable for every precedence
+level, so the grammar becomes longer than the ambiguous grammar that we have started with, and the rules for the
+operators are spread over several syntactical variables.  The parser generators of the \textsl{Yacc} family, for
+example \textsl{Bison} and \simtextsc{Ply}, therefore take a different approach:  They keep the ambiguous grammar
+and resolve its shift-reduce conflicts with the help of \blue{precedence declarations}\index{precedence
+declaration}.  \simtextsc{Larkita} supports the precedence declarations of \textsl{Bison}.  Figure
+\ref{fig:Precedence-Declarations.ipynb} on page \pageref{fig:Precedence-Declarations.ipynb} shows the ambiguous
+grammar of Figure \ref{fig:grammar-resolved.g}, which has been extended by the comparison operators \saquoted{<}
+and \saquoted{==} and by the unary minus, together with precedence declarations.  This grammar is discussed in the
+notebook
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/03-Precedence-Declarations.ipynb}{\texttt{Python/Chapter-11/03-Precedence-Declarations.ipynb}}.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                xleftmargin  = 0.8cm,
+                xrightmargin = 0.8cm,
+              ]{larkita_lexer.py:LarkitaLexer}
+    %nonassoc "<" "=="
+    %left "+" "-"
+    %left "*" "/"
+    %precedence UMINUS
+    %right "^"
+
+    expr : expr "<" expr
+         | expr "==" expr
+         | expr "+" expr
+         | expr "-" expr
+         | expr "*" expr
+         | expr "/" expr
+         | expr "^" expr
+         | "-" expr          %prec UMINUS
+         | "(" expr ")"      %ignore "(", ")"
+         | NUMBER
+
+    NUMBER : /0|[1-9][0-9]*/
+
+    %import common.WS
+    %ignore WS
+\end{minted}
+\vspace*{-0.3cm}
+\caption{An ambiguous grammar for arithmetical expressions with precedence declarations.}
+\label{fig:Precedence-Declarations.ipynb}
+\end{figure}
+\FloatBarrier
+
+\begin{enumerate}
+\item Line 1--5 contain the precedence declarations.  Every declaration consists of one of the keywords
+      \texttt{\%left}, \texttt{\%right}, \texttt{\%nonassoc}, or \texttt{\%precedence}, which is followed by a list
+      of literals or terminals.  All symbols of a declaration have the same
+      \blue{precedence}\index{precedence!of a token}, which is higher than the precedence of the symbols that are
+      declared in the lines above.  Hence, the comparison operators have the lowest precedence, while the operator
+      \saquoted{\symbol{94}} has the highest precedence.
+\item The keyword of a declaration specifies the associativity of its symbols:
+      \begin{enumerate}[(a)]
+      \item \texttt{\%left} declares left associative operators:  ``\texttt{1-2-3}'' is read as
+            ``\texttt{(1-2)-3}''.
+      \item \texttt{\%right} declares right associative operators:  ``\texttt{2\symbol{94}3\symbol{94}4}'' is read
+            as ``\texttt{2\symbol{94}(3\symbol{94}4)}''.
+      \item \texttt{\%nonassoc} declares non-associative operators:  ``\texttt{1<2<3}'' is a syntax error.
+      \item \texttt{\%precedence} declares a precedence without an associativity.
+      \end{enumerate}
+\item Every grammar rule gets a precedence, too:  The \blue{precedence of a rule}\index{precedence!of a grammar
+      rule} is the precedence of the last terminal on its right hand side.  For example, the rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr}$
+      \\[0.2cm]
+      has the precedence of \saquoted{+}.  If the last terminal of a rule has no precedence, the rule has no
+      precedence either.
+\item The unary minus should bind more strongly than the operators \saquoted{*} and \saquoted{/}, but less
+      strongly than \saquoted{\symbol{94}}, so that ``\texttt{-2\symbol{94}2}'' is read as
+      ``\texttt{-(2\symbol{94}2)}'', as usual in mathematics.  However, the last terminal of the rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \aquoted{-} \textsl{expr}$
+      \\[0.2cm]
+      is the token \saquoted{-}, whose precedence is lower than the precedence of \saquoted{*}.  Therefore, the
+      annotation \texttt{\%prec} in line 14 gives this rule the precedence of \texttt{UMINUS}, which is declared
+      in line 4.  \texttt{UMINUS} is not a terminal of the grammar:  It is only a name for a precedence.  The
+      annotation \texttt{\%prec} has to be written at the end of an alternative, but in front of an alias or an
+      annotation \texttt{\%ignore}.
+\end{enumerate}
+Next, we describe how the precedences resolve the shift-reduce conflicts.  Assume that a state $s$ of the LR(1)
+parser contains both a marked rule of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$A \rightarrow \alpha \bullet: L$ \quad where $t \in L$
+\\[0.2cm]
+and a marked rule of the form $B \rightarrow \beta \bullet t\, \gamma: K$.  Then the parser could either reduce
+with the rule $r = (A \rightarrow \alpha)$ or shift the token $t$.  If both the rule $r$ and the token $t$ have a
+precedence, the entry $\textsl{action}(s,t)$ of the action table is defined as follows:
+\begin{enumerate}
+\item If the precedence of $t$ is higher than the precedence of $r$, the token $t$ is shifted:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{action}(s,t) := \langle \texttt{shift}, \textsl{goto}(s,t) \rangle$.
+\item If the precedence of $r$ is higher than the precedence of $t$, the parser reduces with the rule $r$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{action}(s,t) := \langle \texttt{reduce}, r \rangle$.
+\item If $r$ and $t$ have the same precedence, the associativity of $t$ decides:
+      \begin{enumerate}[(a)]
+      \item If $t$ has been declared with \texttt{\%left}, the parser reduces with the rule $r$.
+      \item If $t$ has been declared with \texttt{\%right}, the token $t$ is shifted.
+      \item If $t$ has been declared with \texttt{\%nonassoc}, we have $\textsl{action}(s,t) := \texttt{error}$.
+      \item If $t$ has been declared with \texttt{\%precedence}, the conflict is not resolved.
+      \end{enumerate}
+\end{enumerate}
+As before, all other shift-reduce conflicts are resolved in favour of shifting and reported with a
+\texttt{ConflictWarning}.  Precedence declarations have no influence on reduce-reduce conflicts.
+
+For the grammar shown in Figure \ref{fig:Precedence-Declarations.ipynb}, \simtextsc{Larkita} computes 42 states
+with 112 shift-reduce conflicts.  All of these conflicts are resolved by the precedence declarations, so no
+warning is issued.  The output file contains an additional section \texttt{Precedence}, which lists the precedence
+declarations together with the precedences of the rules.  Furthermore, every conflict is listed together with the
+reason for its resolution, which is written in the same way as by \textsl{Bison}.  Figure
+\ref{fig:Precedence-Declarations.state19} on page \pageref{fig:Precedence-Declarations.state19} shows the actions
+and the conflicts of state 19, which is reached after an expression of the form
+$\textsl{expr} \aquoted{+} \textsl{expr}$ has been read.  The marked rules of this state are omitted, since
+their follow sets contain all eight tokens that can follow an expression.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame        = lines,
+                framesep     = 0.3cm,
+                bgcolor      = sepia,
+                numbers      = left,
+                numbersep    = 0.3cm,
+                gobble       = 4,
+                xleftmargin  = 0.3cm,
+                xrightmargin = 0.0cm,
+              ]{text}
+    State 19
+
+        "*"   shift and go to state 9
+        "/"   shift and go to state 10
+        "^"   shift and go to state 11
+        "+"   reduce using rule (3) expr → expr "+" expr
+        "-"   reduce using rule (3) expr → expr "+" expr
+        "<"   reduce using rule (3) expr → expr "+" expr
+        "=="  reduce using rule (3) expr → expr "+" expr
+        $END  reduce using rule (3) expr → expr "+" expr
+
+        shift/reduce conflict on "*", resolved as shift ("+" < "*")
+            - shift and go to state 9
+            - reduce using rule (3) expr → expr "+" expr
+        shift/reduce conflict on "+", resolved as reduce (%left "+")
+            - shift and go to state 7
+            - reduce using rule (3) expr → expr "+" expr
+        shift/reduce conflict on "-", resolved as reduce (%left "-")
+            - shift and go to state 8
+            - reduce using rule (3) expr → expr "+" expr
+        shift/reduce conflict on "/", resolved as shift ("+" < "/")
+            - shift and go to state 10
+            - reduce using rule (3) expr → expr "+" expr
+        shift/reduce conflict on "<", resolved as reduce ("<" < "+")
+            - shift and go to state 5
+            - reduce using rule (3) expr → expr "+" expr
+        shift/reduce conflict on "==", resolved as reduce ("==" < "+")
+            - shift and go to state 6
+            - reduce using rule (3) expr → expr "+" expr
+        shift/reduce conflict on "^", resolved as shift ("+" < "^")
+            - shift and go to state 11
+            - reduce using rule (3) expr → expr "+" expr
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The actions and the conflicts of the state that is reached after reading
+         $\textsl{expr} \aquoted{+} \textsl{expr}$.}
+\label{fig:Precedence-Declarations.state19}
+\end{figure}
+\FloatBarrier
+
+\noindent
+The rule (3), i.e.~the rule $\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr}$, has the
+precedence of the token \saquoted{+}.
+\begin{enumerate}
+\item The tokens \saquoted{*}, \saquoted{/}, and \saquoted{\symbol{94}} have a higher precedence than rule (3).
+      Therefore, they are shifted.  \textsl{Bison} writes this comparison as \texttt{("+"~<~"*")}.  For the string
+      ``\texttt{1+2*3}'', the parser shifts the token \saquoted{*}, so that ``\texttt{2*3}'' is reduced first.
+\item The tokens \saquoted{+} and \saquoted{-} have the same precedence as rule (3).  As they are left
+      associative, the parser reduces.  This is written as \texttt{(\%left~"+")}.
+\item The tokens \saquoted{<} and \saquoted{==} have a lower precedence than rule (3), so the parser reduces, too.
+\end{enumerate}
+Compare this state with the state shown in Figure \ref{fig:Conflicts.ipynb:state5} on page
+\pageref{fig:Conflicts.ipynb:state5}, where every conflict has been resolved in favour of shifting.  In the state
+that is reached after reading an expression of the form $\textsl{expr} \aquoted{<} \textsl{expr}$, the actions
+for the tokens \saquoted{<} and \saquoted{==} are \texttt{error}, since these operators are non-associative.  The
+output file lists these actions as ``\texttt{error~(nonassociative)}''.
+
+The automaton has many conflicts, because the canonical LR(1) automaton contains the states for expressions
+twice:  once for expressions at the top level and once for expressions inside parentheses, whose follow sets
+contain the token \saquoted{)} instead of \texttt{\$END}.  Hence, every conflict occurs twice.
+
+\remarkEng
+Which of the two approaches should be used?  Precedence declarations keep the grammar short and close to the
+description of the language, and a new operator only has to be added to the right declaration.  On the other
+hand, a grammar with precedence declarations is ambiguous:  The language that is recognized depends on the way
+the parser generator resolves the conflicts, so we have to understand LR parsing in order to understand the
+grammar.  Furthermore, a precedence declaration can also resolve a conflict that is caused by a genuine mistake
+in the grammar.  Therefore, precedence declarations should only be used for operators.  The compiler that we
+develop in Chapter \ref{chapter:compiler} uses precedence declarations.
+\eox
+
 \section{Resolving Shift-Reduce and Reduce-Reduce Conflicts \label{section:resolving-conflicts}}
 We start our discussion by categorizing conflicts with respect to their origin.
 \begin{enumerate}
@@ -468,8 +665,9 @@ We start our discussion by categorizing conflicts with respect to their origin.
       to describe the syntax of arithmetic expressions without the syntactic
       categories \textsl{product} and \textsl{factor}.
 
-      In \simtextsc{Larkita}, such conflicts are resolved by rewriting the grammar as shown in the previous
-      section.
+      In \simtextsc{Larkita}, such conflicts are resolved either by rewriting the grammar as shown in Section
+      \ref{section:operator-precedence} or by precedence declarations as shown in Section
+      \ref{section:precedence-declarations}.
 \item \emph{Look-Ahead Conflicts} are Reduce-Reduce conflicts where the grammar is
       technically unambiguous, but for which a look-ahead of one token is
       insufficient to resolve the conflict.
@@ -486,7 +684,7 @@ We will now look at the last two cases in detail and show ways in which the conf
 A Look-Ahead Conflict exists when the grammar is unambiguous, but a look-ahead of one
 token is insufficient to decide which rule should be used for reduction. Figure
 \ref{fig:lr-conflict.g} shows the grammar
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/03-Look-Ahead.ipynb}{\texttt{03-Look-Ahead.ipynb}}\footnote{
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/04-Look-Ahead.ipynb}{\texttt{04-Look-Ahead.ipynb}}\footnote{
 I found this grammar on the web on Pete Jinks' page at the address
 \\[0.1cm]
 \hspace*{1.3cm}
@@ -642,7 +840,7 @@ instead.  Figure
 \ref{fig:lr-conflict-resolved.g} shows the correspondingly modified grammar, which you can find at
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/04-Look-Ahead-Solved.ipynb}{\texttt{Python/Chapter-11/04-Look-Ahead-Solved.ipynb}}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/05-Look-Ahead-Solved.ipynb}{\texttt{Python/Chapter-11/05-Look-Ahead-Solved.ipynb}}
 \\[0.2cm]
 on the web.  The aliases \texttt{b} and \texttt{c} have no influence on the parse table.  Without them, the
 abstract syntax trees of $b$ and $c$ would both be the tuple \texttt{(('X', 'U'),)} and we could not see which of
@@ -686,7 +884,7 @@ chapter.  Then we had seen that this grammar is an LR grammar, but not an \simte
 if we use \simtextsc{Larkita} to generate the states for this grammar.  This example is discussed in the notebook
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/05-Mysterious-Conflicts.ipynb}{\texttt{Python/Chapter-11/05-Mysterious-Conflicts.ipynb}}.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/06-Mysterious-Conflicts.ipynb}{\texttt{Python/Chapter-11/06-Mysterious-Conflicts.ipynb}}.
 
 \begin{figure}[!ht]
 \centering
@@ -820,7 +1018,7 @@ might perform some additional reductions before it reports the error.  Hence, me
 optimization.  This is demonstrated in the notebook
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/06-Merging-States.ipynb}{\texttt{Python/Chapter-11/06-Merging-States.ipynb}}.
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/07-Merging-States.ipynb}{\texttt{Python/Chapter-11/07-Merging-States.ipynb}}.
 \\[0.2cm]
 Figure \ref{fig:Merging-States.ipynb} on page \pageref{fig:Merging-States.ipynb} shows how this notebook
 generates a canonical parser and a parser with merged states for the grammar for arithmetical expressions that
@@ -953,9 +1151,9 @@ The precedences and associativities are defined as follows:
 \item The operator ``\texttt{<->}'' is not associative and binds weaker than the operator ``\texttt{->}''.
 \end{enumerate}
 Furthermore, the language should support parenthesis, variables, and the constants ``$\top$'' and ``$\bot$''.
-Since \simtextsc{Larkita} does not support precedence declarations, you have to introduce one syntactical variable
-for every precedence level.  Turn the \texttt{ConflictWarning} into an exception as shown in Figure
-\ref{fig:conflicts-strict} so that you notice immediately if your grammar has a conflict.
+Solve this exercise twice:  First, introduce one syntactical variable for every precedence level.  Then, use
+precedence declarations instead.  In both cases, turn the \texttt{ConflictWarning} into an exception as shown in
+Figure \ref{fig:conflicts-strict} so that you notice immediately if your grammar has a conflict.
 
 \exerciseEng
 Implement a parser (using \simtextsc{Larkita}) that evaluates operations on sets of integers.
@@ -983,8 +1181,8 @@ You must support the following operators. The table is ordered from \textbf{high
 \end{table}
 
 \noindent
-Again, the precedences have to be encoded into the grammar.  Make sure that \simtextsc{Larkita} reports no
-conflicts for your grammar.
+Again, solve this exercise twice:  by encoding the precedences into the grammar and by precedence declarations.
+Make sure that \simtextsc{Larkita} issues no \texttt{ConflictWarning} for your grammars.
 
 \section{Check Your Understanding}
 \begin{enumerate}[(a)]
@@ -1005,6 +1203,11 @@ conflicts for your grammar.
 
       Can the features of \simtextsc{Larkita} that determine the shape of the abstract syntax tree introduce or
       remove a conflict?
+\item How are the precedence and the associativity of an operator declared in \simtextsc{Larkita}?  Which
+      precedence does a grammar rule have, and how can this precedence be changed?
+\item How does \simtextsc{Larkita} resolve a shift-reduce conflict if both the rule and the look-ahead token have a
+      precedence?  What happens if they have the same precedence?
+\item Why does the rule for the unary minus need an annotation \texttt{\%prec}?
 \item Which three kinds of conflicts have we distinguished according to their origin?
 \item How is the concept of a \blue{look-ahead conflict} defined?
 \item How is the concept of a \blue{mysterious reduce-reduce conflict} defined?  Why does \simtextsc{Larkita}

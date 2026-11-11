@@ -29,7 +29,7 @@ class LarkitaLexer(RegexLexer):
             (r'[ \t]+', Whitespace),
             (r'(""")((?:.|\n)*)', bygroups(String.Double, using(PythonLexer))),
             (r'//[^\n]*', Comment.Single),
-            (r'%(ignore|import|declare|override|extend)\b', Keyword.Namespace),
+            (r'%(ignore|import|declare|override|extend|left|right|nonassoc|precedence|prec)\b', Keyword.Namespace),
             (r'(->)([ \t]*)(_?[a-zA-Z][a-zA-Z_0-9]*|"[^"\n]*")', bygroups(Operator, Whitespace, Name.Label)),
             (r'"(\\.|[^"\\\n])*"i?', String),
             (r'/(?!/)(\\/|\\\\|[^/\n])*?/[imslux]*', String.Regex),
