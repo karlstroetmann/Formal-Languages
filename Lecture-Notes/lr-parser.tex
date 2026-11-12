@@ -2034,7 +2034,6 @@ grammar.  The first conflict is the one that we have found there:  If the parser
 \saquoted{+} either:  If the next token is \saquoted{+}, the parser does not know whether \texttt{1+2+3} has to be
 read as \texttt{(1+2)+3} or as \texttt{1+(2+3)}.  The other two conflicts occur in the state \texttt{s8}, which
 contains the marked rule $e \rightarrow e \saquoted{*}\, e \bullet$.
-\FloatBarrier
 
 \section{Canonical LR Parsers}
 The reduce-reduce conflict that occurs in the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} can be resolved as follows: In the state
@@ -2421,16 +2420,6 @@ Additionally, investigate whether this grammar has shift-reduce conflicts or red
 \vspace*{0.2cm}
 
 \remarkEng
-As part of the resources provided with this lecture,  the file
-\\[0.2cm]
-\hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/LR-Table-Generator.ipynb}{Python/Chapter-10/LR-Table-Generator.ipynb}
-\\[0.2cm]
-contains a \textsl{Python} program that checks whether a given grammar qualifies as a canonical LR grammar.
-This program computes the LR-states as well as the action table for a given grammar.  \eox
-\vspace*{0.3cm}
-
-\remarkEng
 The theory of LR-parsing has been developed by Donald E.~Knuth \cite{knuth:65}.  
 His theory is described in the paper 
 ``\href{https://doi.org/10.1016/S0019-9958(65)90426-2}{On the translation of languages from left to right}''.
@@ -2443,6 +2432,424 @@ literature, they are therefore called SLR(1), LALR(1), and LR(1) parsers, and th
 called SLR(1), LALR(1), and LR(1) grammars.  More generally, an LR($k$) parser looks at the next $k$ tokens.
 \eox
 
+\section{Implementing an LR Table Generator in \textsl{Python}\label{section:lr-table-generator}}
+The \textsl{Jupyter} notebook
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/LR-Table-Generator.ipynb}{Python/Chapter-10/LR-Table-Generator.ipynb}
+\\[0.2cm]
+implements the theory of the previous section.  Given a grammar $G$, it computes the function \textsl{First}, the
+set of all LR states that can be reached from the start state, and the functions \textsl{action} and
+\textsl{goto}.  It reports every conflict that it finds and can therefore be used to check whether $G$ is a
+canonical LR grammar.  Like the SLR table generator discussed in Section \ref{section:slr-table-generator}, it
+writes the tables into the file \texttt{parse-table.py}, so that they can be used by the shift-reduce parser shown
+in Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb:parse}.
+
+The notebook has been derived from the SLR table generator.  Apart from the type annotations and the output, the
+parser for grammars, the class \texttt{GrammarRule}, the functions \texttt{is\_var}, \texttt{collect\_variables},
+\texttt{collect\_tokens}, and \texttt{eps\_union}, the class \texttt{State}, and the methods
+\texttt{compute\_first}, \texttt{first\_list}, \texttt{compute\_goto\_table}, and \texttt{dump\_parse\_table} are the
+same as there.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
+addition, they omit the variable \texttt{verbose}, which controls the output:  For a large grammar, printing all
+states together with the action table and the goto table would produce several megabytes of output.  Therefore,
+the notebook prints the states and the tables only if there are at most 100 states.  Conflicts are always printed.
+
+\subsection{Extended Marked Rules}
+The class \texttt{ExtendedMarkedRule} represents an extended marked rule.  As in the class \texttt{MarkedRule}, the
+names of its member variables refer to the letters $\alpha$ and $\beta$.  Therefore, we write an e.m.r.\@ in this
+subsection in the form
+\\[0.2cm]
+\hspace*{1.3cm}
+$c \rightarrow \alpha \bullet \beta: L$.
+\\[0.2cm]
+Figure \ref{fig:LR-Table-Generator.ipynb:ExtendedMarkedRule} on page
+\pageref{fig:LR-Table-Generator.ipynb:ExtendedMarkedRule} shows this class together with those of its methods that
+differ from the methods of the class \texttt{MarkedRule}.  It also shows the function \texttt{combine\_rules}, which
+combines extended marked rules that differ only in their sets of follow tokens.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    @dataclass(frozen=True, repr=False)
+    class ExtendedMarkedRule():
+        mVariable: Variable
+        mAlpha:    Symbols
+        mBeta:     Symbols
+        mFollow:   frozenset[Token]
+
+        def __repr__(self):
+            if len(self.mFollow) > 1:
+                followStr = '{' + \
+                            ','.join(sorted(self.mFollow)) + '}'
+            else:
+                followStr = ','.join(self.mFollow)
+            return ' '.join([self.mVariable, '→', *self.mAlpha,
+                             '•', *self.mBeta]) + f': {followStr}'
+
+    def move_dot(self):
+        return ExtendedMarkedRule(self.mVariable,
+                                  self.mAlpha + (self.mBeta[0],),
+                                  self.mBeta[1:],
+                                  self.mFollow)
+
+    def to_marked_rule(self):
+        return MarkedRule(self.mVariable, self.mAlpha, self.mBeta)
+
+    def combine_rules(M):
+        Follow = {}
+        for emr in M:
+            core = emr.to_marked_rule()
+            Follow[core] = \
+                Follow.get(core, frozenset()) | emr.mFollow
+        return [ ExtendedMarkedRule(core.mVariable, core.mAlpha,
+                                    core.mBeta, L)
+                 for core, L in Follow.items() ]
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The class \texttt{ExtendedMarkedRule} and the function \texttt{combine\_rules}.}
+\label{fig:LR-Table-Generator.ipynb:ExtendedMarkedRule}
+\end{figure}
+
+\begin{enumerate}
+\item Line 1 -- 6 define the class and its fields.  The member variables \texttt{mVariable}, \texttt{mAlpha}, and
+      \texttt{mBeta} store $c$, $\alpha$, and $\beta$ as in the class \texttt{MarkedRule}, while the member
+      variable \texttt{mFollow} stores the set $L$ of follow tokens.  As states are sets of extended marked rules,
+      the class \texttt{ExtendedMarkedRule} is a frozen data class, too.  The method \texttt{\_\_hash\_\_} that
+      \textsl{Python} generates for this class combines the hash values of all fields.  As a \texttt{set} can be
+      changed and therefore has no hash value, the set $L$ is stored as a \texttt{frozenset}.
+\item Line 8 -- 15 define the method \texttt{\_\_repr\_\_}.  If $L$ has more than one element, line 10 -- 11 sort
+      these elements and enclose them in braces.  Sorting ensures that the follow tokens are printed in the same
+      order in every run.  Otherwise, line 13 omits the braces, as we do when we write an e.m.r.\@ in the form
+      $c \rightarrow \alpha \bullet \beta: t$.  For example, the e.m.r.\@
+      $c \rightarrow \saquoted{x} \bullet c: \{\saquoted{x}, \saquoted{y}\}$ is converted into the string
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{c → "x" • c: \{"x","y"\}}.
+\item The methods \texttt{is\_complete}, \texttt{symbol\_after\_dot}, \texttt{next\_var}, and \texttt{to\_rule}
+      are the same as the methods of the class \texttt{MarkedRule} shown in Figure
+      \ref{fig:SLR-Table-Generator.ipynb:MarkedRule} on page \pageref{fig:SLR-Table-Generator.ipynb:MarkedRule}.
+      They ignore the follow tokens and are therefore not shown again.
+\item Line 17 -- 21 define the method \texttt{move\_dot}.  Given the e.m.r.\@
+      $c \rightarrow \alpha \bullet X \delta: L$, it returns the e.m.r.\@ $c \rightarrow \alpha X \bullet \delta: L$.
+      Line 21 copies the set of follow tokens, since the function $\textsl{goto}()$ does not change it.
+\item Line 23 -- 24 define the method \texttt{to\_marked\_rule}, which turns the e.m.r.\@
+      $c \rightarrow \alpha \bullet \beta: L$ into the marked rule $c \rightarrow \alpha \bullet \beta$.  This
+      marked rule is called the \blue{core}\index{core of an extended marked rule} of the e.m.r.  The notebook
+      defines the class \texttt{MarkedRule} as in line 1 -- 9 of Figure
+      \ref{fig:SLR-Table-Generator.ipynb:MarkedRule}, but without any further methods, since marked rules are only
+      needed as cores.
+\item Line 26 -- 34 define the function \texttt{combine\_rules}.  Its argument \texttt{M} is a list of extended
+      marked rules.  As discussed in the previous section, extended marked rules that have the same core are
+      combined:  The e.m.r.s $c \rightarrow \alpha \bullet \beta: L_1$, $\cdots$,
+      $c \rightarrow \alpha \bullet \beta: L_k$ are replaced by the single e.m.r.\@
+      $c \rightarrow \alpha \bullet \beta: L_1 \cup \cdots \cup L_k$.
+      \begin{enumerate}[(a)]
+      \item The dictionary \texttt{Follow} maps every core to the union of the sets of follow tokens of those
+            e.m.r.s in \texttt{M} that have this core.  If the core of \texttt{emr} is not yet a key of this
+            dictionary, the method \texttt{get} in line 31 returns the empty set.
+      \item Line 32 -- 34 create one e.m.r.\@ for every core.  As a dictionary remembers the order in which its keys
+            have been inserted, the combined e.m.r.\@ takes the place of the first e.m.r.\@ in \texttt{M} that has
+            this core.
+      \end{enumerate}
+\end{enumerate}
+
+\subsection{The Class \texttt{Grammar}}
+The constructor of the class \texttt{Grammar} and the method \texttt{compute\_tables} differ from those shown in
+Figure \ref{fig:SLR-Table-Generator.ipynb:Grammar} on page \pageref{fig:SLR-Table-Generator.ipynb:Grammar} in two
+essential respects:
+\begin{enumerate}
+\item Following the theory of the previous section, the grammar is augmented by the rule
+      $\widehat{s} \rightarrow s$ instead of the rule $\widehat{s} \rightarrow s\, \symbol{36}$.  Hence, line 12 of
+      Figure \ref{fig:SLR-Table-Generator.ipynb:Grammar} is replaced by
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{self.mRules.append(GrammarRule('ŝ', (self.mStart,)))}.
+      \\[0.2cm]
+      Therefore, the token $\symbol{36}$ does not occur in any grammar rule.  It occurs only as the follow token of
+      the e.m.r.\@ $\widehat{s} \rightarrow \bullet\, s: \symbol{36}$, with which the computation of the states
+      starts.
+\item An LR parser does not need the function \textsl{Follow}, since the follow tokens are stored in the extended
+      marked rules.  Therefore, the method \texttt{compute\_tables} neither initializes the dictionary
+      \texttt{mFollow} nor calls the method \texttt{compute\_follow}, which does not exist in this notebook.  The
+      function \textsl{First} is still needed, since the closure of a set of extended marked rules is defined in
+      terms of \textsl{First}.
+\end{enumerate}
+
+\subsection{Computing the States}
+Figure \ref{fig:LR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:LR-Table-Generator.ipynb:cmp_closure}
+shows the methods \texttt{cmp\_closure} and \texttt{goto}.  The method \texttt{cmp\_closure} uses a worklist in the
+same way as the method shown in Figure \ref{fig:SLR-Table-Generator.ipynb:cmp_closure} on page
+\pageref{fig:SLR-Table-Generator.ipynb:cmp_closure}.  It differs only in the computation of the follow tokens and
+in its result.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def cmp_closure(self, Marked_Rules):
+        Result   = dict.fromkeys(Marked_Rules)
+        worklist = list(Result)
+        for emr in worklist:
+            c = emr.next_var()
+            if c is None:
+                continue
+            delta = emr.mBeta[1:]
+            L     = emr.mFollow
+            for rule in self.mRules:
+                if rule.mVariable == c:
+                    newL    = frozenset({ x for t in L for x in
+                            self.first_list(delta + (t,)) })
+                    new_emr = ExtendedMarkedRule(c, (), rule.mBody,
+                                                 newL)
+                    if new_emr not in Result:
+                        Result[new_emr] = None
+                        worklist.append(new_emr)
+        return list(Result)
+
+    def goto(self, state, x):
+        kernel = [ emr.move_dot() for emr in state
+                   if emr.symbol_after_dot() == x ]
+        return State(combine_rules(self.cmp_closure(kernel)))
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The methods \texttt{cmp\_closure} and \texttt{goto} for extended marked rules.}
+\label{fig:LR-Table-Generator.ipynb:cmp_closure}
+\end{figure}
+
+\begin{enumerate}
+\item If the e.m.r.\@ \texttt{emr} has the form $a \rightarrow \beta \bullet c\, \delta: L$, where $c$ is a
+      variable, line 8 and 9 store the string $\delta$ and the set $L$ of follow tokens.
+\item For every grammar rule of the form $c \rightarrow \gamma$, line 12 -- 13 compute the set
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{newL} = \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L \bigr\}$,
+      \\[0.2cm]
+      as required by the definition of the closure.  The set comprehension iterates over all tokens $t \in L$ and
+      collects the elements of the sets $\textsl{FirstList}(\delta\, t)$.  As $t$ is a token, these sets do not
+      contain $\lambda$.  Line 14 -- 15 create the e.m.r.\@ $c \rightarrow \bullet\, \gamma: \textsl{newL}$.  If
+      this e.m.r.\@ is new, line 17 and 18 add it to the closure and to the worklist.
+\item Line 19 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
+      that have the same core.  For example, for the grammar for arithmetic expressions, the closure of
+      $\bigl\{\widehat{s} \rightarrow \bullet\, \textsl{expr}: \symbol{36}\bigr\}$ contains the three e.m.r.s with
+      the core $\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}$ that have been
+      discussed in the previous section.
+\end{enumerate}
+The method \texttt{goto} in line 21 -- 24 implements the definition
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
+   a \rightarrow \beta\, X \bullet \delta:L \mid (a \rightarrow \beta \bullet X\, \delta:L) \in \mathcal{M}
+   \bigr\} \Bigr)$.
+\\[0.2cm]
+The list \texttt{kernel} in line 22 -- 23 contains those e.m.r.s of the state in which the symbol $X$ follows the
+dot, with the dot moved over $X$.  Line 24 computes the closure of these e.m.r.s, combines the e.m.r.s of the
+closure that have the same core, and turns the result into a state.  Hence, a state contains at most one e.m.r.\@
+for every core, as required in the previous section.  It does not matter that the e.m.r.s are combined only after
+the closure has been computed:  As
+\\[0.2cm]
+\hspace*{1.3cm}
+$\bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L_1 \cup L_2 \bigr\} =
+ \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L_1 \bigr\} \cup
+ \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L_2 \bigr\}$
+\\[0.2cm]
+holds, the e.m.r.\@ $a \rightarrow \beta \bullet c\, \delta: L_1 \cup L_2$ contributes the same follow tokens to
+the closure as the two e.m.r.s $a \rightarrow \beta \bullet c\, \delta: L_1$ and
+$a \rightarrow \beta \bullet c\, \delta: L_2$ together.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def all_states(self):
+        start_rule   = ExtendedMarkedRule('ŝ', (), (self.mStart,),
+                                          frozenset({'$'}))
+        start_state  = State(combine_rules(
+                           self.cmp_closure([ start_rule ])))
+        self.mStates = [ start_state ]
+        self.mStateNames[start_state] = 's0'
+        for state in self.mStates:
+            for x in dict.fromkeys(emr.mBeta[0] for emr in state
+                                   if not emr.is_complete()):
+                next_state = self.goto(state, x)
+                if next_state not in self.mStateNames:
+                    self.mStateNames[next_state] = \
+                        f's{len(self.mStates)}'
+                    self.mStates.append(next_state)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The method \texttt{all\_states} for extended marked rules.}
+\label{fig:LR-Table-Generator.ipynb:all_states}
+\end{figure}
+
+\noindent
+Figure \ref{fig:LR-Table-Generator.ipynb:all_states} on page \pageref{fig:LR-Table-Generator.ipynb:all_states}
+shows the method \texttt{all\_states}.  It works in the same way as the method shown in Figure
+\ref{fig:SLR-Table-Generator.ipynb:all_states} on page \pageref{fig:SLR-Table-Generator.ipynb:all_states}.  There
+are only two differences:
+\begin{enumerate}
+\item Line 2 -- 5 compute the start state
+      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \bullet\, s: \symbol{36} \}\bigr)$.  The start e.m.r.\@
+      has the follow token $\symbol{36}$, since the end marker $\symbol{36}$ has to follow the start symbol $s$.  As
+      in the method \texttt{goto}, the e.m.r.s of the closure are combined before the closure is turned into a
+      state.
+\item The SLR table generator has to skip the symbol $\symbol{36}$ when it computes the successors of a state.  This
+      is not necessary here, since $\symbol{36}$ does not occur in the rules of the augmented grammar and therefore
+      never follows the dot.
+\end{enumerate}
+Two states that differ only in their follow tokens are different states.  Therefore, an LR parser usually has more
+states than an SLR parser for the same grammar.
+
+\subsection{Computing the Action Table}
+Figure \ref{fig:LR-Table-Generator.ipynb:compute_action_table} on page
+\pageref{fig:LR-Table-Generator.ipynb:compute_action_table} shows the method \texttt{compute\_action\_table}, which
+implements the definition of the function \textsl{action} given in the previous section.  It has the same structure
+as the method shown in Figure \ref{fig:SLR-Table-Generator.ipynb:compute_action_table} on page
+\pageref{fig:SLR-Table-Generator.ipynb:compute_action_table}, so we discuss only the differences.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def compute_action_table(self):
+        self.mActionTable = {}
+        for state in self.mStates:
+            stateName = self.mStateNames[state]
+            actionTable = {}
+            # compute shift actions
+            for token in sorted(self.mTokens):
+                newState = self.goto(state, token)
+                if len(newState) > 0:
+                    newName = self.mStateNames[newState]
+                    actionTable[token] = ('shift', newName)
+                    self.mActionTable[stateName, token] = \
+                        ('shift', newName)
+            # compute the accept action
+            for mr in state:
+                if mr == ExtendedMarkedRule('ŝ', (self.mStart,), (),
+                                            frozenset({'$'})):
+                    actionTable['$'] = 'accept'
+                    self.mActionTable[stateName, '$'] = 'accept'
+            # compute reduce actions
+            for mr in state:
+                if mr.is_complete() and mr.mVariable != 'ŝ':
+                    for token in sorted(mr.mFollow):
+                        action1 = actionTable.get(token)
+                        action2 = ('reduce', mr.to_rule())
+                        if action1 is None:
+                            actionTable[token] = action2
+                            r = self.mRuleNames[mr.to_rule()]
+                            self.mActionTable[stateName, token] = \
+                                ('reduce', r)
+                        elif action1 != action2:
+                            self.mConflicts = True
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The method \texttt{compute\_action\_table} for extended marked rules.}
+\label{fig:LR-Table-Generator.ipynb:compute_action_table}
+\end{figure}
+
+\begin{enumerate}
+\item Line 7 -- 13 compute the \texttt{shift} actions.  In contrast to the SLR table generator, the token
+      $\symbol{36}$ need not be excluded, since $\textsl{goto}(\mathcal{M}, \symbol{36})$ is always empty.
+\item Line 15 -- 19 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the e.m.r.\@
+      $\widehat{s} \rightarrow s \bullet: \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
+      \texttt{accept}$.  The token $\symbol{36}$ is the only follow token of every e.m.r.\@ that has the variable
+      $\widehat{s}$ on its left hand side:  The start e.m.r.\@ has this follow token, the method \texttt{move\_dot}
+      does not change the follow tokens, and the closure never adds an e.m.r.\@ for $\widehat{s}$, since
+      $\widehat{s}$ does not occur on the right hand side of any rule.  Therefore, line 16 -- 17 can compare the
+      e.m.r.s of $\mathcal{M}$ with the e.m.r.\@ whose set of follow tokens is $\{\symbol{36}\}$.
+\item Line 21 -- 32 compute the \texttt{reduce} actions.  For a complete e.m.r.\@ $a \rightarrow \beta \bullet: L$,
+      line 23 iterates over the follow tokens in $L$, whereas the SLR table generator iterates over the set
+      $\textsl{Follow}(a)$.  As $L$ is often smaller than $\textsl{Follow}(a)$, fewer conflicts arise.
+
+      The test \texttt{mr.mVariable != 'ŝ'} in line 22 implements the condition $a \not= \widehat{s}$ of the
+      definition of \textsl{action}.  As the e.m.r.\@ $\widehat{s} \rightarrow s \bullet: \symbol{36}$ is
+      complete, the method would otherwise create the action $\pair(\texttt{reduce}, \widehat{s} \rightarrow s)$
+      for the token $\symbol{36}$.  This action conflicts with the \texttt{accept} action, so a conflict would be
+      reported for every grammar.  The SLR table generator does not need this test, since the marked rule
+      $\widehat{s} \rightarrow s\, \symbol{36} \bullet$ never occurs in one of its states.
+\end{enumerate}
+Conflicts are detected in the same way as in the SLR table generator, including conflicts between \texttt{accept}
+and \texttt{reduce}.  For example, for the ambiguous grammar
+\\[0.2cm]
+\hspace*{1.3cm}
+$s \rightarrow a \mid \saquoted{x}$, \quad $a \rightarrow s$
+\\[0.2cm]
+discussed in Section \ref{section:slr-table-generator}, the notebook computes the state
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{goto}(q_0, s) = \bigl\{ \widehat{s} \rightarrow s \bullet: \symbol{36},\;
+                                 a \rightarrow s \bullet: \symbol{36} \bigr\}$.
+\\[0.2cm]
+If the next token is $\symbol{36}$, the parser cannot decide whether it should accept or reduce with the rule
+$a \rightarrow s$.  The method \texttt{compute\_goto\_table}, which computes the goto table, is the same as in
+Figure \ref{fig:SLR-Table-Generator.ipynb:compute_goto_table} on page
+\pageref{fig:SLR-Table-Generator.ipynb:compute_goto_table}.
+
+The file \texttt{Examples/dragon-book.g} contains the grammar shown in Figure \ref{fig:dragon-book.grammar} on page
+\pageref{fig:dragon-book.grammar}, which is discussed in the next section.  For this grammar, the notebook finds 10
+states.  It names them in the same way as Figure \ref{fig:cc-LR.eps} on page \pageref{fig:cc-LR.eps}, which shows
+the LR-goto-graph of this grammar, so the output of the notebook can be compared with this figure.
+
+For the grammar for arithmetic expressions in the file \texttt{Examples/arith.g}, the notebook finds 30 states,
+while the SLR table generator finds only 16 states.  Apart from the states \texttt{s0} and \texttt{s1}, the states
+come in pairs:  The two states of a pair contain the same marked rules and differ only in their follow tokens.
+For example, the notebook computes the states
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{lcl}
+   \texttt{s3}  & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \bullet:
+                      \{ \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/}, \symbol{36} \} \bigr\}
+                      \quad \mbox{and} \\[0.1cm]
+   \texttt{s12} & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \bullet:
+                      \{ \saquoted{)}, \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/} \} \bigr\}.
+ \end{array}$
+\\[0.2cm]
+The parser reaches the state \texttt{s12} if the \textsl{factor} that it has just read occurs inside a pair of
+parentheses.  Then the next token can be a closing parenthesis, but not the end marker $\symbol{36}$.  For the state
+\texttt{s3}, it is the other way round.  This grammar has no conflicts.  The observation that many LR states differ
+only in their follow tokens is the starting point of the LALR parsers discussed in the next section.
+
+For the ambiguous grammar in the file \texttt{Examples/arith-ambiguous.g}, the notebook reports eight shift-reduce
+conflicts, which is twice the number of conflicts reported by the SLR table generator.  These are the conflicts
+found by the SLR table generator, two of which are shown in Figure \ref{fig:SLR-Table-Generator.ipynb:conflicts} on
+page \pageref{fig:SLR-Table-Generator.ipynb:conflicts}, but each of them occurs twice:  Once for an expression
+inside a pair of parentheses and once for an expression that is not enclosed in parentheses.  This example shows that
+conflicts that are caused by the ambiguity of a grammar cannot be avoided by a more powerful parsing method.  The
+results for the grammar of the programming language \texttt{C} are discussed at the beginning of the next section.
 
 \section{LALR Parsers$^*$ \label{section:lalr}}
 The number of states in an LR parser is often significantly larger than the number of states in an
