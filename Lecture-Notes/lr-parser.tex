@@ -604,7 +604,7 @@ Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is compu
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},t) := \texttt{error}\).
 \end{enumerate}
-Conflicts can arise between the first two rules. We distinguish between two types of conflicts.
+Most conflicts arise between the first two rules. We distinguish between two types of these conflicts.
 \begin{enumerate}
 \item A \blue{shift-reduce conflict}\index{shift-reduce conflict} occurs when both the first and second cases
       apply. In this situation, the set \(\mathcal{M}\) contains, on one hand, a marked rule of the form 
@@ -629,9 +629,15 @@ Conflicts can arise between the first two rules. We distinguish between two type
       and if at the same time \(t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)\), because then it is not clear which
       of the two rules the parser should apply when the next token to be read is \(t\).
 \end{enumerate}
+Furthermore, the second rule can conflict with the third rule:  If \(\mathcal{M}\) contains both the marked
+rule \(\widehat{s} \rightarrow s \bullet \symbol{36}\) and a marked rule \(c \rightarrow \delta \bullet\) with
+\(\symbol{36} \in \textsl{Follow}(c)\), then it is not clear whether the parser should accept the input or
+reduce the symbol stack using the rule \(c \rightarrow \delta\) when the next token is \(\symbol{36}\).  Section
+\ref{section:slr-table-generator} gives an example of such a conflict.
 
-If either of these conflicts occurs, we say that the grammar is not an SLR grammar\index{SLR grammar}. Such a
-grammar cannot be parsed using an SLR parser. We will later provide examples of both types of conflicts, but
+If any of these conflicts occurs, we say that the grammar is not an SLR grammar\index{SLR grammar}. Such a
+grammar cannot be parsed using an SLR parser. We will later provide examples of shift-reduce and reduce-reduce
+conflicts, but
 first, we want to examine a grammar where no conflicts occur and actually compute the functions
 \(\textsl{goto}()\) and \(\textsl{action}()\) for it. We use the grammar for arithmetic expressions that is shown in Figure \ref{fig:Expr.grammar}
 as a basis. 
@@ -1886,6 +1892,11 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
                         actionTable[token] = ('shift', newName)
                         self.mActionTable[stateName, token] = \
                             ('shift', newName)
+            # compute the accept action
+            for mr in state:
+                if mr == MarkedRule('ŝ', (self.mStart,), ('$',)):
+                    actionTable['$'] = 'accept'
+                    self.mActionTable[stateName, '$'] = 'accept'
             # compute reduce actions
             for mr in state:
                 if mr.is_complete():
@@ -1899,10 +1910,6 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
                                 ('reduce', r)
                         elif action1 != action2:
                             self.mConflicts = True
-            for mr in state:
-                if mr == MarkedRule('ŝ', (self.mStart,), ('$',)):
-                    actionTable['$'] = 'accept'
-                    self.mActionTable[stateName, '$'] = 'accept'
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The method \texttt{compute\_action\_table}.}
@@ -1911,7 +1918,7 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
 
 \begin{enumerate}
 \item Line 2 creates the empty action table.
-\item The \texttt{for} loop in line 3 -- 31 computes the actions of every state $\mathcal{M}$.  Line 4 looks up the
+\item The \texttt{for} loop in line 3 -- 32 computes the actions of every state $\mathcal{M}$.  Line 4 looks up the
       name of $\mathcal{M}$, and line 5 creates the dictionary \texttt{actionTable}, which collects the actions of
       $\mathcal{M}$.  Its keys are tokens.  In contrast to \texttt{mActionTable}, its \texttt{reduce} actions
       contain the grammar rules themselves instead of their names.  The notebook uses this dictionary to print
@@ -1923,26 +1930,37 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
       \texttt{all\_states} has given a name to the state $\textsl{goto}(\mathcal{M}, t)$, since $t$ follows the
       marker in a marked rule of $\mathcal{M}$.  The tokens are processed in sorted order, so that the actions are
       printed in the same order in every run.
-\item Line 16 -- 27 compute the \texttt{reduce} actions.  For every complete marked rule
-      $a \rightarrow \beta \bullet$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 20 creates
-      the action $\pair(\texttt{reduce}, a \rightarrow \beta)$, while line 19 looks up the action that has
-      already been entered for $t$.
-      \begin{enumerate}[(a)]
-      \item If there is no action for $t$ yet, line 22 -- 25 enter the new action into both dictionaries.  The
-            dictionary \texttt{mActionTable} gets the name of the rule instead of the rule itself.
-      \item Otherwise, a different action has been entered for $t$ before.  This is either a \texttt{shift}
-            action, and then we have found a shift-reduce conflict, or a \texttt{reduce} action with a different
-            rule, and then we have found a reduce-reduce conflict.  Line 27 records the conflict.  In addition,
-            the notebook prints the state and both actions.  The action table keeps the action that has been
-            entered first.  In particular, a shift-reduce conflict is resolved in favour of the \texttt{shift}
-            action.
-      \end{enumerate}
-\item Line 28 -- 31 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the marked rule
+\item Line 16 -- 19 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the marked rule
       $\widehat{s} \rightarrow s \bullet \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
       \texttt{accept}$.  The marked rule $\widehat{s} \rightarrow s\, \symbol{36} \bullet$ never occurs in a
       state, since the method \texttt{all\_states} skips the symbol $\symbol{36}$.  Hence, there is no
       \texttt{reduce} action for the rule $\widehat{s} \rightarrow s\, \symbol{36}$, as required by the definition
       of the function \textsl{action}.
+\item Line 21 -- 32 compute the \texttt{reduce} actions.  For every complete marked rule
+      $a \rightarrow \beta \bullet$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 25 creates
+      the action $\pair(\texttt{reduce}, a \rightarrow \beta)$, while line 24 looks up the action that has
+      already been entered for $t$.
+      \begin{enumerate}[(a)]
+      \item If there is no action for $t$ yet, line 27 -- 30 enter the new action into both dictionaries.  The
+            dictionary \texttt{mActionTable} gets the name of the rule instead of the rule itself.
+      \item Otherwise, a different action has been entered for $t$ before.  If this is a \texttt{shift} action,
+            we have found a shift-reduce conflict.  If it is the \texttt{accept} action, the parser cannot decide
+            whether it should accept the input or reduce it.  If it is a \texttt{reduce} action with a different
+            rule, we have found a reduce-reduce conflict.  Line 32 records the conflict.  In addition, the
+            notebook prints the state and both actions.  The action table keeps the action that has been entered
+            first.  In particular, a shift-reduce conflict is resolved in favour of the \texttt{shift} action.
+      \end{enumerate}
+      The \texttt{accept} action is entered before the \texttt{reduce} actions, so that a conflict between
+      \texttt{accept} and \texttt{reduce} is detected, too.  For example, consider the grammar
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $s \rightarrow a \mid \saquoted{x}$, \quad $a \rightarrow s$.
+      \\[0.2cm]
+      This grammar is ambiguous, since the derivation $s \Rightarrow a \Rightarrow s$ can be repeated arbitrarily
+      often.  The state $\textsl{goto}(q_0, s)$ contains both the marked rule
+      $\widehat{s} \rightarrow s \bullet \symbol{36}$ and the marked rule $a \rightarrow s \bullet$.  Since
+      $\symbol{36} \in \textsl{Follow}(a)$, the parser cannot decide whether it should accept or reduce with the
+      rule $a \rightarrow s$ if the next token is $\symbol{36}$.  This is the only conflict of this grammar.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -2004,7 +2022,6 @@ this state is not empty, line 7 -- 9 enter the names of both states into the got
 \label{fig:SLR-Table-Generator.ipynb:conflicts}
 \end{figure}
 
-\noindent
 For the grammar in the file \texttt{Examples/arith.g}, the notebook does not find any conflicts.  The file
 \texttt{Examples/arith-ambiguous.g} contains the ambiguous grammar shown in Figure
 \ref{fig:shift-reduce-conflict.grammar} on page \pageref{fig:shift-reduce-conflict.grammar}, extended by a rule for
@@ -2276,8 +2293,13 @@ token is an element of the intersection $L_1 \cap L_2$.
 \noindent
 \textbf{Remark}: Compared to an SLR parser, the possibility of reduce-reduce conflicts is reduced, because in
 an SLR parser, a reduce-reduce conflict already occurs if there exists a $t$ in the set $\textsl{Follow}(a)
-\cap \textsl{Follow}(c)$ and the $\textsl{Follow}$ sets are often larger than the sets $L_1$ and $L_2$. \eox 
+\cap \textsl{Follow}(c)$ and the $\textsl{Follow}$ sets are often larger than the sets $L_1$ and $L_2$. \eox
 \vspace*{0.3cm}
+
+As for SLR parsers, the second equation can also conflict with the third equation:  If $\mathcal{M}$ contains
+both the e.m.r.\@ $\widehat{s} \rightarrow s \bullet:\symbol{36}$ and an e.m.r.\@ $c \rightarrow \gamma \bullet:L$
+with $c \not= \widehat{s}$ and $\symbol{36} \in L$, and if the next token is $\symbol{36}$, then it is not clear
+whether the parser should accept the input or reduce the symbol stack using the rule $c \rightarrow \gamma$.
 
 \exampleEng
 We revisit the example of the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} and first calculate the set of all states.
