@@ -408,7 +408,8 @@ parsing is successful, it uses this information to compute all parse trees of th
 
 In the rest of this section we discuss the implementation of Earley's algorithm line by line.  To keep the
 listings short, they show a simplified version of the code in the notebook \texttt{01-Earley-Parser}:  We have
-removed the type annotations and the declarations that are only needed by the type checker.
+removed the type annotations, except for those that declare the fields of a data class, and the declarations that
+are only needed by the type checker.
 
 The implementation expects its input in the following form:
 \begin{enumerate}
@@ -442,7 +443,7 @@ functions and then attached to their class with two lines of the form
 The first of these lines makes the function a method of the class and the second line removes the global name of
 the function.  As these lines always have the same form, we will not mention them again.
 
-\subsection{The Class \texttt{EarleyObject}}
+\subsection{The Class \texttt{EarleyObject}\label{section:earley-object}}
 The class \texttt{EarleyObject} represents a single Earley object.  As the names of the member variables of this
 class refer to the letters $\alpha$ and $\beta$, we write an Earley object in this subsection in the form
 \\[0.2cm]
@@ -461,22 +462,14 @@ $\pair(a \rightarrow \alpha \mdot \beta, k)$.
                 xrightmargin  = 0.5cm,
                 gobble        = 4,
               ]{python3}
+    from dataclasses import dataclass
+
+    @dataclass(frozen=True, repr=False)
     class EarleyObject():
-        def __init__(self, variable, alpha, beta, index):
-            self.mVariable = variable
-            self.mAlpha    = alpha
-            self.mBeta     = beta
-            self.mIndex    = index
-
-        def __eq__(self, other):
-            return isinstance(other, EarleyObject)   and \
-                   self.mVariable == other.mVariable and \
-                   self.mAlpha    == other.mAlpha    and \
-                   self.mBeta     == other.mBeta     and \
-                   self.mIndex    == other.mIndex
-
-        def __hash__(self):
-            return hash(self.__repr__())
+        mVariable: str
+        mAlpha:    tuple[str, ...]
+        mBeta:     tuple[str, ...]
+        mIndex:    int
 
         def __repr__(self):
             rhs = ' '.join(self.mAlpha + ('•',) + self.mBeta)
@@ -489,27 +482,57 @@ $\pair(a \rightarrow \alpha \mdot \beta, k)$.
 
 \noindent
 Figure \ref{fig:01-Earley-Parser.ipynb:EarleyObject} on page \pageref{fig:01-Earley-Parser.ipynb:EarleyObject} shows
-the definition of this class.
+the definition of this class.  The class \texttt{EarleyObject} is a \blue{data class}\index{data class}, i.e.~a class
+whose main purpose is to store data.  For a data class, \textsl{Python} generates the methods that such a class
+needs, so we only have to declare which data are stored.
 \begin{enumerate}
-\item Line 2 -- 6 define the constructor.  It stores the components of the Earley object
-      $\pair(a \rightarrow \alpha \mdot \beta, k)$ in four member variables:
+\item Line 1 imports the decorator \texttt{dataclass} from the module \texttt{dataclasses} of the standard library.
+      A \blue{decorator}\index{decorator} is written as the character ``\texttt{@}'' followed by its name in front of
+      the definition of a class or of a function.  It modifies the definition that follows it.  In line 3, the
+      decorator \texttt{dataclass} turns the class \texttt{EarleyObject} into a data class.
+\item Line 4 -- 8 define the class and declare its \blue{fields}\index{field of a data class}, i.e.~its member
+      variables, together with their types.  The fields store the components of the Earley object
+      $\pair(a \rightarrow \alpha \mdot \beta, k)$:
       \begin{enumerate}[(a)]
       \item \texttt{mVariable} stores the variable $a$,
       \item \texttt{mAlpha} stores the symbols of $\alpha$ as a tuple of strings,
       \item \texttt{mBeta} stores the symbols of $\beta$ as a tuple of strings, and
       \item \texttt{mIndex} stores the number $k$.
       \end{enumerate}
-\item Line 8 -- 13 define the method \texttt{\_\_eq\_\_}.  Two Earley objects are equal if and only if they agree in
-      all four components.  \textsl{Python} derives the operator \texttt{!=} from the method \texttt{\_\_eq\_\_}, so
-      \texttt{\_\_ne\_\_} need not be defined.
-\item Line 15 -- 16 define the method \texttt{\_\_hash\_\_}.  We need this method because Earley's algorithm stores
-      Earley objects in sets and \textsl{Python} requires the elements of a set to have a hash value.
-      The hash value of an Earley object is computed by converting the object into a string and taking the hash
-      value of this string.  Equal Earley objects are converted into equal strings and therefore get equal hash
-      values.
-\item Line 18 -- 20 define the method \texttt{\_\_repr\_\_}, which converts an Earley object into a string.
-      Line 19 joins the symbols of $\alpha$, the marker ``$\bullet$'', and the symbols of $\beta$, separated by
-      blanks.  Line 20 then builds the string that represents the Earley object.  For example, the Earley object
+\item From these declarations, the decorator \texttt{dataclass} generates the following methods:
+      \begin{enumerate}[(a)]
+      \item The constructor \texttt{\_\_init\_\_} has one parameter for every field.  The parameters occur in the
+            order in which the fields are declared, and the constructor stores the arguments in the fields.  For
+            example, the call
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            \texttt{EarleyObject('expr', ('expr', '"+"'), ('prod',), 0)}
+            \\[0.2cm]
+            creates the Earley object
+            $\pair(\textsl{expr} \rightarrow \textsl{expr} \;\squoted{+} \mdot \textsl{prod}, 0)$.
+      \item The method \texttt{\_\_eq\_\_} compares two objects field by field:  Two Earley objects are equal if and
+            only if they agree in all four fields.  \textsl{Python} derives the operator \texttt{!=} from the method
+            \texttt{\_\_eq\_\_}, so \texttt{\_\_ne\_\_} need not be defined.
+      \end{enumerate}
+\item The arguments of the decorator in line 3 control which further methods are generated:
+      \begin{enumerate}[(a)]
+      \item The argument \texttt{frozen=True} makes the data class
+            \blue{frozen}\index{data class!frozen}:  After an Earley object has been created, its fields cannot be
+            changed.  An assignment to a field raises the exception \texttt{FrozenInstanceError}.  As the fields of
+            a frozen object never change, its hash value cannot change either.  Therefore, the decorator also
+            generates the method \texttt{\_\_hash\_\_}, which computes the hash value of an object from the values of
+            all its fields.  We need this method because Earley's algorithm stores Earley objects in sets and
+            \textsl{Python} requires the elements of a set to have a hash value.  For the same reason, the fields
+            \texttt{mAlpha} and \texttt{mBeta} are tuples:  Lists can be changed and therefore have no hash value.
+      \item By default, the decorator also generates a method \texttt{\_\_repr\_\_}, which lists the names and the
+            values of all fields.  The argument \texttt{repr=False} suppresses this method, since line 10 -- 12
+            define a method \texttt{\_\_repr\_\_} of our own.
+      \end{enumerate}
+      Without the decorator, we would have to write the constructor and the methods \texttt{\_\_eq\_\_} and
+      \texttt{\_\_hash\_\_} ourselves.
+\item Line 10 -- 12 define the method \texttt{\_\_repr\_\_}, which converts an Earley object into a string.
+      Line 11 joins the symbols of $\alpha$, the marker ``$\bullet$'', and the symbols of $\beta$, separated by
+      blanks.  Line 12 then builds the string that represents the Earley object.  For example, the Earley object
       $\pair(\textsl{expr} \rightarrow \textsl{expr} \;\squoted{+} \mdot \textsl{prod}, 0)$
       is converted into the string
       \\[0.2cm]
@@ -877,8 +900,8 @@ This method has the same structure as the method \texttt{complete}.
 \item The \texttt{for} loop in line 11 -- 14 inspects all grammar rules.  Line 12 selects those rules that have
       the variable $c$ on their left hand side.  For every such rule $c \rightarrow \gamma$, line 13 -- 14 add the
       Earley object $\pair(c \rightarrow \mdot\gamma, i)$ to \texttt{newQi}.  The list \texttt{rule[1:]} contains
-      the symbols of the right hand side $\gamma$.  It has to be converted into a tuple, since the methods of the
-      class \texttt{EarleyObject} assume that \texttt{mBeta} is a tuple.
+      the symbols of the right hand side $\gamma$.  It has to be converted into a tuple, since the hash value of an
+      Earley object is computed from the values of its fields and a list has no hash value.
 \item Line 15 -- 18 agree with the lines 17 -- 20 of the method \texttt{complete}.  The iteration is needed here,
       since the right hand side $\gamma$ of a rule can start with a variable.  In this case, the new Earley object
       leads to further predictions.
