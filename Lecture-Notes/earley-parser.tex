@@ -53,7 +53,7 @@ The central notion that is needed to understand Earley's algorithm is the notion
   $w = x_1x_2 \cdots x_n \in \Sigma^*$ is a string of length $n$.  A pair of the form
   \\[0.2cm]
   \hspace*{1.3cm}
-  $\langle a \rightarrow \beta \bullet \gamma, k \rangle$
+  $\langle a \rightarrow \beta \mdot \gamma, k \rangle$
   \\[0.2cm]
   is called an \blue{Earley object} if and only if
   \begin{enumerate}[(a)]
@@ -79,7 +79,7 @@ the parser after it has parsed the tokens $x_1$, $\cdots$, $x_i$.
 The interpretation of 
 \\[0.2cm]
 \hspace*{1.3cm}
-$\langle a \rightarrow \beta \bullet \gamma, k \rangle \in Q_j$ \quad where  $j \geq k$
+$\langle a \rightarrow \beta \mdot \gamma, k \rangle \in Q_j$ \quad where  $j \geq k$
 \\[0.2cm]
 is as follows:
 \begin{enumerate}
@@ -105,7 +105,7 @@ $\widehat{G} = \langle V \cup \{\widehat{s}\}, \Sigma, R \cup \{ \widehat{s} \ri
 Next, the set $Q_0$ is defined as
 \\[0.2cm]
 \hspace*{1.3cm}
-$Q_0 := \bigl\{ \pair(\widehat{s} \rightarrow \bullet s, 0) \bigr\}$.
+$Q_0 := \bigl\{ \pair(\widehat{s} \rightarrow \mdot s, 0) \bigr\}$.
 \\[0.2cm]
 The reason is that the  parser should recognize the start symbol $s$ at the beginning of the string $x_1 \cdots
 x_n$.
@@ -115,7 +115,7 @@ following three operations:
 \item \emph{Scanning}\index{Earley's algorithm!scanning}
 
       If the set $Q_j$ contains an Earley object of the form 
-      $\pair(a \rightarrow \beta \bullet T \gamma, k)$ and $T$ is a 
+      $\pair(a \rightarrow \beta \mdot T \gamma, k)$ and $T$ is a 
       terminal, then the parser tries to parse the right hand side of the grammar rule
       $a \rightarrow \beta T \gamma$ and, after reading $x_{k+1} \cdots x_j$, it has already recognized $\beta$.
       If this $\beta$ is now followed by the token $T$, then in order to recognize $a$ with the grammar rule
@@ -123,45 +123,45 @@ following three operations:
       $x_{j+2} \cdots x_n$.  Hence, in this case we add the Earley object
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\pair(a \rightarrow \beta T \bullet \gamma, k)$
+      $\pair(a \rightarrow \beta T \mdot \gamma, k)$
       \\[0.2cm]
       to the set $Q_{j+1}$:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\pair(a \rightarrow \beta \bullet T \gamma, k) \in Q_j \wedge x_{j+1} = T
+      $\pair(a \rightarrow \beta \mdot T \gamma, k) \in Q_j \wedge x_{j+1} = T
        \;\Rightarrow\;
-       Q_{j+1} := Q_{j+1} \cup \bigl\{ \pair(a \rightarrow \beta T \bullet \gamma, k) \bigr\}$.
+       Q_{j+1} := Q_{j+1} \cup \bigl\{ \pair(a \rightarrow \beta T \mdot \gamma, k) \bigr\}$.
       \\[0.2cm]
       This operation is also called \emph{reading}, since it reads the next token.
 \item \emph{Prediction}\index{Earley's algorithm!prediction}
 
-      If the set $Q_j$ contains an Earley object of the form $\pair(a \rightarrow \beta \bullet c \delta, k)$
+      If the set $Q_j$ contains an Earley object of the form $\pair(a \rightarrow \beta \mdot c \delta, k)$
       such that $c$ is a variable, then the parser tries to recognize $c\delta$ after having
       parsed the substring $x_{k+1} \cdots x_j$ as $\beta$.  Hence the parser now has to recognize the variable
       $c$.  Therefore, for every rule of the form $c \rightarrow \gamma$ that is contained in the grammar $G$
       the Earley object 
-      $\pair(c \rightarrow \bullet \gamma, j)$ is added to the set $Q_j$:
+      $\pair(c \rightarrow \mdot \gamma, j)$ is added to the set $Q_j$:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\pair(a \rightarrow \beta \bullet c \delta, k) \in Q_j 
+      $\pair(a \rightarrow \beta \mdot c \delta, k) \in Q_j 
        \wedge (c \rightarrow \gamma) \in R 
        \;\Rightarrow\;
-       Q_j := Q_j \cup\bigl\{ \pair(c \rightarrow \bullet\gamma, j)\bigr\}$.
+       Q_j := Q_j \cup\bigl\{ \pair(c \rightarrow \mdot\gamma, j)\bigr\}$.
 \item \emph{Completion}\index{Earley's algorithm!completion}
 
-      If the set $Q_i$ contains an Earley object of the form $\pair(c \rightarrow \gamma \bullet, j)$
+      If the set $Q_i$ contains an Earley object of the form $\pair(c \rightarrow \gamma \mdot, j)$
       and the set $Q_j$ contains an Earley object of the form 
-      $\pair(a \rightarrow \beta \bullet c \delta,k)$, then the parser has tried to parse the variable $c$
+      $\pair(a \rightarrow \beta \mdot c \delta,k)$, then the parser has tried to parse the variable $c$
       after it had read the substring $x_1\cdots x_{j}$ and after reading the substring $x_{j+1}\cdots x_i$
       it has recognized the variable $c$.
       Therefore, the Earley object
-      $\pair(a \rightarrow \beta c \bullet \delta,k)$
+      $\pair(a \rightarrow \beta c \mdot \delta,k)$
       is now added to the set $Q_i$:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\pair(c \rightarrow \gamma \bullet, j) \in Q_i \wedge
-       \pair(a \rightarrow \beta \bullet c \delta,k) \in Q_j \;\Rightarrow\;
-       Q_i := Q_i \cup \bigl\{ \pair(a \rightarrow \beta c \bullet \delta,k) \bigr\}
+      $\pair(c \rightarrow \gamma \mdot, j) \in Q_i \wedge
+       \pair(a \rightarrow \beta \mdot c \delta,k) \in Q_j \;\Rightarrow\;
+       Q_i := Q_i \cup \bigl\{ \pair(a \rightarrow \beta c \mdot \delta,k) \bigr\}
       $.
 \end{enumerate}
 When trying to parse the string $w = x_1 \cdots x_n$ with the grammar
@@ -170,7 +170,7 @@ $G = \langle V, \Sigma, R, s \rangle$ Earley's algorithm works as follows:
 \item The sets  $Q_i$ are initialized as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
-      $Q_0 := \bigl\{ \pair(\widehat{s} \rightarrow \bullet s, 0) \bigr\}$,
+      $Q_0 := \bigl\{ \pair(\widehat{s} \rightarrow \mdot s, 0) \bigr\}$,
       \\[0.2cm]
       \hspace*{1.3cm}
       $Q_i := \bigl\{ \bigr\}$ \quad for $i=1,\cdots,n$.
@@ -191,7 +191,7 @@ $G = \langle V, \Sigma, R, s \rangle$ Earley's algorithm works as follows:
       completion in $Q_i$ again.  In this case prediction and completion have to be iterated until no further Earley
       objects are generated for $Q_i$.
 \item If after termination of the algorithm the set  $Q_n$ contains the Earley object
-      $\pair(\widehat{s} \rightarrow s \bullet,0)$, then parsing is successful and we have shown that
+      $\pair(\widehat{s} \rightarrow s \mdot,0)$, then parsing is successful and we have shown that
       the string $w = x_1 \cdots x_n$ is an element of $L(G)$.
 \end{enumerate}
   
@@ -237,65 +237,65 @@ $p$ for \texttt{prod}, and use $f$ as an abbreviation for \texttt{fact}.
 \item We initialize $Q_0$ as
       \\[0.2cm]
       \hspace*{1.3cm}
-      $Q_0 = \{ \pair(\widehat{s} \rightarrow \bullet\, e, 0) \}$. 
+      $Q_0 = \{ \pair(\widehat{s} \rightarrow \mdot e, 0) \}$. 
       \\[0.2cm]
       The sets $Q_1$, $Q_2$, $Q_3$, $Q_4$ and $Q_5$ are initially empty. If we apply the completion operation
       to the set $Q_0$, we find no new Earley objects.
 
       Next, we apply the prediction operation to the Earley object  
-      $\pair(\widehat{s} \rightarrow \bullet\, e, 0)$. This initially adds the following two Earley objects to
+      $\pair(\widehat{s} \rightarrow \mdot e, 0)$. This initially adds the following two Earley objects to
       the set $Q_0$: 
       \[
-        \pair(e \rightarrow \bullet\, e\, \squoted{+}\, p, 0) 
+        \pair(e \rightarrow \mdot e \;\squoted{+}\; p, 0) 
         \quad \text{and} \quad 
-        \pair(e \rightarrow \bullet\, p, 0)
+        \pair(e \rightarrow \mdot p, 0)
       \]  
-      We can apply the prediction operation once more to the Earley object $\pair(e \rightarrow \bullet\, p, 0)$,
+      We can apply the prediction operation once more to the Earley object $\pair(e \rightarrow \mdot p, 0)$,
       which results in two new Earley objects:   
       \[
-        \pair(p \rightarrow \bullet\, p\, \squoted{*}\, f, 0) 
+        \pair(p \rightarrow \mdot p \;\squoted{*}\; f, 0) 
         \quad \text{and} \quad 
-        \pair(p \rightarrow \bullet\, f, 0)
+        \pair(p \rightarrow \mdot f, 0)
       \]  
-      Applying the prediction operation to the Earley object $\pair(p \rightarrow \bullet\, f, 0)$, we finally
+      Applying the prediction operation to the Earley object $\pair(p \rightarrow \mdot f, 0)$, we finally
       add the following Earley objects to $Q_0$:   
       \[
-        \pair(f \rightarrow \bullet\, \squoted{1}, 0), \quad 
-        \pair(f \rightarrow \bullet\, \squoted{2}, 0), \quad \text{and} \quad 
-        \pair(f \rightarrow \bullet\, \squoted{3}, 0)
+        \pair(f \rightarrow \mdot \squoted{1}, 0), \quad 
+        \pair(f \rightarrow \mdot \squoted{2}, 0), \quad \text{and} \quad 
+        \pair(f \rightarrow \mdot \squoted{3}, 0)
       \]  
       In total, $Q_0$ now contains the following Earley objects:  
       \begin{enumerate}
-      \item $\pair(\widehat{s} \rightarrow \bullet\, e, 0)$,
-      \item $\pair(e \rightarrow \bullet\, e\, \squoted{+}\, p, 0)$,
-      \item $\pair(e \rightarrow \bullet\, p, 0)$,
-      \item $\pair(p \rightarrow \bullet\, p\, \squoted{*}\, f, 0)$,
-      \item $\pair(p \rightarrow \bullet\, f, 0)$,
-      \item $\pair(f \rightarrow \bullet\, \squoted{1}, 0)$,
-      \item $\pair(f \rightarrow \bullet\, \squoted{2}, 0)$,
-      \item $\pair(f \rightarrow \bullet\, \squoted{3}, 0)$.
+      \item $\pair(\widehat{s} \rightarrow \mdot e, 0)$,
+      \item $\pair(e \rightarrow \mdot e \;\squoted{+}\; p, 0)$,
+      \item $\pair(e \rightarrow \mdot p, 0)$,
+      \item $\pair(p \rightarrow \mdot p \;\squoted{*}\; f, 0)$,
+      \item $\pair(p \rightarrow \mdot f, 0)$,
+      \item $\pair(f \rightarrow \mdot \squoted{1}, 0)$,
+      \item $\pair(f \rightarrow \mdot \squoted{2}, 0)$,
+      \item $\pair(f \rightarrow \mdot \squoted{3}, 0)$.
       \end{enumerate}
       Next, we apply the scanning operation to $Q_0$. Since the first character of the string to be parsed is
       “1”, the set $Q_1$ takes the following form:   
       \[
-        Q_1 = \bigl\{ \pair(f \rightarrow \squoted{1}\, \bullet, 0) \bigr\}
+        Q_1 = \bigl\{ \pair(f \rightarrow \squoted{1}\mdot, 0) \bigr\}
       \]
 \item Now, we set $i = 1$ and first apply the completion operation to $Q_1$. Based on the Earley object
-      $\pair(f \rightarrow \squoted{1}\, \bullet, 0)$ in $Q_1$, we look for an Earley object in $Q_0$ where the marker
+      $\pair(f \rightarrow \squoted{1}\mdot, 0)$ in $Q_1$, we look for an Earley object in $Q_0$ where the marker
       “$\bullet$” is positioned before the variable $f$. We find the Earley object
-       $\pair(p \rightarrow \bullet\, f, 0)$. Therefore, we add the following Earley object to $Q_1$:   
+       $\pair(p \rightarrow \mdot f, 0)$. Therefore, we add the following Earley object to $Q_1$:   
        \[
-         \pair(p \rightarrow f\, \bullet, 0)
+         \pair(p \rightarrow f\mdot, 0)
        \]  
        We can then apply the completion operation again. After repeated applications, $Q_1$ contains the
        following Earley objects:
        \begin{enumerate}
-       \item $\pair(f \rightarrow \squoted{1}\, \bullet, 0)$,
-       \item $\pair(p \rightarrow f\, \bullet, 0)$,
-       \item $\pair(p \rightarrow p \bullet \squoted{*}\, f, 0)$, 
-       \item $\pair(e \rightarrow p\, \bullet, 0)$,
-       \item $\pair(e \rightarrow e \bullet \squoted{+}\, p, 0)$,
-       \item $\pair(\widehat{s} \rightarrow e\, \bullet, 0)$.
+       \item $\pair(f \rightarrow \squoted{1}\mdot, 0)$,
+       \item $\pair(p \rightarrow f\mdot, 0)$,
+       \item $\pair(p \rightarrow p \mdot \squoted{*}\; f, 0)$, 
+       \item $\pair(e \rightarrow p\mdot, 0)$,
+       \item $\pair(e \rightarrow e \mdot \squoted{+}\; p, 0)$,
+       \item $\pair(\widehat{s} \rightarrow e\mdot, 0)$.
        \end{enumerate}  
        Next, we apply the prediction operation to these Earley objects. However, since the marker “$\bullet$” in
        none of the Earley objects in $Q_1$ precedes a variable, no new Earley objects are generated.   
@@ -303,15 +303,15 @@ $p$ for \texttt{prod}, and use $f$ as an abbreviation for \texttt{fact}.
        Finally, we apply the scanning operation to $Q_1$. Since the character “\texttt{+}” is at position 2 in
        the string “\texttt{1+2*3}” and $Q_1$ contains the Earley object   
        \[
-         \pair(e \rightarrow e \bullet \squoted{+}\, p, 0),
+         \pair(e \rightarrow e \mdot \squoted{+}\; p, 0),
        \]  
        we add the following Earley object to $Q_2$:  
        \[
-         \pair(e \rightarrow e\, \squoted{+} \bullet p, 0)
+         \pair(e \rightarrow e \;\squoted{+} \mdot p, 0)
        \]  
 \item Next, we set $i = 2$ and first apply the completion operation to $Q_2$. At this point, we have  
       \[
-        Q_2 = \{ \pair(e \rightarrow e\, \squoted{+} \bullet p, 0) \}.
+        Q_2 = \{ \pair(e \rightarrow e \;\squoted{+} \mdot p, 0) \}.
       \]  
       Since the marker “$\bullet$” in the only Earley object present here is not at the end of the grammar rule,
       the completion operation does not yield any new Earley objects in this step.   
@@ -319,58 +319,58 @@ $p$ for \texttt{prod}, and use $f$ as an abbreviation for \texttt{fact}.
       Next, we apply the prediction operation to $Q_2$. Since the marker precedes the variable $p$, we first
       find the following two Earley objects:   
       \[
-        \pair(p \rightarrow \bullet\, f, 2) \quad \text{and} \quad \pair(p \rightarrow \bullet\, p\, \squoted{*}\, f, 2).
+        \pair(p \rightarrow \mdot f, 2) \quad \text{and} \quad \pair(p \rightarrow \mdot p \;\squoted{*}\; f, 2).
       \]  
       Since in the first Earley object the marker precedes the variable $f$, the prediction operation can be
       applied once more, yielding the following additional Earley objects:   
       \begin{enumerate}
-      \item $\pair(f \rightarrow \bullet\, \squoted{1}, 2)$, 
-      \item $\pair(f \rightarrow \bullet\, \squoted{2}, 2)$,
-      \item $\pair(f \rightarrow \bullet\, \squoted{3}, 2)$.
+      \item $\pair(f \rightarrow \mdot \squoted{1}, 2)$, 
+      \item $\pair(f \rightarrow \mdot \squoted{2}, 2)$,
+      \item $\pair(f \rightarrow \mdot \squoted{3}, 2)$.
       \end{enumerate}  
       Finally, we apply the scanning operation to $Q_2$. Since the third character of the string
       “\texttt{1+2*3}” is the digit “2”, $Q_3$ now takes the form   
       \[
-        Q_3 = \{ \pair(f \rightarrow \squoted{2}\, \bullet, 2) \}.
+        Q_3 = \{ \pair(f \rightarrow \squoted{2}\mdot, 2) \}.
       \]
 \item We set $i = 3$ and apply the completion operation to $Q_3$. This adds  
       \[
-        \pair(p \rightarrow f\, \bullet, 2)
+        \pair(p \rightarrow f\mdot, 2)
       \]  
       to $Q_3$. Here, we can apply the completion operation once more. Through iterative application of the
       completion operation, we additionally obtain the following Earley objects:   
       \begin{enumerate}
-      \item $\pair(p \rightarrow p \bullet \squoted{*}\, f, 2)$,
-      \item $\pair(e \rightarrow e\, \squoted{+}\, p\, \bullet, 0)$,
-      \item $\pair(e \rightarrow e \bullet \squoted{+}\, p, 0)$,
-      \item $\pair(\widehat{s} \rightarrow e\, \bullet, 0)$.
+      \item $\pair(p \rightarrow p \mdot \squoted{*}\; f, 2)$,
+      \item $\pair(e \rightarrow e \;\squoted{+}\; p\mdot, 0)$,
+      \item $\pair(e \rightarrow e \mdot \squoted{+}\; p, 0)$,
+      \item $\pair(\widehat{s} \rightarrow e\mdot, 0)$.
       \end{enumerate}  
       Finally, we apply the scanning operation. Since the next character to be read is the symbol “\texttt{*}”,
       we get   
       \[
-        Q_4 = \{ \pair(p \rightarrow p\, \squoted{*} \bullet f, 2) \}.
+        Q_4 = \{ \pair(p \rightarrow p \;\squoted{*} \mdot f, 2) \}.
       \] 
 \item We set $i = 4$. The completion operation does not yield any new Earley objects. The prediction operation
       provides the following Earley objects:   
       \begin{enumerate}
-      \item $\pair(f \rightarrow \bullet\, \squoted{1}, 4)$, 
-      \item $\pair(f \rightarrow \bullet\, \squoted{2}, 4)$,
-      \item $\pair(f \rightarrow \bullet\, \squoted{3}, 4)$.
+      \item $\pair(f \rightarrow \mdot \squoted{1}, 4)$, 
+      \item $\pair(f \rightarrow \mdot \squoted{2}, 4)$,
+      \item $\pair(f \rightarrow \mdot \squoted{3}, 4)$.
       \end{enumerate}  
       Since the next character is the digit “3”, the scanning operation for $Q_5$ results in:  
       \[
-        Q_5 = \{ \pair(f \rightarrow \squoted{3}\, \bullet, 4) \}.
+        Q_5 = \{ \pair(f \rightarrow \squoted{3}\mdot, 4) \}.
       \]
 \item We set $i = 5$. The completion operation sequentially provides the following Earley objects:
       \begin{enumerate}
-      \item $\pair(p \rightarrow p\, \squoted{*}\, f\, \bullet, 2)$,
-      \item $\pair(e \rightarrow e\, \squoted{+}\, p\, \bullet, 0)$,
-      \item $\pair(p \rightarrow p \bullet \squoted{*}\, f, 2)$,
-      \item $\pair(e \rightarrow e \bullet \squoted{+}\, p, 0)$,
-      \item $\pair(\widehat{s} \rightarrow e\, \bullet, 0)$.
+      \item $\pair(p \rightarrow p \;\squoted{*}\; f\mdot, 2)$,
+      \item $\pair(e \rightarrow e \;\squoted{+}\; p\mdot, 0)$,
+      \item $\pair(p \rightarrow p \mdot \squoted{*}\; f, 2)$,
+      \item $\pair(e \rightarrow e \mdot \squoted{+}\; p, 0)$,
+      \item $\pair(\widehat{s} \rightarrow e\mdot, 0)$.
       \end{enumerate}
 \end{enumerate}
-Since the set $Q_5$ contains the Earley object $\pair(\widehat{s} \rightarrow e\, \bullet, 0)$, we can conclude
+Since the set $Q_5$ contains the Earley object $\pair(\widehat{s} \rightarrow e\mdot, 0)$, we can conclude
 that the string “\texttt{1+2*3}” indeed belongs to the language generated by the given grammar.
 
 \noindent
@@ -378,7 +378,7 @@ that the string “\texttt{1+2*3}” indeed belongs to the language generated by
 \blue{recognizer}\index{recognizer} and not a parser:  It decides whether $w \in L(G)$, but it does not compute a
 parse tree.  In order to construct a parse tree, every Earley object that is created by scanning or completion has
 to remember the Earley objects from which it has been created.  Starting with the Earley object
-$\pair(\widehat{s} \rightarrow s \bullet, 0) \in Q_n$, these references can then be followed backwards to build the
+$\pair(\widehat{s} \rightarrow s \mdot, 0) \in Q_n$, these references can then be followed backwards to build the
 parse tree.  If the grammar is ambiguous, an Earley object can be created in several ways, and then the string has
 several parse trees.  The notebook \texttt{02-Earley-Parser-Chatty}, which is presented in the next section,
 implements this idea and computes all parse trees of a string.
@@ -447,7 +447,7 @@ The class \texttt{EarleyObject} represents a single Earley object.  As the names
 class refer to the letters $\alpha$ and $\beta$, we write an Earley object in this subsection in the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$\pair(a \rightarrow \alpha \bullet \beta, k)$.
+$\pair(a \rightarrow \alpha \mdot \beta, k)$.
 
 \begin{figure}[!ht]
 \centering
@@ -492,7 +492,7 @@ Figure \ref{fig:01-Earley-Parser.ipynb:EarleyObject} on page \pageref{fig:01-Ear
 the definition of this class.
 \begin{enumerate}
 \item Line 2 -- 6 define the constructor.  It stores the components of the Earley object
-      $\pair(a \rightarrow \alpha \bullet \beta, k)$ in four member variables:
+      $\pair(a \rightarrow \alpha \mdot \beta, k)$ in four member variables:
       \begin{enumerate}[(a)]
       \item \texttt{mVariable} stores the variable $a$,
       \item \texttt{mAlpha} stores the symbols of $\alpha$ as a tuple of strings,
@@ -510,7 +510,7 @@ the definition of this class.
 \item Line 18 -- 20 define the method \texttt{\_\_repr\_\_}, which converts an Earley object into a string.
       Line 19 joins the symbols of $\alpha$, the marker ``$\bullet$'', and the symbols of $\beta$, separated by
       blanks.  Line 20 then builds the string that represents the Earley object.  For example, the Earley object
-      $\pair(\textsl{expr} \rightarrow \textsl{expr} \quoted{+} \bullet\; \textsl{prod}, 0)$
+      $\pair(\textsl{expr} \rightarrow \textsl{expr} \;\squoted{+} \mdot \textsl{prod}, 0)$
       is converted into the string
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -577,16 +577,16 @@ Figure \ref{fig:01-Earley-Parser.ipynb:EarleyObject:methods} on page
 \texttt{EarleyObject}.
 \begin{enumerate}
 \item Line 1 -- 2 define the method \texttt{isComplete}.  It checks whether the Earley object has the form
-      $\pair(a \rightarrow \alpha \bullet, k)$, i.e.~whether the marker ``$\bullet$'' is at the end of the rule.
+      $\pair(a \rightarrow \alpha \mdot, k)$, i.e.~whether the marker ``$\bullet$'' is at the end of the rule.
       This is the case if and only if \texttt{mBeta} is the empty tuple.
 \item Line 7 -- 8 define the method \texttt{sameVar}.  The call \texttt{self.sameVar($c$)} checks whether the
       symbol following the marker is the variable $c$, i.e.~whether the Earley object has the form
-      $\pair(a \rightarrow \alpha \bullet c\, \beta, k)$.
+      $\pair(a \rightarrow \alpha \mdot c\, \beta, k)$.
       The length of \texttt{mBeta} has to be tested first, since the expression \texttt{mBeta[0]} would raise an
       exception if \texttt{mBeta} were empty.
 \item Line 13 -- 14 define the method \texttt{scan}.  The call \texttt{self.scan($T$)} checks whether the symbol
       following the marker is the token $T$, i.e.~whether the Earley object has the form
-      $\pair(a \rightarrow \alpha \bullet T \beta, k)$.
+      $\pair(a \rightarrow \alpha \mdot T \beta, k)$.
       The method \texttt{scan} performs the same test as the method \texttt{sameVar}.  We nevertheless use two
       names, so that the methods \texttt{complete} and \texttt{scan} of the class \texttt{EarleyParser} say what
       they are looking for.
@@ -599,8 +599,8 @@ Figure \ref{fig:01-Earley-Parser.ipynb:EarleyObject:methods} on page
       \item In all other cases, line 24 returns \texttt{None}.
       \end{enumerate}
 \item Line 29 -- 33 define the method \texttt{moveDot}, which assumes that \texttt{mBeta} is not empty.
-      Given an Earley object of the form $\pair(a \rightarrow \alpha \bullet X \beta, k)$, it moves the marker over
-      the symbol $X$ and returns the new Earley object $\pair(a \rightarrow \alpha X \bullet \beta, k)$.
+      Given an Earley object of the form $\pair(a \rightarrow \alpha \mdot X \beta, k)$, it moves the marker over
+      the symbol $X$ and returns the new Earley object $\pair(a \rightarrow \alpha X \mdot \beta, k)$.
       To this end, line 31 appends the first element of \texttt{mBeta} to \texttt{mAlpha} and line 32
       removes this element from \texttt{mBeta}.  The original Earley object is not changed.
 \end{enumerate}
@@ -652,11 +652,11 @@ The class \texttt{Grammar} represents a context-free grammar.  Its definition is
 \item Line 2 -- 3 define the constructor, which stores the list of grammar rules in the member variable
       \texttt{mRules}.
 \item Line 5 -- 6 define the method \texttt{startObject}.  It returns the Earley object
-      $\pair(\widehat{s} \rightarrow \bullet\, s, 0)$ that is used to initialize the set $Q_0$.
+      $\pair(\widehat{s} \rightarrow \mdot s, 0)$ that is used to initialize the set $Q_0$.
       The new start variable $\widehat{s}$ is represented by the string \texttt{'Start'}.  As this string contains
       both upper case and lower case letters, it differs from all variables and tokens of the grammar.
 \item Line 11 -- 12 define the method \texttt{finishObject}.  It returns the Earley object
-      $\pair(\widehat{s} \rightarrow s\, \bullet, 0)$.  Parsing is successful if this Earley object is an element of
+      $\pair(\widehat{s} \rightarrow s\mdot, 0)$.  Parsing is successful if this Earley object is an element of
       the set $Q_n$.
 \item Line 17 -- 18 define the method \texttt{startVar}, which returns the start symbol $s$ of the grammar.  This
       is the variable on the left hand side of the first rule, i.e.~the first element of the first list in
@@ -720,7 +720,7 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
             tokens.  Then \texttt{mString[$i$]} is the token $x_i$ for all $i \in \{1, \cdots, n\}$.
       \item Line 5 creates the list \texttt{mStateList} of the $n+1$ sets $Q_0$, $Q_1$, $\cdots$, $Q_n$, which are
             all empty at this point.  The set $Q_i$ is stored in \texttt{mStateList[$i$]}.
-      \item Line 6 initializes $Q_0$ as the set $\bigl\{ \pair(\widehat{s} \rightarrow \bullet\, s, 0) \bigr\}$.
+      \item Line 6 initializes $Q_0$ as the set $\bigl\{ \pair(\widehat{s} \rightarrow \mdot s, 0) \bigr\}$.
       \end{enumerate}
 \item Line 8 -- 20 define the function \texttt{earley\_parse}, which is attached to the class as the method
       \texttt{parse} in line 22.
@@ -739,7 +739,7 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
       \item Line 16 applies the scanning operation, which initializes the set $Q_{i+1}$.
       \item After the \texttt{for} loop has finished, line 17 checks whether the set $Q_n$, which is the last
             element of the list \texttt{mStateList}, contains the Earley object
-            $\pair(\widehat{s} \rightarrow s\, \bullet, 0)$.  Line 18 and line 20 print the result.
+            $\pair(\widehat{s} \rightarrow s\mdot, 0)$.  Line 18 and line 20 print the result.
       \end{enumerate}
 \end{enumerate}
 
@@ -790,9 +790,9 @@ Figure \ref{fig:01-Earley-Parser.ipynb:complete} on page \pageref{fig:01-Earley-
 method \texttt{complete}.  The call \texttt{self.complete($i$)} applies the completion operation to the set $Q_i$:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\pair(c \rightarrow \gamma \bullet, j) \in Q_i \wedge
- \pair(a \rightarrow \beta \bullet c \delta,k) \in Q_j \;\Rightarrow\;
- Q_i := Q_i \cup \bigl\{ \pair(a \rightarrow \beta c \bullet \delta,k) \bigr\}$.
+$\pair(c \rightarrow \gamma \mdot, j) \in Q_i \wedge
+ \pair(a \rightarrow \beta \mdot c \delta,k) \in Q_j \;\Rightarrow\;
+ Q_i := Q_i \cup \bigl\{ \pair(a \rightarrow \beta c \mdot \delta,k) \bigr\}$.
 \begin{enumerate}
 \item Line 2 initializes the variable \texttt{change} to \texttt{False}.  This variable records whether the method
       has added at least one Earley object to $Q_i$.  It is the result of the method, which is returned in line 21.
@@ -805,12 +805,12 @@ $\pair(c \rightarrow \gamma \bullet, j) \in Q_i \wedge
       cannot be added to $Q_i$ immediately, since \textsl{Python} does not allow a set to be changed while a loop
       iterates over this set.
 \item The \texttt{for} loop in line 8 -- 16 inspects all Earley objects in $Q_i$.  Line 9 selects the complete Earley
-      objects, which have the form $\pair(c \rightarrow \gamma \bullet, j)$.  Line 10 and 11 extract the variable
+      objects, which have the form $\pair(c \rightarrow \gamma \mdot, j)$.  Line 10 and 11 extract the variable
       $c$ and the index $j$ from such an Earley object and line 12 sets the variable \texttt{Qj} to the set $Q_j$.
 \item The \texttt{for} loop in line 13 -- 16 inspects all Earley objects in $Q_j$.  Line 14 selects those Earley
-      objects that have the form $\pair(a \rightarrow \beta \bullet c \delta, k)$.  For each of them, line 15 moves
+      objects that have the form $\pair(a \rightarrow \beta \mdot c \delta, k)$.  For each of them, line 15 moves
       the marker over the variable $c$, which results in the Earley object
-      $\pair(a \rightarrow \beta c \bullet \delta, k)$, and line 16 adds this Earley object to \texttt{newQi}.
+      $\pair(a \rightarrow \beta c \mdot \delta, k)$, and line 16 adds this Earley object to \texttt{newQi}.
 \item Line 17 checks whether the set \texttt{newQi} contains an Earley object that is not yet an element of $Q_i$.
       Here, the operator \texttt{<=} tests whether its left operand is a subset of its right operand.  If a new Earley
       object has been found, line 18 and 19 record this fact and line 20 adds the new Earley objects to the set
@@ -863,20 +863,20 @@ Figure \ref{fig:01-Earley-Parser.ipynb:predict} on page \pageref{fig:01-Earley-P
 method \texttt{predict}.  The call \texttt{self.predict($i$)} applies the prediction operation to the set $Q_i$:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\pair(a \rightarrow \beta \bullet c \delta, k) \in Q_i
+$\pair(a \rightarrow \beta \mdot c \delta, k) \in Q_i
  \wedge (c \rightarrow \gamma) \in R
  \;\Rightarrow\;
- Q_i := Q_i \cup\bigl\{ \pair(c \rightarrow \bullet\gamma, i)\bigr\}$.
+ Q_i := Q_i \cup\bigl\{ \pair(c \rightarrow \mdot\gamma, i)\bigr\}$.
 \\[0.2cm]
 This method has the same structure as the method \texttt{complete}.
 \begin{enumerate}
 \item Line 2 -- 7 agree with the lines 2 -- 7 of the method \texttt{complete}.
 \item The \texttt{for} loop in line 8 -- 14 inspects all Earley objects in $Q_i$.  Line 9 computes the variable
       following the marker.  If there is such a variable, the Earley object has the form
-      $\pair(a \rightarrow \beta \bullet c \delta, k)$ and the test in line 10 succeeds.
+      $\pair(a \rightarrow \beta \mdot c \delta, k)$ and the test in line 10 succeeds.
 \item The \texttt{for} loop in line 11 -- 14 inspects all grammar rules.  Line 12 selects those rules that have
       the variable $c$ on their left hand side.  For every such rule $c \rightarrow \gamma$, line 13 -- 14 add the
-      Earley object $\pair(c \rightarrow \bullet\gamma, i)$ to \texttt{newQi}.  The list \texttt{rule[1:]} contains
+      Earley object $\pair(c \rightarrow \mdot\gamma, i)$ to \texttt{newQi}.  The list \texttt{rule[1:]} contains
       the symbols of the right hand side $\gamma$.  It has to be converted into a tuple, since the methods of the
       class \texttt{EarleyObject} assume that \texttt{mBeta} is a tuple.
 \item Line 15 -- 18 agree with the lines 17 -- 20 of the method \texttt{complete}.  The iteration is needed here,
@@ -919,9 +919,9 @@ Finally, Figure \ref{fig:01-Earley-Parser.ipynb:scan} on page \pageref{fig:01-Ea
 method \texttt{scan}.  The call \texttt{self.scan($i$)} applies the scanning operation to the set $Q_i$:
 \\[0.2cm]
 \hspace*{1.3cm}
-$\pair(a \rightarrow \beta \bullet T \gamma, k) \in Q_i \wedge x_{i+1} = T
+$\pair(a \rightarrow \beta \mdot T \gamma, k) \in Q_i \wedge x_{i+1} = T
  \;\Rightarrow\;
- Q_{i+1} := Q_{i+1} \cup \bigl\{ \pair(a \rightarrow \beta T \bullet \gamma, k) \bigr\}$.
+ Q_{i+1} := Q_{i+1} \cup \bigl\{ \pair(a \rightarrow \beta T \mdot \gamma, k) \bigr\}$.
 \begin{enumerate}
 \item Line 2 sets the variable \texttt{Qi} to the set $Q_i$ and line 3 computes the number $n$ of tokens.
 \item The test in line 4 is necessary because the set $Q_n$ has no successor:  If $i = n$, then all tokens have
@@ -929,7 +929,7 @@ $\pair(a \rightarrow \beta \bullet T \gamma, k) \in Q_i \wedge x_{i+1} = T
 \item Line 5 sets the variable \texttt{T} to the next token $x_{i+1}$.
 \item The \texttt{for} loop in line 6 -- 8 inspects all Earley objects in $Q_i$.  Line 7 uses the method
       \texttt{scan} of the class \texttt{EarleyObject} to select those Earley objects in which this token follows the
-      marker, i.e.~those that have the form $\pair(a \rightarrow \beta \bullet T \gamma, k)$ where $T = x_{i+1}$.
+      marker, i.e.~those that have the form $\pair(a \rightarrow \beta \mdot T \gamma, k)$ where $T = x_{i+1}$.
       Line 8 moves the marker over the token and adds the resulting Earley object to the set $Q_{i+1}$.
 \end{enumerate}
 In contrast to the methods \texttt{complete} and \texttt{predict}, no iteration is necessary here and the new Earley

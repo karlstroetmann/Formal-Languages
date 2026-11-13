@@ -27,13 +27,13 @@ In the literature on LR parsing, which goes back to Knuth \cite{knuth:65}, marke
   A marked rule of the form \(\langle a, \beta, \gamma \rangle\) is written as
   \\[0.2cm]
   \hspace*{1.3cm}
-  \(a \rightarrow \beta \bullet \gamma\). \eox
+  \(a \rightarrow \beta \mdot \gamma\). \eox
 \end{Definition}
 
 \noindent
-The marked rule \(a \rightarrow \beta \bullet \gamma\) indicates that the parser is trying to parse an \(a\)
+The marked rule \(a \rightarrow \beta \mdot \gamma\) indicates that the parser is trying to parse an \(a\)
 with the rule \(a \rightarrow \beta \gamma\), having already seen \(\beta\) and is next attempting to recognize
-\(\gamma\). The symbol \(\bullet\) thus marks the part of the right side of the rule that we have
+\(\gamma\). The symbol \(\mdot\) thus marks the part of the right side of the rule that we have
 already read.  Now the idea is to represent a state of an SLR parser as a \blue{set of marked rules}. To illustrate
 this idea, let's consider a specific example: we start with the grammar for arithmetic expressions shown in
 Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}. We extend this grammar by a new start symbol
@@ -44,14 +44,14 @@ Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}. We extend this
 where the symbol ``$\symbol{36}$'' is used to denote \simtextsc{Eof}, i.e.~the end of the input.
 The start state clearly contains the marked rule
 \\[0.2cm]
-\hspace*{1.3cm} \(\widehat{s} \rightarrow \lambda \bullet \textsl{expr}\; \symbol{36}\),
+\hspace*{1.3cm} \(\widehat{s} \rightarrow \lambda \mdot \textsl{expr}\; \symbol{36}\),
 \\[0.2cm]
 since at the beginning we are trying to derive the start symbol \(\widehat{s}\).
 The component \(\lambda\) indicates that we have not yet processed anything. In addition to this marked rule, the start state must also contain the marked rules
 \begin{enumerate}
-\item \(\textsl{expr} \rightarrow \lambda \bullet \textsl{expr} \aquoted{+} \textsl{product}\),
-\item \(\textsl{expr} \rightarrow \lambda \bullet \textsl{expr} \aquoted{-} \textsl{product}\) \qquad and
-\item \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\)
+\item \(\textsl{expr} \rightarrow \lambda \mdot \textsl{expr} \aquoted{+} \textsl{product}\),
+\item \(\textsl{expr} \rightarrow \lambda \mdot \textsl{expr} \aquoted{-} \textsl{product}\) \qquad and
+\item \(\textsl{expr} \rightarrow \lambda \mdot \textsl{product}\)
 \end{enumerate}
 because, for example, it may be necessary to use the rule
 \\[0.2cm]
@@ -66,24 +66,24 @@ to derive the sought \textsl{expr}. Similarly, it could be that instead we need 
 This explains why we must include the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
- \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\)
+ \(\textsl{expr} \rightarrow \lambda \mdot \textsl{product}\)
 \\[0.2cm]
 in the start state, because at the beginning we cannot yet know which rule we will need, so the start state must contain all these rules. Once we have added the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
- \(\textsl{expr} \rightarrow \lambda \bullet \textsl{product}\) 
+ \(\textsl{expr} \rightarrow \lambda \mdot \textsl{product}\) 
 \\[0.2cm]
 to the start state, we see that we might need to read a \textsl{product} next.  
 Therefore, the start state also contains the following marked rules\footnote{In order to be more concise, we
 drop the empty string $\lambda$ in the following rules.}:  
 \begin{enumerate}
-\item[4.] \(\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{*} \textsl{factor}\),
-\item[5.] \(\textsl{product} \rightarrow \bullet\; \textsl{product} \aquoted{/} \textsl{factor}\),
-\item[6.] \(\textsl{product} \rightarrow \bullet\; \textsl{factor}\),
+\item[4.] \(\textsl{product} \rightarrow \mdot \textsl{product} \aquoted{*} \textsl{factor}\),
+\item[5.] \(\textsl{product} \rightarrow \mdot \textsl{product} \aquoted{/} \textsl{factor}\),
+\item[6.] \(\textsl{product} \rightarrow \mdot \textsl{factor}\),
 
       Now, the sixth rule indicates that we might first read a \textsl{factor}. Therefore, we add the following two marked rules to the start state: 
-\item[7.] \(\textsl{factor} \rightarrow \bullet \aquoted{(} \textsl{expr} \aquoted{)}\),
-\item[8.] \(\textsl{factor} \rightarrow \bullet\; \simtextsc{Number}\).
+\item[7.] \(\textsl{factor} \rightarrow \mdot \saquoted{(}\; \textsl{expr} \aquoted{)}\),
+\item[8.] \(\textsl{factor} \rightarrow \mdot \simtextsc{Number}\).
 \end{enumerate}
 Overall, we see that the start state consists of a set of 9 marked rules.
 The system shown above, for deriving further rules from a given rule,
@@ -98,7 +98,7 @@ is formalized in the concept of the \textcolor{blue}{closure} of a set of marked
   \item If 
         \\[0.2cm]
         \hspace*{1.3cm}
-        \(a \rightarrow \beta \bullet c\, \delta\)
+        \(a \rightarrow \beta \mdot c\, \delta\)
         \\[0.2cm]
         is a marked rule from the set \(\mathcal{K}\), where \(c\) is a syntactic variable, and 
         \\[0.2cm]
@@ -108,15 +108,15 @@ is formalized in the concept of the \textcolor{blue}{closure} of a set of marked
         is a grammar rule of the underlying grammar \(G\), then the marked rule 
         \\[0.2cm]
         \hspace*{1.3cm}
-        \(c \rightarrow \bullet\; \gamma\)
+        \(c \rightarrow \mdot \gamma\)
         \\[0.2cm]
         is also an element of the set \(\mathcal{K}\). Formally, this is written as follows:
         \\[0.2cm]
         \hspace*{1.3cm}
-        \((a \rightarrow \beta \bullet c\, \delta) \in \mathcal{K} 
+        \((a \rightarrow \beta \mdot c\, \delta) \in \mathcal{K} 
          \;\wedge\; 
          (c \rightarrow \gamma) \in R
-         \;\Rightarrow\; (c \rightarrow \bullet\; \gamma) \in \mathcal{K}
+         \;\Rightarrow\; (c \rightarrow \mdot \gamma) \in \mathcal{K}
         \)
   \end{enumerate}
   The set \(\mathcal{K}\) defined in this way is uniquely determined and is referred to as \(\textsl{closure}(\mathcal{M})\) \index{closure@\(\textsl{closure}(\mathcal{M})\)} in the following. \eox
@@ -134,12 +134,12 @@ For a given set \(\mathcal{M}\) of marked rules, the computation of \(\mathcal{K
 \item Then, find all rules of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(a \rightarrow \beta \bullet c\, \delta\)
+      \(a \rightarrow \beta \mdot c\, \delta\)
       \\[0.2cm]
       within the set \(\mathcal{K}\), where \(c\) is a syntactic variable. Subsequently, for all rules of the form \(c \rightarrow \gamma\), add the new marked rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(c \rightarrow \bullet\;\gamma\)
+      \(c \rightarrow \mdot\gamma\)
       \\[0.2cm]
       into the set \(\mathcal{K}\). Repeat this step until no new rules are found.
 \end{enumerate}
@@ -147,7 +147,7 @@ For a given set \(\mathcal{M}\) of marked rules, the computation of \(\mathcal{K
 \exampleEng
 Starting from the grammar for arithmetic expressions shown in Figure \ref{fig:Expr.grammar} on page \pageref{fig:Expr.grammar}, let's consider the set
 \[ \mathcal{M} := 
-   \bigl\{ \textsl{product} \rightarrow \textsl{product} \aquoted{*}\! \bullet \textsl{factor} \bigr\}
+   \bigl\{ \textsl{product} \rightarrow \textsl{product} \;\saquoted{*} \mdot \textsl{factor} \bigr\}
 \]
 For the set \(\textsl{closure}(\mathcal{M})\), we then find
 \\[0.2cm]
@@ -156,9 +156,9 @@ $
 \begin{array}[b]{lcll}
 \textsl{closure}(\mathcal{M}) 
  & = & \bigl\{ &
-         \textsl{product} \rightarrow \textsl{product} \aquoted{*}\! \bullet \textsl{factor}, \\
-   & & & \textsl{factor}  \rightarrow \bullet \aquoted{(} \textsl{expr} \aquoted{)}\!\!,          \\
-   & & & \textsl{factor}  \rightarrow \bullet \;\simtextsc{Number}                                  \\
+         \textsl{product} \rightarrow \textsl{product} \;\saquoted{*} \mdot \textsl{factor}, \\
+   & & & \textsl{factor}  \rightarrow \mdot \saquoted{(}\; \textsl{expr} \aquoted{)}\!\!,          \\
+   & & & \textsl{factor}  \rightarrow \mdot\simtextsc{Number}                                  \\
    & & \bigr\}. & \hspace*{8cm} 
 \end{array}$  \eox
 \vspace*{0.3cm}
@@ -174,7 +174,7 @@ determine how to define the states in the set \(Q\), as this will almost automat
 components. As mentioned earlier, we define the states as sets of marked rules. Let's first define 
 \\[0.2cm]
 \hspace*{1.3cm}
-\(\Gamma := \bigl\{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \gamma) \in R \bigr\}\)
+\(\Gamma := \bigl\{ a \rightarrow \beta \mdot \gamma \mid (a \rightarrow \beta \gamma) \in R \bigr\}\)
 \\[0.2cm]
 as the set of all marked rules of the grammar. However, it is not sensible to allow arbitrary subsets of
 \(\Gamma\) as states: A subset \(\mathcal{M} \subseteq \Gamma\) is only considered as a state if the set
@@ -201,13 +201,13 @@ The use of the augmented grammar enables the following definition of the start s
 We set:
 \\[0.2cm]
 \hspace*{1.3cm}
-\( q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \bullet s\,\symbol{36} \bigr\} \Bigr)\).
+\( q_0 := \textsl{closure}\Bigl( \bigl\{ \widehat{s} \rightarrow \mdot s\,\symbol{36} \bigr\} \Bigr)\).
 \\[0.2cm]
 Next, we construct the function \(\textsl{goto}()\).\glsadd{gotoM} The definition is as follows:
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\textsl{goto}(\mathcal{M}, c) := \textsl{closure}\Bigl( \bigl\{ 
-   a \rightarrow \beta\, c \bullet \delta \mid (a \rightarrow \beta \bullet c\, \delta) \in \mathcal{M} 
+   a \rightarrow \beta\, c \mdot \delta \mid (a \rightarrow \beta \mdot c\, \delta) \in \mathcal{M} 
    \bigr\} \Bigr)
 \).
 \\[0.2cm]
@@ -216,13 +216,13 @@ tries to parse an \(a\) using the rule \(a \rightarrow \beta\, c\, \delta\) and,
 has already been recognized. This state must contain the marked rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-\(a \rightarrow \beta \bullet c\, \delta\)
+\(a \rightarrow \beta \mdot c\, \delta\)
 \\[0.2cm]
 If a \(c\) is recognized in this state, the parser can transition from this state to a state containing the
 rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-\(a \rightarrow \beta\, c \bullet \delta\).
+\(a \rightarrow \beta\, c \mdot \delta\).
 \\[0.2cm]
 Therefore, we get the above definition of the function \(\textsl{goto}(\mathcal{M},c)\).
 For the subsequent definition of the function \(\textsl{action}(\mathcal{M}, t)\), it is
@@ -231,7 +231,7 @@ For terminals \(t \in T\) we set:
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\textsl{goto}(\mathcal{M}, t) := \textsl{closure}\Bigl( \bigl\{ 
-   a \rightarrow \beta\, t \bullet \delta \mid (a \rightarrow \beta \bullet t\, \delta) \in \mathcal{M} 
+   a \rightarrow \beta\, t \mdot \delta \mid (a \rightarrow \beta \mdot t\, \delta) \in \mathcal{M} 
    \bigr\} \Bigr)
 \).
 \\[0.2cm]
@@ -554,22 +554,22 @@ Using these relationships, \(\textsl{nullable}()\), \(\textsl{First}()\), and \(
 \subsection{Computing the Function \textsl{action}}
 Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is computed for a set of marked rules \(\mathcal{M}\) and a token \(t\). When defining \(\textsl{action}(\mathcal{M},t)\), we distinguish four cases.
 \begin{enumerate}
-\item If \(\mathcal{M}\) contains a marked rule of the form \(a \rightarrow \beta \bullet t\, \delta\) and \(t \neq \symbol{36}\), then we set
+\item If \(\mathcal{M}\) contains a marked rule of the form \(a \rightarrow \beta \mdot t\, \delta\) and \(t \neq \symbol{36}\), then we set
       \\[0.2cm]
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle\),
       \\[0.2cm]
       because in this case the parser is trying to recognize an \(a\) using the rule \(a \rightarrow \beta\, t \delta\)
       and has already recognized \(\beta\). If the next token in the input string is indeed the token  
-      \(t\), the parser can read this \(t\) and transitions from the state \(a \rightarrow \beta \bullet t\,
+      \(t\), the parser can read this \(t\) and transitions from the state \(a \rightarrow \beta \mdot t\,
       \delta\) to the state  
-      \(a \rightarrow \beta\, t \bullet \delta\), which is computed by the function \(\textsl{goto}(\mathcal{M},t)\). So, we have
+      \(a \rightarrow \beta\, t \mdot \delta\), which is computed by the function \(\textsl{goto}(\mathcal{M},t)\). So, we have
       \\[0.2cm]
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle
-         \quad \text{if} \quad (a \rightarrow \beta \bullet t\, \delta) \in \mathcal{M}
+         \quad \text{if} \quad (a \rightarrow \beta \mdot t\, \delta) \in \mathcal{M}
       \) and \(t \neq \symbol{36}\).
-\item If \(\mathcal{M}\) contains a marked rule of the form \(a \rightarrow \beta \bullet\) and additionally \(t \in \textsl{Follow}(a)\), then we set
+\item If \(\mathcal{M}\) contains a marked rule of the form \(a \rightarrow \beta \mdot\) and additionally \(t \in \textsl{Follow}(a)\), then we set
       \\[0.2cm]
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle\),
@@ -582,9 +582,9 @@ Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is compu
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle\)
       \quad if 
-      \((a \rightarrow \beta\bullet) \in \mathcal{M}\), \(a \neq \widehat{s}\) 
+      \((a \rightarrow \beta\mdot) \in \mathcal{M}\), \(a \neq \widehat{s}\) 
       and \(t \in \textsl{Follow}(a)\).
-\item If \(\mathcal{M}\) contains the marked rule \(\widehat{s} \rightarrow s \bullet \symbol{36}\) we set
+\item If \(\mathcal{M}\) contains the marked rule \(\widehat{s} \rightarrow s \mdot \symbol{36}\) we set
       \\[0.2cm]
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}\),
@@ -597,7 +597,7 @@ Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is compu
       \\[0.2cm]
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}\),
-      \quad if \((\widehat{s} \rightarrow s\bullet\symbol{36}) \in \mathcal{M}\).
+      \quad if \((\widehat{s} \rightarrow s\mdot\symbol{36}) \in \mathcal{M}\).
 \item In all other cases, we set
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -609,21 +609,21 @@ Conflicts can arise between the first three cases. We distinguish between three 
       apply. In this situation, the set \(\mathcal{M}\) contains, on one hand, a marked rule of the form 
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(a \rightarrow \beta \bullet t\, \gamma\),
+      \(a \rightarrow \beta \mdot t\, \gamma\),
       \\[0.2cm]
       and on the other hand, \(\mathcal{M}\) contains a rule of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(c \rightarrow \delta \bullet\) \quad with \(t \in \textsl{Follow}(c)\).
+      \(c \rightarrow \delta \mdot\) \quad with \(t \in \textsl{Follow}(c)\).
       \\[0.2cm]
       If the next token is \(t\), it is unclear whether this token should be pushed onto the symbol stack and
       the parser transition to a state with the marked rule  
-      \(a \rightarrow \beta\, t \bullet \gamma\), or whether the symbol stack should be reduced using the rule
+      \(a \rightarrow \beta\, t \mdot \gamma\), or whether the symbol stack should be reduced using the rule
       \(c \rightarrow \delta\) instead. 
 \item A \blue{reduce-reduce conflict}\index{reduce-reduce conflict} exists if the set \(\mathcal{M}\) contains two different marked rules of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(c_1 \rightarrow \gamma_1 \bullet\) \quad  and \quad \(c_2 \rightarrow \gamma_2 \bullet\)
+      \(c_1 \rightarrow \gamma_1 \mdot\) \quad  and \quad \(c_2 \rightarrow \gamma_2 \mdot\)
       \\[0.2cm]
       and if at the same time \(t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)\), because then it is not clear which
       of the two rules the parser should apply when the next token to be read is \(t\).
@@ -631,12 +631,12 @@ Conflicts can arise between the first three cases. We distinguish between three 
       cases apply.  In this situation, the set \(\mathcal{M}\) contains, on one hand, the marked rule
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(\widehat{s} \rightarrow s \bullet \symbol{36}\),
+      \(\widehat{s} \rightarrow s \mdot \symbol{36}\),
       \\[0.2cm]
       and on the other hand, \(\mathcal{M}\) contains a rule of the form
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(c \rightarrow \delta \bullet\) \quad with \(\symbol{36} \in \textsl{Follow}(c)\).
+      \(c \rightarrow \delta \mdot\) \quad with \(\symbol{36} \in \textsl{Follow}(c)\).
       \\[0.2cm]
       If the next token is \(\symbol{36}\), it is not clear whether the parser should accept the input or
       reduce the symbol stack using the rule \(c \rightarrow \delta\).  Section
@@ -678,130 +678,130 @@ We begin with the start state:
 \begin{enumerate}
 \item $ 
 \begin{array}[t]{lcrl}
-s_0 & := & \textsl{closure}\bigl(\{ & \widehat{s} \rightarrow \bullet\, e\, \symbol{36}\quad \}\bigr) \\
-    &  = & \{ & \widehat{s} \rightarrow \bullet\, e \,\symbol{36},                \\[0.1cm]
-    &    &    & e \rightarrow \bullet\, e \aquoted{+} p,\; 
-                e \rightarrow \bullet\, e \aquoted{-} p,\;
-                e \rightarrow \bullet\, p, \\[0.1cm]
-    &    &    & p \rightarrow \bullet\, p \aquoted{*} f,\;
-                p \rightarrow \bullet\, p \aquoted{/} f,\;
-                p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    &    & f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-                f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
+s_0 & := & \textsl{closure}\bigl(\{ & \widehat{s} \rightarrow \mdot e\, \symbol{36}\quad \}\bigr) \\
+    &  = & \{ & \widehat{s} \rightarrow \mdot e \,\symbol{36},                \\[0.1cm]
+    &    &    & e \rightarrow \mdot e \aquoted{+} p,\; 
+                e \rightarrow \mdot e \aquoted{-} p,\;
+                e \rightarrow \mdot p, \\[0.1cm]
+    &    &    & p \rightarrow \mdot p \aquoted{*} f,\;
+                p \rightarrow \mdot p \aquoted{/} f,\;
+                p \rightarrow \mdot f,                \\[0.1cm]
+    &    &    & f \rightarrow \mdot \saquoted{(}\; e \aquoted{)},\;
+                f \rightarrow \mdot N   \hspace*{2.4cm} \}. 
 \end{array}
 $
 \item$ 
 \begin{array}[t]{lcl}
 s_1 & := & \textsl{goto}(s_0, e ) \\
     &  = & \textsl{closure}(\{ 
-           \widehat{s} \rightarrow e \bullet\,\symbol{36},\;  
-           e \rightarrow e \bullet \aquoted{+} p,\; 
-           e \rightarrow e \bullet \aquoted{-} p\;
+           \widehat{s} \rightarrow e \mdot\symbol{36},\;  
+           e \rightarrow e \mdot \saquoted{+}\; p,\; 
+           e \rightarrow e \mdot \saquoted{-}\; p\;
        \}) \\
-    &  = & \{\;  \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
-                 e \rightarrow e \bullet \aquoted{+} p,\; 
-                 e \rightarrow e \bullet \aquoted{-} p \; \}.
+    &  = & \{\;  \widehat{s} \rightarrow e \mdot\symbol{36},\;
+                 e \rightarrow e \mdot \saquoted{+}\; p,\; 
+                 e \rightarrow e \mdot \saquoted{-}\; p \; \}.
 \end{array}
 $
 \item$ 
 \begin{array}[t]{lcl}
 s_2 & := & \textsl{goto}(s_0, p ) \\
-    &  = & \textsl{closure}(\{ e \rightarrow p \bullet,\;
-                               p \rightarrow p \bullet \aquoted{*} f,\;
-                               p \rightarrow p \bullet \aquoted{/} f
+    &  = & \textsl{closure}(\{ e \rightarrow p \mdot,\;
+                               p \rightarrow p \mdot \saquoted{*}\; f,\;
+                               p \rightarrow p \mdot \saquoted{/}\; f
                             \}) \\
-    &  = & \{ e \rightarrow p \bullet,\; p \rightarrow p \bullet \aquoted{*} f,\; p \rightarrow p \bullet \aquoted{/} f \}.
+    &  = & \{ e \rightarrow p \mdot,\; p \rightarrow p \mdot \saquoted{*}\; f,\; p \rightarrow p \mdot \saquoted{/}\; f \}.
 \end{array}
 $
 \item$ 
 \begin{array}[t]{lcl}
 s_3 & := & \textsl{goto}(s_0, f ) \\
-    &  = & \textsl{closure}(\{ p \rightarrow f \bullet \}) \\
-    &  = & \{ p \rightarrow f \bullet \}. 
+    &  = & \textsl{closure}(\{ p \rightarrow f \mdot \}) \\
+    &  = & \{ p \rightarrow f \mdot \}. 
 \end{array}
 $
 \item$ 
 \begin{array}[t]{lcl}
 s_4 & := & \textsl{goto}(s_0, \aquoted{(}) \\
-    &  = & \textsl{closure}(\{ f \rightarrow \aquoted{(} \bullet e \aquoted{)} \}) \\
-    &  = & \{\;\; f \rightarrow \aquoted{(} \bullet e \aquoted{)}, \\[0.1cm]
-    &    & \quad e \rightarrow \bullet\, e \aquoted{+} p,\;
-                 e \rightarrow \bullet\, e \aquoted{-} p,\;
-                 e \rightarrow \bullet\, p,                  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
-                 p \rightarrow \bullet\, p \aquoted{/} f,\;
-                 p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
+    &  = & \textsl{closure}(\{ f \rightarrow \;\saquoted{(} \mdot e \aquoted{)} \}) \\
+    &  = & \{\;\; f \rightarrow \;\saquoted{(} \mdot e \aquoted{)}, \\[0.1cm]
+    &    & \quad e \rightarrow \mdot e \aquoted{+} p,\;
+                 e \rightarrow \mdot e \aquoted{-} p,\;
+                 e \rightarrow \mdot p,                  \\[0.1cm]
+    &    & \quad p \rightarrow \mdot p \aquoted{*} f,\;
+                 p \rightarrow \mdot p \aquoted{/} f,\;
+                 p \rightarrow \mdot f,                \\[0.1cm]
+    &    & \quad f \rightarrow \mdot \saquoted{(}\; e \aquoted{)},\;
+                 f \rightarrow \mdot N   \hspace*{2.4cm} \}. 
 \end{array}
 $
 \item$ 
 \begin{array}[t]{lcl}
 s_5 & := & \textsl{goto}(s_0, N ) \\
-    &  = & \textsl{closure}(\{ f \rightarrow N \bullet \}) \\
-    &  = & \{ f \rightarrow N \bullet \}. 
+    &  = & \textsl{closure}(\{ f \rightarrow N \mdot \}) \\
+    &  = & \{ f \rightarrow N \mdot \}. 
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_6 & := & \textsl{goto}(s_1, \aquoted{+}) \\
-    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p \}) \\
-    &  = & \{\;\; e \rightarrow e \aquoted{+} \bullet p,  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
-                 p \rightarrow \bullet\, p \aquoted{/} f,\;
-                 p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
+    &  = & \textsl{closure}(\{ e \rightarrow e \;\saquoted{+} \mdot p \}) \\
+    &  = & \{\;\; e \rightarrow e \;\saquoted{+} \mdot p,  \\[0.1cm]
+    &    & \quad p \rightarrow \mdot p \aquoted{*} f,\;
+                 p \rightarrow \mdot p \aquoted{/} f,\;
+                 p \rightarrow \mdot f,                \\[0.1cm]
+    &    & \quad f \rightarrow \mdot \saquoted{(}\; e \aquoted{)},\;
+                 f \rightarrow \mdot N   \hspace*{2.4cm} \}. 
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_7 & := & \textsl{goto}(s_1, \aquoted{-}) \\
-    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{-} \bullet p \}) \\
-    &  = & \{\;\; e \rightarrow e \aquoted{-} \bullet p,  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
-                 p \rightarrow \bullet\, p \aquoted{/} f,\;
-                 p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
+    &  = & \textsl{closure}(\{ e \rightarrow e \;\saquoted{-} \mdot p \}) \\
+    &  = & \{\;\; e \rightarrow e \;\saquoted{-} \mdot p,  \\[0.1cm]
+    &    & \quad p \rightarrow \mdot p \aquoted{*} f,\;
+                 p \rightarrow \mdot p \aquoted{/} f,\;
+                 p \rightarrow \mdot f,                \\[0.1cm]
+    &    & \quad f \rightarrow \mdot \saquoted{(}\; e \aquoted{)},\;
+                 f \rightarrow \mdot N   \hspace*{2.4cm} \}. 
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_8 & := & \textsl{goto}(s_2, \aquoted{*}) \\
     &  = & \textsl{closure}(\{ 
-                  p \rightarrow p \aquoted{*} \bullet f \; \})
+                  p \rightarrow p \;\saquoted{*} \mdot f \; \})
                   \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \aquoted{*} \bullet f,\;
-                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
-                  f \rightarrow \bullet\, N \; \}.
+                  p \rightarrow p \;\saquoted{*} \mdot f,\;
+                  f \rightarrow \mdot \saquoted{(}\; e \aquoted{)}\!\!,\;
+                  f \rightarrow \mdot N \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_9 & := & \textsl{goto}(s_2, \aquoted{/}) \\
     &  = & \textsl{closure}(\{ 
-                  p \rightarrow p \aquoted{/} \bullet f \; \})
+                  p \rightarrow p \;\saquoted{/} \mdot f \; \})
                   \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \aquoted{/} \bullet f,\;
-                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
-                  f \rightarrow \bullet\, N \; \}.
+                  p \rightarrow p \;\saquoted{/} \mdot f,\;
+                  f \rightarrow \mdot \saquoted{(}\; e \aquoted{)}\!\!,\;
+                  f \rightarrow \mdot N \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{10} & := & \textsl{goto}(s_4, e) \\
     &  = & \textsl{closure}(\{\; 
-                               f \rightarrow \aquoted{(} e \bullet \aquoted{)},\;
-                               e \rightarrow e \bullet \aquoted{+} p,\; 
-                               e \rightarrow e \bullet \aquoted{-} p\;
+                               f \rightarrow \aquoted{(} e \mdot \saquoted{)}\;,\;
+                               e \rightarrow e \mdot \saquoted{+}\; p,\; 
+                               e \rightarrow e \mdot \saquoted{-}\; p\;
                             \}) \\
     &  = & \{\; 
-                               f \rightarrow \aquoted{(} e \bullet \aquoted{)},\;
-                               e \rightarrow e \bullet \aquoted{+} p,\; 
-                               e \rightarrow e \bullet \aquoted{-} p\;
+                               f \rightarrow \aquoted{(} e \mdot \saquoted{)}\;,\;
+                               e \rightarrow e \mdot \saquoted{+}\; p,\; 
+                               e \rightarrow e \mdot \saquoted{-}\; p\;
            \}.
 \end{array}
 $
@@ -809,54 +809,54 @@ $
 \begin{array}[t]{lcl}
 s_{11} & := & \textsl{goto}(s_6, p) \\
     &  = & \textsl{closure}(\{ 
-                 e \rightarrow e \aquoted{+} p \bullet,\;
-                 p \rightarrow p \bullet \aquoted{*} f,\;
-                 p \rightarrow p \bullet \aquoted{/} f \; \})
+                 e \rightarrow e \aquoted{+} p \mdot,\;
+                 p \rightarrow p \mdot \saquoted{*}\; f,\;
+                 p \rightarrow p \mdot \saquoted{/}\; f \; \})
                   \\[0.1cm]
     &  = & \{\;\;
-                  e \rightarrow e \aquoted{+} p \bullet,\;
-                  p \rightarrow p \bullet \aquoted{*} f,\;
-                  p \rightarrow p \bullet \aquoted{/} f \; \}.
+                  e \rightarrow e \aquoted{+} p \mdot,\;
+                  p \rightarrow p \mdot \saquoted{*}\; f,\;
+                  p \rightarrow p \mdot \saquoted{/}\; f \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{12} & := & \textsl{goto}(s_7, p) \\
     &  = & \textsl{closure}(\{ 
-                  e \rightarrow e \aquoted{-} p \bullet,\;
-                  p \rightarrow p \bullet \aquoted{*} f,\;
-                  p \rightarrow p \bullet \aquoted{/} f \; \})
+                  e \rightarrow e \aquoted{-} p \mdot,\;
+                  p \rightarrow p \mdot \saquoted{*}\; f,\;
+                  p \rightarrow p \mdot \saquoted{/}\; f \; \})
                   \\[0.1cm]
-    &  = & \{\;\; e \rightarrow e \aquoted{-} p \bullet,\;
-                  p \rightarrow p \bullet \aquoted{*} f,\;
-                  p \rightarrow p \bullet \aquoted{/} f \; \}.
+    &  = & \{\;\; e \rightarrow e \aquoted{-} p \mdot,\;
+                  p \rightarrow p \mdot \saquoted{*}\; f,\;
+                  p \rightarrow p \mdot \saquoted{/}\; f \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{13} & := & \textsl{goto}(s_8, f) \\
-    &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{*} f \bullet \; \})
+    &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{*} f \mdot \})
            \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \aquoted{*} f \bullet \; \}.
+                  p \rightarrow p \aquoted{*} f \mdot \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{14} & := & \textsl{goto}(s_9, f) \\
-    &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{/} f \bullet \; \})
+    &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{/} f \mdot \})
            \\[0.1cm]
     &  = & \{\;\;
-                  p \rightarrow p \aquoted{/} f \bullet \; \}.
+                  p \rightarrow p \aquoted{/} f \mdot \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
 s_{15} & := & \textsl{goto}(s_{10}, \aquoted{)}) \\
     &  = & \textsl{closure}(\{\; 
-                               f \rightarrow \aquoted{(} e \aquoted{)} \bullet \;
+                               f \rightarrow \aquoted{(} e \;\saquoted{)} \mdot
                             \}) \\
-    &  = & \{\; f \rightarrow \aquoted{(} e \aquoted{)} \bullet\; \}.
+    &  = & \{\; f \rightarrow \aquoted{(} e \;\saquoted{)} \mdot \}.
 \end{array}
 $
 \end{enumerate}
@@ -866,16 +866,16 @@ Further calculations do not yield any new states. For instance, when we compute 
 $ 
 \begin{array}{cl}
     & \textsl{goto}(s_6, \aquoted{(}) \\
-  = & \textsl{closure}(\{ f \rightarrow \aquoted{(} \bullet e \aquoted{)} \}) \\
-  = & \{\;\; f \rightarrow \aquoted{(} \bullet e \aquoted{)}, \\[0.1cm]
-    & \quad e \rightarrow \bullet\, e \aquoted{+} p,\; 
-            e \rightarrow \bullet\, e \aquoted{-} p,\;
-            e \rightarrow \bullet\, p,                  \\[0.1cm]
-    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
-            p \rightarrow \bullet\, p \aquoted{/} f,\;
-            p \rightarrow \bullet\, f,                \\[0.1cm]
-    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-            f \rightarrow \bullet\, N   \hspace*{2.4cm} \} \\[0.1cm]
+  = & \textsl{closure}(\{ f \rightarrow \;\saquoted{(} \mdot e \aquoted{)} \}) \\
+  = & \{\;\; f \rightarrow \;\saquoted{(} \mdot e \aquoted{)}, \\[0.1cm]
+    & \quad e \rightarrow \mdot e \aquoted{+} p,\; 
+            e \rightarrow \mdot e \aquoted{-} p,\;
+            e \rightarrow \mdot p,                  \\[0.1cm]
+    & \quad p \rightarrow \mdot p \aquoted{*} f,\;
+            p \rightarrow \mdot p \aquoted{/} f,\;
+            p \rightarrow \mdot f,                \\[0.1cm]
+    & \quad f \rightarrow \mdot \saquoted{(}\; e \aquoted{)},\;
+            f \rightarrow \mdot N   \hspace*{2.4cm} \} \\[0.1cm]
   = & s_4.
 \end{array}
 $
@@ -889,13 +889,13 @@ Next, we investigate whether there are any conflicts, and we look specifically a
 the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
-\( p \rightarrow p \bullet \aquoted{*} f \)
+\( p \rightarrow p \mdot \saquoted{*}\; f \)
 \\[0.2cm]
 a shift must occur in state \(s_{11}\) if the next token is \(\aquoted{*}\). On the other hand, the state
 \(s_{11}\) includes the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-\( e \rightarrow e \aquoted{+} p \bullet. \)
+\( e \rightarrow e \aquoted{+} p \mdot. \)
 \\[0.2cm]
 This rule indicates that the symbol stack must be reduced with the grammar rule \(e \rightarrow e \aquoted{+}
 p\) if a character from the set \(\textsl{Follow}(e)\) appears in the input. If \(\saquoted{*}\) were in
@@ -915,7 +915,7 @@ Next, we calculate the \(\textsl{action}\) function. We consider two cases as ex
       \(
       \begin{array}[t]{lcl}
       \textsl{action}(s_3, \aquoted{+}) & = &
-            \textsl{action}(\{p \rightarrow f \bullet\}, \aquoted{+}) \\
+            \textsl{action}(\{p \rightarrow f \mdot\}, \aquoted{+}) \\
       & = & \langle \texttt{reduce}, p \rightarrow f \rangle,
       \end{array}
       \)
@@ -927,10 +927,10 @@ Next, we calculate the \(\textsl{action}\) function. We consider two cases as ex
       \(
       \begin{array}[t]{lcl}
       \textsl{action}(s_1, \aquoted{+}) & = &
-            \textsl{action}(\{ \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
-                 e \rightarrow e \bullet \aquoted{+} p,\; 
-                 e \rightarrow e \bullet \aquoted{-} p \; \}, \aquoted{+}) \\
-      & = & \langle \texttt{shift}, \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p\}) \rangle \\
+            \textsl{action}(\{ \widehat{s} \rightarrow e \mdot\symbol{36},\;
+                 e \rightarrow e \mdot \saquoted{+}\; p,\; 
+                 e \rightarrow e \mdot \saquoted{-}\; p \; \}, \aquoted{+}) \\
+      & = & \langle \texttt{shift}, \textsl{closure}(\{ e \rightarrow e \;\saquoted{+} \mdot p\}) \rangle \\
       & = & \langle \texttt{shift}, s_6 \rangle.
       \end{array}
       \)
@@ -980,7 +980,8 @@ The grammar shown in Figure \ref{fig:shift-reduce-conflict.grammar} is ambiguous
 \\[0.2cm]
 \hspace*{1.3cm}
 \((1 + 2) * 3\) \quad or as \quad \(1 + (2 * 3)\).
-
+\\[0.2cm]
+  
 \begin{figure}[htbp]
   \begin{center}    
   \fcolorbox{blue}{sepia}{
@@ -1006,11 +1007,11 @@ We augment the grammar and calculate the start state \(s_0\):
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\begin{array}[t]{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, e\,\symbol{36} \}\bigr) \\[0.1cm]
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, e\,\symbol{36},\;
-                   e \rightarrow \bullet\, e \saquoted{+} e,\;
-                   e \rightarrow \bullet\, e \saquoted{*} e,\;
-                   e \rightarrow \bullet\, N\;
+ s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \mdot e\,\symbol{36} \}\bigr) \\[0.1cm]
+     & = & \bigl\{ \widehat{s} \rightarrow \mdot e\,\symbol{36},\;
+                   e \rightarrow \mdot e \;\saquoted{+}\; e,\;
+                   e \rightarrow \mdot e \;\saquoted{*}\; e,\;
+                   e \rightarrow \mdot N\;
             \bigr\}.
  \end{array}
 \)
@@ -1021,13 +1022,13 @@ Next, we calculate \(s_1 := \textsl{goto}(s_0, e)\):
 \(\begin{array}[t]{lcl}
   s_1 & = & \textsl{goto}(s_0, e)  \\
       & = & \textsl{closure}\bigl(\{  
-                   \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
-                   e \rightarrow e \bullet \saquoted{+}\; e,\;
-                   e \rightarrow e \bullet \saquoted{*}\; e \;
+                   \widehat{s} \rightarrow e \mdot\symbol{36},\;
+                   e \rightarrow e \mdot \saquoted{+}\; e,\;
+                   e \rightarrow e \mdot \saquoted{*}\; e \;
             \}\bigr) \\
-      & = & \{ \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
-               e \rightarrow e \bullet \saquoted{+}\; e,\;
-               e \rightarrow e \bullet \saquoted{*}\; e \;
+      & = & \{ \widehat{s} \rightarrow e \mdot\symbol{36},\;
+               e \rightarrow e \mdot \saquoted{+}\; e,\;
+               e \rightarrow e \mdot \saquoted{*}\; e \;
             \} 
 \end{array}
 \)
@@ -1038,11 +1039,11 @@ Now we calculate \(s_2 := \textsl{goto}(s_1, \saquoted{+})\):
 \(
 \begin{array}[t]{lcl}
   s_2 & = & \textsl{goto}(s_1, \saquoted{+})  \\
-      & = & \textsl{closure}\bigl(\{ e \rightarrow e \saquoted{+} \bullet e \}\bigr) \\
-      & = & \{ e \rightarrow e \;\saquoted{+} \bullet e,\;
-               e \rightarrow \bullet\, e \saquoted{+} e,\;
-               e \rightarrow \bullet\, e \saquoted{*} e,\;
-               e \rightarrow \bullet\, N\;
+      & = & \textsl{closure}\bigl(\{ e \rightarrow e \;\saquoted{+} \mdot e \}\bigr) \\
+      & = & \{ e \rightarrow e \;\saquoted{+} \mdot e,\;
+               e \rightarrow \mdot e \;\saquoted{+}\; e,\;
+               e \rightarrow \mdot e \;\saquoted{*}\; e,\;
+               e \rightarrow \mdot N\;
             \}
 \end{array}
 \)
@@ -1054,12 +1055,12 @@ Next, we calculate \(s_3 := \textsl{goto}(s_2, e)\):
 \begin{array}[t]{lcl}
   s_3 & = & \textsl{goto}(s_2, e)  \\
       & = & \textsl{closure}\bigl(\{  
-               e \rightarrow e \saquoted{+} e \bullet,\;
-               e \rightarrow e \bullet \saquoted{+}\; e,\;
-               e \rightarrow e \bullet \saquoted{*}\; e \}\bigr) \\
-      & = & \{ e \rightarrow e \saquoted{+} e \bullet,\;
-               e \rightarrow e \bullet \saquoted{+}\; e,\;
-               e \rightarrow e \bullet \saquoted{*}\; e \;
+               e \rightarrow e \;\saquoted{+}\; e \mdot,\;
+               e \rightarrow e \mdot \saquoted{+}\; e,\;
+               e \rightarrow e \mdot \saquoted{*}\; e \}\bigr) \\
+      & = & \{ e \rightarrow e \;\saquoted{+}\; e \mdot,\;
+               e \rightarrow e \mdot \saquoted{+}\; e,\;
+               e \rightarrow e \mdot \saquoted{*}\; e \;
             \}
 \end{array}
 \)
@@ -1068,7 +1069,7 @@ Here, a shift-reduce conflict arises when calculating \(\textsl{action}(s_3, \sa
 because on one hand, the marked rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-\(e \rightarrow e \bullet \saquoted{*}\; e\), 
+\(e \rightarrow e \mdot \saquoted{*}\; e\), 
 \\[0.2cm]
 demands that the token \(\saquoted{*}\) is pushed onto the stack, but on the other hand, we have
 \\[0.2cm]
@@ -1078,7 +1079,7 @@ demands that the token \(\saquoted{*}\) is pushed onto the stack, but on the oth
 so that, if the next token to be read has the value \(\saquoted{*}\), the symbol stack should be reduced with the rule 
 \\[0.2cm]
 \hspace*{1.3cm}
-\(e \rightarrow e \saquoted{+} e\).
+\(e \rightarrow e \;\saquoted{+}\; e\).
 \vspace*{0.3cm}
 
 \noindent
@@ -1123,27 +1124,27 @@ To demonstrate that this grammar contains reduce-reduce conflicts, we calculate 
 \\[0.2cm]
 $\hspace*{1.3cm}
 \begin{array}[t]{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
-                   s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
-                   a \rightarrow \bullet\, \lambda, \;
-                   b \rightarrow \bullet\, \lambda \;
+ s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \mdot s\,\symbol{36} \}\bigr) \\
+     & = & \bigl\{ \widehat{s} \rightarrow \mdot s\,\symbol{36},\;
+                   s \rightarrow \mdot a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \mdot b \aquoted{y} b \aquoted{x},\;
+                   a \rightarrow \mdot \lambda, \;
+                   b \rightarrow \mdot \lambda \;
             \bigr\} \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
-                   s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
-                   a \rightarrow \lambda \bullet, \;
-                   b \rightarrow \lambda \bullet \;
+     & = & \bigl\{ \widehat{s} \rightarrow \mdot s\,\symbol{36},\;
+                   s \rightarrow \mdot a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \mdot b \aquoted{y} b \aquoted{x},\;
+                   a \rightarrow \lambda \mdot, \;
+                   b \rightarrow \lambda \mdot
             \bigr\},
  \end{array}
 $
 \\[0.2cm] 
-since $a \rightarrow \bullet\, \lambda$ is the same as $a \rightarrow \lambda \bullet$.
+since $a \rightarrow \mdot \lambda$ is the same as $a \rightarrow \lambda \mdot$.
 In this state, there is a reduce-reduce conflict between the two marked rules
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \lambda \bullet \quad \mbox{and} \quad b \rightarrow \lambda\; \bullet$.
+$a \rightarrow \lambda \mdot \quad \mbox{and} \quad b \rightarrow \lambda\mdot$.
 \\[0.2cm]
 This conflict arises when calculating 
 \\[0.2cm]
@@ -1295,7 +1296,7 @@ The class \texttt{MarkedRule} represents a marked rule.  As the names of its mem
 $\alpha$ and $\beta$, we write a marked rule in this subsection in the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$c \rightarrow \alpha \bullet \beta$.
+$c \rightarrow \alpha \mdot \beta$.
 \\[0.2cm]
 Figure \ref{fig:SLR-Table-Generator.ipynb:MarkedRule} on page \pageref{fig:SLR-Table-Generator.ipynb:MarkedRule}
 shows this class together with its methods.
@@ -1357,25 +1358,25 @@ shows this class together with its methods.
       elements of sets and keys of dictionaries.  This is needed, since states are sets of marked rules.
 \item Line 7 -- 9 define the method \texttt{\_\_repr\_\_}.  The operator \texttt{*} inserts the elements of the
       tuples \texttt{mAlpha} and \texttt{mBeta} into the list, whose elements are then joined with blanks.  For
-      example, the marked rule $\textsl{expr} \rightarrow \textsl{expr} \bullet \saquoted{+}\; \textsl{product}$ is
+      example, the marked rule $\textsl{expr} \rightarrow \textsl{expr} \mdot \saquoted{+}\; \textsl{product}$ is
       converted into the string
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{expr → expr • "+" product}.
 \item Line 11 -- 12 define the method \texttt{is\_complete}, which checks whether the marked rule has the form
-      $c \rightarrow \alpha \bullet$, i.e.~whether the marker ``$\bullet$'' is at the end of the rule.
+      $c \rightarrow \alpha \mdot$, i.e.~whether the marker ``$\bullet$'' is at the end of the rule.
 \item Line 14 -- 17 define the method \texttt{symbol\_after\_dot}.  For a marked rule of the form
-      $c \rightarrow \alpha \bullet X \delta$, it returns the symbol $X$, which can be a variable or a token.  If the
+      $c \rightarrow \alpha \mdot X \delta$, it returns the symbol $X$, which can be a variable or a token.  If the
       marked rule is complete, it returns \texttt{None}.
 \item Line 19 -- 24 define the method \texttt{next\_var}.  For a marked rule of the form
-      $c \rightarrow \alpha \bullet b\, \delta$, where $b$ is a variable, it returns $b$.  If the marked rule is
+      $c \rightarrow \alpha \mdot b\, \delta$, where $b$ is a variable, it returns $b$.  If the marked rule is
       complete or if a token follows the marker, it returns \texttt{None}.
 \item Line 26 -- 29 define the method \texttt{move\_dot}, which assumes that \texttt{mBeta} is not empty.  Given the
-      marked rule $c \rightarrow \alpha \bullet X \delta$, it returns the marked rule
-      $c \rightarrow \alpha X \bullet \delta$.  To this end, line 28 appends the first element of \texttt{mBeta} to
+      marked rule $c \rightarrow \alpha \mdot X \delta$, it returns the marked rule
+      $c \rightarrow \alpha X \mdot \delta$.  To this end, line 28 appends the first element of \texttt{mBeta} to
       \texttt{mAlpha} and line 29 removes this element from \texttt{mBeta}.  The original marked rule is not changed.
 \item Line 31 -- 32 define the method \texttt{to\_rule}, which turns the marked rule
-      $c \rightarrow \alpha \bullet \beta$ into the grammar rule $c \rightarrow \alpha \beta$.  This method is
+      $c \rightarrow \alpha \mdot \beta$ into the grammar rule $c \rightarrow \alpha \beta$.  This method is
       needed for the \texttt{reduce} actions.
 \end{enumerate}
 
@@ -1782,9 +1783,9 @@ rule is appended to the worklist when it is added to the closure, and it is proc
       marked rules that are appended in line 13 are processed, too.
 \item Line 5 computes the variable following the marker.  If there is no such variable, the marked rule does not
       contribute to the closure and line 7 continues with the next marked rule.
-\item Otherwise, the marked rule has the form $a \rightarrow \beta \bullet c\, \delta$.  The \texttt{for} loop in
+\item Otherwise, the marked rule has the form $a \rightarrow \beta \mdot c\, \delta$.  The \texttt{for} loop in
       line 8 -- 13 inspects all grammar rules.  For every rule of the form $c \rightarrow \gamma$, line 10 creates
-      the marked rule $c \rightarrow \bullet\, \gamma$.  If this marked rule is new, line 12 adds it to the
+      the marked rule $c \rightarrow \mdot \gamma$.  If this marked rule is new, line 12 adds it to the
       closure and line 13 appends it to the worklist.
 \item Line 14 turns the dictionary into a state.  Iterating over a dictionary yields its keys in the order of their
       insertion.  Hence, the state lists the given marked rules first, followed by the marked rules that have
@@ -1794,7 +1795,7 @@ The method \texttt{goto} in line 16 -- 18 implements the definition
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
-   a \rightarrow \beta\, X \bullet \delta \mid (a \rightarrow \beta \bullet X\, \delta) \in \mathcal{M}
+   a \rightarrow \beta\, X \mdot \delta \mid (a \rightarrow \beta \mdot X\, \delta) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
 The generator expression in line 17 -- 18 selects those marked rules of the state in which the symbol $X$ follows
@@ -1841,7 +1842,7 @@ does not compute all sets of marked rules that are closed under $\textsl{closure
 can be reached from the start state via the function $\textsl{goto}()$.
 \begin{enumerate}
 \item Line 2 -- 3 compute the start state
-      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \bullet\, s\, \symbol{36} \}\bigr)$.
+      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s\, \symbol{36} \}\bigr)$.
 \item Line 4 initializes the list \texttt{mStates} with the start state and line 5 gives it the name
       \texttt{s0}.
 \item The \texttt{for} loop in line 6 -- 15 iterates over the list \texttt{mStates}, which grows while the loop
@@ -1855,8 +1856,8 @@ can be reached from the start state via the function $\textsl{goto}()$.
       strings for every process.
 \item Line 9 -- 10 skip the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
       input if the next token is $\symbol{36}$ and the current state contains the marked rule
-      $\widehat{s} \rightarrow s \bullet \symbol{36}$.  Hence, the state
-      $\bigl\{ \widehat{s} \rightarrow s\, \symbol{36} \bullet \bigr\}$ is not needed.
+      $\widehat{s} \rightarrow s \mdot \symbol{36}$.  Hence, the state
+      $\bigl\{ \widehat{s} \rightarrow s\, \symbol{36} \mdot \bigr\}$ is not needed.
 \item Line 11 computes the state $\textsl{goto}(\mathcal{M}, X)$.  If this state has not been found before, line
       13 -- 15 give it the next free name and append it to \texttt{mStates}.  The name of a new state is
       \texttt{s}$n$, where $n$ is the number of states that have been found so far.  Hence, the state with the
@@ -1938,19 +1939,19 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
       the actions and the conflicts in a readable form.
 \item Line 7 -- 14 compute the \texttt{shift} actions.  For every token $t$ different from $\symbol{36}$, line 9
       computes the state $\textsl{goto}(\mathcal{M}, t)$.  If this state is not empty, $\mathcal{M}$ contains a
-      marked rule of the form $a \rightarrow \beta \bullet t\, \delta$.  In this case, line 11 -- 14 enter the
+      marked rule of the form $a \rightarrow \beta \mdot t\, \delta$.  In this case, line 11 -- 14 enter the
       action $\langle \texttt{shift}, \textsl{goto}(\mathcal{M}, t) \rangle$ into both dictionaries.  The method
       \texttt{all\_states} has given a name to the state $\textsl{goto}(\mathcal{M}, t)$, since $t$ follows the
       marker in a marked rule of $\mathcal{M}$.  The tokens are processed in sorted order, so that the actions are
       printed in the same order in every run.
 \item Line 16 -- 19 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the marked rule
-      $\widehat{s} \rightarrow s \bullet \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
-      \texttt{accept}$.  The marked rule $\widehat{s} \rightarrow s\, \symbol{36} \bullet$ never occurs in a
+      $\widehat{s} \rightarrow s \mdot \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
+      \texttt{accept}$.  The marked rule $\widehat{s} \rightarrow s\, \symbol{36} \mdot$ never occurs in a
       state, since the method \texttt{all\_states} skips the symbol $\symbol{36}$.  Hence, there is no
       \texttt{reduce} action for the rule $\widehat{s} \rightarrow s\, \symbol{36}$, as required by the definition
       of the function \textsl{action}.
 \item Line 21 -- 32 compute the \texttt{reduce} actions.  For every complete marked rule
-      $a \rightarrow \beta \bullet$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 25 creates
+      $a \rightarrow \beta \mdot$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 25 creates
       the action $\pair(\texttt{reduce}, a \rightarrow \beta)$, while line 24 looks up the action that has
       already been entered for $t$.
       \begin{enumerate}[(a)]
@@ -1971,7 +1972,7 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
       \\[0.2cm]
       This grammar is ambiguous, since the derivation $s \Rightarrow a \Rightarrow s$ can be repeated arbitrarily
       often.  The state $\textsl{goto}(q_0, s)$ contains both the marked rule
-      $\widehat{s} \rightarrow s \bullet \symbol{36}$ and the marked rule $a \rightarrow s \bullet$.  Since
+      $\widehat{s} \rightarrow s \mdot \symbol{36}$ and the marked rule $a \rightarrow s \mdot$.  Since
       $\symbol{36} \in \textsl{Follow}(a)$, the parser cannot decide whether it should accept or reduce with the
       rule $a \rightarrow s$ if the next token is $\symbol{36}$.  This is the only conflict of this grammar.
 \end{enumerate}
@@ -2046,28 +2047,28 @@ grammar.  The first conflict is the one that we have found there:  If the parser
 \saquoted{+}.  The second conflict shows that the grammar does not specify the associativity of the operator
 \saquoted{+} either:  If the next token is \saquoted{+}, the parser does not know whether \texttt{1+2+3} has to be
 read as \texttt{(1+2)+3} or as \texttt{1+(2+3)}.  The other two conflicts occur in the state \texttt{s8}, which
-contains the marked rule $e \rightarrow e \saquoted{*}\, e \bullet$.
+contains the marked rule $e \rightarrow e \;\saquoted{*}\; e \mdot$.
 
 \section{Canonical LR Parsers}
 The reduce-reduce conflict that occurs in the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} can be resolved as follows: In the state
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}{lcl}
- s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36} \}\bigr) \\
-     & = & \bigl\{ \widehat{s} \rightarrow \bullet\, s\,\symbol{36},\;
-                   s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y},\;
-                   s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x},\;
-                   a \rightarrow \lambda \bullet, \;
-                   b \rightarrow \lambda \bullet \;
+ s_0 & = & \textsl{closure}\bigl( \{ \widehat{s} \rightarrow \mdot s\,\symbol{36} \}\bigr) \\
+     & = & \bigl\{ \widehat{s} \rightarrow \mdot s\,\symbol{36},\;
+                   s \rightarrow \mdot a \aquoted{x} a \aquoted{y},\;
+                   s \rightarrow \mdot b \aquoted{y} b \aquoted{x},\;
+                   a \rightarrow \lambda \mdot, \;
+                   b \rightarrow \lambda \mdot
             \bigr\}
 \end{array}
 $
 \\[0.2cm]
-the marked rules $a \rightarrow \lambda \bullet$ and $b \rightarrow \lambda\bullet$ arise from the closure calculation of the rules 
+the marked rules $a \rightarrow \lambda \mdot$ and $b \rightarrow \lambda\mdot$ arise from the closure calculation of the rules 
 \\[0.2cm]
 \hspace*{1.3cm}
-$s \rightarrow \bullet\, a \aquoted{x} a \aquoted{y} \quad \text{and} \quad 
- s \rightarrow \bullet\, b \aquoted{y} b \aquoted{x}$.
+$s \rightarrow \mdot a \aquoted{x} a \aquoted{y} \quad \text{and} \quad 
+ s \rightarrow \mdot b \aquoted{y} b \aquoted{x}$.
 \\[0.2cm]
 For the first rule, it is clear that the first $a$ must be followed by a $\saquoted{x}$, and for the second rule, we see that the first $b$ must be followed by a $\saquoted{y}$. This information goes beyond what is contained in the sets $\textsl{Follow}(a)$ and $\textsl{Follow}(b)$, as we now consider the \textcolor{blue}{context} in which the syntactic variable appears. This allows us to define the function $\textsl{action}(s_0, \saquoted{x})$ and $\textsl{action}(s_0, \saquoted{y})$ as follows:
 \\[0.2cm]
@@ -2095,17 +2096,17 @@ appears in the closure calculation. To do this, we expand the definition of a ma
   We write the extended marked rule $\langle a, \beta, \gamma, L \rangle$ as
   \\[0.2cm]
   \hspace*{1.3cm}
-  $a \rightarrow \beta \bullet \gamma: L$.
+  $a \rightarrow \beta \mdot \gamma: L$.
   \\[0.2cm]
   If $L$ consists of only one element $t$, that is if $L = \{ t \}$,
   we omit the set brackets and write the rule as
   \\[0.2cm]
   \hspace*{1.3cm}
-  $a \rightarrow \beta \bullet \gamma:t$. \eox
+  $a \rightarrow \beta \mdot \gamma:t$. \eox
 \end{Definition}
 
 \noindent
-Intuitively, we interpret the e.m.r.\@ $a \rightarrow \beta \bullet \gamma: L$ as a state in which the following applies:
+Intuitively, we interpret the e.m.r.\@ $a \rightarrow \beta \mdot \gamma: L$ as a state in which the following applies:
 \begin{enumerate}[(a)]
 \item The parser attempts to recognize an $a$ using the grammar rule $a \rightarrow \beta \gamma$.
 \item So far, $\beta$ has been recognized. For the rule $a \rightarrow \beta \gamma$ to be applied, $\gamma$ must now be recognized.
@@ -2126,7 +2127,7 @@ Working with extended marked rules is quite similar to working with marked rules
   \item On one hand, if
         \\[0.2cm]
         \hspace*{1.3cm}
-        $a \rightarrow \beta \bullet c\, \delta: L$
+        $a \rightarrow \beta \mdot c\, \delta: L$
         \\[0.2cm]
         is an e.m.r.~from the set $\mathcal{K}$, where $c$ is a syntactic
         variable, and on the other hand, if
@@ -2137,7 +2138,7 @@ Working with extended marked rules is quite similar to working with marked rules
         is a grammar rule of the underlying grammar $G$, then the e.m.r.\@
         \\[0.2cm]
         \hspace*{1.3cm}
-        $c \rightarrow \bullet\, \gamma: \bigcup \{ \textsl{First}(\delta\, t) \mid t \in L \}$
+        $c \rightarrow \mdot \gamma: \bigcup \{ \textsl{First}(\delta\, t) \mid t \in L \}$
         \\[0.2cm]
         is also an element of the set $\mathcal{K}$. The function $\textsl{First}(\alpha)$ computes for
         a string $\alpha \in (T \cup V)^*$ the set of all tokens $t$ with which a string
@@ -2150,7 +2151,7 @@ Working with extended marked rules is quite similar to working with marked rules
 \noindent
 \textbf{Remark}: Compared to the old definition, only the computation of the set of follow tokens has been
 added. The context in which the variable $c$, to be recognized by the rule $c \rightarrow \gamma$, appears is initially
-given by the string $\delta$ that follows $c$ in the rule $a \rightarrow \beta \bullet c\, \delta:L$.  Now it is
+given by the string $\delta$ that follows $c$ in the rule $a \rightarrow \beta \mdot c\, \delta:L$.  Now it is
 possible that $\delta$ derives the empty string $\lambda$. In this case, the follow tokens from the set $L$
 also play a role, because if $\delta \Rightarrow^* \lambda$ is true, then a follow token $t$ from the set $L$
 can also follow the $c$. \eox 
@@ -2181,8 +2182,8 @@ marked rules.
         $\mathcal{K}^{-}$ := $\{\}$;
         while ($\mathcal{K}^{-}\!$ $\not=$ $\mathcal{K}$) \{
             $\mathcal{K}^{-}\!$ := $\mathcal{K}$;
-            $\mathcal{K}$  := $\mathcal{K} \cup \bigl\{\left(c\rightarrow\bullet\gamma:\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}\right) \mid$
-                         $(a\rightarrow\beta\bullet{}c\,\delta:L)\in\mathcal{K}\wedge(c\rightarrow\gamma)\in{}R\bigr\}$;
+            $\mathcal{K}$  := $\mathcal{K} \cup \bigl\{\left(c\rightarrow\mdot\gamma:\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}\right) \mid$
+                         $(a\rightarrow\beta\mdot{}c\,\delta:L)\in\mathcal{K}\wedge(c\rightarrow\gamma)\in{}R\bigr\}$;
         \}
         return $\mathcal{K}$;
     \}
@@ -2216,7 +2217,7 @@ only by appending the set of \textcolor{blue}{follow tokens}, which itself remai
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{ 
-   a \rightarrow \beta\, x \bullet \delta:L \mid (a \rightarrow \beta \bullet x\, \delta:L) \in \mathcal{M} 
+   a \rightarrow \beta\, x \mdot \delta:L \mid (a \rightarrow \beta \mdot x\, \delta:L) \in \mathcal{M} 
    \bigr\} \Bigr)$. 
 \\[0.2cm]
 Similar to the theory of SLR parsers, we augment our grammar $G$ by adding
@@ -2225,50 +2226,50 @@ new rule $\widehat{s} \rightarrow s$ to the set of rules. Further, we add the sy
 \symbol{36} to the tokens. Then the start state has the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$q_0 := \textsl{closure}\bigl(\bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36}\bigr\}\bigr)$,
+$q_0 := \textsl{closure}\bigl(\bigl\{ \widehat{s} \rightarrow \mdot s:\symbol{36}\bigr\}\bigr)$,
 \\[0.2cm]
 because the file end symbol ``\symbol{36}'' must follow the start symbol.
 
 The closure of a set of extended marked rules can contain several rules that differ only in their sets of
 follow tokens.  For example, for the grammar for arithmetic expressions shown in Figure \ref{fig:Expr.grammar}
 on page \pageref{fig:Expr.grammar}, the start state
-$\textsl{closure}\bigl(\bigl\{ \widehat{s} \rightarrow \bullet\, \textsl{expr}:\symbol{36}\bigr\}\bigr)$ contains
+$\textsl{closure}\bigl(\bigl\{ \widehat{s} \rightarrow \mdot \textsl{expr}:\symbol{36}\bigr\}\bigr)$ contains
 the three rules
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}[t]{l}
-   \textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: \symbol{36}, \\[0.1cm]
-   \textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: \saquoted{+}, \\[0.1cm]
-   \textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: \saquoted{-}.
+   \textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}: \symbol{36}, \\[0.1cm]
+   \textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}: \saquoted{+}, \\[0.1cm]
+   \textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}: \saquoted{-}.
  \end{array}$
 \\[0.2cm]
-The first of these rules results from the rule $\widehat{s} \rightarrow \bullet\, \textsl{expr}:\symbol{36}$,
+The first of these rules results from the rule $\widehat{s} \rightarrow \mdot \textsl{expr}:\symbol{36}$,
 while the second and the third result from rules of the form
-$\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}: L$ and
-$\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{-} \textsl{product}: L$, respectively.
+$\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}: L$ and
+$\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{-} \textsl{product}: L$, respectively.
 We combine extended marked rules that differ only in their sets of follow tokens into a single rule whose set
 of follow tokens is the union of these sets.  In the example, we obtain the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}:
+$\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}:
  \{ \saquoted{+}, \saquoted{-}, \symbol{36} \}$.
 \\[0.2cm]
 This does not change the actions of the parser, since the function $\textsl{goto}()$ moves the dot in all of
 these rules in the same way and a reduction with a rule $a \rightarrow \beta$ is performed if the next token
 is an element of one of the sets of follow tokens.  However, it ensures that two states that describe the same
 situation are represented by the same set of extended marked rules.  Therefore, in the following, a state contains
-at most one extended marked rule $a \rightarrow \beta \bullet \gamma: L$ for every marked rule
-$a \rightarrow \beta \bullet \gamma$.
+at most one extended marked rule $a \rightarrow \beta \mdot \gamma: L$ for every marked rule
+$a \rightarrow \beta \mdot \gamma$.
 
 Finally, we show how the definition of the function $\textsl{action}()$ must be changed.
 We specify the computation of this function through the following conditional equations.
 \begin{enumerate}
-\item $(a \rightarrow \beta \bullet t\, \delta:L) \in \mathcal{M} \;\Rightarrow\;
+\item $(a \rightarrow \beta \mdot t\, \delta:L) \in \mathcal{M} \;\Rightarrow\;
        \textsl{action}(\mathcal{M},t) := \langle \texttt{shift}, \textsl{goto}(\mathcal{M},t) \rangle$. 
-\item $(a \rightarrow \beta \bullet:L) \in \mathcal{M} \;\wedge\; a \not= \widehat{s}
+\item $(a \rightarrow \beta \mdot:L) \in \mathcal{M} \;\wedge\; a \not= \widehat{s}
        \;\wedge\; t \in L \;\Rightarrow\;
        \textsl{action}(\mathcal{M},t) := \langle \texttt{reduce}, a \rightarrow \beta \rangle$. 
-\item $(\widehat{s} \rightarrow s \bullet:\symbol{36}) \in \mathcal{M} \;\Rightarrow\;
+\item $(\widehat{s} \rightarrow s \mdot:\symbol{36}) \in \mathcal{M} \;\Rightarrow\;
        \textsl{action}(\mathcal{M},\symbol{36}) := \texttt{accept}$. 
 \item Otherwise: \quad $\textsl{action}(\mathcal{M},t) := \texttt{error}$. 
 \end{enumerate}
@@ -2279,8 +2280,8 @@ A shift-reduce conflict thus occurs in the computation of
 $\textsl{action}(\mathcal{M},t)$ when there are two e.m.r.s 
 \\[0.2cm]
 \hspace*{1.3cm}
-$(a \rightarrow \beta \bullet t\, \delta:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
-$(c \rightarrow \gamma\bullet :L_2) \in \mathcal{M} \quad \mbox{with}\; t \in L_2$
+$(a \rightarrow \beta \mdot t\, \delta:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
+$(c \rightarrow \gamma\mdot :L_2) \in \mathcal{M} \quad \mbox{with}\; t \in L_2$
 \\[0.2cm]
 because then it is unclear whether in state $\mathcal{M}$ the token $t$ should be pushed onto the stack,
 or whether instead the symbol stack should be reduced with the rule $c \rightarrow \gamma$.
@@ -2295,8 +2296,8 @@ smaller than the set $\textsl{Follow}(c)$. \eox
 A \textcolor{blue}{reduce-reduce conflict}\index{reduce-reduce conflict} occurs when there are two e.m.r.s 
 \\[0.2cm]
 \hspace*{1.3cm}
-$(a \rightarrow \beta\, \bullet:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
-$(c \rightarrow \delta\, \bullet:L_2) \in \mathcal{M}$ \quad \mbox{with} \quad $L_1 \cap L_2 \not= \{\}$
+$(a \rightarrow \beta\mdot:L_1) \in \mathcal{M}$ \quad \mbox{and} \quad 
+$(c \rightarrow \delta\mdot:L_2) \in \mathcal{M}$ \quad \mbox{with} \quad $L_1 \cap L_2 \not= \{\}$
 \\[0.2cm]
 because then it is unclear which of these two rules should be used to reduce the symbol stack when the next
 token is an element of the intersection $L_1 \cap L_2$. 
@@ -2309,7 +2310,7 @@ an SLR parser, a reduce-reduce conflict already occurs if there exists a $t$ in 
 \vspace*{0.3cm}
 
 As for SLR parsers, the second equation can also conflict with the third equation:  If $\mathcal{M}$ contains
-both the e.m.r.\@ $\widehat{s} \rightarrow s \bullet:\symbol{36}$ and an e.m.r.\@ $c \rightarrow \gamma \bullet:L$
+both the e.m.r.\@ $\widehat{s} \rightarrow s \mdot:\symbol{36}$ and an e.m.r.\@ $c \rightarrow \gamma \mdot:L$
 with $c \not= \widehat{s}$ and $\symbol{36} \in L$, and if the next token is $\symbol{36}$, then it is not clear
 whether the parser should accept the input or reduce the symbol stack using the rule $c \rightarrow \gamma$.
 Then we speak again of an \blue{accept-reduce conflict}\index{accept-reduce conflict}.
@@ -2318,89 +2319,89 @@ Then we speak again of an \blue{accept-reduce conflict}\index{accept-reduce conf
 We revisit the example of the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} and first calculate the set of all states.
 \begin{enumerate}
 \item $\begin{array}[t]{lcl}
-        s_0 & := & \textsl{closure}\Bigl(\bigl\{\widehat{s} \rightarrow \bullet\, s:\symbol{36} \bigr\}\Bigr) \\
-            & =  & \bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36},
-                           s \rightarrow \bullet\, a \saquoted{x} a \saquoted{y}:\symbol{36},
-                           s \rightarrow \bullet\, b \saquoted{y} b \saquoted{x}:\symbol{36},
-                           a \rightarrow \bullet\,: \saquoted{x},
-                           b \rightarrow \bullet\,: \saquoted{y}
+        s_0 & := & \textsl{closure}\Bigl(\bigl\{\widehat{s} \rightarrow \mdot s:\symbol{36} \bigr\}\Bigr) \\
+            & =  & \bigl\{ \widehat{s} \rightarrow \mdot s:\symbol{36},
+                           s \rightarrow \mdot a \;\saquoted{x}\; a \;\saquoted{y}:\symbol{36},
+                           s \rightarrow \mdot b \;\saquoted{y}\; b \;\saquoted{x}:\symbol{36},
+                           a \rightarrow \mdot: \saquoted{x},
+                           b \rightarrow \mdot: \saquoted{y}
                     \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_1 & := & \textsl{goto}(s_0,s) \\
-            & =  & \textsl{closure}\bigl(\bigl\{\widehat{s} \rightarrow s \bullet:\symbol{36} \bigr\}\bigr) \\
-            & =  & \bigl\{ \widehat{s} \rightarrow s \bullet:\symbol{36} \bigr\}.
+            & =  & \textsl{closure}\bigl(\bigl\{\widehat{s} \rightarrow s \mdot:\symbol{36} \bigr\}\bigr) \\
+            & =  & \bigl\{ \widehat{s} \rightarrow s \mdot:\symbol{36} \bigr\}.
        \end{array}
       $
 \item $\begin{array}[t]{lcl}
         s_2 & := & \textsl{goto}(s_0,a) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow a \bullet \saquoted{x} a \saquoted{y}:\symbol{36} 
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow a \mdot \saquoted{x}\; a \;\saquoted{y}:\symbol{36} 
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow a \bullet \saquoted{x} a \saquoted{y}:\symbol{36} \bigr\}.
+            & =  & \bigl\{ s \rightarrow a \mdot \saquoted{x}\; a \;\saquoted{y}:\symbol{36} \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_3 & := & \textsl{goto}(s_0,b) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \bullet \saquoted{y} b \saquoted{x}: \symbol{36}
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \mdot \saquoted{y}\; b \;\saquoted{x}: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \bullet \saquoted{y} b \saquoted{x}: \symbol{36}
+            & =  & \bigl\{ s \rightarrow b \mdot \saquoted{y}\; b \;\saquoted{x}: \symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_4 & := & \textsl{goto}(s_2, \saquoted{x}) \\
             & =  & \textsl{closure}\bigl(\bigl\{ 
-                          s \rightarrow a \saquoted{x} \bullet a \saquoted{y}:\symbol{36}
+                          s \rightarrow a \;\saquoted{x} \mdot a \;\saquoted{y}:\symbol{36}
                    \bigr\}\bigr) \\
             & =  & \bigl\{
-                          s \rightarrow a \saquoted{x} \bullet a \saquoted{y}:\symbol{36},
-                          a \rightarrow \bullet\,: \saquoted{y}
+                          s \rightarrow a \;\saquoted{x} \mdot a \;\saquoted{y}:\symbol{36},
+                          a \rightarrow \mdot: \saquoted{y}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_5 & := & \textsl{goto}(s_3,\saquoted{y}) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \saquoted{y} \bullet b \saquoted{x}: \symbol{36}
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \;\saquoted{y} \mdot b \;\saquoted{x}: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \saquoted{y} \bullet b \saquoted{x}: \symbol{36},
-                           b \rightarrow \bullet\,: \saquoted{x}
+            & =  & \bigl\{ s \rightarrow b \;\saquoted{y} \mdot b \;\saquoted{x}: \symbol{36},
+                           b \rightarrow \mdot: \saquoted{x}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_6 & := & \textsl{goto}(s_4, a) \\
             & =  & \textsl{closure}\bigl(\bigl\{ 
-                          s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36}
+                          s \rightarrow a \;\saquoted{x}\; a \mdot \saquoted{y}:\symbol{36}
                    \bigr\}\bigr) \\
             & =  & \bigl\{
-                          s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36}
+                          s \rightarrow a \;\saquoted{x}\; a \mdot \saquoted{y}:\symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_7 & := & \textsl{goto}(s_5, b) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \saquoted{y} b \bullet \saquoted{x}: \symbol{36}
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \;\saquoted{y}\; b \mdot \saquoted{x}: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \saquoted{y} b \bullet \saquoted{x}: \symbol{36}
+            & =  & \bigl\{ s \rightarrow b \;\saquoted{y}\; b \mdot \saquoted{x}: \symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_8 & := & \textsl{goto}(s_6, \saquoted{y}) \\
             & =  & \textsl{closure}\bigl(\bigl\{ 
-                          s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36}
+                          s \rightarrow a \;\saquoted{x}\; a \;\saquoted{y} \mdot :\symbol{36}
                    \bigr\}\bigr) \\
             & =  & \bigl\{
-                          s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36}
+                          s \rightarrow a \;\saquoted{x}\; a \;\saquoted{y} \mdot :\symbol{36}
                    \bigr\}.
        \end{array}
        $
 \item $\begin{array}[t]{lcl}
         s_9 & := & \textsl{goto}(s_7, \saquoted{x}) \\
-            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \saquoted{y} b \saquoted{x} \bullet: \symbol{36}
+            & =  & \textsl{closure}\bigl(\bigl\{ s \rightarrow b \;\saquoted{y}\; b \;\saquoted{x} \mdot: \symbol{36}
                    \bigr\}\bigr) \\
-            & =  & \bigl\{ s \rightarrow b \saquoted{y} b \saquoted{x} \bullet: \symbol{36}
+            & =  & \bigl\{ s \rightarrow b \;\saquoted{y}\; b \;\saquoted{x} \mdot: \symbol{36}
                    \bigr\}.
        \end{array}
        $
@@ -2415,8 +2416,8 @@ $\textsl{Follow}(a) \cap \textsl{Follow}(b) = \{ \saquoted{x}, \saquoted{y} \} \
 holds. This conflict has now disappeared, as there is no conflict between the e.m.r.s
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \bullet\,: \saquoted{x}$ \quad \mbox{and} \quad 
-$b \rightarrow \bullet\,: \saquoted{y}$
+$a \rightarrow \mdot: \saquoted{x}$ \quad \mbox{and} \quad 
+$b \rightarrow \mdot: \saquoted{y}$
 \\[0.2cm]
 due to $\saquoted{x} \not= \saquoted{y}$. It is easy to see that no conflicts arise in the other states either.
 
@@ -2474,7 +2475,7 @@ names of its member variables refer to the letters $\alpha$ and $\beta$.  Theref
 subsection in the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$c \rightarrow \alpha \bullet \beta: L$.
+$c \rightarrow \alpha \mdot \beta: L$.
 \\[0.2cm]
 Figure \ref{fig:LR-Table-Generator.ipynb:ExtendedMarkedRule} on page
 \pageref{fig:LR-Table-Generator.ipynb:ExtendedMarkedRule} shows this class together with those of its methods that
@@ -2543,8 +2544,8 @@ combines extended marked rules that differ only in their sets of follow tokens.
 \item Line 8 -- 15 define the method \texttt{\_\_repr\_\_}.  If $L$ has more than one element, line 10 -- 11 sort
       these elements and enclose them in braces.  Sorting ensures that the follow tokens are printed in the same
       order in every run.  Otherwise, line 13 omits the braces, as we do when we write an e.m.r.\@ in the form
-      $c \rightarrow \alpha \bullet \beta: t$.  For example, the e.m.r.\@
-      $c \rightarrow \saquoted{x} \bullet c: \{\saquoted{x}, \saquoted{y}\}$ is converted into the string
+      $c \rightarrow \alpha \mdot \beta: t$.  For example, the e.m.r.\@
+      $c \rightarrow \saquoted{x} \mdot c: \{\saquoted{x}, \saquoted{y}\}$ is converted into the string
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{c → "x" • c: \{"x","y"\}}.
@@ -2553,19 +2554,19 @@ combines extended marked rules that differ only in their sets of follow tokens.
       \ref{fig:SLR-Table-Generator.ipynb:MarkedRule} on page \pageref{fig:SLR-Table-Generator.ipynb:MarkedRule}.
       They ignore the follow tokens and are therefore not shown again.
 \item Line 17 -- 21 define the method \texttt{move\_dot}.  Given the e.m.r.\@
-      $c \rightarrow \alpha \bullet X \delta: L$, it returns the e.m.r.\@ $c \rightarrow \alpha X \bullet \delta: L$.
+      $c \rightarrow \alpha \mdot X \delta: L$, it returns the e.m.r.\@ $c \rightarrow \alpha X \mdot \delta: L$.
       Line 21 copies the set of follow tokens, since the function $\textsl{goto}()$ does not change it.
 \item Line 23 -- 24 define the method \texttt{to\_marked\_rule}, which turns the e.m.r.\@
-      $c \rightarrow \alpha \bullet \beta: L$ into the marked rule $c \rightarrow \alpha \bullet \beta$.  This
+      $c \rightarrow \alpha \mdot \beta: L$ into the marked rule $c \rightarrow \alpha \mdot \beta$.  This
       marked rule is called the \blue{core}\index{core of an extended marked rule} of the e.m.r.  The notebook
       defines the class \texttt{MarkedRule} as in line 1 -- 9 of Figure
       \ref{fig:SLR-Table-Generator.ipynb:MarkedRule}, but without any further methods, since marked rules are only
       needed as cores.
 \item Line 26 -- 34 define the function \texttt{combine\_rules}.  Its argument \texttt{M} is a list of extended
       marked rules.  As discussed in the previous section, extended marked rules that have the same core are
-      combined:  The e.m.r.s $c \rightarrow \alpha \bullet \beta: L_1$, $\cdots$,
-      $c \rightarrow \alpha \bullet \beta: L_k$ are replaced by the single e.m.r.\@
-      $c \rightarrow \alpha \bullet \beta: L_1 \cup \cdots \cup L_k$.
+      combined:  The e.m.r.s $c \rightarrow \alpha \mdot \beta: L_1$, $\cdots$,
+      $c \rightarrow \alpha \mdot \beta: L_k$ are replaced by the single e.m.r.\@
+      $c \rightarrow \alpha \mdot \beta: L_1 \cup \cdots \cup L_k$.
       \begin{enumerate}[(a)]
       \item The dictionary \texttt{Follow} maps every core to the union of the sets of follow tokens of those
             e.m.r.s in \texttt{M} that have this core.  If the core of \texttt{emr} is not yet a key of this
@@ -2589,7 +2590,7 @@ essential respects:
       \texttt{self.mRules.append(GrammarRule('ŝ', (self.mStart,)))}.
       \\[0.2cm]
       Therefore, the token $\symbol{36}$ does not occur in any grammar rule.  It occurs only as the follow token of
-      the e.m.r.\@ $\widehat{s} \rightarrow \bullet\, s: \symbol{36}$, with which the computation of the states
+      the e.m.r.\@ $\widehat{s} \rightarrow \mdot s: \symbol{36}$, with which the computation of the states
       starts.
 \item An LR parser does not need the function \textsl{Follow}, since the follow tokens are stored in the extended
       marked rules.  Therefore, the method \texttt{compute\_tables} neither initializes the dictionary
@@ -2648,7 +2649,7 @@ in its result.
 \end{figure}
 
 \begin{enumerate}
-\item If the e.m.r.\@ \texttt{emr} has the form $a \rightarrow \beta \bullet c\, \delta: L$, where $c$ is a
+\item If the e.m.r.\@ \texttt{emr} has the form $a \rightarrow \beta \mdot c\, \delta: L$, where $c$ is a
       variable, line 8 and 9 store the string $\delta$ and the set $L$ of follow tokens.
 \item For every grammar rule of the form $c \rightarrow \gamma$, line 12 -- 13 compute the set
       \\[0.2cm]
@@ -2657,19 +2658,19 @@ in its result.
       \\[0.2cm]
       as required by the definition of the closure.  The set comprehension iterates over all tokens $t \in L$ and
       collects the elements of the sets $\textsl{FirstList}(\delta\, t)$.  As $t$ is a token, these sets do not
-      contain $\lambda$.  Line 14 -- 15 create the e.m.r.\@ $c \rightarrow \bullet\, \gamma: \textsl{newL}$.  If
+      contain $\lambda$.  Line 14 -- 15 create the e.m.r.\@ $c \rightarrow \mdot \gamma: \textsl{newL}$.  If
       this e.m.r.\@ is new, line 17 and 18 add it to the closure and to the worklist.
 \item Line 19 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
       that have the same core.  For example, for the grammar for arithmetic expressions, the closure of
-      $\bigl\{\widehat{s} \rightarrow \bullet\, \textsl{expr}: \symbol{36}\bigr\}$ contains the three e.m.r.s with
-      the core $\textsl{expr} \rightarrow \bullet\, \textsl{expr} \aquoted{+} \textsl{product}$ that have been
+      $\bigl\{\widehat{s} \rightarrow \mdot \textsl{expr}: \symbol{36}\bigr\}$ contains the three e.m.r.s with
+      the core $\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}$ that have been
       discussed in the previous section.
 \end{enumerate}
 The method \texttt{goto} in line 21 -- 24 implements the definition
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
-   a \rightarrow \beta\, X \bullet \delta:L \mid (a \rightarrow \beta \bullet X\, \delta:L) \in \mathcal{M}
+   a \rightarrow \beta\, X \mdot \delta:L \mid (a \rightarrow \beta \mdot X\, \delta:L) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
 The list \texttt{kernel} in line 22 -- 23 contains those e.m.r.s of the state in which the symbol $X$ follows the
@@ -2683,9 +2684,9 @@ $\bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L_1 \cup L_2 \bigr\} =
  \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L_1 \bigr\} \cup
  \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L_2 \bigr\}$
 \\[0.2cm]
-holds, the e.m.r.\@ $a \rightarrow \beta \bullet c\, \delta: L_1 \cup L_2$ contributes the same follow tokens to
-the closure as the two e.m.r.s $a \rightarrow \beta \bullet c\, \delta: L_1$ and
-$a \rightarrow \beta \bullet c\, \delta: L_2$ together.
+holds, the e.m.r.\@ $a \rightarrow \beta \mdot c\, \delta: L_1 \cup L_2$ contributes the same follow tokens to
+the closure as the two e.m.r.s $a \rightarrow \beta \mdot c\, \delta: L_1$ and
+$a \rightarrow \beta \mdot c\, \delta: L_2$ together.
 
 \begin{figure}[!ht]
 \centering
@@ -2727,7 +2728,7 @@ shows the method \texttt{all\_states}.  It works in the same way as the method s
 are only two differences:
 \begin{enumerate}
 \item Line 2 -- 5 compute the start state
-      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \bullet\, s: \symbol{36} \}\bigr)$.  The start e.m.r.\@
+      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s: \symbol{36} \}\bigr)$.  The start e.m.r.\@
       has the follow token $\symbol{36}$, since the end marker $\symbol{36}$ has to follow the start symbol $s$.  As
       in the method \texttt{goto}, the e.m.r.s of the closure are combined before the closure is turned into a
       state.
@@ -2799,22 +2800,22 @@ as the method shown in Figure \ref{fig:SLR-Table-Generator.ipynb:compute_action_
 \item Line 7 -- 13 compute the \texttt{shift} actions.  In contrast to the SLR table generator, the token
       $\symbol{36}$ need not be excluded, since $\textsl{goto}(\mathcal{M}, \symbol{36})$ is always empty.
 \item Line 15 -- 19 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the e.m.r.\@
-      $\widehat{s} \rightarrow s \bullet: \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
+      $\widehat{s} \rightarrow s \mdot: \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
       \texttt{accept}$.  The token $\symbol{36}$ is the only follow token of every e.m.r.\@ that has the variable
       $\widehat{s}$ on its left hand side:  The start e.m.r.\@ has this follow token, the method \texttt{move\_dot}
       does not change the follow tokens, and the closure never adds an e.m.r.\@ for $\widehat{s}$, since
       $\widehat{s}$ does not occur on the right hand side of any rule.  Therefore, line 16 -- 17 can compare the
       e.m.r.s of $\mathcal{M}$ with the e.m.r.\@ whose set of follow tokens is $\{\symbol{36}\}$.
-\item Line 21 -- 32 compute the \texttt{reduce} actions.  For a complete e.m.r.\@ $a \rightarrow \beta \bullet: L$,
+\item Line 21 -- 32 compute the \texttt{reduce} actions.  For a complete e.m.r.\@ $a \rightarrow \beta \mdot: L$,
       line 23 iterates over the follow tokens in $L$, whereas the SLR table generator iterates over the set
       $\textsl{Follow}(a)$.  As $L$ is often smaller than $\textsl{Follow}(a)$, fewer conflicts arise.
 
       The test \texttt{mr.mVariable != 'ŝ'} in line 22 implements the condition $a \not= \widehat{s}$ of the
-      definition of \textsl{action}.  As the e.m.r.\@ $\widehat{s} \rightarrow s \bullet: \symbol{36}$ is
+      definition of \textsl{action}.  As the e.m.r.\@ $\widehat{s} \rightarrow s \mdot: \symbol{36}$ is
       complete, the method would otherwise create the action $\pair(\texttt{reduce}, \widehat{s} \rightarrow s)$
       for the token $\symbol{36}$.  This action conflicts with the \texttt{accept} action, so a conflict would be
       reported for every grammar.  The SLR table generator does not need this test, since the marked rule
-      $\widehat{s} \rightarrow s\, \symbol{36} \bullet$ never occurs in one of its states.
+      $\widehat{s} \rightarrow s\, \symbol{36} \mdot$ never occurs in one of its states.
 \end{enumerate}
 Conflicts are detected in the same way as in the SLR table generator, including conflicts between \texttt{accept}
 and \texttt{reduce}.  For example, for the ambiguous grammar
@@ -2825,8 +2826,8 @@ $s \rightarrow a \mid \saquoted{x}$, \quad $a \rightarrow s$
 discussed in Section \ref{section:slr-table-generator}, the notebook computes the state
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{goto}(q_0, s) = \bigl\{ \widehat{s} \rightarrow s \bullet: \symbol{36},\;
-                                 a \rightarrow s \bullet: \symbol{36} \bigr\}$.
+$\textsl{goto}(q_0, s) = \bigl\{ \widehat{s} \rightarrow s \mdot: \symbol{36},\;
+                                 a \rightarrow s \mdot: \symbol{36} \bigr\}$.
 \\[0.2cm]
 If the next token is $\symbol{36}$, the parser cannot decide whether it should accept or reduce with the rule
 $a \rightarrow s$.  The method \texttt{compute\_goto\_table}, which computes the goto table, is the same as in
@@ -2845,10 +2846,10 @@ For example, the notebook computes the states
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}[t]{lcl}
-   \texttt{s3}  & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \bullet:
+   \texttt{s3}  & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \mdot:
                       \{ \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/}, \symbol{36} \} \bigr\}
                       \quad \mbox{and} \\[0.1cm]
-   \texttt{s12} & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \bullet:
+   \texttt{s12} & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \mdot:
                       \{ \saquoted{)}, \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/} \} \bigr\}.
  \end{array}$
 \\[0.2cm]
@@ -2919,17 +2920,17 @@ Looking at the LR-goto-graph, we find that the states $s_6$ and
 $s_3$ differ only in the sets of follow tokens, as on one hand, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_6 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \bullet c: \symbol{36}, 
-                 c \rightarrow \bullet\, \text{\aquoted{x}} c:  \symbol{36},
-                 c \rightarrow \bullet\, \text{\aquoted{y}}:    \symbol{36}
+$s_6 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \mdot c: \symbol{36}, 
+                 c \rightarrow \mdot \text{\aquoted{x}} c:  \symbol{36},
+                 c \rightarrow \mdot \text{\aquoted{y}}:    \symbol{36}
        \Bigr\}$, 
 \\[0.2cm]
 and on the other hand, we have
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_3 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \bullet c: \{ \text{\saquoted{x}}, \text{\saquoted{y}} \}, 
-                 c \rightarrow \bullet\, \text{\aquoted{x}} c:  \{ \text{\saquoted{x}}, \text{\saquoted{y}} \},
-                 c \rightarrow \bullet\, \text{\aquoted{y}}:    \{ \text{\saquoted{x}}, \text{\saquoted{y}} \}  
+$s_3 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \mdot c: \{ \text{\saquoted{x}}, \text{\saquoted{y}} \}, 
+                 c \rightarrow \mdot \text{\aquoted{x}} c:  \{ \text{\saquoted{x}}, \text{\saquoted{y}} \},
+                 c \rightarrow \mdot \text{\aquoted{y}}:    \{ \text{\saquoted{x}}, \text{\saquoted{y}} \}  
        \Bigr\}$.
 \\[0.2cm]
 Clearly, the set $s_3$ is derived from the set $s_6$ by replacing everywhere $\symbol{36}$
@@ -2963,7 +2964,7 @@ a set of marked rules:
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{core}(\mathcal{M}) := 
-   \{ a \rightarrow \beta \bullet \gamma \mid (a \rightarrow \beta \bullet \gamma:L) \in \mathcal{M} \}$. 
+   \{ a \rightarrow \beta \mdot \gamma \mid (a \rightarrow \beta \mdot \gamma:L) \in \mathcal{M} \}$. 
 \\[0.2cm]
 Thus, the function $\textsl{core}()$ simply removes the set of follow tokens from the e.m.r.s.
 We had defined the function $\textsl{goto}()$ for a set $\mathcal{M}$ of extended
@@ -2971,7 +2972,7 @@ marked rules and a symbol $x$ as
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{ 
- a \rightarrow \beta\, x \bullet \gamma:L \mid (a \rightarrow \beta \bullet x\, \gamma:L) \in \mathcal{M} 
+ a \rightarrow \beta\, x \mdot \gamma:L \mid (a \rightarrow \beta \mdot x\, \gamma:L) \in \mathcal{M} 
  \bigr\} \Bigr)
 $.
 \\[0.2cm]
@@ -2992,9 +2993,9 @@ $\mathcal{M} \uplus \mathcal{N}$ of $\mathcal{M}$ and $\mathcal{N}$ as
 \\[0.2cm]
 \hspace*{1.3cm}
 $\mathcal{M} \uplus \mathcal{N} := 
-   \{ a \rightarrow \beta\bullet \gamma:K \cup L \mid 
-      (a \rightarrow \beta\bullet \gamma:K) \in \mathcal{M} \;\wedge\;
-      (a \rightarrow \beta\bullet \gamma:L) \in \mathcal{N}
+   \{ a \rightarrow \beta\mdot \gamma:K \cup L \mid 
+      (a \rightarrow \beta\mdot \gamma:K) \in \mathcal{M} \;\wedge\;
+      (a \rightarrow \beta\mdot \gamma:L) \in \mathcal{N}
    \}
 $.
 \\[0.2cm] 
@@ -3026,7 +3027,7 @@ To compute $\textsl{goto}(\mathcal{M},X)$, we first calculate the set
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{closure}\Bigl( \bigl\{  
-  a \rightarrow \alpha X \bullet \beta:L \mid (a \rightarrow \alpha \bullet X \beta:L) \in \mathcal{M} \bigr\} \Bigr)
+  a \rightarrow \alpha X \mdot \beta:L \mid (a \rightarrow \alpha \mdot X \beta:L) \in \mathcal{M} \bigr\} \Bigr)
 $.
 \\[0.2cm]
 The problem is that this set is generally not an element of the set $\frak{Q}$,
@@ -3037,7 +3038,7 @@ core. Therefore, the set
 \hspace*{1.3cm}
 $\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
   \textsl{core}\bigl(\textsl{closure}\bigl( \bigl\{  
-  a \rightarrow \beta\, X \bullet \gamma:L \mid (a \rightarrow \beta \bullet X\, \gamma:L) \in \mathcal{M} 
+  a \rightarrow \beta\, X \mdot \gamma:L \mid (a \rightarrow \beta \mdot X\, \gamma:L) \in \mathcal{M} 
   \bigr\} \bigr)\bigr)
   \Bigr\}
 $
@@ -3048,7 +3049,7 @@ we can set
 \hspace*{-0.1cm}
 $\ds\textsl{goto}(\mathcal{M}, X) := \textsl{arb}\Bigl(\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
   \textsl{core}\Bigl(\textsl{closure}\Bigl( \bigl\{  
-  a \rightarrow \beta\, X \bullet \gamma:L \mid (a \rightarrow \beta \bullet X\, \gamma:L) \in \mathcal{M} 
+  a \rightarrow \beta\, X \mdot \gamma:L \mid (a \rightarrow \beta \mdot X\, \gamma:L) \in \mathcal{M} 
   \bigr\} \Bigr)\Bigr)
   \Bigr\} \Bigr)
 $
@@ -3113,28 +3114,28 @@ canonical LR parser. We will now show that this grammar can also be parsed by
 an LALR parser. To do this, we calculate the set of LALR states.
 This requires first calculating the set of canonical LR states. We had already carried out this calculation earlier and obtained the following states:
 \begin{enumerate}
-\item $s_0  = \bigl\{ \widehat{s} \rightarrow \bullet\, s:\symbol{36},
-                     s \rightarrow \bullet\, a \saquoted{x} a \saquoted{y}:\symbol{36},
-                     s \rightarrow \bullet\, b \saquoted{y} b \saquoted{x}:\symbol{36},
-                     a \rightarrow \bullet\,: \saquoted{x},
-                     b \rightarrow \bullet\,: \saquoted{y}
+\item $s_0  = \bigl\{ \widehat{s} \rightarrow \mdot s:\symbol{36},
+                     s \rightarrow \mdot a \;\saquoted{x}\; a \;\saquoted{y}:\symbol{36},
+                     s \rightarrow \mdot b \;\saquoted{y}\; b \;\saquoted{x}:\symbol{36},
+                     a \rightarrow \mdot: \saquoted{x},
+                     b \rightarrow \mdot: \saquoted{y}
               \bigr\}
       $,
-\item $s_1 = \bigl\{ \widehat{s} \rightarrow s \bullet:\symbol{36} \bigr\}$,
-\item $s_2 = \bigl\{ s \rightarrow a \bullet \saquoted{x} a \saquoted{y}:\symbol{36} \bigr\}$,
-\item $s_3 = \bigl\{ s \rightarrow b \bullet \saquoted{y} b \saquoted{x}: \symbol{36} \bigr\}$,
-\item $s_4 = \bigl\{ s \rightarrow a \saquoted{x} \bullet a \saquoted{y}:\symbol{36},
-                     a \rightarrow \bullet\,: \saquoted{y}
+\item $s_1 = \bigl\{ \widehat{s} \rightarrow s \mdot:\symbol{36} \bigr\}$,
+\item $s_2 = \bigl\{ s \rightarrow a \mdot \saquoted{x}\; a \;\saquoted{y}:\symbol{36} \bigr\}$,
+\item $s_3 = \bigl\{ s \rightarrow b \mdot \saquoted{y}\; b \;\saquoted{x}: \symbol{36} \bigr\}$,
+\item $s_4 = \bigl\{ s \rightarrow a \;\saquoted{x} \mdot a \;\saquoted{y}:\symbol{36},
+                     a \rightarrow \mdot: \saquoted{y}
               \bigr\}
       $,
-\item $s_5 = \bigl\{ s \rightarrow b \saquoted{y} \bullet b \saquoted{x}: \symbol{36},
-                     b \rightarrow \bullet\,: \saquoted{x}
+\item $s_5 = \bigl\{ s \rightarrow b \;\saquoted{y} \mdot b \;\saquoted{x}: \symbol{36},
+                     b \rightarrow \mdot: \saquoted{x}
              \bigr\}
       $,
-\item $s_6 = \bigl\{ s \rightarrow a \saquoted{x} a \bullet \saquoted{y}:\symbol{36} \bigr\}$,
-\item $s_7 = \bigl\{ s \rightarrow b \saquoted{y} b \bullet \saquoted{x}: \symbol{36} \bigr\}$,
-\item $s_8 = \bigl\{ s \rightarrow a \saquoted{x} a \saquoted{y} \bullet :\symbol{36} \bigr\}$,
-\item $s_9 = \bigl\{ s \rightarrow b \saquoted{y} b \saquoted{x} \bullet: \symbol{36} \bigr\}$.
+\item $s_6 = \bigl\{ s \rightarrow a \;\saquoted{x}\; a \mdot \saquoted{y}:\symbol{36} \bigr\}$,
+\item $s_7 = \bigl\{ s \rightarrow b \;\saquoted{y}\; b \mdot \saquoted{x}: \symbol{36} \bigr\}$,
+\item $s_8 = \bigl\{ s \rightarrow a \;\saquoted{x}\; a \;\saquoted{y} \mdot :\symbol{36} \bigr\}$,
+\item $s_9 = \bigl\{ s \rightarrow b \;\saquoted{y}\; b \;\saquoted{x} \mdot: \symbol{36} \bigr\}$.
 \end{enumerate}
 We observe that the cores of all the states listed here are different.
 Therefore, for this grammar, the set of states of the LALR parser coincides with the set of
@@ -3177,55 +3178,55 @@ Dragon Book.
 We first calculate the set of states for a canonical LR parser for this grammar. We obtain the following sets
 of extended marked rules: 
 \begin{enumerate}
-\item $s_0 = \textsl{closure}\bigl(\{\widehat{s} \rightarrow \bullet\, s: \symbol{36}\}\bigr) =
+\item $s_0 = \textsl{closure}\bigl(\{\widehat{s} \rightarrow \mdot s: \symbol{36}\}\bigr) =
        \{
        \begin{array}[t]{lcl}
-         \widehat{s} & \rightarrow & \bullet \;s: \symbol{36},                \\
-         s           & \rightarrow & \bullet \saquoted{v} a \saquoted{y}: \symbol{36}, \\
-         s           & \rightarrow & \bullet \saquoted{w} b \saquoted{y}: \symbol{36}, \\
-         s           & \rightarrow & \bullet \saquoted{v} b \saquoted{z}: \symbol{36}, \\
-         s           & \rightarrow & \bullet \saquoted{w} a \saquoted{z}: \symbol{36}\;\},
+         \widehat{s} & \rightarrow & \mdot s: \symbol{36},                \\
+         s           & \rightarrow & \mdot \saquoted{v}\; a \;\saquoted{y}: \symbol{36}, \\
+         s           & \rightarrow & \mdot \saquoted{w}\; b \;\saquoted{y}: \symbol{36}, \\
+         s           & \rightarrow & \mdot \saquoted{v}\; b \;\saquoted{z}: \symbol{36}, \\
+         s           & \rightarrow & \mdot \saquoted{w}\; a \;\saquoted{z}: \symbol{36}\;\},
         \end{array}
        $
-\item $s_1 = \textsl{goto}(s_0, s) =\{ \widehat{s} \rightarrow s \bullet: \symbol{36} \}$
+\item $s_1 = \textsl{goto}(s_0, s) =\{ \widehat{s} \rightarrow s \mdot: \symbol{36} \}$
 \item $s_2 = \textsl{goto}(s_0, \aquoted{v}) = \{ 
        \begin{array}[t]{lcl}
-        s & \rightarrow & \saquoted{v} \bullet a \saquoted{y}: \symbol{36}, \\
-        s & \rightarrow & \saquoted{v} \bullet b \saquoted{z}: \symbol{36}, \\
-        a & \rightarrow & \bullet \saquoted{x}: \saquoted{y}, \\
-        b & \rightarrow & \bullet \saquoted{x}: \saquoted{z}\; \},
+        s & \rightarrow & \saquoted{v} \mdot a \;\saquoted{y}: \symbol{36}, \\
+        s & \rightarrow & \saquoted{v} \mdot b \;\saquoted{z}: \symbol{36}, \\
+        a & \rightarrow & \mdot \saquoted{x}: \saquoted{y}, \\
+        b & \rightarrow & \mdot \saquoted{x}: \saquoted{z}\; \},
        \end{array}
       $
 \item $s_3 = \textsl{goto}(s_0, \aquoted{w}) = \{ 
        \begin{array}[t]{lcl}
-       s & \rightarrow & \saquoted{w} \bullet b \saquoted{y}: \symbol{36},  \\
-       s & \rightarrow & \saquoted{w} \bullet a \saquoted{z}: \symbol{36},  \\
-       b & \rightarrow & \bullet \saquoted{x}: \saquoted{y},                \\
-       a & \rightarrow & \bullet \saquoted{x}: \saquoted{z}\; \},
+       s & \rightarrow & \saquoted{w} \mdot b \;\saquoted{y}: \symbol{36},  \\
+       s & \rightarrow & \saquoted{w} \mdot a \;\saquoted{z}: \symbol{36},  \\
+       b & \rightarrow & \mdot \saquoted{x}: \saquoted{y},                \\
+       a & \rightarrow & \mdot \saquoted{x}: \saquoted{z}\; \},
        \end{array}
       $
 \item $s_4 = \textsl{goto}(s_2, a) =
-             \{ s \rightarrow \saquoted{v} a \bullet \saquoted{y}: \symbol{36} \}$,
+             \{ s \rightarrow \saquoted{v}\; a \mdot \saquoted{y}: \symbol{36} \}$,
 \item $s_5 = \textsl{goto}(s_2, b) =
-             \{ s \rightarrow \saquoted{v} b \bullet \saquoted{z}: \symbol{36} \}$,
+             \{ s \rightarrow \saquoted{v}\; b \mdot \saquoted{z}: \symbol{36} \}$,
 \item $s_6 = \textsl{goto}(s_2, \aquoted{x}) =
-             \{ a \rightarrow \saquoted{x} \bullet: \saquoted{y},\;
-                b \rightarrow \saquoted{x} \bullet: \saquoted{z} \}$,
+             \{ a \rightarrow \saquoted{x} \mdot: \saquoted{y},\;
+                b \rightarrow \saquoted{x} \mdot: \saquoted{z} \}$,
 \item $s_7 = \textsl{goto}(s_3, b) =
-             \{ s \rightarrow \saquoted{w} b \bullet \saquoted{y}: \symbol{36} \}$,
+             \{ s \rightarrow \saquoted{w}\; b \mdot \saquoted{y}: \symbol{36} \}$,
 \item $s_8 = \textsl{goto}(s_3, a) =
-             \{ s \rightarrow \saquoted{w} a \bullet \saquoted{z}: \symbol{36} \}$,
+             \{ s \rightarrow \saquoted{w}\; a \mdot \saquoted{z}: \symbol{36} \}$,
 \item $s_9 = \textsl{goto}(s_3, \aquoted{x}) =
-             \{ b \rightarrow \saquoted{x} \bullet: \saquoted{y},\;
-                a \rightarrow \saquoted{x} \bullet: \saquoted{z} \}$,
+             \{ b \rightarrow \saquoted{x} \mdot: \saquoted{y},\;
+                a \rightarrow \saquoted{x} \mdot: \saquoted{z} \}$,
 \item $s_{10} = \textsl{goto}(s_4, \aquoted{y}) =
-                \{ s \rightarrow \saquoted{v} a \saquoted{y} \bullet: \symbol{36} \}$,
+                \{ s \rightarrow \saquoted{v}\; a \;\saquoted{y} \mdot: \symbol{36} \}$,
 \item $s_{11} = \textsl{goto}(s_5, \aquoted{z}) =
-                \{ s \rightarrow \saquoted{v} b \saquoted{z} \bullet: \symbol{36} \}$,
+                \{ s \rightarrow \saquoted{v}\; b \;\saquoted{z} \mdot: \symbol{36} \}$,
 \item $s_{12} = \textsl{goto}(s_7, \aquoted{y}) =
-                \{ s \rightarrow \saquoted{w} b \saquoted{y} \bullet: \symbol{36} \}$,
+                \{ s \rightarrow \saquoted{w}\; b \;\saquoted{y} \mdot: \symbol{36} \}$,
 \item $s_{13} = \textsl{goto}(s_8, \aquoted{z}) =
-                \{ s \rightarrow \saquoted{w} a \saquoted{z} \bullet: \symbol{36} \}$.
+                \{ s \rightarrow \saquoted{w}\; a \;\saquoted{z} \mdot: \symbol{36} \}$.
 \end{enumerate}
 The only states where conflicts could occur are the sets $s_6$ and $s_9$, as in these states, reductions with both rules
 \\[0.2cm]
@@ -3238,14 +3239,14 @@ are potentially possible. However, since the sets of follow tokens have an empty
 Next, we calculate the LALR states for the grammar mentioned above. The only states that have a common core are $s_6$ and $s_9$, as
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{core}(s_6) = \{ a \rightarrow \saquoted{x} \bullet,\;
-                b \rightarrow \saquoted{x} \bullet \} = \textsl{core}(s_9)$.
+$\textsl{core}(s_6) = \{ a \rightarrow \saquoted{x} \mdot,\;
+                b \rightarrow \saquoted{x} \mdot \} = \textsl{core}(s_9)$.
 \\[0.2cm]
 In calculating the LALR states, these two states are combined into one state $s_{\{6,9\}}$. This new state takes the form
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_{\{6,9\}} = \bigl\{ a \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saquoted{z} \},\;
-                       b \rightarrow \saquoted{x} \bullet: \{\saquoted{y}, \saquoted{z} \} \bigr\}$.
+$s_{\{6,9\}} = \bigl\{ a \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \},\;
+                       b \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \} \bigr\}$.
 \\[0.2cm]
 Here, there is obviously a reduce-reduce conflict, as on one hand we have
 \\[0.2cm]
