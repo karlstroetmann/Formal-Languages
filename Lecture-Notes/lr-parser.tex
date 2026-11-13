@@ -654,7 +654,7 @@ As described above, we augment the grammar with the new start symbol \(\widehat{
 \\[0.2cm]
 \hspace*{1.3cm}
 \(\widehat{s} \rightarrow \textsl{expr}\; \symbol{36}\).
-
+\\[0.2cm]
 First, we compute the set of states \(Q\). We had previously provided the following formula for this:
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -667,8 +667,13 @@ following abbreviations:
 \\[0.2cm]
 \hspace*{1.3cm}
 \(e := \textsl{expr},\; p := \textsl{product},\; 
-   f := \textsl{factor}\), and \(N := \simtextsc{Number}\). 
+   f := \textsl{factor}\), and \(N := \simtextsc{Number}\).
 \\[0.2cm]
+We compute the states in a systematic order:  We process the states in the order in which they are found,
+beginning with the start state \(s_0\).  For every state \(\mathcal{M}\), we take the symbols \(X\) that occur
+after the dot in the marked rules of \(\mathcal{M}\) in the order in which they occur first, and compute
+\(\textsl{goto}(\mathcal{M}, X)\).  We skip the symbol \(\symbol{36}\), since the parser never shifts it.
+Whenever we find a new state, it gets the next free index.
 We begin with the start state:
 \begin{enumerate}
 \item $ 
@@ -687,31 +692,7 @@ s_0 & := & \textsl{closure}\bigl(\{ & \widehat{s} \rightarrow \bullet\, e\, \sym
 $
 \item$ 
 \begin{array}[t]{lcl}
-s_1 & := & \textsl{goto}(s_0, f ) \\
-    &  = & \textsl{closure}(\{ p \rightarrow f \bullet \}) \\
-    &  = & \{ p \rightarrow f \bullet \}. 
-\end{array}
-$
-\item$ 
-\begin{array}[t]{lcl}
-s_2 & := & \textsl{goto}(s_0, N ) \\
-    &  = & \textsl{closure}(\{ f \rightarrow N \bullet \}) \\
-    &  = & \{ f \rightarrow N \bullet \}. 
-\end{array}
-$
-\item$ 
-\begin{array}[t]{lcl}
-s_3 & := & \textsl{goto}(s_0, p ) \\
-    &  = & \textsl{closure}(\{ p \rightarrow p \bullet \aquoted{*} f,\; 
-                               p \rightarrow p \bullet \aquoted{/} f,\;
-                               e \rightarrow p \bullet
-                            \}) \\
-    &  = & \{ p \rightarrow p \bullet \aquoted{*} f,\; p \rightarrow p \bullet \aquoted{/} f,\; e \rightarrow p \bullet \}.
-\end{array}
-$
-\item$ 
-\begin{array}[t]{lcl}
-s_4 & := & \textsl{goto}(s_0, e ) \\
+s_1 & := & \textsl{goto}(s_0, e ) \\
     &  = & \textsl{closure}(\{ 
            \widehat{s} \rightarrow e \bullet\,\symbol{36},\;  
            e \rightarrow e \bullet \aquoted{+} p,\; 
@@ -724,7 +705,24 @@ s_4 & := & \textsl{goto}(s_0, e ) \\
 $
 \item$ 
 \begin{array}[t]{lcl}
-s_5 & := & \textsl{goto}(s_0, \aquoted{(}) \\
+s_2 & := & \textsl{goto}(s_0, p ) \\
+    &  = & \textsl{closure}(\{ p \rightarrow p \bullet \aquoted{*} f,\; 
+                               p \rightarrow p \bullet \aquoted{/} f,\;
+                               e \rightarrow p \bullet
+                            \}) \\
+    &  = & \{ p \rightarrow p \bullet \aquoted{*} f,\; p \rightarrow p \bullet \aquoted{/} f,\; e \rightarrow p \bullet \}.
+\end{array}
+$
+\item$ 
+\begin{array}[t]{lcl}
+s_3 & := & \textsl{goto}(s_0, f ) \\
+    &  = & \textsl{closure}(\{ p \rightarrow f \bullet \}) \\
+    &  = & \{ p \rightarrow f \bullet \}. 
+\end{array}
+$
+\item$ 
+\begin{array}[t]{lcl}
+s_4 & := & \textsl{goto}(s_0, \aquoted{(}) \\
     &  = & \textsl{closure}(\{ f \rightarrow \aquoted{(} \bullet e \aquoted{)} \}) \\
     &  = & \{\;\; f \rightarrow \aquoted{(} \bullet e \aquoted{)}, \\[0.1cm]
     &    & \quad e \rightarrow \bullet\, e \aquoted{+} p,\;
@@ -737,9 +735,64 @@ s_5 & := & \textsl{goto}(s_0, \aquoted{(}) \\
                  f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
 \end{array}
 $
+\item$ 
+\begin{array}[t]{lcl}
+s_5 & := & \textsl{goto}(s_0, N ) \\
+    &  = & \textsl{closure}(\{ f \rightarrow N \bullet \}) \\
+    &  = & \{ f \rightarrow N \bullet \}. 
+\end{array}
+$
 \item $ 
 \begin{array}[t]{lcl}
-s_6 & := & \textsl{goto}(s_5, e) \\
+s_6 & := & \textsl{goto}(s_1, \aquoted{+}) \\
+    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p \}) \\
+    &  = & \{\;\; e \rightarrow e \aquoted{+} \bullet p,  \\[0.1cm]
+    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
+                 p \rightarrow \bullet\, p \aquoted{/} f,\;
+                 p \rightarrow \bullet\, f,                \\[0.1cm]
+    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
+                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
+\end{array}
+$
+\item $ 
+\begin{array}[t]{lcl}
+s_7 & := & \textsl{goto}(s_1, \aquoted{-}) \\
+    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{-} \bullet p \}) \\
+    &  = & \{\;\; e \rightarrow e \aquoted{-} \bullet p,  \\[0.1cm]
+    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
+                 p \rightarrow \bullet\, p \aquoted{/} f,\;
+                 p \rightarrow \bullet\, f,                \\[0.1cm]
+    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
+                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
+\end{array}
+$
+\item $ 
+\begin{array}[t]{lcl}
+s_8 & := & \textsl{goto}(s_2, \aquoted{*}) \\
+    &  = & \textsl{closure}(\{ 
+                  p \rightarrow p \aquoted{*} \bullet f \; \})
+                  \\[0.1cm]
+    &  = & \{\;\;
+                  p \rightarrow p \aquoted{*} \bullet f,\;
+                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
+                  f \rightarrow \bullet\, N \; \}.
+\end{array}
+$
+\item $ 
+\begin{array}[t]{lcl}
+s_9 & := & \textsl{goto}(s_2, \aquoted{/}) \\
+    &  = & \textsl{closure}(\{ 
+                  p \rightarrow p \aquoted{/} \bullet f \; \})
+                  \\[0.1cm]
+    &  = & \{\;\;
+                  p \rightarrow p \aquoted{/} \bullet f,\;
+                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
+                  f \rightarrow \bullet\, N \; \}.
+\end{array}
+$
+\item $ 
+\begin{array}[t]{lcl}
+s_{10} & := & \textsl{goto}(s_4, e) \\
     &  = & \textsl{closure}(\{\; 
                                f \rightarrow \aquoted{(} e \bullet \aquoted{)},\;
                                e \rightarrow e \bullet \aquoted{+} p,\; 
@@ -754,40 +807,21 @@ s_6 & := & \textsl{goto}(s_5, e) \\
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_7 & := & \textsl{goto}(s_6, \aquoted{)}) \\
-    &  = & \textsl{closure}(\{\; 
-                               f \rightarrow \aquoted{(} e \aquoted{)} \bullet \;
-                            \}) \\
-    &  = & \{\; f \rightarrow \aquoted{(} e \aquoted{)} \bullet\; \}.
+s_{11} & := & \textsl{goto}(s_6, p) \\
+    &  = & \textsl{closure}(\{ 
+                 e \rightarrow e \aquoted{+} p \bullet,\;
+                 p \rightarrow p \bullet \aquoted{*} f,\;
+                 p \rightarrow p \bullet \aquoted{/} f \; \})
+                  \\[0.1cm]
+    &  = & \{\;\;
+                  e \rightarrow e \aquoted{+} p \bullet,\;
+                  p \rightarrow p \bullet \aquoted{*} f,\;
+                  p \rightarrow p \bullet \aquoted{/} f \; \}.
 \end{array}
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_8 & := & \textsl{goto}(s_4, \aquoted{+}) \\
-    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p \}) \\
-    &  = & \{\;\; e \rightarrow e \aquoted{+} \bullet p,  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
-                 p \rightarrow \bullet\, p \aquoted{/} f,\;
-                 p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
-\end{array}
-$
-\item $ 
-\begin{array}[t]{lcl}
-s_9 & := & \textsl{goto}(s_4, \aquoted{-}) \\
-    &  = & \textsl{closure}(\{ e \rightarrow e \aquoted{-} \bullet p \}) \\
-    &  = & \{\;\; e \rightarrow e \aquoted{-} \bullet p,  \\[0.1cm]
-    &    & \quad p \rightarrow \bullet\, p \aquoted{*} f,\;
-                 p \rightarrow \bullet\, p \aquoted{/} f,\;
-                 p \rightarrow \bullet\, f,                \\[0.1cm]
-    &    & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
-                 f \rightarrow \bullet\, N   \hspace*{2.4cm} \}. 
-\end{array}
-$
-\item $ 
-\begin{array}[t]{lcl}
-s_{10} & := & \textsl{goto}(s_9, p) \\
+s_{12} & := & \textsl{goto}(s_7, p) \\
     &  = & \textsl{closure}(\{ 
                   e \rightarrow e \aquoted{-} p \bullet,\;
                   p \rightarrow p \bullet \aquoted{*} f,\;
@@ -800,31 +834,7 @@ s_{10} & := & \textsl{goto}(s_9, p) \\
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_{11} & := & \textsl{goto}(s_3, \aquoted{/}) \\
-    &  = & \textsl{closure}(\{ 
-                  p \rightarrow p \aquoted{/} \bullet f \; \})
-                  \\[0.1cm]
-    &  = & \{\;\;
-                  p \rightarrow p \aquoted{/} \bullet f,\;
-                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
-                  f \rightarrow \bullet\, N \; \}.
-\end{array}
-$
-\item $ 
-\begin{array}[t]{lcl}
-s_{12} & := & \textsl{goto}(s_3, \aquoted{*}) \\
-    &  = & \textsl{closure}(\{ 
-                  p \rightarrow p \aquoted{*} \bullet f \; \})
-                  \\[0.1cm]
-    &  = & \{\;\;
-                  p \rightarrow p \aquoted{*} \bullet f,\;
-                  f \rightarrow \bullet\, \saquoted{(} e \aquoted{)}\!\!,\;
-                  f \rightarrow \bullet\, N \; \}.
-\end{array}
-$
-\item $ 
-\begin{array}[t]{lcl}
-s_{13} & := & \textsl{goto}(s_{12}, f) \\
+s_{13} & := & \textsl{goto}(s_8, f) \\
     &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{*} f \bullet \; \})
            \\[0.1cm]
     &  = & \{\;\;
@@ -833,7 +843,7 @@ s_{13} & := & \textsl{goto}(s_{12}, f) \\
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_{14} & := & \textsl{goto}(s_{11}, f) \\
+s_{14} & := & \textsl{goto}(s_9, f) \\
     &  = & \textsl{closure}(\{ p \rightarrow p \aquoted{/} f \bullet \; \})
            \\[0.1cm]
     &  = & \{\;\;
@@ -842,25 +852,20 @@ s_{14} & := & \textsl{goto}(s_{11}, f) \\
 $
 \item $ 
 \begin{array}[t]{lcl}
-s_{15} & := & \textsl{goto}(s_{8}, p) \\
-    &  = & \textsl{closure}(\{ 
-                 e \rightarrow e \aquoted{+} p \bullet,\;
-                 p \rightarrow p \bullet \aquoted{*} f,\;
-                 p \rightarrow p \bullet \aquoted{/} f \; \})
-                  \\[0.1cm]
-    &  = & \{\;\;
-                  e \rightarrow e \aquoted{+} p \bullet,\;
-                  p \rightarrow p \bullet \aquoted{*} f,\;
-                  p \rightarrow p \bullet \aquoted{/} f \; \}.
+s_{15} & := & \textsl{goto}(s_{10}, \aquoted{)}) \\
+    &  = & \textsl{closure}(\{\; 
+                               f \rightarrow \aquoted{(} e \aquoted{)} \bullet \;
+                            \}) \\
+    &  = & \{\; f \rightarrow \aquoted{(} e \aquoted{)} \bullet\; \}.
 \end{array}
 $
 \end{enumerate}
-Further calculations do not yield any new states. For instance, when we compute \(\textsl{goto}(s_8,\aquoted{(})\), we find: 
+Further calculations do not yield any new states. For instance, when we compute \(\textsl{goto}(s_6,\aquoted{(})\), we find:
 \\[0.2cm]
 \hspace*{1.3cm}
 $ 
 \begin{array}{cl}
-    & \textsl{goto}(s_8, \aquoted{(}) \\
+    & \textsl{goto}(s_6, \aquoted{(}) \\
   = & \textsl{closure}(\{ f \rightarrow \aquoted{(} \bullet e \aquoted{)} \}) \\
   = & \{\;\; f \rightarrow \aquoted{(} \bullet e \aquoted{)}, \\[0.1cm]
     & \quad e \rightarrow \bullet\, e \aquoted{+} p,\; 
@@ -871,7 +876,7 @@ $
             p \rightarrow \bullet\, f,                \\[0.1cm]
     & \quad f \rightarrow \bullet\, \saquoted{(} e \aquoted{)},\;
             f \rightarrow \bullet\, N   \hspace*{2.4cm} \} \\[0.1cm]
-  = & s_5.
+  = & s_4.
 \end{array}
 $
 \\[0.2cm]
@@ -880,14 +885,14 @@ Therefore, the set of states for the shift-reduce parser is given by
 \hspace*{1.3cm}
 \( Q := \{ s_0, s_1, s_2, s_3, s_4, s_5, s_6, s_7, s_8, s_9, s_{10}, s_{11}, s_{12}, s_{13}, s_{14}, s_{15} \} \)
 \\[0.2cm]
-Next, we investigate whether there are any conflicts, and we look specifically at the set \(s_{15}\). Due to
-the marked rule  
+Next, we investigate whether there are any conflicts, and we look specifically at the set \(s_{11}\). Due to
+the marked rule
 \\[0.2cm]
 \hspace*{1.3cm}
 \( p \rightarrow p \bullet \aquoted{*} f \)
 \\[0.2cm]
-a shift must occur in state \(s_{15}\) if the next token is \(\aquoted{*}\). On the other hand, the state
-\(s_{15}\) includes the rule 
+a shift must occur in state \(s_{11}\) if the next token is \(\aquoted{*}\). On the other hand, the state
+\(s_{11}\) includes the rule
 \\[0.2cm]
 \hspace*{1.3cm}
 \( e \rightarrow e \aquoted{+} p \bullet. \)
@@ -904,29 +909,29 @@ examination of the other sets shows that there are also no shift-reduce or reduc
 
 Next, we calculate the \(\textsl{action}\) function. We consider two cases as examples.
 \begin{enumerate}
-\item First, we compute \(\textsl{action}(s_1, \aquoted{+})\). It holds that
+\item First, we compute \(\textsl{action}(s_3, \aquoted{+})\). It holds that
       \\[0.2cm]
       \hspace*{1.3cm}
-      \( 
+      \(
       \begin{array}[t]{lcl}
-      \textsl{action}(s_1, \aquoted{+}) & = & 
+      \textsl{action}(s_3, \aquoted{+}) & = &
             \textsl{action}(\{p \rightarrow f \bullet\}, \aquoted{+}) \\
       & = & \langle \texttt{reduce}, p \rightarrow f \rangle,
       \end{array}
       \)
 \\[0.2cm]
       since we have \(\saquoted{+} \in \textsl{Follow}(p)\).
-\item Next, we compute \(\textsl{action}(s_4, \aquoted{+})\). It holds that
+\item Next, we compute \(\textsl{action}(s_1, \aquoted{+})\). It holds that
       \\[0.2cm]
       \hspace*{1.3cm}
-      \( 
+      \(
       \begin{array}[t]{lcl}
-      \textsl{action}(s_4, \aquoted{+}) & = & 
+      \textsl{action}(s_1, \aquoted{+}) & = &
             \textsl{action}(\{ \widehat{s} \rightarrow e \bullet\,\symbol{36},\;
                  e \rightarrow e \bullet \aquoted{+} p,\; 
                  e \rightarrow e \bullet \aquoted{-} p \; \}, \aquoted{+}) \\
       & = & \langle \texttt{shift}, \textsl{closure}(\{ e \rightarrow e \aquoted{+} \bullet p\}) \rangle \\
-      & = & \langle \texttt{shift}, s_8 \rangle.
+      & = & \langle \texttt{shift}, s_6 \rangle.
       \end{array}
       \)
 \end{enumerate}
@@ -1860,9 +1865,9 @@ can be reached from the start state via the function $\textsl{goto}()$.
       whether a state is new.
 \end{enumerate}
 For the grammar in the file \texttt{Examples/arith.g}, the method \texttt{all\_states} finds the 16 states that we
-have computed by hand in the previous section.  However, it numbers them differently.  For example, the state
-$\textsl{goto}(s_0, \textsl{expr})$, which we have called $s_4$, is called \texttt{s1} by the notebook, since
-\texttt{expr} is the first symbol following the marker in the start state.
+have computed by hand in the previous section.  Since it processes the states and the symbols in the same order
+as we did, it even gives them the same names:  For example, the state $\textsl{goto}(s_0, \textsl{expr})$ is
+called \texttt{s1}, since \texttt{expr} is the first symbol following the marker in the start state.
 
 \subsection{Computing the Action Table and the Goto Table}
 Figure \ref{fig:SLR-Table-Generator.ipynb:compute_action_table} on page
