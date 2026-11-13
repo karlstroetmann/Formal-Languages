@@ -603,7 +603,7 @@ Finally, we specify how the function \(\textsl{action}(\mathcal{M},t)\) is compu
       \hspace*{1.3cm}
       \(\textsl{action}(\mathcal{M},t) := \texttt{error}\).
 \end{enumerate}
-Most conflicts arise between the first two rules. We distinguish between two types of these conflicts.
+Conflicts can arise between the first three rules. We distinguish between three types of conflicts.
 \begin{enumerate}
 \item A \blue{shift-reduce conflict}\index{shift-reduce conflict} occurs when both the first and second cases
       apply. In this situation, the set \(\mathcal{M}\) contains, on one hand, a marked rule of the form 
@@ -627,12 +627,21 @@ Most conflicts arise between the first two rules. We distinguish between two typ
       \\[0.2cm]
       and if at the same time \(t \in \textsl{Follow}(c_1) \cap \textsl{Follow}(c_2)\), because then it is not clear which
       of the two rules the parser should apply when the next token to be read is \(t\).
+\item An \blue{accept-reduce conflict}\index{accept-reduce conflict} occurs when both the second and third
+      cases apply.  In this situation, the set \(\mathcal{M}\) contains, on one hand, the marked rule
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(\widehat{s} \rightarrow s \bullet \symbol{36}\),
+      \\[0.2cm]
+      and on the other hand, \(\mathcal{M}\) contains a rule of the form
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \(c \rightarrow \delta \bullet\) \quad with \(\symbol{36} \in \textsl{Follow}(c)\).
+      \\[0.2cm]
+      If the next token is \(\symbol{36}\), it is not clear whether the parser should accept the input or
+      reduce the symbol stack using the rule \(c \rightarrow \delta\).  Section
+      \ref{section:slr-table-generator} gives an example of such a conflict.
 \end{enumerate}
-Furthermore, the second rule can conflict with the third rule:  If \(\mathcal{M}\) contains both the marked
-rule \(\widehat{s} \rightarrow s \bullet \symbol{36}\) and a marked rule \(c \rightarrow \delta \bullet\) with
-\(\symbol{36} \in \textsl{Follow}(c)\), then it is not clear whether the parser should accept the input or
-reduce the symbol stack using the rule \(c \rightarrow \delta\) when the next token is \(\symbol{36}\).  Section
-\ref{section:slr-table-generator} gives an example of such a conflict.
 
 If any of these conflicts occurs, we say that the grammar is not an SLR grammar\index{SLR grammar}. Such a
 grammar cannot be parsed using an SLR parser. We will later provide examples of shift-reduce and reduce-reduce
@@ -1943,8 +1952,8 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
       \item If there is no action for $t$ yet, line 27 -- 30 enter the new action into both dictionaries.  The
             dictionary \texttt{mActionTable} gets the name of the rule instead of the rule itself.
       \item Otherwise, a different action has been entered for $t$ before.  If this is a \texttt{shift} action,
-            we have found a shift-reduce conflict.  If it is the \texttt{accept} action, the parser cannot decide
-            whether it should accept the input or reduce it.  If it is a \texttt{reduce} action with a different
+            we have found a shift-reduce conflict.  If it is the \texttt{accept} action,
+            we have found an accept-reduce conflict.  If it is a \texttt{reduce} action with a different
             rule, we have found a reduce-reduce conflict.  Line 32 records the conflict.  In addition, the
             notebook prints the state and both actions.  The action table keeps the action that has been entered
             first.  In particular, a shift-reduce conflict is resolved in favour of the \texttt{shift} action.
@@ -2298,6 +2307,7 @@ As for SLR parsers, the second equation can also conflict with the third equatio
 both the e.m.r.\@ $\widehat{s} \rightarrow s \bullet:\symbol{36}$ and an e.m.r.\@ $c \rightarrow \gamma \bullet:L$
 with $c \not= \widehat{s}$ and $\symbol{36} \in L$, and if the next token is $\symbol{36}$, then it is not clear
 whether the parser should accept the input or reduce the symbol stack using the rule $c \rightarrow \gamma$.
+Then we speak again of an \blue{accept-reduce conflict}\index{accept-reduce conflict}.
 
 \exampleEng
 We revisit the example of the grammar shown in Figure \ref{fig:reduce-reduce-conflict.grammar} and first calculate the set of all states.
