@@ -311,13 +311,13 @@ then there is a case distinction according to the value of $\textsl{action}(q_m,
     GotoTable   = dict[tuple[State, Variable], State]
 
     class ShiftReduceParser():
-        def __init__(self, actionTable: ActionTable,
-                     gotoTable: GotoTable) -> None:
+        def __init__(self,
+                     actionTable: ActionTable,
+                     gotoTable:   GotoTable) -> None:
             self.mActionTable: ActionTable = actionTable
             self.mGotoTable  : GotoTable   = gotoTable
 
-        def parse(self, TL: list[Token]) -> bool:
-            ...
+        def parse(self, TL: list[Token]) -> bool: ...
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Implementation of a shift-reduce parser in \textsl{Python}}
@@ -338,7 +338,7 @@ Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb} on page \pageref{fig:Shift-Reduc
       \item \texttt{mActionTable} stores the function $\textsl{action}: Q \times T \rightarrow \textsl{Action}$.
       \item \texttt{mGotoTable} stores the function $\textsl{goto}: Q \times V \rightarrow Q$.
       \end{enumerate}
-\item Line 16 -- 17 only declare the method \texttt{parse}.  This method is implemented as a function that is
+\item Line 17 only declare the method \texttt{parse}.  This method is implemented as a function that is 
       attached to the class afterwards.
 \end{enumerate}
 
@@ -382,13 +382,14 @@ Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb} on page \pageref{fig:Shift-Reduc
 
     ShiftReduceParser.parse = parse
     del parse
-\end{minted}
+\end{minted} 
 \vspace*{-0.3cm}
 \caption{Implementation of a shift-reduce parser in \textsl{Python}}
 \label{fig:Shift-Reduce-Parser-Pure.ipynb:parse}
-\end{figure}
+\end{figure} %$
 
-Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb:parse} on page \pageref{fig:Shift-Reduce-Parser-Pure.ipynb:parse}
+Figure \ref{fig:Shift-Reduce-Parser-Pure.ipynb:parse} on page
+\pageref{fig:Shift-Reduce-Parser-Pure.ipynb:parse}
 shows the implementation of the method \texttt{parse}
 that implements \blue{shift-reduce parsing}.  
 This method assumes that the function \textsl{action} is coded
@@ -396,8 +397,8 @@ as a dictionary that is stored in the member variable \texttt{mActionTable}.
 The function \textsl{goto} is also represented as a dictionary.  It is stored in the
 member variable \texttt{mGotoTable}.  The method \texttt{parse} is called with one
 argument \textsl{TL}.  This is the list of tokens that have to be parsed.  We append the special token
-\simtextsc{Eof}, which is represented by the string ``\texttt{\$}'', at the end of this list.  As we do not
-want to change the list of the caller, we
+\simtextsc{Eof}, which is represented by the string ``\texttt{\$}'', at the end of this list.
+As we do not want to change the list of the caller, we
 create a new list instead of using the operator \texttt{+=}.  The invocation
 $\texttt{parse}(\textsl{TL})$ returns \texttt{True} if the token list \textsl{TL} can be
 parsed successfully and \texttt{False} otherwise.  The implementation of \texttt{parse} works as follows:
@@ -411,11 +412,11 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
       only this state.
 \item The main loop of the parser 
       \begin{itemize}
-      \item sets the variable $q$ to the current state,
-      \item initializes $t$ to the next token, and then
+      \item sets the variable $q$ to the current state, i.e.~the state that is on top of the state stack,
+      \item it initializes $t$ to the next token, and then
       \item looks up the appropriate action in the action table.
       \end{itemize}
-      What happens next depends on this value of $\textsl{action}(q, t)$.
+      What happens next depends on the value of $\textsl{action}(q, t)$.
       \begin{enumerate}
       \item $\textsl{action}(q,t) = \texttt{error}$.
 
@@ -442,8 +443,7 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
             In this case, it can be shown that the symbols $X_1$, $\cdots$, $X_n$ are on top of the
             symbol stack.  As we are going to reduce the symbol stack with the rule $r$,
             we remove these $n$ symbols from the symbol stack and replace them with the
-            variable $A$.  We cannot use the shorter slice \texttt{Symbols[:-n]} here, since the right hand
-            side of a rule can be empty:  For $n = 0$, the slice \texttt{Symbols[:-0]} is the empty list.
+            variable $A$.
 
             Furthermore, we have to remove $n$ states from the stack of states.
             After that, we set the variable \textsl{state} to the state that is on top of the
