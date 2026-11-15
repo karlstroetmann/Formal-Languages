@@ -69,11 +69,12 @@ operators.
     expr : expr "+" expr
          | expr "*" expr
          | NUMBER
+         ;
 
-    NUMBER : /0|[1-9][0-9]*/
+    NUMBER : /0|[1-9][0-9]*/;
 
-    %import common.WS
-    %ignore WS
+    %import common.WS;
+    %ignore WS;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{An ambiguous grammar for arithmetical expressions.}
@@ -378,21 +379,25 @@ collects the expressions that bind most tightly, that is, numbers and parenthesi
     expr : expr "+" prod
          | expr "-" prod
          | prod
+         ;
 
     prod : prod "*" fact
          | prod "/" fact
          | fact
+         ;
 
     fact : atom "^" fact
          | atom
+         ;
 
     atom : "(" expr ")"    %ignore "(", ")"
          | NUMBER
+         ;
 
-    NUMBER : /0|[1-9][0-9]*/
+    NUMBER : /0|[1-9][0-9]*/;
 
-    %import common.WS
-    %ignore WS
+    %import common.WS;
+    %ignore WS;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{An unambiguous \simtextsc{Larkita} grammar for arithmetical expressions.}
@@ -405,7 +410,7 @@ Observe how the associativities are expressed: the rules for \texttt{expr} and \
 because the additive and multiplicative operators associate to the left, while the rule
 \\[0.2cm]
 \hspace*{1.3cm}
-\texttt{fact : atom "\symbol{94}" fact}
+\texttt{fact : atom "\symbol{94}" fact;}
 \\[0.2cm]
 is right recursive, because exponentiation associates to the right.  This grammar is an LR(1)
 grammar: if we build a parser for it after turning the \texttt{ConflictWarning} into an exception as shown in
@@ -469,11 +474,11 @@ notebook
                 xleftmargin  = 0.8cm,
                 xrightmargin = 0.8cm,
               ]{larkita_lexer.py:LarkitaLexer}
-    %nonassoc "<" "=="
-    %left "+" "-"
-    %left "*" "/"
-    %precedence UMINUS
-    %right "^"
+    %nonassoc "<" "==";
+    %left "+" "-";
+    %left "*" "/";
+    %precedence UMINUS;
+    %right "^";
 
     expr : expr "<" expr
          | expr "==" expr
@@ -485,11 +490,12 @@ notebook
          | "-" expr          %prec UMINUS
          | "(" expr ")"      %ignore "(", ")"
          | NUMBER
+         ;
 
-    NUMBER : /0|[1-9][0-9]*/
+    NUMBER : /0|[1-9][0-9]*/;
 
-    %import common.WS
-    %ignore WS
+    %import common.WS;
+    %ignore WS;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{An ambiguous grammar for arithmetical expressions with precedence declarations.}
@@ -706,8 +712,9 @@ which, although unambiguous, does not possess the LR(1) property and is therefor
               ]{larkita_lexer.py:LarkitaLexer}
     a : b "U" "V"
       | c "U" "W"
-    b : "X"
-    c : "X"
+      ;
+    b : "X";
+    c : "X";
 \end{minted}
 \vspace*{-0.3cm}
 \caption{An unambiguous grammar without the LR(1) property.}
@@ -805,8 +812,9 @@ above.
               ]{larkita_lexer.py:LarkitaLexer}
     a : b "V"
       | c "W"
-    b : "X" "U"     -> b
-    c : "X" "U"     -> c
+      ;
+    b : "X" "U"     -> b;
+    c : "X" "U"     -> c;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{An LR(1) grammar equivalent to Figure \ref{fig:lr-conflict.g}.}
@@ -901,12 +909,13 @@ if we use \simtextsc{Larkita} to generate the states for this grammar.  This exa
       | "w" b "y"
       | "v" b "z"
       | "w" a "z"
+      ;
 
-    a : X     -> a
+    a : X     -> a;
 
-    b : X     -> b
+    b : X     -> b;
 
-    X : "x"
+    X : "x";
 \end{minted}
 \vspace*{-0.3cm}
 \caption{A grammar that is LR(1), but not \simtextsc{Lalr}(1).}

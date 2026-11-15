@@ -37,7 +37,7 @@ class LarkitaLexer(RegexLexer):
             (r'_?[a-z][a-z_0-9]*', Name),
             (r'\d+', Number),
             (r'[|*+?~]|\.\.', Operator),
-            (r'[()\[\]:,.]', Punctuation),
+            (r'[()\[\]:;,.]', Punctuation),
         ],
     }
 

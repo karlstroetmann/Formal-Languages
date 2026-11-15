@@ -113,24 +113,28 @@ very same file that also declares the grammar rules.
               ]{larkita_lexer.py:LarkitaLexer}
     stmnt: IDENTIFIER ":=" expr ";"
          | expr ";"
+         ;
 
     expr: expr "+" product
         | expr "-" product
         | product
+        ;
 
     product: product "*" factor
            | product "/" factor
            | factor
+           ;
 
     factor: "(" expr ")"    %ignore "(", ")"
           | NUMBER
           | IDENTIFIER
+          ;
 
     // Lexical definitions
-    %import common.CNAME -> IDENTIFIER, common.NUMBER, common.WS
+    %import common.CNAME -> IDENTIFIER, common.NUMBER, common.WS;
 
     // Ignore whitespace
-    %ignore WS
+    %ignore WS;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The grammar \texttt{calc.lark} of the symbolic calculator, written for \simtextsc{Larkita}.}
@@ -143,7 +147,7 @@ very same file that also declares the grammar rules.
 to be written in \textsl{upper case}.  Therefore, \texttt{expr} is a syntactical variable, while
 \texttt{NUMBER} is a token.  Figure \ref{fig:01-Calculator.ipynb:grammar} is discussed line by line.
 \begin{enumerate}
-\item Line 1 -- 2 define the syntactical variable \texttt{stmnt}.  This definition corresponds to the two
+\item Line 1 -- 3 define the syntactical variable \texttt{stmnt}.  This definition corresponds to the two
       grammar rules
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -154,16 +158,20 @@ to be written in \textsl{upper case}.  Therefore, \texttt{expr} is a syntactical
       of the grammar shown in Figure \ref{fig:calculator.g}.  Observe that the different alternatives of a
       rule are separated by the symbol ``\texttt{|}'', exactly as in the mathematical notation that we
       have used so far, and that literal strings like \squoted{:=} are simply written down as strings
-      enclosed in double quotes.
+      enclosed in double quotes.  Every rule is terminated by a semicolon.  The semicolons in line 1 and
+      line 2 are enclosed in double quotes:  They are literals that stand for the semicolon of the language
+      of our calculator.  The semicolon in line 3, which is not enclosed in quotes, terminates the rule.
+      Line breaks have no meaning for \simtextsc{Larkita}, but we write every alternative on a line of its
+      own and terminate a rule that spans several lines with a semicolon on a line of its own.
 
       As \texttt{stmnt} is the first syntactical variable of the grammar, it is the \blue{start symbol}.
-\item Line 4 -- 10 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
+\item Line 5 -- 13 define the variables \texttt{expr} and \texttt{product}.  These rules are literal
       transcriptions of the corresponding rules of Figure \ref{fig:calculator.g}.  In particular, they
       encode the \blue{precedence}\index{precedence!of arithmetic operators} of the arithmetic operators, and they are \blue{left recursive}.
       Left recursion is not a problem here, since LR parsing is a \blue{bottom-up} technique.
-\item Line 12 -- 14 define the variable \texttt{factor}.  The annotation \texttt{\%ignore "(", ")"} at the end
-      of line 12 is explained below, when we discuss the abstract syntax tree.
-\item Line 17 imports predefined token definitions from the library \texttt{common} that is shipped
+\item Line 15 -- 18 define the variable \texttt{factor}.  The annotation \texttt{\%ignore "(", ")"} at the end
+      of line 15 is explained below, when we discuss the abstract syntax tree.
+\item Line 21 imports predefined token definitions from the library \texttt{common} that is shipped
       with \simtextsc{Larkita}.  Several imports are separated by commas.  Instead of writing our own regular
       expressions we reuse the following definitions:
       \begin{enumerate}
@@ -176,7 +184,7 @@ to be written in \textsl{upper case}.  Therefore, \texttt{expr} is a syntactical
       \item \texttt{NUMBER} matches both integers and floating point numbers.
       \item \texttt{WS} matches \blue{white space}, i.e.~blanks, tabulators, and newlines.
       \end{enumerate}
-\item Line 20 instructs the scanner to discard all white space.
+\item Line 24 instructs the scanner to discard all white space.
 \end{enumerate}
 The notebook reads this file and creates the parser with the commands
 \\[0.2cm]
@@ -220,10 +228,10 @@ an alternative of a grammar rule, then the tuple that is built for this alternat
       the abstract syntax tree of this symbol is returned.  Hence, alternatives like \texttt{expr: product} or
       \texttt{product: factor} leave no trace in the abstract syntax tree.
 \item The annotation \texttt{\%ignore "(", ")"} at the end of an alternative removes the given literals from
-      the head of this alternative.  Hence, the alternative \texttt{"(" expr ")"} in line 12 consists of a
+      the head of this alternative.  Hence, the alternative \texttt{"(" expr ")"} in line 15 consists of a
       single symbol and returns the abstract syntax tree of \texttt{expr}.  This is exactly what we want,
       because the only purpose of the parentheses is to override the precedence of the operators.  Note
-      that this annotation is unrelated to the directive \texttt{\%ignore WS} in line 20, which tells the
+      that this annotation is unrelated to the directive \texttt{\%ignore WS;} in line 24, which tells the
       scanner to discard white space.
 \end{enumerate}
 For example, the alternative \texttt{expr "+" product} yields the tuple
@@ -437,14 +445,16 @@ same as in Figure \ref{fig:01-Calculator.ipynb:grammar} and are therefore not sh
               ]{larkita_lexer.py:LarkitaLexer}
     stmnt: IDENTIFIER ":=" expr ";"
          | expr ";"
+         ;
 
-    expr: product (("+" | "-") product)*
+    expr: product (("+" | "-") product)*;
 
-    product: factor (("*" | "/") factor)*
+    product: factor (("*" | "/") factor)*;
 
     factor: "(" expr ")"    %ignore "(", ")"
           | NUMBER
           | IDENTIFIER
+          ;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The grammar \texttt{calc-ebnf.lark} of the symbolic calculator, written with \simtextsc{Ebnf} operators.}
@@ -452,7 +462,7 @@ same as in Figure \ref{fig:01-Calculator.ipynb:grammar} and are therefore not sh
 \end{figure}
 
 \noindent
-The rules in line 4 and line 6 use two operators of \simtextsc{Ebnf}.
+The rules in line 5 and line 7 use two operators of \simtextsc{Ebnf}.
 \begin{enumerate}
 \item The postfix operator ``\texttt{*}'' denotes a \blue{repetition}\index{repetition (\simtextsc{Ebnf})}:
       The part in parentheses can occur any number of times, including zero times.  Similarly, the postfix
@@ -462,7 +472,7 @@ The rules in line 4 and line 6 use two operators of \simtextsc{Ebnf}.
       alternative that occurs inside an alternative of a grammar rule.  An inner alternative has to be enclosed
       in parentheses.
 \end{enumerate}
-Hence, line 4 states that an expression is a product that is followed by any number of pairs, where every
+Hence, line 5 states that an expression is a product that is followed by any number of pairs, where every
 pair consists of one of the operators \squoted{+} or \squoted{-} and another product.  This single rule
 replaces the three rules for \texttt{expr} in Figure \ref{fig:01-Calculator.ipynb:grammar}.
 
@@ -470,16 +480,16 @@ When an alternative contains repetitions or inner alternatives, the rules for bu
 tree that have been given in Section \ref{section:calculator} are complemented as follows.
 \begin{enumerate}
 \item The children that are produced by the repeated parts are \blue{spliced}\index{splicing (\simtextsc{Larkita})}
-      into the tuple of the alternative.  Hence, the alternative in line 4 builds a single \emph{flat} tuple
+      into the tuple of the alternative.  Hence, the alternative in line 5 builds a single \emph{flat} tuple
       that contains all products of the expression, no matter how many products there are.
 \item The head of a tuple is determined by the grammar, not by the input.  Inside a repetition, the head
       cannot record which operator has been read, since a single tuple contains all the operators.
       Therefore, the literals of an inner alternative that occurs inside a repetition do not belong to the
       head.  Instead, the literal that has actually been read becomes a child of the tuple.  As it is a literal
       and not a named token, it is represented by a plain string like \texttt{'-'} rather than by a pair.
-\item The alternative in line 4 has no literal that belongs to the head.  As it contains a repetition, it does
+\item The alternative in line 5 has no literal that belongs to the head.  As it contains a repetition, it does
       not return the abstract syntax tree of one of its symbols either.  In this case, the name of the rule is
-      used as the head.  Therefore, the alternative in line 4 builds tuples of the form
+      used as the head.  Therefore, the alternative in line 5 builds tuples of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('expr', $p_1$, $o_1$, $p_2$, $\cdots$, $o_{n-1}$, $p_n$)},
@@ -598,11 +608,11 @@ implements the calculator discussed in this section.
 
 \remarkEng
 The parse table of an LR(1) parser is computed from grammar rules that do not use the operators of
-\simtextsc{Ebnf}.  Therefore, \simtextsc{Larkita} translates the repetition in line 4 into a new syntactical
+\simtextsc{Ebnf}.  Therefore, \simtextsc{Larkita} translates the repetition in line 5 into a new syntactical
 variable \texttt{\_\_expr\_star\_0} that is defined by left-recursive rules.  These rules show up in the file
 \texttt{calc-ebnf.out}, which is printed by the notebook.  The reductions with these rules do not build tuples
 of their own.  Instead, they collect the children of the repeated parts in a list, which is then spliced into
-the tuple of the alternative in line 4.  \eox
+the tuple of the alternative in line 5.  \eox
 
 \section{Symbolic Differentiation  \label{section:differentiator}}
 Our second example shows how a parser can be used to construct an \blue{abstract syntax tree} that is
@@ -683,25 +693,30 @@ stored in the file \texttt{diff.lark}, and the notebook creates the parser with 
     expr: expr "+" product
         | expr "-" product
         | product
+        ;
 
     product: product "*" unary
            | product "/" unary
            | unary
+           ;
 
     unary: "-" unary            -> neg
          | factor
+         ;
 
     factor: base "**" unary
           | base
+          ;
 
     base: "exp" "(" expr ")"    -> exp
         | "ln" "(" expr ")"     -> ln
         | "(" expr ")"          %ignore "(", ")"
         | NUMBER
         | "x"
+        ;
 
-    %import common.NUMBER, common.WS
-    %ignore WS
+    %import common.NUMBER, common.WS;
+    %ignore WS;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The grammar \texttt{diff.lark} of the differentiator, written for \simtextsc{Larkita}.}
@@ -712,21 +727,21 @@ stored in the file \texttt{diff.lark}, and the notebook creates the parser with 
 As the general structure of this grammar is the same as the structure of the grammar that we have
 discussed in the previous section, we only comment on those parts that are new.
 \begin{enumerate}
-\item Line 1 -- 7 define the variables \texttt{expr} and \texttt{product} in the usual way.  As
+\item Line 1 -- 9 define the variables \texttt{expr} and \texttt{product} in the usual way.  As
       \texttt{expr} is the first variable of the grammar, it is the start symbol.  In contrast to the
       calculator, this language has no statements:  The input is a single expression and there is no
       terminating semicolon.  Note that the second operand of the operators \squoted{*} and \squoted{/} is
       now the variable \texttt{unary} instead of the variable \texttt{factor}.
-\item Line 9 -- 10 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
+\item Line 11 -- 13 define the variable \texttt{unary}, which implements the \blue{unary minus}.  This rule
       is \blue{right recursive}\index{right recursive}, since a unary operator can be applied repeatedly:  The string
       \texttt{"-\,-x"} is a legal expression.
 
-      The construct ``\texttt{-> neg}'' at the end of line 9 is an
+      The construct ``\texttt{-> neg}'' at the end of line 11 is an
       \blue{alias}\index{alias (Larkita)@alias (\simtextsc{Larkita})}.  An alias replaces the head of the tuple that is
       built for the alternative.  Without this alias, the head would be the literal \squoted{-} and a negation
       could only be distinguished from a subtraction by the number of components of its tuple.  With the alias,
       a negation is represented by a tuple of the form \texttt{('neg', $\textsl{ast}$)}.
-\item Line 12 -- 13 define the variable \texttt{factor}, which implements exponentiation.  The interplay
+\item Line 15 -- 17 define the variable \texttt{factor}, which implements exponentiation.  The interplay
       between \texttt{unary} and \texttt{factor} deserves a closer look, because it encodes two
       conventions that every mathematician takes for granted:
       \begin{enumerate}
@@ -751,8 +766,8 @@ discussed in the previous section, we only comment on those parts that are new.
             \texttt{"x ** x ** x"}
             \\[0.2cm] is parsed as the expression $x^{\left(x^x\right)}$.
       \end{enumerate}
-\item Line 15 -- 19 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
-      line 15 and line 16 are ordinary literals, i.e.~they are recognized in exactly the same way as the
+\item Line 19 -- 24 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
+      line 19 and line 20 are ordinary literals, i.e.~they are recognized in exactly the same way as the
       operator symbols.  Without the aliases \texttt{exp} and \texttt{ln}, the heads of these alternatives
       would be the tuples
       \\[0.2cm]
@@ -761,7 +776,7 @@ discussed in the previous section, we only comment on those parts that are new.
       \\[0.2cm]
       With the aliases, the abstract syntax tree of the string \texttt{"exp(x)"} is the pair
       \texttt{('exp', $\textsl{ast}$)}.
-\item Line 19 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
+\item Line 23 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
       as a literal string, we do not need a token for identifiers at all.  As this alternative consists of a
       single literal, its abstract syntax tree is the tuple \texttt{('x',)}, which has the head \squoted{x} and
       no children.
@@ -1138,7 +1153,7 @@ Which changes are necessary in the function \texttt{toString}? \eox
 \item What is an \blue{inner alternative}?  When is it an abbreviation for several alternatives, and when does
       the literal that has been read become a child of the tuple?
 \item What is the effect of an annotation of the form \texttt{\%ignore "(", ")"} at the end of an alternative,
-      and how does it differ from a directive of the form \texttt{\%ignore WS}?
+      and how does it differ from a directive of the form \texttt{\%ignore WS;}?
 \item Would you be able to write a \simtextsc{Larkita} grammar for propositional formulas together with a
       function that evaluates the nested tuples returned by the generated parser?
 \item How does \simtextsc{Larkita} report lexical errors and syntax errors?

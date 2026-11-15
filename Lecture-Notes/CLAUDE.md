@@ -65,13 +65,18 @@ pdflatex -shell-escape formal-languages.tex
   brace, since the notes do not use `\frenchspacing`.
 - Code listings use `minted`.  Listings that show notebook code must match the notebook
   (`../Python/Chapter-13/Compiler.ipynb` for chapter 13).
+- Larkita grammars (Larkita 0.7.0 or newer) end every rule, terminal definition, and directive with `;`.  A
+  statement on one line has the `;` directly after its last token (`expr: NUMBER;`, `%ignore WS;`); a rule that
+  spans several lines has the `;` on a line of its own, in the column of the `|`.  When the text refers to a
+  rule by its lines, the range includes the line of the `;`.  In the text, complete statements keep their `;`,
+  while fragments that the text calls alternatives (e.g. `expr: product`) have none.
 - Grammars for Larkita are set with the Pygments lexers in `larkita_lexer.py`:
   `{larkita_lexer.py:LarkitaLexer}` for a grammar on its own (it switches to Python after a closing `"""`),
   `{larkita_lexer.py:PythonLarkitaLexer}` for Python code whose raw strings `r"""..."""` are grammars.
   minted only loads a custom lexer whose SHA-256 hash is listed in `~/.latexminted_config`, otherwise the
   build fails:  `{"custom_lexers": {"larkita_lexer.py": ["<shasum -a 256 larkita_lexer.py>"]}}`.
   Larkita's tutorial uses an identical copy of the lexer.  After a change of the lexer, update the hash
-  (list both hashes while the copies differ) and delete `_minted-formal-languages`, since minted's cache
+  (list both hashes while the copies differ) and delete `_minted`, since minted's cache
   does not notice changes of a lexer.
 - The notebooks keep their grammars in `.lark` files next to them (chapter 13: one file per piece in
   `../Python/Chapter-13/Grammar/`), display them with `Code(filename=..., language='larkita')`, and load

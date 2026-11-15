@@ -156,8 +156,8 @@ that start with the string \squoted{program}.
 Figure \ref{fig:01-Interpreter.ipynb:grammar} on page \pageref{fig:01-Interpreter.ipynb:grammar} shows the
 transcription of the grammar of Figure \ref{fig:Pure.g} into the \simtextsc{Ebnf} dialect of
 \simtextsc{Larkita}.  Recall that there is no separate scanner specification:  Both the lexical structure and
-the syntactical structure of our language are described by the single file \texttt{sl.lark}.  Line 1 -- 22
-contain the \blue{syntactical} part of this file, while line 24 -- 33 contain its \blue{lexical} part.
+the syntactical structure of our language are described by the single file \texttt{sl.lark}.  Line 1 -- 26
+contain the \blue{syntactical} part of this file, while line 28 -- 37 contain its \blue{lexical} part.
 
 \begin{figure}[!ht]
 \centering
@@ -169,39 +169,43 @@ contain the \blue{syntactical} part of this file, while line 24 -- 33 contain it
                 xleftmargin  = 0.3cm,
                 xrightmargin = 0.0cm,
               ]{larkita_lexer.py:LarkitaLexer}
-    program: stmnt*
+    program: stmnt*;
 
     stmnt: "if"    "(" bool_expr ")" "{" program "}"
          | "while" "(" bool_expr ")" "{" program "}"
          | ID ":=" expr ";"
          | expr ";"                                 -> "expr"
+         ;
 
-    bool_expr: expr ("==" | "!=" | "<=" | ">=" | "<" | ">") expr
+    bool_expr: expr ("==" | "!=" | "<=" | ">=" | "<" | ">") expr;
 
     expr: expr ("+" | "-") product
         | product
+        ;
 
     product: product ("*" | "/" | "%") factor
            | factor
+           ;
 
     factor: "(" expr ")"
           | INT
           | ID
           | ID "(" [expr ("," expr)*] ")" -> "call"
+          ;
 
     // These literals are left out of the heads of all tuples.
-    %ignore: "(", ")", "{", "}", ";"
+    %ignore: "(", ")", "{", "}", ";";
 
     // Lexical definitions
-    %import common.CNAME -> ID, common.INT, common.WS
+    %import common.CNAME -> ID, common.INT, common.WS;
 
     // In order to show how it's done, I have defined the tokens
     // CPP_COMMENT and C_COMMENT describing comments myself.
-    CPP_COMMENT: /\/\/[^\n]*/
-    C_COMMENT:   "/*" /(.|\n)*?/ "*/"
+    CPP_COMMENT: /\/\/[^\n]*/;
+    C_COMMENT:   "/*" /(.|\n)*?/ "*/";
 
     // Ignore whitespace and comments
-    %ignore WS, C_COMMENT, CPP_COMMENT
+    %ignore WS, C_COMMENT, CPP_COMMENT;
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The grammar \texttt{sl.lark} of our programming language.}
@@ -230,14 +234,14 @@ we only discuss those parts that are new.
       \texttt{('program', $s_1$, $\cdots$, $s_n$)}.  Note that the head of a tuple is determined by the grammar
       and not by the input:  Even a program that consists of a single statement is represented by a tuple
       with the head \squoted{program}.
-\item Line 3 -- 6 define the variable \texttt{stmnt}.  The four alternatives correspond one to one to the
+\item Line 3 -- 7 define the variable \texttt{stmnt}.  The four alternatives correspond one to one to the
       four alternatives of the grammar shown in Figure \ref{fig:Pure.g}.  The keywords \texttt{"if"} and
       \texttt{"while"} are written as literals, i.e.~in exactly the same way as the operator symbols.  In
       particular, we do \emph{not} have to declare tokens for them.
-\item Line 22 is a variant of the directive \texttt{\%ignore} that is written with a colon:  The directive
+\item Line 26 is a variant of the directive \texttt{\%ignore} that is written with a colon:  The directive
       \\[0.2cm]
       \hspace*{1.3cm}
-      \verb|%ignore: "(", ")", "{", "}", ";"|
+      \verb|%ignore: "(", ")", "{", "}", ";";|
       \\[0.2cm]
       removes the given literals from the heads of \emph{all} alternatives of the grammar, since the
       parentheses, the braces, and the semicolon carry no information.  Therefore, the alternative in line 3
@@ -256,24 +260,24 @@ we only discuss those parts that are new.
       of the expression and we could not distinguish an expression statement from an expression.  The alias
       replaces the head, so an expression statement is represented as \texttt{('expr', $\textsl{expr}$)}.
       Note that an alias may be written with or without double quotes.
-\item Line 8 defines the variable \texttt{bool\_expr}.  The part
+\item Line 9 defines the variable \texttt{bool\_expr}.  The part
       \\[0.2cm]
       \hspace*{1.3cm}
       \verb+("==" | "!=" | "<=" | ">=" | "<" | ">")+
       \\[0.2cm]
       is an inner alternative.  As it does not occur inside a repetition, it is an abbreviation (see
-      Section \ref{section:calculator-ebnf}):  Line 8 stands for
+      Section \ref{section:calculator-ebnf}):  Line 9 stands for
       the six alternatives \texttt{expr "==" expr}, $\cdots$, \texttt{expr ">" expr}, one for every
       comparison operator.  Therefore, the comparison operator that has been read is the head of the
       resulting tuple, e.g.~a test of the form $\textsl{lhs}$ \texttt{==} $\textsl{rhs}$ yields the tuple
       \texttt{('==', $\textsl{lhs}$, $\textsl{rhs}$)}.
-\item Line 10 -- 14 define the variables \texttt{expr} and \texttt{product}.  These rules encode the
+\item Line 11 -- 17 define the variables \texttt{expr} and \texttt{product}.  These rules encode the
       \blue{precedence} of the arithmetic operators in the usual way.  Again, inner alternatives are used:
-      Line 10 stands for the two alternatives \texttt{expr "+" product} and \texttt{expr "-" product}.  In
+      Line 11 stands for the two alternatives \texttt{expr "+" product} and \texttt{expr "-" product}.  In
       addition to the four basic arithmetic operators, our language supports the
       \blue{modulo operator} \squoted{\%}.
-\item Line 16 -- 19 define the variable \texttt{factor}.  As the parentheses are ignored, the alternative in
-      line 16 returns the abstract syntax tree of the expression in parentheses.  Line 19 describes a
+\item Line 19 -- 23 define the variable \texttt{factor}.  As the parentheses are ignored, the alternative in
+      line 19 returns the abstract syntax tree of the expression in parentheses.  Line 22 describes a
       \blue{function call}.  The list of arguments is written as
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -288,19 +292,19 @@ we only discuss those parts that are new.
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{('call', ('ID', $f$), $a_1$, $\cdots$, $a_n$)}.
-\item Line 25 imports three token definitions from the library \texttt{common}.  In contrast to the
+\item Line 29 imports three token definitions from the library \texttt{common}.  In contrast to the
       calculator of Section \ref{section:calculator}, we rename the token \texttt{CNAME} to the shorter name
       \texttt{ID}, and we import the token \texttt{INT} instead of the token \texttt{NUMBER}, because the
       language that we implement only supports integers.
-\item Line 29 -- 30 define the tokens \texttt{CPP\_COMMENT} and \texttt{C\_COMMENT}.  In \simtextsc{Larkita},
+\item Line 33 -- 34 define the tokens \texttt{CPP\_COMMENT} and \texttt{C\_COMMENT}.  In \simtextsc{Larkita},
       a \blue{regular expression} is written between two slashes, exactly as in the language
       \textsl{JavaScript}.  Our language supports two kinds of comments.
       \begin{enumerate}
-      \item Line 29 describes \blue{one line comments} that start with the character sequence
+      \item Line 33 describes \blue{one line comments} that start with the character sequence
             ``\texttt{//}'' and extend to the end of the line.  Note that the two slashes that start the
             comment have to be escaped inside the regular expression, since an unescaped slash would
             terminate it.
-      \item Line 30 describes \blue{multiline comments}, i.e.~text that is surrounded by ``\texttt{/*}''
+      \item Line 34 describes \blue{multiline comments}, i.e.~text that is surrounded by ``\texttt{/*}''
             and ``\texttt{*/}''.
 
             Here, we have to use the so-called \emph{non-greedy} version of the Kleene operator
@@ -319,7 +323,7 @@ we only discuss those parts that are new.
             \\[0.2cm]
             two separate comments are recognized.
       \end{enumerate}
-\item Line 33 instructs the scanner to discard white space and both kinds of comments.  The terminals that
+\item Line 37 instructs the scanner to discard white space and both kinds of comments.  The terminals that
       are to be ignored are listed after \texttt{\%ignore}, separated by commas.
 \end{enumerate}
 The notebook creates the LR(1) parser with the command
@@ -378,8 +382,8 @@ recognized as an identifier.  \eox
 
 \remarkEng
 The library \texttt{common} already provides the definitions \texttt{C\_COMMENT} and \texttt{CPP\_COMMENT}.
-Hence, we could drop line 29 -- 30 of Figure \ref{fig:01-Interpreter.ipynb:grammar} and import these
-terminals in line 25 instead.  We have written these tokens ourselves in order to show how a
+Hence, we could drop line 33 -- 34 of Figure \ref{fig:01-Interpreter.ipynb:grammar} and import these
+terminals in line 29 instead.  We have written these tokens ourselves in order to show how a
 regular expression is specified in \simtextsc{Larkita}.  \eox
 \vspace*{0.2cm}
 
@@ -735,7 +739,7 @@ aliases.  For the logical operators, introduce the syntactical variables \texttt
       \\[0.2cm]
       be expressed more concisely in the \simtextsc{Ebnf} dialect of \simtextsc{Larkita}, and what does the
       resulting abstract syntax tree look like?
-\item What is the effect of the directive \verb|%ignore: "(", ")", "{", "}", ";"| in the grammar of our
+\item What is the effect of the directive \verb|%ignore: "(", ")", "{", "}", ";";| in the grammar of our
       interpreter?
 \item Why do the keywords of a programming language not have to be declared as tokens when the scanner is
       generated by \simtextsc{Larkita}?  How would this problem be solved if the scanner were implemented with
