@@ -708,12 +708,14 @@ stored in the file \texttt{diff.lark}, and the notebook creates the parser with 
           | base
           ;
 
-    base: "exp" "(" expr ")"    -> exp
-        | "ln" "(" expr ")"     -> ln
-        | "(" expr ")"          %ignore "(", ")"
+    base: "exp" "(" expr ")"
+        | "ln" "(" expr ")"
+        | "(" expr ")"
         | NUMBER
         | "x"
         ;
+
+    %ignore: "(", ")";
 
     %import common.NUMBER, common.WS;
     %ignore WS;
@@ -768,18 +770,29 @@ discussed in the previous section, we only comment on those parts that are new.
       \end{enumerate}
 \item Line 19 -- 24 define the variable \texttt{base}.  The strings \texttt{"exp"} and \texttt{"ln"} in
       line 19 and line 20 are ordinary literals, i.e.~they are recognized in exactly the same way as the
-      operator symbols.  Without the aliases \texttt{exp} and \texttt{ln}, the heads of these alternatives
-      would be the tuples
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{('exp', '(', ')')} \quad and \quad \texttt{('ln', '(', ')')}.
-      \\[0.2cm]
-      With the aliases, the abstract syntax tree of the string \texttt{"exp(x)"} is the pair
-      \texttt{('exp', $\textsl{ast}$)}.
+      operator symbols.  As the directive in line 26 removes the parentheses from all heads, the heads of
+      these alternatives are the strings \squoted{exp} and \squoted{ln}.  Hence, the abstract syntax tree of
+      the string \texttt{"exp(x)"} is the pair \texttt{('exp', $\textsl{ast}$)}.  For the same reason, the
+      alternative \texttt{"(" expr ")"} in line 21 consists of a single symbol and returns the abstract syntax
+      tree of \texttt{expr}.
 \item Line 23 shows that the only variable of our expressions is \texttt{x}.  Since \texttt{x} is written
       as a literal string, we do not need a token for identifiers at all.  As this alternative consists of a
       single literal, its abstract syntax tree is the tuple \texttt{('x',)}, which has the head \squoted{x} and
       no children.
+\item Line 26 is a variant of the directive \texttt{\%ignore} that is written with a colon:  The directive
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \verb|%ignore: "(", ")";|
+      \\[0.2cm]
+      removes the parentheses from the heads of \emph{all} alternatives of the grammar.  Without it, the
+      heads of the alternatives in line 19 and line 20 would be the tuples
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{('exp', '(', ')')} \quad and \quad \texttt{('ln', '(', ')')}.
+      \\[0.2cm]
+      In contrast to the annotation \texttt{\%ignore "(", ")"} at the end of an alternative, which we have
+      used in the grammar of the calculator, the directive does not have to be repeated for every alternative
+      that contains parentheses.
 \end{enumerate}
 \FloatBarrier
 
@@ -1122,7 +1135,7 @@ implements the symbolic differentiator that has been discussed in this section.
 \exerciseEng
 Extend the differentiator so that it supports the trigonometric functions $\sin$ and $\cos$.  You have to
 \begin{enumerate}
-\item add two alternatives with suitable aliases to the variable \texttt{base} in the grammar shown in Figure
+\item add two alternatives to the variable \texttt{base} in the grammar shown in Figure
       \ref{fig:02-Differentiator.ipynb:grammar} and
 \item add the rules
       \\[0.2cm]
