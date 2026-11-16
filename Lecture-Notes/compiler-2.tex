@@ -1,6 +1,6 @@
 \section{Code Generation}
 Next, we discuss the generation of code.\index{code generation}  We structure our representation by discussing the code generation for
-arithmetic expressions, Boolean expression, statements, and function definitions separately. 
+arithmetic expressions, Boolean expressions, statements, and function definitions separately. 
 
 \subsection{Translation of Arithmetic Expressions}
 Given an arithmetic expression $e$, the translation of $e$ is supposed to generate some code that, when
@@ -347,7 +347,7 @@ def compile_expr(expr, st, class_name):
       \hspace*{1.3cm}
       $\mytt{compile\_expr}(a_i, \mytt{st}, \mytt{class\_name}) = \pair(L_i, s_i)$,
       \\[0.2cm]
-      i.e.~evaluation of the $i^\mathrm{th}$ argument is done by the list of assembler commands $L_i$ and
+      i.e.~the evaluation of the $i^\mathrm{th}$ argument is done by the list of assembler commands $L_i$ and
       needs a stack size of $s_i$.  As we are evaluating the arguments $a_i$ in the order from $a_1$ to $a_n$,
       the evaluation of $a_i$ needs a stack size of $i-1 + s_i$, since the results from the evaluation of
       the arguments $a_1$, $\cdots$, $a_{i-1}$ are already placed on the stack.  Therefore, if we define
@@ -499,7 +499,7 @@ function that is compiled.  Let me explain this equation in detail:
 \begin{enumerate}
 \item $L_1$ and $L_2$ are the lists of assembler commands that evaluate  \textsl{lhs} and \textsl{rhs}, respectively.
 \item Executing $L_1$ and $L_2$ leaves two values on the stack.  These values are then compared using the
-      assembler command \mytt{if\_icmpeq}.  If these value are the same, execution proceeds at the label
+      assembler command \mytt{if\_icmpeq}.  If these values are the same, execution proceeds at the label
       \textsl{true}.
 \item Otherwise execution commences with the next instruction and hence the value $0$ is pushed onto the stack.
 \item Next, the control flow jumps to the label \textsl{next}, which is at the end of the generated
@@ -636,9 +636,9 @@ if an expression of the form
 \hspace*{1.3cm}
 \textsl{lhs} \mytt{\&\&} \textsl{rhs}
 \\[0.2cm]
-is evaluated, the evaluation is stopped as soon the evaluation of \textsl{lhs}
-returns $0$ because then there is no point to evaluate \textsl{rhs}, since if the value of \textsl{lhs} is $0$,
-the result of the expression $\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}$ is $0$, independent from the value of
+is evaluated, the evaluation is stopped as soon as the evaluation of \textsl{lhs}
+returns $0$ because then there is no point in evaluating \textsl{rhs}, since if the value of \textsl{lhs} is $0$,
+the result of the expression $\textsl{lhs} \;\mytt{\&\&}\; \textsl{rhs}$ is $0$, independent of the value of
 the expression \textsl{rhs}.  Similarly, if an expression of the form 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -696,7 +696,7 @@ def compile_bool(expr, st, class_name):
 
 \subsection{Translation of Statements}
 Next, we show how statements are compiled.  First of all, we agree that the execution of a statement
-must not change the size of the stack:  The size of stack before the execution of a statement must
+must not change the size of the stack:  The size of the stack before the execution of a statement must
 be the same as the size of the stack after the statement has been executed.
 Of course, during the execution of the statement the stack may well
 grow and shrink.  But once the execution of the statement has finished, the stack has to be cleaned from all
@@ -973,7 +973,7 @@ def compile_stmnt(stmnt, st, class_name):
 \end{figure}
 
 \subsubsection{Translating a Block Statement}
-The translation of block statement of the form
+The translation of a block statement of the form
 \[ \{ \textsl{stmnt}_1\mytt{;}\; \cdots\; \textsl{stmnt}_n\mytt{;} \} \]
 proceeds by translating the statements $\textsl{stmnt}_i$ separately.  Assume that
 \\[0.2cm]
@@ -1202,11 +1202,11 @@ We proceed to discuss the implementation shown in Figure \ref{fig:Compiler.ipynb
       \item \textsl{parameters} is the abstract syntax tree representing the list of parameters.
       \item \textsl{variables} is the abstract syntax tree representing the list of all local variables
             declared in the function. 
-      \item \textsl{stmnts} is the the abstract syntax tree representing the list of all statements in the body
+      \item \textsl{stmnts} is the abstract syntax tree representing the list of all statements in the body
             of the function. 
       \end{enumerate}
 \item Initially, the parameters, variables, and statements are stored as nested tuples.
-      In line 5-7 these nested tuples are transformed into proper lists.
+      In lines 5--7 these nested tuples are transformed into proper lists.
 \item $m$ is the number of parameters. 
 \item $n$ is the number of local variables. 
 \item The \mytt{for} loop in line 12--14 initializes the symbol table \mytt{st}.  The parameters occupy the
@@ -1297,7 +1297,7 @@ def compile_program(file_name):
       \end{enumerate}
       The module \mytt{os} is aware of the differences in naming directories that exist in different operating
       systems.     
-\item After computing the \mytt{directory} of the file and its \mytt{base} in line 4 and 5, we remove the 
+\item After computing the \mytt{directory} of the file and its \mytt{base} in lines 4 and 5, we remove the 
       file extension \mytt{'.c'} in line 6.  Line 7 computes the name of the output file.  The function
       \mytt{os.path.join} combines the name of the directory and the name of the file using the separator of
       the operating system.
@@ -1305,14 +1305,14 @@ def compile_program(file_name):
 \item In line 10 the function \mytt{parse\_program} shown in Figure \ref{fig:Compiler.ipynb-6} converts the
       program into an abstract syntax tree that is represented as a nested tuple.
 \item If the program contains a syntax error, \mytt{parse\_program} prints an error message and returns
-      \mytt{None}.  In this case, line 11--12 terminate the function.
+      \mytt{None}.  In this case, lines 11--12 terminate the function.
 \item \mytt{fct\_lst} is a list of all function definitions occurring in the given program.
 \item \mytt{CmdLst} is a list of all assembler commands that will be generated.
-\item The \mytt{for} loop in line 15--17 translates all function definitions into assembler code
+\item The \mytt{for} loop in lines 15--17 translates all function definitions into assembler code
       and concatenates the assembler statements into the list \mytt{CmdLst}.
 \item In line 18 the output file is opened for writing.
-\item Line 19--25 write the initialization code to the output file.
-\item The \mytt{for} loop in line 26--27 writes the generated assembler commands to the output file.
+\item Lines 19--25 write the initialization code to the output file.
+\item The \mytt{for} loop in lines 26--27 writes the generated assembler commands to the output file.
 \end{enumerate}
 Figure \ref{fig:MySum.c2} on page \pageref{fig:MySum.c2} shows an integer \mytt{C} program for computing the
 sum $\sum\limits_{i=1}^{6^2}i$.  When we translate this program using the compiler developed in this chapter,
