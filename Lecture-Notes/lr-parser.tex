@@ -1729,13 +1729,83 @@ The set $\textsl{Follow}(\widehat{s})$ remains empty, since $\widehat{s}$ does n
 any rule.
 
 \subsection{Computing the States}
+Both the closure of a set of marked rules and the set of all states of the parser are computed according to the
+same scheme.  Assume that $\mathcal{S}$ is a set and that \textsl{successors} is a function that assigns a set
+$\textsl{successors}(x)$ of \blue{successors}\index{successor} to every element $x$.  Then there is a smallest set
+$\mathcal{K}$ such that
+\begin{enumerate}[(a)]
+\item $\mathcal{S} \subseteq \mathcal{K}$ and
+\item $x \in \mathcal{K} \;\Rightarrow\; \textsl{successors}(x) \subseteq \mathcal{K}$.
+\end{enumerate}
+The set $\mathcal{K}$ contains exactly those elements that are \blue{reachable}\index{reachable} from
+$\mathcal{S}$:  These are the elements of $\mathcal{S}$, their successors, the successors of these successors, and so
+on.
+\begin{enumerate}
+\item $\textsl{closure}(\mathcal{M})$ is the set of marked rules that are reachable from $\mathcal{M}$ if the
+      successors of a marked rule $a \rightarrow \beta \mdot c\, \delta$, where $c$ is a variable, are the marked
+      rules $c \rightarrow \mdot \gamma$ such that $c \rightarrow \gamma$ is a grammar rule, while all other marked
+      rules have no successors.
+\item The states of the parser are the states that are reachable from $\{ q_0 \}$ if the successors of a state
+      $\mathcal{M}$ are the states $\textsl{goto}(\mathcal{M}, X)$ for those symbols $X$ that follow the marker in a
+      marked rule of $\mathcal{M}$.
+\end{enumerate}
+Therefore, we implement this scheme only once.  Figure \ref{fig:04-SLR-Table-Generator.ipynb:reachable} on page
+\pageref{fig:04-SLR-Table-Generator.ipynb:reachable} shows the function \texttt{reachable}.  Given an iterable
+\texttt{Start} and a function \texttt{successors} that returns the successors of its argument, it returns the list of
+all elements that are reachable from \texttt{Start}.  The iterative computation of the closure that has been
+described in the previous section inspects all marked rules of $\mathcal{K}$ again and again until no new marked rule
+is found.  In contrast, the function \texttt{reachable} uses a \blue{worklist}\index{worklist}, i.e.~a list of those
+elements that still have to be processed.  Every element is appended to the worklist when it is found, and it is
+processed exactly once.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def reachable(Start, successors):
+        Result = list(dict.fromkeys(Start))
+        Seen   = set(Result)
+        for x in Result:
+            for y in successors(x):
+                if y not in Seen:
+                    Seen.add(y)
+                    Result.append(y)
+        return Result
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The function \texttt{reachable}.}
+\label{fig:04-SLR-Table-Generator.ipynb:reachable}
+\end{figure}
+
+\begin{enumerate}
+\item Line 2 initializes the list \texttt{Result} with the elements of \texttt{Start}.  The function
+      \texttt{dict.fromkeys} removes duplicates, while keeping the order of the elements.  The list
+      \texttt{Result} collects the elements that have been found and serves as the worklist at the same time.
+\item Line 3 initializes the set \texttt{Seen}, which always contains the same elements as the list
+      \texttt{Result}.  Line 6 uses it to check whether an element is new.  This check is fast for a set, while
+      for a list it would have to compare the element with every element of the list.
+\item The \texttt{for} loop in line 4 -- 8 processes the elements of the list \texttt{Result}.  This list grows
+      while the loop iterates over it.  This is no problem, since a \texttt{for} loop over a list accesses the
+      elements of the list by their index and stops only when it reaches the current end of the list.  Therefore,
+      the elements that are appended in line 8 are processed, too.
+\item The \texttt{for} loop in line 5 -- 8 inspects the successors \texttt{y} of the element \texttt{x}.  If
+      \texttt{y} is new, line 7 and 8 add it to the set \texttt{Seen} and append it to the list \texttt{Result}.
+\item Line 9 returns the list \texttt{Result}.  It starts with the elements of \texttt{Start}, followed by the
+      other elements in the order in which they have been found.
+\end{enumerate}
+
+\noindent
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure}
 shows the methods \texttt{cmp\_closure} and \texttt{goto}.  Given a set $\mathcal{M}$ of marked rules, the method
-\texttt{cmp\_closure} computes the set $\textsl{closure}(\mathcal{M})$ and returns it as a \texttt{State}.  The iterative computation of
-the closure that has been described in the previous section inspects all marked rules of $\mathcal{K}$ again and
-again until no new marked rule is found.  In contrast, the method \texttt{cmp\_closure} uses a
-\blue{worklist}\index{worklist}, i.e.~a list of those marked rules that still have to be processed.  Every marked
-rule is appended to the worklist when it is added to the closure, and it is processed exactly once.
+\texttt{cmp\_closure} computes the set $\textsl{closure}(\mathcal{M})$ and returns it as a \texttt{State}.
 
 \begin{figure}[!ht]
 \centering
@@ -1750,19 +1820,14 @@ rule is appended to the worklist when it is added to the closure, and it is proc
                 gobble        = 4,
               ]{python3}
     def cmp_closure(self, Marked_Rules):
-        Result   = dict.fromkeys(Marked_Rules)
-        worklist = list(Result)
-        for mr in worklist:
+        def successors(mr):
             c = mr.next_var()
             if c is None:
-                continue
-            for rule in self.mRules:
-                if rule.mVariable == c:
-                    new_mr = MarkedRule(c, (), rule.mBody)
-                    if new_mr not in Result:
-                        Result[new_mr] = None
-                        worklist.append(new_mr)
-        return State(Result)
+                return []
+            return [ MarkedRule(c, (), rule.mBody)
+                     for rule in self.mRules
+                     if rule.mVariable == c ]
+        return State(reachable(Marked_Rules, successors))
 
     def goto(self, state, x):
         return self.cmp_closure(mr.move_dot() for mr in state
@@ -1774,33 +1839,26 @@ rule is appended to the worklist when it is added to the closure, and it is proc
 \end{figure}
 
 \begin{enumerate}
-\item Line 2 initializes the variable \texttt{Result} with a dictionary whose keys are the given marked rules and
-      whose values are \texttt{None}.  This dictionary is used as an \emph{ordered set}:  It remembers the order
-      in which the marked rules have been inserted, and the test in line 11, which checks whether a marked rule
-      is already an element of the closure, is fast.
-\item Line 3 initializes the worklist with the given marked rules.
-\item The \texttt{for} loop in line 4 -- 13 processes the marked rules on the worklist.  The worklist grows while
-      this loop iterates over it.  This is no problem, since a \texttt{for} loop over a list accesses the elements
-      of the list by their index and stops only when it reaches the current end of the list.  Therefore, the
-      marked rules that are appended in line 13 are processed, too.
-\item Line 5 computes the variable following the marker.  If there is no such variable, the marked rule does not
-      contribute to the closure and line 7 continues with the next marked rule.
-\item Otherwise, the marked rule has the form $a \rightarrow \beta \mdot c\, \delta$.  The \texttt{for} loop in
-      line 8 -- 13 inspects all grammar rules.  For every rule of the form $c \rightarrow \gamma$, line 10 creates
-      the marked rule $c \rightarrow \mdot \gamma$.  If this marked rule is new, line 12 adds it to the
-      closure and line 13 appends it to the worklist.
-\item Line 14 turns the dictionary into a state.  Iterating over a dictionary yields its keys in the order of their
-      insertion.  Hence, the state lists the given marked rules first, followed by the marked rules that have
-      been added in line 12.
+\item Line 2 -- 8 define the local function \texttt{successors}, which computes the successors of the marked rule
+      \texttt{mr}.  As \texttt{successors} is defined inside the method \texttt{cmp\_closure}, it can access the
+      parameter \texttt{self} of this method.
+\item Line 3 computes the variable following the marker.  If there is no such variable, the marked rule has no
+      successors and line 5 returns the empty list.
+\item Otherwise, the marked rule has the form $a \rightarrow \beta \mdot c\, \delta$.  The list comprehension in
+      line 6 -- 8 inspects all grammar rules.  For every rule of the form $c \rightarrow \gamma$, it creates the
+      marked rule $c \rightarrow \mdot \gamma$.
+\item Line 9 computes the marked rules that are reachable from the given marked rules and turns them into a state.
+      As the list returned by \texttt{reachable} starts with the given marked rules, the state lists these marked
+      rules first, followed by the marked rules that have been added by the closure.
 \end{enumerate}
-The method \texttt{goto} in line 16 -- 18 implements the definition
+The method \texttt{goto} in line 11 -- 13 implements the definition
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, X \mdot \delta \mid (a \rightarrow \beta \mdot X\, \delta) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
-The generator expression in line 17 -- 18 selects those marked rules of the state in which the symbol $X$ follows
+The generator expression in line 12 -- 13 selects those marked rules of the state in which the symbol $X$ follows
 the marker and moves the marker over $X$.  The symbol $X$ can be a variable or a token.  If $X$ does not follow the
 marker in any marked rule of the state, the result is the empty state.
 
@@ -1817,20 +1875,15 @@ marker in any marked rule of the state, the result is the empty state.
                 gobble        = 4,
               ]{python3}
     def all_states(self):
+        def successors(state):
+            symbols = dict.fromkeys(mr.mBeta[0] for mr in state
+                                    if not mr.is_complete())
+            return [ self.goto(state, x) for x in symbols if x != '$' ]
         start_state  = self.cmp_closure(
             [ MarkedRule('ŝ', (), (self.mStart, '$')) ])
-        self.mStates = [ start_state ]
-        self.mStateNames[start_state] = 's0'
-        for state in self.mStates:
-            for x in dict.fromkeys(mr.mBeta[0] for mr in state
-                                   if not mr.is_complete()):
-                if x == '$':
-                    continue
-                next_state = self.goto(state, x)
-                if next_state not in self.mStateNames:
-                    self.mStateNames[next_state] = \
-                        f's{len(self.mStates)}'
-                    self.mStates.append(next_state)
+        self.mStates = reachable([ start_state ], successors)
+        for n, state in enumerate(self.mStates):
+            self.mStateNames[state] = f's{n}'
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The method \texttt{all\_states}.}
@@ -1843,29 +1896,25 @@ shows the method \texttt{all\_states}, which computes the states of the SLR pars
 does not compute all sets of marked rules that are closed under $\textsl{closure}()$, but only those states that
 can be reached from the start state via the function $\textsl{goto}()$.
 \begin{enumerate}
-\item Line 2 -- 3 compute the start state
-      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s\, \symbol{36} \}\bigr)$.
-\item Line 4 initializes the list \texttt{mStates} with the start state and line 5 gives it the name
-      \texttt{s0}.
-\item The \texttt{for} loop in line 6 -- 15 iterates over the list \texttt{mStates}, which grows while the loop
-      iterates over it.  This is the same technique as the worklist of the method \texttt{cmp\_closure}.
-\item The \texttt{for} loop in line 7 -- 15 iterates over all symbols $X$ that follow the marker in a marked rule of
-      the current state $\mathcal{M}$.  For all other symbols $X$, the set $\textsl{goto}(\mathcal{M}, X)$ is empty
-      and hence is not a state.  Again, a dictionary is used as an ordered set:  The function
-      \texttt{dict.fromkeys} removes duplicates, while keeping the order in which the symbols occur in the marked
-      rules.  Therefore, the states are named in the same way in every run.  If we used a set instead, the order
-      of the symbols could change from one run to the next, since \textsl{Python} randomizes the hash values of
-      strings for every process.
-\item Line 9 -- 10 skip the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
+\item Line 2 -- 5 define the local function \texttt{successors}.  Given a state $\mathcal{M}$, it returns the
+      states $\textsl{goto}(\mathcal{M}, X)$ for all symbols $X$ that follow the marker in a marked rule of
+      $\mathcal{M}$.  For all other symbols $X$, the set $\textsl{goto}(\mathcal{M}, X)$ is empty and hence is not
+      a state.  Again, a dictionary is used as an ordered set:  The function \texttt{dict.fromkeys} in line 3 -- 4
+      removes duplicates, while keeping the order in which the symbols occur in the marked rules.  Therefore, the
+      states are named in the same way in every run.  If we used a set instead, the order of the symbols could
+      change from one run to the next, since \textsl{Python} randomizes the hash values of strings for every
+      process.
+\item Line 5 skips the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
       input if the next token is $\symbol{36}$ and the current state contains the marked rule
       $\widehat{s} \rightarrow s \mdot \symbol{36}$.  Hence, the state
       $\bigl\{ \widehat{s} \rightarrow s\, \symbol{36} \mdot \bigr\}$ is not needed.
-\item Line 11 computes the state $\textsl{goto}(\mathcal{M}, X)$.  If this state has not been found before, line
-      13 -- 15 give it the next free name and append it to \texttt{mStates}.  The name of a new state is
-      \texttt{s}$n$, where $n$ is the number of states that have been found so far.  Hence, the state with the
-      name \texttt{s}$n$ is stored at index $n$ of the list \texttt{mStates}.  Note that the dictionary
-      \texttt{mStateNames} serves two purposes:  It assigns names to the states, and line 12 uses it to check
-      whether a state is new.
+\item Line 6 -- 7 compute the start state
+      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s\, \symbol{36} \}\bigr)$.
+\item Line 8 computes the list of all states that are reachable from the start state.  This list starts with the
+      start state, followed by the other states in the order in which they have been found.
+\item Line 9 -- 10 give the state at index $n$ of the list \texttt{mStates} the name \texttt{s}$n$.  Hence, the
+      start state is called \texttt{s0}, and the state with the name \texttt{s}$n$ is stored at index $n$ of the
+      list \texttt{mStates}.
 \end{enumerate}
 For the grammar in the file \texttt{Examples/arith.g}, the method \texttt{all\_states} finds the 16 states that we
 have computed by hand in the previous section.  Since it processes the states and the symbols in the same order
@@ -2603,10 +2652,10 @@ essential respects:
 
 \subsection{Computing the States}
 Figure \ref{fig:05-LR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:05-LR-Table-Generator.ipynb:cmp_closure}
-shows the methods \texttt{cmp\_closure} and \texttt{goto}.  The method \texttt{cmp\_closure} uses a worklist in the
-same way as the method shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page
-\pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure}.  It differs only in the computation of the follow tokens and
-in its result.
+shows the methods \texttt{cmp\_closure} and \texttt{goto}.  Like the method shown in Figure
+\ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure},
+the method \texttt{cmp\_closure} computes the closure with the function \texttt{reachable}.  It differs only in the
+computation of the follow tokens and in its result.
 
 \begin{figure}[!ht]
 \centering
@@ -2621,24 +2670,18 @@ in its result.
                 gobble        = 4,
               ]{python3}
     def cmp_closure(self, Marked_Rules):
-        Result   = dict.fromkeys(Marked_Rules)
-        worklist = list(Result)
-        for emr in worklist:
+        def successors(emr):
             c = emr.next_var()
             if c is None:
-                continue
+                return []
             delta = emr.mBeta[1:]
             L     = emr.mFollow
-            for rule in self.mRules:
-                if rule.mVariable == c:
-                    newL    = frozenset({ x for t in L for x in
-                            self.first_list(delta + (t,)) })
-                    new_emr = ExtendedMarkedRule(c, (), rule.mBody,
-                                                 newL)
-                    if new_emr not in Result:
-                        Result[new_emr] = None
-                        worklist.append(new_emr)
-        return list(Result)
+            newL  = frozenset({ x for t in L for x in
+                                self.first_list(delta + (t,)) })
+            return [ ExtendedMarkedRule(c, (), rule.mBody, newL)
+                     for rule in self.mRules
+                     if rule.mVariable == c ]
+        return reachable(Marked_Rules, successors)
 
     def goto(self, state, x):
         kernel = [ emr.move_dot() for emr in state
@@ -2652,31 +2695,33 @@ in its result.
 
 \begin{enumerate}
 \item If the e.m.r.\@ \texttt{emr} has the form $a \rightarrow \beta \mdot c\, \delta: L$, where $c$ is a
-      variable, line 8 and 9 store the string $\delta$ and the set $L$ of follow tokens.
-\item For every grammar rule of the form $c \rightarrow \gamma$, line 12 -- 13 compute the set
+      variable, line 6 and 7 store the string $\delta$ and the set $L$ of follow tokens.
+\item Line 8 -- 9 compute the set
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{newL} = \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L \bigr\}$,
       \\[0.2cm]
       as required by the definition of the closure.  The set comprehension iterates over all tokens $t \in L$ and
       collects the elements of the sets $\textsl{FirstList}(\delta\, t)$.  As $t$ is a token, these sets do not
-      contain $\lambda$.  Line 14 -- 15 create the e.m.r.\@ $c \rightarrow \mdot \gamma: \textsl{newL}$.  If
-      this e.m.r.\@ is new, line 17 and 18 add it to the closure and to the worklist.
-\item Line 19 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
+      contain $\lambda$.  The set \textsl{newL} does not depend on the grammar rule $c \rightarrow \gamma$ that is
+      used to create a successor.  Therefore, it is computed only once.
+\item For every grammar rule of the form $c \rightarrow \gamma$, the list comprehension in line 10 -- 12 creates
+      the e.m.r.\@ $c \rightarrow \mdot \gamma: \textsl{newL}$.
+\item Line 13 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
       that have the same core.  For example, for the grammar for arithmetic expressions, the closure of
       $\bigl\{\widehat{s} \rightarrow \mdot \textsl{expr}: \symbol{36}\bigr\}$ contains the three e.m.r.s with
       the core $\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}$ that have been
       discussed in the previous section.
 \end{enumerate}
-The method \texttt{goto} in line 21 -- 24 implements the definition
+The method \texttt{goto} in line 15 -- 18 implements the definition
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, X \mdot \delta:L \mid (a \rightarrow \beta \mdot X\, \delta:L) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
-The list \texttt{kernel} in line 22 -- 23 contains those e.m.r.s of the state in which the symbol $X$ follows the
-dot, with the dot moved over $X$.  Line 24 computes the closure of these e.m.r.s, combines the e.m.r.s of the
+The list \texttt{kernel} in line 16 -- 17 contains those e.m.r.s of the state in which the symbol $X$ follows the
+dot, with the dot moved over $X$.  Line 18 computes the closure of these e.m.r.s, combines the e.m.r.s of the
 closure that have the same core, and turns the result into a state.  Hence, a state contains at most one e.m.r.\@
 for every core, as required in the previous section.  It does not matter that the e.m.r.s are combined only after
 the closure has been computed:  As
@@ -2703,20 +2748,17 @@ $a \rightarrow \beta \mdot c\, \delta: L_2$ together.
                 gobble        = 4,
               ]{python3}
     def all_states(self):
+        def successors(state):
+            symbols = dict.fromkeys(emr.mBeta[0] for emr in state
+                                    if not emr.is_complete())
+            return [ self.goto(state, x) for x in symbols ]
         start_rule   = ExtendedMarkedRule('ŝ', (), (self.mStart,),
                                           frozenset({'$'}))
         start_state  = State(combine_rules(
                            self.cmp_closure([ start_rule ])))
-        self.mStates = [ start_state ]
-        self.mStateNames[start_state] = 's0'
-        for state in self.mStates:
-            for x in dict.fromkeys(emr.mBeta[0] for emr in state
-                                   if not emr.is_complete()):
-                next_state = self.goto(state, x)
-                if next_state not in self.mStateNames:
-                    self.mStateNames[next_state] = \
-                        f's{len(self.mStates)}'
-                    self.mStates.append(next_state)
+        self.mStates = reachable([ start_state ], successors)
+        for n, state in enumerate(self.mStates):
+            self.mStateNames[state] = f's{n}'
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The method \texttt{all\_states} for extended marked rules.}
@@ -2729,7 +2771,7 @@ shows the method \texttt{all\_states}.  It works in the same way as the method s
 \ref{fig:04-SLR-Table-Generator.ipynb:all_states} on page \pageref{fig:04-SLR-Table-Generator.ipynb:all_states}.  There
 are only two differences:
 \begin{enumerate}
-\item Line 2 -- 5 compute the start state
+\item Line 6 -- 9 compute the start state
       $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s: \symbol{36} \}\bigr)$.  The start e.m.r.\@
       has the follow token $\symbol{36}$, since the end marker $\symbol{36}$ has to follow the start symbol $s$.  As
       in the method \texttt{goto}, the e.m.r.s of the closure are combined before the closure is turned into a
