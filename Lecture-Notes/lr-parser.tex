@@ -1639,14 +1639,16 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
                 gobble        = 4,
               ]{python3}
     def compute_first(self):
-        def step(First):
-            NewFirst = initialize_dictionary(self.mVariables)
-            for rule in self.mRules:
-                NewFirst[rule.mVariable] |= \
-                    first_list(rule.mBody, First)
-            return NewFirst
         self.mFirst = fixpoint(
-            step, initialize_dictionary(self.mVariables))
+            self.compute_first_step,
+            initialize_dictionary(self.mVariables))
+
+    def compute_first_step(self, First):
+        NewFirst = initialize_dictionary(self.mVariables)
+        for rule in self.mRules:
+            NewFirst[rule.mVariable] |= first_list(rule.mBody,
+                                                   First)
+        return NewFirst
 
     def first_list(alpha, First):
         if len(alpha) == 0:
@@ -1672,33 +1674,36 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
 \end{figure}
 
 \begin{enumerate}
-\item Line 1 -- 9 define the method \texttt{compute\_first}, which computes the function \textsl{First} as the
-      smallest fixpoint of the function $F$.
+\item Line 1 -- 4 define the method \texttt{compute\_first}, which computes the function \textsl{First} as the
+      smallest fixpoint of the function $F$.  It starts the fixpoint iteration with the dictionary that maps every
+      variable to the empty set and stores its result in the member variable \texttt{mFirst}.  The function $F$ is
+      implemented by the method \texttt{compute\_first\_step}.  The expression \texttt{self.compute\_first\_step}
+      in line 3 is a \blue{bound method}\index{bound method}:  It is a function that takes only the argument
+      \texttt{First} and calls the method \texttt{compute\_first\_step} for the object \texttt{self}.
+\item Line 6 -- 11 define the method \texttt{compute\_first\_step}, which implements $F$.
       \begin{enumerate}[(a)]
-      \item Line 2 -- 7 define the local function \texttt{step}, which implements $F$.  Its argument \texttt{First}
-            is a dictionary that maps every variable to the current approximation of its set \textsl{First}.  Line 3
-            initializes the dictionary \texttt{NewFirst}, which stores the result, with empty sets.
-      \item The \texttt{for} loop in line 4 -- 6 inspects all grammar rules $a \rightarrow \alpha$.  Line 5 -- 6
+      \item Its argument \texttt{First} is a dictionary that maps every variable to the current approximation of
+            its set \textsl{First}.  Line 7 initializes the dictionary \texttt{NewFirst}, which stores the result,
+            with empty sets.
+      \item The \texttt{for} loop in line 8 -- 10 inspects all grammar rules $a \rightarrow \alpha$.  Line 9 -- 10
             compute $\textsl{FirstList}(\alpha)$ using the approximations stored in \texttt{First} and add this
             set to the set that \texttt{NewFirst} assigns to $a$.  The operator \texttt{|=} changes this set in
             place.  After the loop, \texttt{NewFirst} maps every variable $a$ to the set
             $\bigcup_{i=1}^n \textsl{FirstList}(\alpha_i)$, where $a \rightarrow \alpha_1 \mid \cdots \mid \alpha_n$
             are the rules defining $a$.
-      \item Line 8 -- 9 start the fixpoint iteration with the dictionary that maps every variable to the empty
-            set and store its result in the member variable \texttt{mFirst}.
       \end{enumerate}
-\item Line 11 -- 20 define the function \texttt{first\_list}, which implements the equations defining
-      $\textsl{FirstList}(\alpha)$.  It takes the dictionary \texttt{First} as an argument, since the function
-      \texttt{step} calls it with the approximations of the fixpoint iteration, while the method
-      \texttt{compute\_follow} calls it with the final dictionary \texttt{mFirst}.
+\item Line 13 -- 22 define the function \texttt{first\_list}, which implements the equations defining
+      $\textsl{FirstList}(\alpha)$.  It takes the dictionary \texttt{First} as an argument, since the method
+      \texttt{compute\_first\_step} calls it with the approximations of the fixpoint iteration, while the method
+      \texttt{compute\_follow\_step} calls it with the final dictionary \texttt{mFirst}.
       \begin{enumerate}[(a)]
-      \item If $\alpha$ is empty, line 13 returns the set $\{\lambda\}$.
-      \item If $\alpha$ starts with a variable $v$, line 15 splits $\alpha$ into $v$ and the list $r$ of the
-            remaining symbols.  Line 16 -- 17 convert $r$ into a tuple and combine $\textsl{First}(v)$ with
+      \item If $\alpha$ is empty, line 15 returns the set $\{\lambda\}$.
+      \item If $\alpha$ starts with a variable $v$, line 17 splits $\alpha$ into $v$ and the list $r$ of the
+            remaining symbols.  Line 18 -- 19 convert $r$ into a tuple and combine $\textsl{First}(v)$ with
             $\textsl{FirstList}(r)$ using the function \texttt{eps\_union}.
-      \item Otherwise, $\alpha$ starts with a token $t$ and line 20 returns the set $\{t\}$.
+      \item Otherwise, $\alpha$ starts with a token $t$ and line 22 returns the set $\{t\}$.
       \end{enumerate}
-\item Line 22 -- 27 define the function \texttt{eps\_union}.  Its arguments $S$ and $T$ are sets of tokens that
+\item Line 24 -- 29 define the function \texttt{eps\_union}.  Its arguments $S$ and $T$ are sets of tokens that
       may contain $\lambda$.  It is specified as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1727,19 +1732,20 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
                 gobble        = 4,
               ]{python3}
     def compute_follow(self):
-        def step(Follow):
-            NewFollow = initialize_dictionary(self.mVariables)
-            for rule in self.mRules:
-                a, body = rule.mVariable, rule.mBody
-                for i in range(len(body)):
-                    if is_var(body[i]):
-                        Tail = first_list(body[i+1:],
-                                          self.mFirst)
-                        NewFollow[body[i]] |= \
-                            eps_union(Tail, Follow[a])
-            return NewFollow
         self.mFollow = fixpoint(
-            step, initialize_dictionary(self.mVariables))
+            self.compute_follow_step,
+            initialize_dictionary(self.mVariables))
+
+    def compute_follow_step(self, Follow):
+        NewFollow = initialize_dictionary(self.mVariables)
+        for rule in self.mRules:
+            a, body = rule.mVariable, rule.mBody
+            for i in range(len(body)):
+                if is_var(body[i]):
+                    Tail = first_list(body[i+1:], self.mFirst)
+                    NewFollow[body[i]] |= \
+                        eps_union(Tail, Follow[a])
+        return NewFollow
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The computation of the function \textsl{Follow}.}
@@ -1748,8 +1754,8 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
 
 \noindent
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_follow} on page
-\pageref{fig:04-SLR-Table-Generator.ipynb:compute_follow} shows the method \texttt{compute\_follow}, which computes
-the sets $\textsl{Follow}(a)$, again with the function \texttt{fixpoint}.  It is based on the following observation:  If
+\pageref{fig:04-SLR-Table-Generator.ipynb:compute_follow} shows the methods \texttt{compute\_follow} and
+\texttt{compute\_follow\_step}, which compute the sets $\textsl{Follow}(a)$, again with the function \texttt{fixpoint}.  It is based on the following observation:  If
 $a \rightarrow Y_1 \cdots Y_k$ is a grammar rule and $Y_i$ is a variable, then
 \begin{enumerate}[(a)]
 \item $\textsl{FirstList}(Y_{i+1} \cdots Y_k) - \{\lambda\} \subseteq \textsl{Follow}(Y_i)$, since every token that
@@ -1761,23 +1767,24 @@ $a \rightarrow Y_1 \cdots Y_k$ is a grammar rule and $Y_i$ is a variable, then
 These two conditions summarize the relationships 6 -- 9 that have been stated at the end of Section
 \ref{section:first-follow}.
 \begin{enumerate}
-\item Line 2 -- 12 define the local function \texttt{step}.  Its argument \texttt{Follow} is a dictionary that maps
-      every variable to the current approximation of its set \textsl{Follow}.  The function evaluates the
+\item Line 1 -- 4 define the method \texttt{compute\_follow}.  It computes the smallest fixpoint of the method
+      \texttt{compute\_follow\_step}, starting with empty sets, and stores it in the member variable
+      \texttt{mFollow}.  It is not necessary to initialize $\textsl{Follow}(s)$ as $\{ \symbol{36} \}$, since the
+      rule $\widehat{s} \rightarrow s\, \symbol{36}$ of the augmented grammar adds $\symbol{36}$ to
+      $\textsl{Follow}(s)$.
+\item Line 6 -- 15 define the method \texttt{compute\_follow\_step}.  Its argument \texttt{Follow} is a dictionary
+      that maps every variable to the current approximation of its set \textsl{Follow}.  The method evaluates the
       conditions (a) and (b) with these approximations and collects the results in the dictionary
-      \texttt{NewFollow}, which line 3 initializes with empty sets.
-\item The \texttt{for} loop in line 4 -- 11 inspects all grammar rules, and the \texttt{for} loop in line 6 -- 11
-      inspects all positions of the right hand side \texttt{body} of the rule.  Line 7 selects those positions
+      \texttt{NewFollow}, which line 7 initializes with empty sets.
+\item The \texttt{for} loop in line 8 -- 14 inspects all grammar rules, and the \texttt{for} loop in line 10 -- 14
+      inspects all positions of the right hand side \texttt{body} of the rule.  Line 11 selects those positions
       that contain a variable $Y_i$.  The slice \texttt{body[i+1:]} contains the symbols that follow $Y_i$.
-\item Line 8 -- 9 compute the set \textsl{FirstList} of these symbols, using the dictionary \texttt{mFirst} that
-      has been computed before.  If this set contains $\lambda$, the function \texttt{eps\_union} in line 11
+\item Line 12 computes the set \textsl{FirstList} of these symbols, using the dictionary \texttt{mFirst} that
+      has been computed before.  If this set contains $\lambda$, the function \texttt{eps\_union} in line 14
       removes $\lambda$ and adds the set $\textsl{Follow}(a)$, otherwise it leaves the set unchanged.  Therefore,
-      line 10 -- 11 add exactly those tokens to the set $\textsl{Follow}(Y_i)$ that the conditions (a) and (b)
+      line 13 -- 14 add exactly those tokens to the set $\textsl{Follow}(Y_i)$ that the conditions (a) and (b)
       require.  As the approximations of the sets $\textsl{Follow}(a)$ never contain $\lambda$, the result of
       \texttt{eps\_union} does not contain $\lambda$ either.
-\item Line 13 -- 14 compute the smallest fixpoint of the function \texttt{step}, starting with empty sets, and store
-      it in the member variable \texttt{mFollow}.  It is not necessary to initialize $\textsl{Follow}(s)$ as
-      $\{ \symbol{36} \}$, since the rule $\widehat{s} \rightarrow s\, \symbol{36}$ of the augmented grammar adds
-      $\symbol{36}$ to $\textsl{Follow}(s)$.
 \end{enumerate}
 The set $\textsl{Follow}(\widehat{s})$ remains empty, since $\widehat{s}$ does not occur on the right hand side of
 any rule.
@@ -1858,8 +1865,9 @@ processed exactly once.
 
 \noindent
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure}
-shows the methods \texttt{cmp\_closure} and \texttt{goto}.  Given a set $\mathcal{M}$ of marked rules, the method
-\texttt{cmp\_closure} computes the set $\textsl{closure}(\mathcal{M})$ and returns it as a \texttt{State}.
+shows the methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto}.  Given a set
+$\mathcal{M}$ of marked rules, the method \texttt{cmp\_closure} computes the set $\textsl{closure}(\mathcal{M})$ and
+returns it as a \texttt{State}.
 
 \begin{figure}[!ht]
 \centering
@@ -1874,45 +1882,47 @@ shows the methods \texttt{cmp\_closure} and \texttt{goto}.  Given a set $\mathca
                 gobble        = 4,
               ]{python3}
     def cmp_closure(self, Marked_Rules):
-        def successors(mr):
-            c = mr.next_var()
-            if c is None:
-                return []
-            return [ MarkedRule(c, (), rule.mBody)
-                     for rule in self.mRules
-                     if rule.mVariable == c ]
-        return State(reachable(Marked_Rules, successors))
+        return State(reachable(Marked_Rules,
+                               self.cmp_closure_successors))
+
+    def cmp_closure_successors(self, mr):
+        c = mr.next_var()
+        if c is None:
+            return []
+        return [ MarkedRule(c, (), rule.mBody)
+                 for rule in self.mRules
+                 if rule.mVariable == c ]
 
     def goto(self, state, x):
         return self.cmp_closure(mr.move_dot() for mr in state
                                 if mr.symbol_after_dot() == x)
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The methods \texttt{cmp\_closure} and \texttt{goto}.}
+\caption{The methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto}.}
 \label{fig:04-SLR-Table-Generator.ipynb:cmp_closure}
 \end{figure}
 
 \begin{enumerate}
-\item Line 2 -- 8 define the local function \texttt{successors}, which computes the successors of the marked rule
-      \texttt{mr}.  As \texttt{successors} is defined inside the method \texttt{cmp\_closure}, it can access the
-      parameter \texttt{self} of this method.
-\item Line 3 computes the variable following the marker.  If there is no such variable, the marked rule has no
-      successors and line 5 returns the empty list.
+\item Line 1 -- 3 define the method \texttt{cmp\_closure}.  It computes the marked rules that are reachable from the
+      given marked rules and turns them into a state.  The successors of a marked rule are computed by the bound
+      method \texttt{self.cmp\_closure\_successors}.  As the list returned by \texttt{reachable} starts with the
+      given marked rules, the state lists these marked rules first, followed by the marked rules that have been
+      added by the closure.
+\item Line 5 -- 11 define the method \texttt{cmp\_closure\_successors}, which computes the successors of the
+      marked rule \texttt{mr}.  Line 6 computes the variable following the marker.  If there is no such variable,
+      the marked rule has no successors and line 8 returns the empty list.
 \item Otherwise, the marked rule has the form $a \rightarrow \beta \mdot c\, \delta$.  The list comprehension in
-      line 6 -- 8 inspects all grammar rules.  For every rule of the form $c \rightarrow \gamma$, it creates the
+      line 9 -- 11 inspects all grammar rules.  For every rule of the form $c \rightarrow \gamma$, it creates the
       marked rule $c \rightarrow \mdot \gamma$.
-\item Line 9 computes the marked rules that are reachable from the given marked rules and turns them into a state.
-      As the list returned by \texttt{reachable} starts with the given marked rules, the state lists these marked
-      rules first, followed by the marked rules that have been added by the closure.
 \end{enumerate}
-The method \texttt{goto} in line 11 -- 13 implements the definition
+The method \texttt{goto} in line 13 -- 15 implements the definition
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, X \mdot \delta \mid (a \rightarrow \beta \mdot X\, \delta) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
-The generator expression in line 12 -- 13 selects those marked rules of the state in which the symbol $X$ follows
+The generator expression in line 14 -- 15 selects those marked rules of the state in which the symbol $X$ follows
 the marker and moves the marker over $X$.  The symbol $X$ can be a variable or a token.  If $X$ does not follow the
 marker in any marked rule of the state, the result is the empty state.
 
@@ -1929,46 +1939,50 @@ marker in any marked rule of the state, the result is the empty state.
                 gobble        = 4,
               ]{python3}
     def all_states(self):
-        def successors(state):
-            symbols = dict.fromkeys(mr.mBeta[0] for mr in state
-                                    if not mr.is_complete())
-            return [ self.goto(state, x) for x in symbols if x != '$' ]
         start_state  = self.cmp_closure(
             [ MarkedRule('ŝ', (), (self.mStart, '$')) ])
-        self.mStates = reachable([ start_state ], successors)
+        self.mStates = reachable([ start_state ],
+                                 self.all_states_successors)
         for n, state in enumerate(self.mStates):
             self.mStateNames[state] = f's{n}'
+
+    def all_states_successors(self, state):
+        symbols = dict.fromkeys(mr.mBeta[0] for mr in state
+                                if not mr.is_complete())
+        return [ self.goto(state, x) for x in symbols if x != '$' ]
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The method \texttt{all\_states}.}
+\caption{The methods \texttt{all\_states} and \texttt{all\_states\_successors}.}
 \label{fig:04-SLR-Table-Generator.ipynb:all_states}
 \end{figure}
 
 \noindent
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:all_states} on page \pageref{fig:04-SLR-Table-Generator.ipynb:all_states}
-shows the method \texttt{all\_states}, which computes the states of the SLR parser.  As in the previous section, it
-does not compute all sets of marked rules that are closed under $\textsl{closure}()$, but only those states that
+shows the methods \texttt{all\_states} and \texttt{all\_states\_successors}, which compute the states of the SLR
+parser.  As in the previous section, they
+do not compute all sets of marked rules that are closed under $\textsl{closure}()$, but only those states that
 can be reached from the start state via the function $\textsl{goto}()$.
 \begin{enumerate}
-\item Line 2 -- 5 define the local function \texttt{successors}.  Given a state $\mathcal{M}$, it returns the
+\item Line 2 -- 3 compute the start state
+      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s\, \symbol{36} \}\bigr)$.
+\item Line 4 -- 5 compute the list of all states that are reachable from the start state.  The successors of a state
+      are computed by the bound method \texttt{self.all\_states\_successors}.  The list starts with the start
+      state, followed by the other states in the order in which they have been found.
+\item Line 6 -- 7 give the state at index $n$ of the list \texttt{mStates} the name \texttt{s}$n$.  Hence, the
+      start state is called \texttt{s0}, and the state with the name \texttt{s}$n$ is stored at index $n$ of the
+      list \texttt{mStates}.
+\item Line 9 -- 12 define the method \texttt{all\_states\_successors}.  Given a state $\mathcal{M}$, it returns the
       states $\textsl{goto}(\mathcal{M}, X)$ for all symbols $X$ that follow the marker in a marked rule of
       $\mathcal{M}$.  For all other symbols $X$, the set $\textsl{goto}(\mathcal{M}, X)$ is empty and hence is not
-      a state.  Again, a dictionary is used as an ordered set:  The function \texttt{dict.fromkeys} in line 3 -- 4
+      a state.  Again, a dictionary is used as an ordered set:  The function \texttt{dict.fromkeys} in line 10 -- 11
       removes duplicates, while keeping the order in which the symbols occur in the marked rules.  Therefore, the
       states are named in the same way in every run.  If we used a set instead, the order of the symbols could
       change from one run to the next, since \textsl{Python} randomizes the hash values of strings for every
       process.
-\item Line 5 skips the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
+\item Line 12 skips the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
       input if the next token is $\symbol{36}$ and the current state contains the marked rule
       $\widehat{s} \rightarrow s \mdot \symbol{36}$.  Hence, the state
       $\bigl\{ \widehat{s} \rightarrow s\, \symbol{36} \mdot \bigr\}$ is not needed.
-\item Line 6 -- 7 compute the start state
-      $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s\, \symbol{36} \}\bigr)$.
-\item Line 8 computes the list of all states that are reachable from the start state.  This list starts with the
-      start state, followed by the other states in the order in which they have been found.
-\item Line 9 -- 10 give the state at index $n$ of the list \texttt{mStates} the name \texttt{s}$n$.  Hence, the
-      start state is called \texttt{s0}, and the state with the name \texttt{s}$n$ is stored at index $n$ of the
-      list \texttt{mStates}.
 \end{enumerate}
 For the grammar in the file \texttt{Examples/arith.g}, the method \texttt{all\_states} finds the 16 states that we
 have computed by hand in the previous section.  Since it processes the states and the symbols in the same order
@@ -2568,8 +2582,8 @@ in Figure \ref{fig:01-Shift-Reduce-Parser-Pure.ipynb:parse}.
 The notebook has been derived from the SLR table generator.  Apart from the type annotations and the output, the
 parser for grammars, the class \texttt{GrammarRule}, the functions \texttt{is\_var}, \texttt{collect\_variables},
 \texttt{collect\_tokens}, \texttt{fixpoint}, \texttt{first\_list}, \texttt{eps\_union}, and \texttt{reachable}, the
-class \texttt{State}, and the methods \texttt{compute\_first}, \texttt{compute\_goto\_table}, and
-\texttt{dump\_parse\_table} are the same as there.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
+class \texttt{State}, and the methods \texttt{compute\_first}, \texttt{compute\_first\_step},
+\texttt{compute\_goto\_table}, and \texttt{dump\_parse\_table} are the same as there.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
 addition, they omit the variable \texttt{verbose}, which controls the output:  For a large grammar, printing all
 states together with the action table and the goto table would produce several megabytes of output.  Therefore,
 the notebook prints the states and the tables only if there are at most 100 states.  Conflicts are always printed.
@@ -2706,10 +2720,11 @@ essential respects:
 
 \subsection{Computing the States}
 Figure \ref{fig:05-LR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:05-LR-Table-Generator.ipynb:cmp_closure}
-shows the methods \texttt{cmp\_closure} and \texttt{goto}.  Like the method shown in Figure
-\ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure},
-the method \texttt{cmp\_closure} computes the closure with the function \texttt{reachable}.  It differs only in the
-computation of the follow tokens and in its result.
+shows the methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto}.  Like the methods
+shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page
+\pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure}, the method \texttt{cmp\_closure} computes the closure with the
+function \texttt{reachable}, and the method \texttt{cmp\_closure\_successors} computes the successors of an extended
+marked rule.  They differ only in the computation of the follow tokens and in the result of \texttt{cmp\_closure}.
 
 \begin{figure}[!ht]
 \centering
@@ -2724,19 +2739,19 @@ computation of the follow tokens and in its result.
                 gobble        = 4,
               ]{python3}
     def cmp_closure(self, Marked_Rules):
-        def successors(emr):
-            c = emr.next_var()
-            if c is None:
-                return []
-            delta = emr.mBeta[1:]
-            L     = emr.mFollow
-            newL  = frozenset({ x for t in L for x in
-                                first_list(delta + (t,),
-                                           self.mFirst) })
-            return [ ExtendedMarkedRule(c, (), rule.mBody, newL)
-                     for rule in self.mRules
-                     if rule.mVariable == c ]
-        return reachable(Marked_Rules, successors)
+        return reachable(Marked_Rules, self.cmp_closure_successors)
+
+    def cmp_closure_successors(self, emr):
+        c = emr.next_var()
+        if c is None:
+            return []
+        delta = emr.mBeta[1:]
+        L     = emr.mFollow
+        newL  = frozenset({ x for t in L for x in
+                            first_list(delta + (t,), self.mFirst) })
+        return [ ExtendedMarkedRule(c, (), rule.mBody, newL)
+                 for rule in self.mRules
+                 if rule.mVariable == c ]
 
     def goto(self, state, x):
         kernel = [ emr.move_dot() for emr in state
@@ -2744,14 +2759,15 @@ computation of the follow tokens and in its result.
         return State(combine_rules(self.cmp_closure(kernel)))
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The methods \texttt{cmp\_closure} and \texttt{goto} for extended marked rules.}
+\caption{The methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto} for extended marked
+         rules.}
 \label{fig:05-LR-Table-Generator.ipynb:cmp_closure}
 \end{figure}
 
 \begin{enumerate}
 \item If the e.m.r.\@ \texttt{emr} has the form $a \rightarrow \beta \mdot c\, \delta: L$, where $c$ is a
-      variable, line 6 and 7 store the string $\delta$ and the set $L$ of follow tokens.
-\item Line 8 -- 10 compute the set
+      variable, line 8 and 9 store the string $\delta$ and the set $L$ of follow tokens.
+\item Line 10 -- 11 compute the set
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{newL} = \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L \bigr\}$,
@@ -2760,9 +2776,9 @@ computation of the follow tokens and in its result.
       collects the elements of the sets $\textsl{FirstList}(\delta\, t)$.  As $t$ is a token, these sets do not
       contain $\lambda$.  The set \textsl{newL} does not depend on the grammar rule $c \rightarrow \gamma$ that is
       used to create a successor.  Therefore, it is computed only once.
-\item For every grammar rule of the form $c \rightarrow \gamma$, the list comprehension in line 11 -- 13 creates
+\item For every grammar rule of the form $c \rightarrow \gamma$, the list comprehension in line 12 -- 14 creates
       the e.m.r.\@ $c \rightarrow \mdot \gamma: \textsl{newL}$.
-\item Line 14 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
+\item Line 2 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
       that have the same core.  For example, for the grammar for arithmetic expressions, the closure of
       $\bigl\{\widehat{s} \rightarrow \mdot \textsl{expr}: \symbol{36}\bigr\}$ contains the three e.m.r.s with
       the core $\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}$ that have been
@@ -2803,30 +2819,32 @@ $a \rightarrow \beta \mdot c\, \delta: L_2$ together.
                 gobble        = 4,
               ]{python3}
     def all_states(self):
-        def successors(state):
-            symbols = dict.fromkeys(emr.mBeta[0] for emr in state
-                                    if not emr.is_complete())
-            return [ self.goto(state, x) for x in symbols ]
         start_rule   = ExtendedMarkedRule('ŝ', (), (self.mStart,),
                                           frozenset({'$'}))
         start_state  = State(combine_rules(
                            self.cmp_closure([ start_rule ])))
-        self.mStates = reachable([ start_state ], successors)
+        self.mStates = reachable([ start_state ],
+                                 self.all_states_successors)
         for n, state in enumerate(self.mStates):
             self.mStateNames[state] = f's{n}'
+
+    def all_states_successors(self, state):
+        symbols = dict.fromkeys(emr.mBeta[0] for emr in state
+                                if not emr.is_complete())
+        return [ self.goto(state, x) for x in symbols ]
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The method \texttt{all\_states} for extended marked rules.}
+\caption{The methods \texttt{all\_states} and \texttt{all\_states\_successors} for extended marked rules.}
 \label{fig:05-LR-Table-Generator.ipynb:all_states}
 \end{figure}
 
 \noindent
 Figure \ref{fig:05-LR-Table-Generator.ipynb:all_states} on page \pageref{fig:05-LR-Table-Generator.ipynb:all_states}
-shows the method \texttt{all\_states}.  It works in the same way as the method shown in Figure
-\ref{fig:04-SLR-Table-Generator.ipynb:all_states} on page \pageref{fig:04-SLR-Table-Generator.ipynb:all_states}.  There
-are only two differences:
+shows the methods \texttt{all\_states} and \texttt{all\_states\_successors}.  They work in the same way as the methods
+shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:all_states} on page
+\pageref{fig:04-SLR-Table-Generator.ipynb:all_states}.  There are only two differences:
 \begin{enumerate}
-\item Line 6 -- 9 compute the start state
+\item Line 2 -- 5 compute the start state
       $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s: \symbol{36} \}\bigr)$.  The start e.m.r.\@
       has the follow token $\symbol{36}$, since the end marker $\symbol{36}$ has to follow the start symbol $s$.  As
       in the method \texttt{goto}, the e.m.r.s of the closure are combined before the closure is turned into a
