@@ -1492,8 +1492,6 @@ control the computation.
         return { a: set() for a in Variables }
 
     def compute_tables(self):
-        self.mFirst  = initialize_dictionary(self.mVariables)
-        self.mFollow = initialize_dictionary(self.mVariables)
         self.compute_first()
         self.compute_follow()
         self.compute_rule_names()
@@ -1535,14 +1533,14 @@ control the computation.
       \item Line 14 computes all tables.
       \end{enumerate}
 \item Line 16 -- 17 define the function \texttt{initialize\_dictionary}, which returns a dictionary that maps all
-      given variables to the empty set.
-\item Line 19 -- 27 define the method \texttt{compute\_tables}.  Line 20 and 21 initialize the dictionaries
-      \texttt{mFirst} and \texttt{mFollow}, which store the functions \textsl{First} and \textsl{Follow}.  The
-      remaining lines compute these functions, the names of the rules, the states, the action table, and the goto
-      table.  The order of these steps matters:  The computation of \textsl{Follow} needs \textsl{First}, the
-      action table needs the states, the function \textsl{Follow}, and the names of the rules, and the goto table
-      needs the states.
-\item Line 29 -- 33 define the method \texttt{compute\_rule\_names}, which gives the names \texttt{r0},
+      given variables to the empty set.  The fixpoint iterations that compute the functions \textsl{First} and
+      \textsl{Follow} start with this dictionary.
+\item Line 19 -- 25 define the method \texttt{compute\_tables}.  It computes the functions \textsl{First} and
+      \textsl{Follow}, which are stored in the dictionaries \texttt{mFirst} and \texttt{mFollow}, the names of the
+      rules, the states, the action table, and the goto table.  The order of these steps matters:  The computation
+      of \textsl{Follow} needs \textsl{First}, the action table needs the states, the function \textsl{Follow}, and
+      the names of the rules, and the goto table needs the states.
+\item Line 27 -- 31 define the method \texttt{compute\_rule\_names}, which gives the names \texttt{r0},
       \texttt{r1}, \texttt{r2}, $\cdots$ to the grammar rules in the order in which they occur in
       \texttt{mRules}.  These names are used in the \texttt{reduce} actions of the action table.
 \end{enumerate}
@@ -1572,8 +1570,61 @@ $a \rightarrow \alpha_1 \mid \cdots \mid \alpha_n$, then we have
 \hspace*{1.3cm}
 $\textsl{First}(a) = \bigcup\limits_{i=1}^n \textsl{FirstList}(\alpha_i)$.
 \\[0.2cm]
+These equations do not define the sets $\textsl{First}(a)$ explicitly, since the sets $\textsl{First}(b)$ occur on
+their right hand sides, too.  Instead, they state that the function \textsl{First} is a
+\blue{fixpoint}\index{fixpoint}:  If $D$ is a function that assigns a subset of $T \cup \{\lambda\}$ to every
+variable, let $F(D)$ be the function that maps every variable $a$ to the set
+$\bigcup_{i=1}^n \textsl{FirstList}(\alpha_i)$, where the sets $\textsl{First}(b)$ that are needed to compute
+$\textsl{FirstList}(\alpha_i)$ are taken from $D$.  Then we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$F(\textsl{First}) = \textsl{First}$.
+\\[0.2cm]
+The function $F$ can have several fixpoints, but we need the smallest one.  As described in Section
+\ref{section:first-follow}, it is computed by a fixpoint iteration:  We start with the function $D_0$ that maps every
+variable to the empty set and compute
+\\[0.2cm]
+\hspace*{1.3cm}
+$D_1 := F(D_0)$, \quad $D_2 := F(D_1)$, \quad $D_3 := F(D_2)$, \quad $\cdots$
+\\[0.2cm]
+until we find a function $D_k$ such that $D_{k+1} = D_k$.  As the function $F$ is
+\blue{monotone}\index{monotone}, i.e.~larger sets in its argument yield larger sets in its result, the sets can only
+grow during this iteration.  Since they are subsets of the finite set $T \cup \{\lambda\}$, the iteration
+terminates.  The sets $\textsl{Follow}(a)$ are computed in the same way.  Therefore, the notebook implements the
+fixpoint iteration as a function of its own, which is shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:fixpoint}
+on page \pageref{fig:04-SLR-Table-Generator.ipynb:fixpoint}.  Given a function \texttt{f} and a start value
+\texttt{x}, the function \texttt{fixpoint} computes the values $x$, $f(x)$, $f\bigl(f(x)\bigr)$, $\cdots$ until it
+finds a value $x$ such that $f(x) = x$, and returns this value.  As \textsl{Python} compares two dictionaries by
+comparing their keys and the values assigned to these keys, the test \texttt{y == x} in line 4 checks whether any of
+the sets has changed.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def fixpoint(f, x):
+        while True:
+            y = f(x)
+            if y == x:
+                return x
+            x = y
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The function \texttt{fixpoint}.}
+\label{fig:04-SLR-Table-Generator.ipynb:fixpoint}
+\end{figure}
+
+\noindent
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
-\pageref{fig:04-SLR-Table-Generator.ipynb:compute_first} shows how these equations are implemented.
+\pageref{fig:04-SLR-Table-Generator.ipynb:compute_first} shows how the function \textsl{First} is computed.
 
 \begin{figure}[!ht]
 \centering
@@ -1588,23 +1639,22 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
                 gobble        = 4,
               ]{python3}
     def compute_first(self):
-        change = True
-        while change:
-            change = False
+        def step(First):
+            NewFirst = initialize_dictionary(self.mVariables)
             for rule in self.mRules:
-                a, body = rule.mVariable, rule.mBody
-                first_body = self.first_list(body)
-                if not (first_body <= self.mFirst[a]):
-                    change = True
-                    self.mFirst[a] |= first_body
+                NewFirst[rule.mVariable] |= \
+                    first_list(rule.mBody, First)
+            return NewFirst
+        self.mFirst = fixpoint(
+            step, initialize_dictionary(self.mVariables))
 
-    def first_list(self, alpha):
+    def first_list(alpha, First):
         if len(alpha) == 0:
             return { '' }
         elif is_var(alpha[0]):
             v, *r = alpha
-            return eps_union(self.mFirst[v],
-                             self.first_list(tuple(r)))
+            return eps_union(First[v],
+                             first_list(tuple(r), First))
         else:
             t = alpha[0]
             return { t }
@@ -1622,31 +1672,33 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
 \end{figure}
 
 \begin{enumerate}
-\item Line 1 -- 10 define the method \texttt{compute\_first}, which computes the sets $\textsl{First}(a)$ by a
-      fixpoint iteration.  When this method is called, the dictionary \texttt{mFirst} maps every variable to the
-      empty set.
+\item Line 1 -- 9 define the method \texttt{compute\_first}, which computes the function \textsl{First} as the
+      smallest fixpoint of the function $F$.
       \begin{enumerate}[(a)]
-      \item The \texttt{while} loop in line 3 -- 10 is repeated as long as one of the sets $\textsl{First}(a)$ has
-            changed in the previous iteration.  The variable \texttt{change} records whether this is the case.
-      \item The \texttt{for} loop in line 5 -- 10 inspects all grammar rules $a \rightarrow \beta$.  Line 7
-            computes $\textsl{FirstList}(\beta)$ using the current approximations of the sets $\textsl{First}(b)$.
-      \item Line 8 checks whether this set contains elements that are not yet elements of
-            $\textsl{First}(a)$.  The operator \texttt{<=} tests whether its left operand is a subset of its
-            right operand.  If new elements have been found, line 9 records this fact and line 10 adds them to
-            the set $\textsl{First}(a)$.
+      \item Line 2 -- 7 define the local function \texttt{step}, which implements $F$.  Its argument \texttt{First}
+            is a dictionary that maps every variable to the current approximation of its set \textsl{First}.  Line 3
+            initializes the dictionary \texttt{NewFirst}, which stores the result, with empty sets.
+      \item The \texttt{for} loop in line 4 -- 6 inspects all grammar rules $a \rightarrow \alpha$.  Line 5 -- 6
+            compute $\textsl{FirstList}(\alpha)$ using the approximations stored in \texttt{First} and add this
+            set to the set that \texttt{NewFirst} assigns to $a$.  The operator \texttt{|=} changes this set in
+            place.  After the loop, \texttt{NewFirst} maps every variable $a$ to the set
+            $\bigcup_{i=1}^n \textsl{FirstList}(\alpha_i)$, where $a \rightarrow \alpha_1 \mid \cdots \mid \alpha_n$
+            are the rules defining $a$.
+      \item Line 8 -- 9 start the fixpoint iteration with the dictionary that maps every variable to the empty
+            set and store its result in the member variable \texttt{mFirst}.
       \end{enumerate}
-      As the sets $\textsl{First}(a)$ can only grow and are subsets of the finite set $T \cup \{\lambda\}$, the
-      iteration terminates.
-\item Line 12 -- 21 define the method \texttt{first\_list}, which implements the equations defining
-      $\textsl{FirstList}(\alpha)$.
+\item Line 11 -- 20 define the function \texttt{first\_list}, which implements the equations defining
+      $\textsl{FirstList}(\alpha)$.  It takes the dictionary \texttt{First} as an argument, since the function
+      \texttt{step} calls it with the approximations of the fixpoint iteration, while the method
+      \texttt{compute\_follow} calls it with the final dictionary \texttt{mFirst}.
       \begin{enumerate}[(a)]
-      \item If $\alpha$ is empty, line 14 returns the set $\{\lambda\}$.
-      \item If $\alpha$ starts with a variable $v$, line 16 splits $\alpha$ into $v$ and the list $r$ of the
-            remaining symbols.  Line 17 -- 18 convert $r$ into a tuple and combine $\textsl{First}(v)$ with
+      \item If $\alpha$ is empty, line 13 returns the set $\{\lambda\}$.
+      \item If $\alpha$ starts with a variable $v$, line 15 splits $\alpha$ into $v$ and the list $r$ of the
+            remaining symbols.  Line 16 -- 17 convert $r$ into a tuple and combine $\textsl{First}(v)$ with
             $\textsl{FirstList}(r)$ using the function \texttt{eps\_union}.
-      \item Otherwise, $\alpha$ starts with a token $t$ and line 21 returns the set $\{t\}$.
+      \item Otherwise, $\alpha$ starts with a token $t$ and line 20 returns the set $\{t\}$.
       \end{enumerate}
-\item Line 23 -- 28 define the function \texttt{eps\_union}.  Its arguments $S$ and $T$ are sets of tokens that
+\item Line 22 -- 27 define the function \texttt{eps\_union}.  Its arguments $S$ and $T$ are sets of tokens that
       may contain $\lambda$.  It is specified as follows:
       \\[0.2cm]
       \hspace*{1.3cm}
@@ -1675,20 +1727,19 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
                 gobble        = 4,
               ]{python3}
     def compute_follow(self):
-        self.mFollow[self.mStart] = { '$' }
-        change = True
-        while change:
-            change = False
+        def step(Follow):
+            NewFollow = initialize_dictionary(self.mVariables)
             for rule in self.mRules:
                 a, body = rule.mVariable, rule.mBody
                 for i in range(len(body)):
                     if is_var(body[i]):
-                        yi        = body[i]
-                        Tail      = self.first_list(body[i+1:])
-                        firstTail = eps_union(Tail, self.mFollow[a])
-                        if not (firstTail <= self.mFollow[yi]):
-                            change = True
-                            self.mFollow[yi] |= firstTail
+                        Tail = first_list(body[i+1:],
+                                          self.mFirst)
+                        NewFollow[body[i]] |= \
+                            eps_union(Tail, Follow[a])
+            return NewFollow
+        self.mFollow = fixpoint(
+            step, initialize_dictionary(self.mVariables))
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The computation of the function \textsl{Follow}.}
@@ -1698,7 +1749,7 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_first} on page
 \noindent
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_follow} on page
 \pageref{fig:04-SLR-Table-Generator.ipynb:compute_follow} shows the method \texttt{compute\_follow}, which computes
-the sets $\textsl{Follow}(a)$, again by a fixpoint iteration.  It is based on the following observation:  If
+the sets $\textsl{Follow}(a)$, again with the function \texttt{fixpoint}.  It is based on the following observation:  If
 $a \rightarrow Y_1 \cdots Y_k$ is a grammar rule and $Y_i$ is a variable, then
 \begin{enumerate}[(a)]
 \item $\textsl{FirstList}(Y_{i+1} \cdots Y_k) - \{\lambda\} \subseteq \textsl{Follow}(Y_i)$, since every token that
@@ -1710,20 +1761,23 @@ $a \rightarrow Y_1 \cdots Y_k$ is a grammar rule and $Y_i$ is a variable, then
 These two conditions summarize the relationships 6 -- 9 that have been stated at the end of Section
 \ref{section:first-follow}.
 \begin{enumerate}
-\item Line 2 initializes $\textsl{Follow}(s)$ as $\{ \symbol{36} \}$.  Strictly speaking, this is not
-      necessary, since the rule $\widehat{s} \rightarrow s\, \symbol{36}$ of the augmented grammar adds
-      $\symbol{36}$ to $\textsl{Follow}(s)$ in the first iteration anyway.
-\item The \texttt{while} loop in line 4 -- 15 and the \texttt{for} loop in line 6 -- 15 work in the same way as the
-      corresponding loops of the method \texttt{compute\_first}.
-\item The \texttt{for} loop in line 8 -- 15 inspects all positions of the right hand side \texttt{body} of the
-      rule.  Line 9 selects those positions that contain a variable, and line 10 stores this variable in
-      \texttt{yi}.  The slice \texttt{body[i+1:]} contains the symbols that follow \texttt{yi}.
-\item Line 11 computes the set \textsl{FirstList} of these symbols.  If this set contains $\lambda$, line 12
-      removes $\lambda$ and adds the set $\textsl{Follow}(a)$, otherwise the set is left unchanged.  Therefore,
-      the set \texttt{firstTail} contains exactly those tokens that the conditions (a) and (b) add to the set
-      $\textsl{Follow}(Y_i)$.  As the sets $\textsl{Follow}(a)$ never contain $\lambda$, the set
-      \texttt{firstTail} does not contain $\lambda$ either.
-\item Line 13 -- 15 add the new tokens to the set $\textsl{Follow}(Y_i)$ and record the change.
+\item Line 2 -- 12 define the local function \texttt{step}.  Its argument \texttt{Follow} is a dictionary that maps
+      every variable to the current approximation of its set \textsl{Follow}.  The function evaluates the
+      conditions (a) and (b) with these approximations and collects the results in the dictionary
+      \texttt{NewFollow}, which line 3 initializes with empty sets.
+\item The \texttt{for} loop in line 4 -- 11 inspects all grammar rules, and the \texttt{for} loop in line 6 -- 11
+      inspects all positions of the right hand side \texttt{body} of the rule.  Line 7 selects those positions
+      that contain a variable $Y_i$.  The slice \texttt{body[i+1:]} contains the symbols that follow $Y_i$.
+\item Line 8 -- 9 compute the set \textsl{FirstList} of these symbols, using the dictionary \texttt{mFirst} that
+      has been computed before.  If this set contains $\lambda$, the function \texttt{eps\_union} in line 11
+      removes $\lambda$ and adds the set $\textsl{Follow}(a)$, otherwise it leaves the set unchanged.  Therefore,
+      line 10 -- 11 add exactly those tokens to the set $\textsl{Follow}(Y_i)$ that the conditions (a) and (b)
+      require.  As the approximations of the sets $\textsl{Follow}(a)$ never contain $\lambda$, the result of
+      \texttt{eps\_union} does not contain $\lambda$ either.
+\item Line 13 -- 14 compute the smallest fixpoint of the function \texttt{step}, starting with empty sets, and store
+      it in the member variable \texttt{mFollow}.  It is not necessary to initialize $\textsl{Follow}(s)$ as
+      $\{ \symbol{36} \}$, since the rule $\widehat{s} \rightarrow s\, \symbol{36}$ of the augmented grammar adds
+      $\symbol{36}$ to $\textsl{Follow}(s)$.
 \end{enumerate}
 The set $\textsl{Follow}(\widehat{s})$ remains empty, since $\widehat{s}$ does not occur on the right hand side of
 any rule.
@@ -2513,9 +2567,9 @@ in Figure \ref{fig:01-Shift-Reduce-Parser-Pure.ipynb:parse}.
 
 The notebook has been derived from the SLR table generator.  Apart from the type annotations and the output, the
 parser for grammars, the class \texttt{GrammarRule}, the functions \texttt{is\_var}, \texttt{collect\_variables},
-\texttt{collect\_tokens}, and \texttt{eps\_union}, the class \texttt{State}, and the methods
-\texttt{compute\_first}, \texttt{first\_list}, \texttt{compute\_goto\_table}, and \texttt{dump\_parse\_table} are the
-same as there.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
+\texttt{collect\_tokens}, \texttt{fixpoint}, \texttt{first\_list}, \texttt{eps\_union}, and \texttt{reachable}, the
+class \texttt{State}, and the methods \texttt{compute\_first}, \texttt{compute\_goto\_table}, and
+\texttt{dump\_parse\_table} are the same as there.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
 addition, they omit the variable \texttt{verbose}, which controls the output:  For a large grammar, printing all
 states together with the action table and the goto table would produce several megabytes of output.  Therefore,
 the notebook prints the states and the tables only if there are at most 100 states.  Conflicts are always printed.
@@ -2644,8 +2698,8 @@ essential respects:
       the e.m.r.\@ $\widehat{s} \rightarrow \mdot s: \symbol{36}$, with which the computation of the states
       starts.
 \item An LR parser does not need the function \textsl{Follow}, since the follow tokens are stored in the extended
-      marked rules.  Therefore, the method \texttt{compute\_tables} neither initializes the dictionary
-      \texttt{mFollow} nor calls the method \texttt{compute\_follow}, which does not exist in this notebook.  The
+      marked rules.  Therefore, the method \texttt{compute\_tables} does not call the method
+      \texttt{compute\_follow}, which does not exist in this notebook.  The
       function \textsl{First} is still needed, since the closure of a set of extended marked rules is defined in
       terms of \textsl{First}.
 \end{enumerate}
@@ -2677,7 +2731,8 @@ computation of the follow tokens and in its result.
             delta = emr.mBeta[1:]
             L     = emr.mFollow
             newL  = frozenset({ x for t in L for x in
-                                self.first_list(delta + (t,)) })
+                                first_list(delta + (t,),
+                                           self.mFirst) })
             return [ ExtendedMarkedRule(c, (), rule.mBody, newL)
                      for rule in self.mRules
                      if rule.mVariable == c ]
@@ -2696,7 +2751,7 @@ computation of the follow tokens and in its result.
 \begin{enumerate}
 \item If the e.m.r.\@ \texttt{emr} has the form $a \rightarrow \beta \mdot c\, \delta: L$, where $c$ is a
       variable, line 6 and 7 store the string $\delta$ and the set $L$ of follow tokens.
-\item Line 8 -- 9 compute the set
+\item Line 8 -- 10 compute the set
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{newL} = \bigcup \bigl\{ \textsl{First}(\delta\, t) \mid t \in L \bigr\}$,
@@ -2705,23 +2760,23 @@ computation of the follow tokens and in its result.
       collects the elements of the sets $\textsl{FirstList}(\delta\, t)$.  As $t$ is a token, these sets do not
       contain $\lambda$.  The set \textsl{newL} does not depend on the grammar rule $c \rightarrow \gamma$ that is
       used to create a successor.  Therefore, it is computed only once.
-\item For every grammar rule of the form $c \rightarrow \gamma$, the list comprehension in line 10 -- 12 creates
+\item For every grammar rule of the form $c \rightarrow \gamma$, the list comprehension in line 11 -- 13 creates
       the e.m.r.\@ $c \rightarrow \mdot \gamma: \textsl{newL}$.
-\item Line 13 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
+\item Line 14 returns the closure as a list and not as a state, since the closure can contain several e.m.r.s
       that have the same core.  For example, for the grammar for arithmetic expressions, the closure of
       $\bigl\{\widehat{s} \rightarrow \mdot \textsl{expr}: \symbol{36}\bigr\}$ contains the three e.m.r.s with
       the core $\textsl{expr} \rightarrow \mdot \textsl{expr} \aquoted{+} \textsl{product}$ that have been
       discussed in the previous section.
 \end{enumerate}
-The method \texttt{goto} in line 15 -- 18 implements the definition
+The method \texttt{goto} in line 16 -- 19 implements the definition
 \\[0.2cm]
 \hspace*{1.3cm}
 $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, X \mdot \delta:L \mid (a \rightarrow \beta \mdot X\, \delta:L) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
-The list \texttt{kernel} in line 16 -- 17 contains those e.m.r.s of the state in which the symbol $X$ follows the
-dot, with the dot moved over $X$.  Line 18 computes the closure of these e.m.r.s, combines the e.m.r.s of the
+The list \texttt{kernel} in line 17 -- 18 contains those e.m.r.s of the state in which the symbol $X$ follows the
+dot, with the dot moved over $X$.  Line 19 computes the closure of these e.m.r.s, combines the e.m.r.s of the
 closure that have the same core, and turns the result into a state.  Hence, a state contains at most one e.m.r.\@
 for every core, as required in the previous section.  It does not matter that the e.m.r.s are combined only after
 the closure has been computed:  As
