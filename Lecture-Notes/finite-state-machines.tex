@@ -592,7 +592,7 @@ $L(F) = \bigl\{ w \in \{ \mathtt{a}, \mathtt{b} \}^* \bigm|\; |w| \geq 3 \wedge 
 Specify an \simtextsc{Nfa} $F$ such that $L(F)$ is the set of those
 strings from the language  $\{a,b\}^*$ that contain the substring ``\texttt{aba}''. \eox
 
-\section{Transforming NFAs to DFAs}
+\section{Transforming NFAs to DFAs \label{section:nfa-2-dfa}}
 In this section we show how an \simtextsc{Nfa} 
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -917,10 +917,61 @@ The \textsl{Jupyter notebook}
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/01-NFA-2-DFA.ipynb}{\texttt{Python/Chapter-04-05/01-NFA-2-DFA.ipynb}}
 \\[0.2cm]
-contains a program that takes a \simtextsc{Nfa} $F$ and computes the \simtextsc{Dfa} $\textsl{det}(F)$.  The states
-of the computed \simtextsc{Dfa} are only those subsets of $Q$ that can be reached from the start state
-$\textsl{ec}(q_0)$.  As both the $\varepsilon$-closure and the set of these states are computed by a fixpoint
-iteration, the notebook implements the fixpoint iteration as a function of its own.  Figure
+contains a program that takes a \simtextsc{Nfa} $F$ and computes the \simtextsc{Dfa} $\textsl{det}(F)$.  In this
+subsection and in the implementation subsections of the following sections, we discuss the notebooks of this
+chapter line by line.  To keep the listings short, they show a simplified version of the code in the notebooks:  We
+have removed the type annotations, and a few long lines have been split into two lines.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    State = TypeVar('State')
+    Char = str
+    Delta = dict[tuple[State, Char], set[State]]
+    TransRel = dict[tuple[State, Char], State]
+    NFA = tuple[set[State], set[Char], Delta, State, set[State]]
+    DFA = tuple[set[State], set[Char], TransRel, State, set[State]]
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The types that represent finite state machines.}
+\label{fig:01-NFA-2-DFA.ipynb:types}
+\end{figure}
+
+\noindent
+Figure \ref{fig:01-NFA-2-DFA.ipynb:types} on page \pageref{fig:01-NFA-2-DFA.ipynb:types} shows how the notebook
+represents finite state machines.  The other notebooks of this chapter use the same representation.
+\begin{enumerate}
+\item Line 1 defines the \blue{type variable}\index{type variable} \texttt{State}.  It stands for the type of the
+      states, which is left open, since the functions of the notebook work for states of any type.  For example,
+      the states of the \simtextsc{Nfa}s that are constructed in the next section are numbers, while the states of
+      $\textsl{det}(F)$ are sets of states of $F$.
+\item Line 2 defines the type \texttt{Char} of characters.  As \textsl{Python} has no type of its own for
+      characters, a character is represented as a string of length one.
+\item Line 3 defines the type \texttt{Delta} of the transition function
+      $\delta: Q \times (\Sigma \cup \{\varepsilon\}) \rightarrow 2^Q$ of a \simtextsc{Nfa}.  This function is
+      stored as a dictionary that maps a pair $\pair(q, c)$ to the set $\delta(q, c)$.  The character
+      $\varepsilon$ is represented by the string \texttt{'𝜀'}.  If $\delta(q, c)$ is the empty set, the
+      dictionary need not contain the pair $\pair(q, c)$ as a key.
+\item Line 4 defines the type \texttt{TransRel} of the transition function
+      $\delta: Q \times \Sigma \rightarrow Q \cup \{\Omega\}$ of a \simtextsc{Dfa}.  This dictionary maps a pair
+      $\pair(q, c)$ to the state $\delta(q, c)$.  If $\delta(q, c) = \Omega$, the dictionary does not contain the
+      pair $\pair(q, c)$ as a key.
+\item Line 5 -- 6 define the types \texttt{NFA} and \texttt{DFA}.  A finite state machine
+      $\langle Q, \Sigma, \delta, q_0, A \rangle$ is represented as a tuple with five components, where the set of
+      states $Q$, the alphabet $\Sigma$, and the set of accepting states $A$ are \textsl{Python} sets.
+\end{enumerate}
+The states of the \simtextsc{Dfa} that the notebook computes are only those subsets of $Q$ that can be reached
+from the start state $\textsl{ec}(q_0)$.  As both the $\varepsilon$-closure and the set of these states are
+computed by a fixpoint iteration, the notebook implements the fixpoint iteration as a function of its own.  Figure
 \ref{fig:01-NFA-2-DFA.ipynb:fixpoint} on page \pageref{fig:01-NFA-2-DFA.ipynb:fixpoint} shows this function
 together with the functions that use it.
 
@@ -976,27 +1027,123 @@ together with the functions that use it.
       $\textsl{ecStep}$ and $\textsl{allStatesStep}$ depend on the transition function $\delta$ and the function
       $\textsl{allStatesStep}$ also depends on the alphabet $\Sigma$.
 \item Line 8 -- 10 define the function \texttt{epsClosureStep}, which implements the function $\textsl{ecStep}$.
-      The transition function $\delta$ is stored as a dictionary that maps a pair consisting of a state and a
-      character to a set of states.  The character $\varepsilon$ is represented as the string \texttt{'𝜀'}.  As
-      the dictionary has no entry for a state without $\varepsilon$-transitions, the expression
+      As the dictionary $\delta$ need not have an entry for a state without $\varepsilon$-transitions, the
+      expression
       \\[0.2cm]
       \hspace*{1.3cm}
       \texttt{δ.get((q, '𝜀'), set())}
       \\[0.2cm]
-      returns the empty set in this case.  The function \texttt{bigUnion} computes the union $\bigcup$ of a set
-      of sets.
+      returns the empty set in this case.  The function \texttt{bigUnion}, which is shown in Figure
+      \ref{fig:01-NFA-2-DFA.ipynb:nfa2dfa} on page \pageref{fig:01-NFA-2-DFA.ipynb:nfa2dfa}, computes the union
+      $\bigcup$ of a set of sets.  As it expects a set of \texttt{frozenset}s, the sets $\delta(q, \varepsilon)$
+      are converted into \texttt{frozenset}s.
 \item Line 12 -- 13 define the function \texttt{epsClosure}, which computes $\textsl{ec}(s)$ by a fixpoint
       iteration that starts with the set $\{ s \}$.
 \item Line 15 -- 18 define the function \texttt{allStatesStep}, which implements the function
-      $\textsl{allStatesStep}$.  The function \texttt{capitalDelta} implements the function $\Delta$.
+      $\textsl{allStatesStep}$.  The function \texttt{capitalDelta}, which is also shown in Figure
+      \ref{fig:01-NFA-2-DFA.ipynb:nfa2dfa}, implements the function $\Delta$.
 \item Line 20 -- 21 define the function \texttt{allStates}.  Its argument \texttt{Q} is the start state
       $\textsl{ec}(q_0)$ of $\textsl{det}(F)$.  The function computes the set of all states of
       $\textsl{det}(F)$ that can be reached from \texttt{Q} by a fixpoint iteration that starts with the set
       $\{ \texttt{Q} \}$.
 \end{enumerate}
 
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def bigUnion(M):
+        return frozenset({ x for A in M
+                             for x in A
+                         })
 
-\section{From Regular Expression to NFAs}
+    def deltaHat(s, c, δ):
+        return bigUnion({ epsClosure(q, δ)
+                          for q in δ.get((s, c), set()) })
+
+    def capitalDelta(M, c, δ):
+        return bigUnion({ deltaHat(q, c, δ) for q in M })
+
+    def nfa2dfa(nfa):
+        _, Σ, δ, q0, Final = nfa
+        newStart  = epsClosure(q0, δ)
+        NewStates = allStates(newStart, δ, Σ)
+        newδ  = { (M, c): capitalDelta(M, c, δ) for M in NewStates
+                                                for c in Σ
+                }
+        NewFinal = { M for M in NewStates if  M & Final != set() }
+        return NewStates, Σ, newδ, newStart, NewFinal
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The functions \texttt{bigUnion}, \texttt{deltaHat}, \texttt{capitalDelta}, and \texttt{nfa2dfa}.}
+\label{fig:01-NFA-2-DFA.ipynb:nfa2dfa}
+\end{figure}
+
+\noindent
+Figure \ref{fig:01-NFA-2-DFA.ipynb:nfa2dfa} on page \pageref{fig:01-NFA-2-DFA.ipynb:nfa2dfa} shows the remaining
+functions of the notebook.
+\begin{enumerate}
+\item Line 1 -- 4 define the function \texttt{bigUnion}.  Given a set $M$ of sets, it computes the union
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds \bigcup M = \bigl\{ x \bigm| \exists A \in M: x \in A \bigr\}$
+      \\[0.2cm]
+      with a set comprehension that iterates over all sets $A$ in $M$ and all elements $x$ of $A$.  The result
+      is returned as a \texttt{frozenset}.  The reason is that \textsl{Python} finds the elements of a set and
+      the keys of a dictionary via their hash values.  Therefore, these elements and keys must not change.  As a
+      set can be changed, it can neither be an element of a set nor a key of a dictionary.  In contrast, a
+      \texttt{frozenset} cannot be changed after it has been created.  As the states of $\textsl{det}(F)$ are
+      sets of states of $F$, which are elements of the set of states of $\textsl{det}(F)$ and occur in the keys
+      of its transition function, they are represented as \texttt{frozenset}s.  For the same reason, the
+      argument $M$ of \texttt{bigUnion} is a set of \texttt{frozenset}s.
+\item Line 6 -- 8 define the function \texttt{deltaHat}, which implements the function $\widehat{\delta}$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds\widehat{\delta}(q_1, c) = \bigcup \bigl\{ \textsl{ec}(q_2) \bigm| q_2 \in \delta(q_1, c) \bigr\}$.
+      \\[0.2cm]
+      As in the function \texttt{epsClosureStep}, the method \texttt{get} returns the empty set if there is no
+      transition from the state \texttt{s} for the character \texttt{c}.
+\item Line 10 -- 11 define the function \texttt{capitalDelta}, which implements the function $\Delta$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\ds\Delta(M,c) = \bigcup \bigl\{ \widehat{\delta}(q,c) \bigm| q \in M \bigr\}$.
+\item Line 13 -- 21 define the function \texttt{nfa2dfa}, which computes $\textsl{det}(F)$ for the
+      \simtextsc{Nfa} $F$ that is given as the argument \texttt{nfa}.
+      \begin{enumerate}
+      \item Line 14 extracts the components of $F$.  The set of states of $F$ is not needed.  Therefore, it is
+            assigned to the variable \texttt{\_}, which, by convention, holds values that are not used.
+      \item Line 15 computes the start state $\textsl{ec}(q_0)$ of $\textsl{det}(F)$.
+      \item Line 16 computes the set of states of $\textsl{det}(F)$.  Instead of the power set $2^Q$, which
+            occurs in the definition of $\textsl{det}(F)$, it contains only those sets of states that can be
+            reached from the start state.
+      \item Line 17 -- 19 compute the transition function $\Delta$ of $\textsl{det}(F)$ as a dictionary.  As the
+            set \texttt{NewStates} is a fixpoint of the function \texttt{allStatesStep}, the set
+            $\Delta(M, c)$ is an element of \texttt{NewStates} for every $M \in \texttt{NewStates}$ and every
+            $c \in \Sigma$.  Hence $\textsl{det}(F)$ is complete:  If $F$ dies in all states of $M$ when it
+            reads the character $c$, then $\Delta(M, c)$ is the empty set.  In this case, the empty set is a state
+            of $\textsl{det}(F)$.  It is not accepting and all of its transitions lead back to it.
+      \item Line 20 computes the set $\widehat{A}$ of accepting states.  The operator ``\texttt{\&}'' computes
+            the intersection of two sets.
+      \item Line 21 returns the five components of $\textsl{det}(F)$.
+      \end{enumerate}
+\end{enumerate}
+The notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/02-Test-NFA-2-DFA.ipynb}{\texttt{02-Test-NFA-2-DFA.ipynb}}
+applies the function \texttt{nfa2dfa} to the \simtextsc{Nfa} shown in Figure \ref{fig:ab-or-ba-star.dot} on page
+\pageref{fig:ab-or-ba-star.dot}.  It draws both finite state machines with the help of the notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/FSM-2-Dot.ipynb}{\texttt{FSM-2-Dot.ipynb}},
+which uses the program \textsl{Graphviz}.
+
+
+\section{From Regular Expression to NFAs \label{section:regexp-2-nfa}}
 In this section we show how a regular expression can be implemented as an \simtextsc{Nfa}.
 Given a regular expression $r$ we will construct an \simtextsc{Nfa} $A(r)$ that accepts the
 language that is described by the regular expression $r$, i.e.~we will have
@@ -1200,8 +1347,251 @@ The \textsl{Jupyter notebook}
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/03-Regexp-2-NFA.ipynb}{\texttt{Python/Chapter-04-05/03-Regexp-2-NFA.ipynb}} 
 \\[0.2cm]
-implements the theory discussed in this section.
+implements the theory discussed in this section.  It represents regular expressions as nested tuples:
+\begin{enumerate}
+\item The regular expression $\emptyset$ is represented by the number \texttt{0}.
+\item The regular expression $\varepsilon$ is represented by the string \texttt{'𝜀'}.
+\item A character $c \in \Sigma$ is represented by the string \texttt{'$c$'}.
+\item If the regular expressions $r_1$ and $r_2$ are represented by the values $v_1$ and $v_2$, then
+      \begin{enumerate}
+      \item $r_1 \cdot r_2$ is represented by the triple \texttt{(}$v_1$\texttt{, '⋅', }$v_2$\texttt{)},
+      \item $r_1 + r_2$ is represented by the triple \texttt{(}$v_1$\texttt{, '+', }$v_2$\texttt{)}, and
+      \item $r_1^*$ is represented by the pair \texttt{(}$v_1$\texttt{, '*')}.
+      \end{enumerate}
+\end{enumerate}
+For example, the regular expression $(\texttt{a} + \texttt{b}) \cdot \texttt{a}^*$ is represented by the nested
+tuple
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{(('a', '+', 'b'), '⋅', ('a', '*'))}.
+\\[0.2cm]
+The notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/RegExp-Parser.ipynb}{\texttt{RegExp-Parser.ipynb}}
+provides the function \texttt{parse}, which turns a string like \texttt{'(a+b)a*'} into this representation.
 
+The notebook \texttt{03-Regexp-2-NFA} implements the construction of $A(r)$ as the methods of the class
+\texttt{RegExp2NFA}.  It defines most of these methods as functions in cells of their own and attaches them to the
+class with two lines of the form
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{RegExp2NFA.toNFA = toNFA}
+\\[0.1cm]
+\hspace*{1.3cm}
+\texttt{del toNFA}
+\\[0.2cm]
+The listings omit these lines and the declarations of these methods in the body of the class, which are only
+needed by the type checker.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    class RegExp2NFA:
+        def __init__(self, Sigma):
+            self.Sigma      = Sigma
+            self.StateCount = 0
+
+    def getNewState(self):
+        self.StateCount += 1
+        return self.StateCount
+
+    def toNFA(self, r):
+        match r:
+            case 0:
+                return self.genEmptyNFA()
+            case '𝜀':
+                return self.genEpsilonNFA()
+            case r if isinstance(r, str) and len(r) == 1:
+                return self.genCharNFA(r)
+            case (r1, '⋅', r2):
+                return self.catenate(self.toNFA(r1), self.toNFA(r2))
+            case (r1, '+', r2):
+                return self.disjunction(self.toNFA(r1),
+                                        self.toNFA(r2))
+            case (r1, '*'):
+                return self.kleene(self.toNFA(r1))
+            case _:
+                raise ValueError(
+                    f'{r} is not a proper regular expression.')
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The class \texttt{RegExp2NFA} and the methods \texttt{getNewState} and \texttt{toNFA}.}
+\label{fig:03-Regexp-2-NFA.ipynb:toNFA}
+\end{figure}
+
+\noindent
+Figure \ref{fig:03-Regexp-2-NFA.ipynb:toNFA} on page \pageref{fig:03-Regexp-2-NFA.ipynb:toNFA} shows the class
+\texttt{RegExp2NFA} together with the methods \texttt{getNewState} and \texttt{toNFA}.
+\begin{enumerate}
+\item Line 1 -- 4 define the class \texttt{RegExp2NFA}.  The member variable \texttt{Sigma} stores the alphabet
+      $\Sigma$, which is a component of every \simtextsc{Nfa} that is constructed.  The member variable
+      \texttt{StateCount} counts the states that have been created so far.
+\item Line 6 -- 8 define the method \texttt{getNewState}, which returns a new number every time it is called.
+      The construction of $A(r_1 \cdot r_2)$ and $A(r_1 + r_2)$ assumes that the sets of states of $A(r_1)$ and
+      $A(r_2)$ are disjoint.  The implementation achieves this without renaming any states:  Every state is
+      created by the method \texttt{getNewState}.  Hence no state is created twice and different
+      \simtextsc{Nfa}s that have been constructed by the same object have disjoint sets of states.
+\item Line 10 -- 27 define the method \texttt{toNFA}, which computes $A(r)$ by recursion on the regular
+      expression $r$.  It uses a \texttt{match} statement.  \blue{Structural pattern matching}\index{pattern
+      matching} is the natural way to work with values that are represented as nested tuples:  The
+      \texttt{match} statement compares the value \texttt{r} with the patterns that follow the keyword
+      \texttt{case}, one after another, and executes the code of the first pattern that matches.
+      \begin{enumerate}
+      \item Line 12 -- 13 handle the regular expression $\emptyset$, since the pattern \texttt{0} matches only the
+            number \texttt{0}.  Similarly, line 14 -- 15 handle the regular expression $\varepsilon$.
+      \item The pattern \texttt{r} in line 16 matches every value and binds it to the variable \texttt{r}.
+            However, it is followed by a \blue{guard}\index{pattern matching!guard}, i.e.~a condition that starts
+            with the keyword \texttt{if}.  The case is only chosen if this condition is true, i.e.~if
+            \texttt{r} is a string of length one.  Then line 17 constructs the \simtextsc{Nfa} $A(c)$ for the
+            character $c$ = \texttt{r}.  As the string \texttt{'𝜀'} has length one, too, the order of the cases
+            matters:  The case in line 14 has to precede the case in line 16.
+      \item The pattern in line 18 matches every triple whose second component is the string \texttt{'⋅'}.  It
+            binds the first and the third component of the triple to the variables \texttt{r1} and \texttt{r2}.
+            Line 19 computes the \simtextsc{Nfa}s $A(r_1)$ and $A(r_2)$ recursively and combines them into the
+            \simtextsc{Nfa} $A(r_1 \cdot r_2)$.  Line 20 -- 22 handle the regular expression $r_1 + r_2$ in the
+            same way, while line 23 -- 24 construct the \simtextsc{Nfa} $A(r_1^*)$ for a pair whose second
+            component is the string \texttt{'*'}.
+      \item The pattern \texttt{\_} in line 25 matches every value.  As this case is only reached if the value
+            \texttt{r} does not represent a regular expression, line 26 -- 27 raise an exception.
+      \end{enumerate}
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def genEmptyNFA(self):
+        q0 = self.getNewState()
+        q1 = self.getNewState()
+        return {q0, q1}, self.Sigma, {}, q0, { q1 }
+
+    def genEpsilonNFA(self):
+        q0 = self.getNewState()
+        q1 = self.getNewState()
+        delta = { (q0, '𝜀'): {q1} }
+        return {q0, q1}, self.Sigma, delta, q0, { q1 }
+
+    def genCharNFA(self, c):
+        q0 = self.getNewState()
+        q1 = self.getNewState()
+        delta = { (q0, c): {q1} }
+        return {q0, q1}, self.Sigma, delta, q0, { q1 }
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The methods \texttt{genEmptyNFA}, \texttt{genEpsilonNFA}, and \texttt{genCharNFA}.}
+\label{fig:03-Regexp-2-NFA.ipynb:genEmptyNFA}
+\end{figure}
+
+\noindent
+Figure \ref{fig:03-Regexp-2-NFA.ipynb:genEmptyNFA} on page \pageref{fig:03-Regexp-2-NFA.ipynb:genEmptyNFA} shows
+the methods that construct the \simtextsc{Nfa}s $A(\emptyset)$, $A(\varepsilon)$, and $A(c)$.  Each of them creates
+two new states:  The start state $q_0$ and the accepting state $q_1$.  The \simtextsc{Nfa} $A(\emptyset)$ has no
+transitions at all.  Therefore, its transition function is the empty dictionary \texttt{\{\}} in line 4.  Note that
+in \textsl{Python}, the expression \texttt{\{\}} denotes an empty dictionary, while the empty set is written as
+\texttt{set()}.  The \simtextsc{Nfa}s $A(\varepsilon)$ and $A(c)$ have a single transition from $q_0$ to $q_1$,
+which is labelled with $\varepsilon$ and the character $c$, respectively.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def catenate(self, f1, f2):
+        M1, Sigma, delta1, q1, A1 = f1
+        M2, Sigma, delta2, q3, A2 = f2
+        q2, = A1 # extract the element from the set A1
+        delta = delta1 | delta2
+        delta[q2, '𝜀'] = {q3}
+        return M1 | M2, Sigma, delta, q1, A2
+
+    def disjunction(self, f1, f2):
+        Q1, Sigma, delta1, q1, A1 = f1
+        Q2, Sigma, delta2, q2, A2 = f2
+        q3, = A1
+        q4, = A2
+        q0 = self.getNewState()
+        q5 = self.getNewState()
+        delta = delta1 | delta2
+        delta[q0, '𝜀'] = { q1, q2 }
+        delta[q3, '𝜀'] = { q5 }
+        delta[q4, '𝜀'] = { q5 }
+        return { q0, q5 } | Q1 | Q2, Sigma, delta, q0, { q5 }
+
+    def kleene(self, f):
+        Q, Sigma, delta0, q1, A = f
+        q2, = A
+        q0 = self.getNewState()
+        q3 = self.getNewState()
+        delta = delta0 | {}    # copy delta0, so that f is not changed
+        delta[q0, '𝜀'] = { q1, q3 }
+        delta[q2, '𝜀'] = { q1, q3 }
+        return { q0, q3 } | Q, Sigma, delta, q0, { q3 }
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The methods \texttt{catenate}, \texttt{disjunction}, and \texttt{kleene}.}
+\label{fig:03-Regexp-2-NFA.ipynb:catenate}
+\end{figure}
+
+\noindent
+Figure \ref{fig:03-Regexp-2-NFA.ipynb:catenate} on page \pageref{fig:03-Regexp-2-NFA.ipynb:catenate} shows the
+methods that construct the \simtextsc{Nfa}s $A(r_1 \cdot r_2)$, $A(r_1 + r_2)$, and $A(r^*)$.  They use the same
+names for the states as the definitions given above.
+\begin{enumerate}
+\item Line 1 -- 7 define the method \texttt{catenate}, which computes $A(r_1 \cdot r_2)$ from the
+      \simtextsc{Nfa}s \texttt{f1} = $A(r_1)$ and \texttt{f2} = $A(r_2)$.
+      \begin{enumerate}
+      \item Line 2 -- 3 extract the components of these \simtextsc{Nfa}s.  Both have the same alphabet.
+      \item The set \texttt{A1} of accepting states of $A(r_1)$ contains exactly one element.  The assignment in
+            line 4 extracts this element:  Because of the comma, the left hand side is a tuple with one
+            component, and the set on the right hand side is unpacked into this tuple.  The assignment fails
+            if the set does not contain exactly one element.
+      \item For dictionaries, the operator ``\texttt{|}'' in line 5 creates a new dictionary that contains the
+            entries of both dictionaries.  As the sets of states of $A(r_1)$ and $A(r_2)$ are disjoint, the two
+            dictionaries have no key in common.  As the dictionary is new, line 6 does not change the
+            transition function of $A(r_1)$.
+      \item Line 6 adds the $\varepsilon$-transition from $q_2$ to $q_3$.  As $A(r_1)$ has no transitions out
+            of its accepting state $q_2$, no transition of $A(r_1)$ is overwritten.
+      \item Line 7 returns $A(r_1 \cdot r_2)$.  The operator ``\texttt{|}'' computes the union of the two sets
+            of states.  The start state is the start state $q_1$ of $A(r_1)$, and the set of accepting states is
+            the set $\{ q_4 \}$ of $A(r_2)$.
+      \end{enumerate}
+\item Line 9 -- 20 define the method \texttt{disjunction}, which computes $A(r_1 + r_2)$.  Line 14 -- 15
+      create the new start state $q_0$ and the new accepting state $q_5$, and line 17 -- 19 add the four
+      $\varepsilon$-transitions.
+\item Line 22 -- 30 define the method \texttt{kleene}, which computes $A(r^*)$ from the \simtextsc{Nfa}
+      \texttt{f} = $A(r)$.  Line 27 copies the transition function of $A(r)$, since otherwise line 28 -- 29
+      would change it.  In the methods \texttt{catenate} and \texttt{disjunction}, such a copy is not needed,
+      since the operator ``\texttt{|}'' creates a new dictionary anyway.  Line 29 adds the
+      $\varepsilon$-transitions from the accepting state $q_2$ of $A(r)$ back to its start state $q_1$ and to the
+      new accepting state $q_3$.
+\end{enumerate}
+The notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/04-Test-Regexp-2-NFA.ipynb}{\texttt{04-Test-Regexp-2-NFA.ipynb}}
+constructs a \simtextsc{Nfa} for the regular expression $\texttt{a}^* \cdot \texttt{b} \cdot \texttt{a}^*$,
+transforms it into a \simtextsc{Dfa} with the function \texttt{nfa2dfa}, and draws both finite state machines.
 
 
 \section{Translating a \textsc{DFA} into a Regular Expression}
@@ -1494,7 +1884,119 @@ The \textsl{Jupyter notebook}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/05-DFA-2-RegExp.ipynb}{\texttt{Python/Chapter-04-05/05-DFA-2-RegExp.ipynb}}
 \\[0.2cm]
 contains a program that takes a  \simtextsc{Dfa} $F$ and computes a regular expression $r$ such that
-$r$ specifies the language accepted by $F$, i.e.~we have $L(r) = L(F)$.
+$r$ specifies the language accepted by $F$, i.e.~we have $L(r) = L(F)$.  Figure
+\ref{fig:05-DFA-2-RegExp.ipynb:rpq} on page \pageref{fig:05-DFA-2-RegExp.ipynb:rpq} shows the functions of this
+notebook.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def regexp_sum(S):
+        n = len(S)
+        match n:
+            case 0:
+                return 0
+            case 1:
+                r, = S
+                return r
+            case _:
+                r, *Rs = S
+                return (r, '+', regexp_sum(Rs))
+
+    def rpq(p1, p2, Σ, 𝛿, Allowed):
+        if len(Allowed) == 0:
+            AllChars = { c for c in Σ if 𝛿.get((p1, c)) == p2 }
+            r = regexp_sum(AllChars)
+            if p1 == p2:
+                return ('𝜀', '+', r)
+            else:
+                return r
+        else:
+            q, *RestAllowed = Allowed
+            rp1p2 = rpq(p1, p2, Σ, 𝛿, RestAllowed)
+            rp1q  = rpq(p1,  q, Σ, 𝛿, RestAllowed)
+            rqq   = rpq( q,  q, Σ, 𝛿, RestAllowed)
+            rqp2  = rpq( q, p2, Σ, 𝛿, RestAllowed)
+            return (rp1p2, '+', ((rp1q, '⋅', (rqq, '*')), '⋅', rqp2))
+
+    def dfa_2_regexp(F):
+        States, Σ, 𝛿, q0, Accepting = F
+        r = regexp_sum({ rpq(q0, p, Σ, 𝛿, States)
+                         for p in Accepting })
+        return r
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The functions \texttt{regexp\_sum}, \texttt{rpq}, and \texttt{dfa\_2\_regexp}.}
+\label{fig:05-DFA-2-RegExp.ipynb:rpq}
+\end{figure}
+
+\begin{enumerate}
+\item Line 1 -- 11 define the function \texttt{regexp\_sum}.  Given a collection $S = \{ r_1, \cdots, r_n \}$ of
+      regular expressions, it returns the regular expression $r_1 + \cdots + r_n$.
+      \begin{enumerate}
+      \item If $S$ is empty, the sum is empty and line 5 returns the regular expression $\emptyset$, which is
+            represented by the number \texttt{0}.
+      \item If $S$ has exactly one element, line 7 extracts this element in the same way as the method
+            \texttt{catenate} in Figure \ref{fig:03-Regexp-2-NFA.ipynb:catenate} extracts the accepting state.
+      \item Otherwise, the assignment in line 10 assigns the first element of $S$ to the variable \texttt{r}.
+            Because of the operator ``\texttt{*}'', the variable \texttt{Rs} collects the remaining elements
+            in a list.  Hence the recursive call in line 11 receives a list instead of a set.  The result has
+            the form $r_1 + \bigl(r_2 + (\cdots + r_n)\bigr)$.  For a set, the order of the elements is not
+            specified.  However, this order does not matter, since the operator ``$+$'' is commutative with
+            respect to the languages that the regular expressions describe.
+      \end{enumerate}
+\item Line 13 -- 27 define the function \texttt{rpq}, which computes the regular expressions
+      $r^{(k)}(p_1, p_2)$.  The definition of these regular expressions numbers the states of $F$ as
+      $q_0, \cdots, q_n$ and allows only the states of the set $Q_k = \{ q_0, \cdots, q_{k-1} \}$ in-between.  The
+      function \texttt{rpq} does not need to number the states.  Instead, its argument \texttt{Allowed} is the
+      set of the states that are allowed in-between.  Hence we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\texttt{rpq}(p_1, p_2, \Sigma, \delta, Q_k) = r^{(k)}(p_1, p_2)$.
+      \begin{enumerate}
+      \item Line 14 -- 20 handle the case $\texttt{Allowed} = \{\}$, which corresponds to the case $k = 0$.
+            Line 15 computes the set of all characters $c$ such that $\delta(p_1, c) = p_2$.  If the
+            dictionary $\delta$ has no entry for the pair $\pair(p_1, c)$, the method \texttt{get} returns the
+            value \texttt{None}, which is different from every state.  Therefore, the \simtextsc{Dfa} need not be
+            complete.  Line 16 combines these characters with the operator ``$+$''.  If $p_1 = p_2$, the empty
+            string takes $F$ from $p_1$ to $p_2$, too.  Therefore, line 18 adds the regular expression
+            $\varepsilon$.  If there is no character $c$ such that $\delta(p_1, c) = p_1$, the result is the
+            regular expression $\varepsilon + \emptyset$, which is equivalent to $\varepsilon$.
+      \item Otherwise, line 22 splits the collection \texttt{Allowed} into a state $q$ and the list
+            \texttt{RestAllowed} of the remaining states.  The state $q$ plays the role of the state $q_k$,
+            while \texttt{RestAllowed} plays the role of the set $Q_k$.  Therefore, line 23 -- 26 compute the
+            regular expressions $r^{(k)}(p_1, p_2)$, $r^{(k)}(p_1, q_k)$, $r^{(k)}(q_k, q_k)$, and
+            $r^{(k)}(q_k, p_2)$ recursively, and line 27 returns the regular expression
+            \\[0.2cm]
+            \hspace*{1.3cm}
+            $r^{(k)}(p_1,p_2) + r^{(k)}(p_1,q_k) \cdot \bigl(r^{(k)}(q_k,q_k)\bigr)^* \cdot r^{(k)}(q_k,p_2)$.
+      \end{enumerate}
+      Every call of \texttt{rpq} with a collection \texttt{Allowed} of $k > 0$ states makes four recursive calls
+      with $k-1$ states.  Hence, if $F$ has $n$ states, the number of calls and the size of the resulting
+      regular expression grow like $4^n$.  Therefore, this algorithm is only suitable for small
+      \simtextsc{Dfa}s.
+\item Line 29 -- 33 define the function \texttt{dfa\_2\_regexp}, which computes the regular expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $r(F) = r(q_0, t_1) + \cdots + r(q_0, t_m)$,
+      \\[0.2cm]
+      where $\{ t_1, \cdots, t_m \}$ is the set of accepting states and all states are allowed in-between.  If
+      $F$ has no accepting states, the function \texttt{regexp\_sum} returns the regular expression $\emptyset$.
+\end{enumerate}
+The notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/06-Test-DFA-2-RegExp.ipynb}{\texttt{06-Test-DFA-2-RegExp.ipynb}}
+applies the function \texttt{dfa\_2\_regexp} to a \simtextsc{Dfa} with three states.  As the resulting regular
+expression is nearly unreadable, it is simplified with the function \texttt{simplify} from the notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/Simplify.ipynb}{\texttt{Simplify.ipynb}}.
 
 \section{Minimization of Finite State Machines}
 In this section we show how to minimize the number of states of a \simtextsc{Dfa}
@@ -1822,7 +2324,199 @@ The \textsl{Jupyter notebook}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize.ipynb}{\texttt{Python/Chapter-04-05/07-Minimize.ipynb}}
 \\[0.2cm]
 contains a program that takes a  \simtextsc{Dfa} $F$ and returns an equivalent \simtextsc{Dfa} that has
-the minimum number of states.  The \textsl{Jupyter notebook}
+the minimum number of states.  It represents \simtextsc{Dfa}s with the types \texttt{TransRel} and \texttt{DFA} shown
+in Figure \ref{fig:01-NFA-2-DFA.ipynb:types} on page \pageref{fig:01-NFA-2-DFA.ipynb:types}.  The states of
+$\texttt{Min}(F)$ are equivalence classes, i.e.~sets of states of $F$.  For the reasons given in the discussion of
+the function \texttt{bigUnion} in Section \ref{section:nfa-2-dfa}, they are represented as \texttt{frozenset}s.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def arb(M):
+        x, *_ = M
+        return x
+
+    def cart_prod(A, B):
+        return { (x, y) for x in A for y in B }
+
+    def separate(Pairs, States, Σ, 𝛿):
+        Result = { (q1, q2) for q1 in States
+                            for q2 in States
+                            for c  in Σ
+                            if (𝛿[q1, c], 𝛿[q2, c]) in Pairs
+                 }
+        return Result
+
+    def find_equivalence_class(p, Partition):
+        return arb({ C for C in Partition if p in C })
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The functions \texttt{arb}, \texttt{cart\_prod}, \texttt{separate}, and \texttt{find\_equivalence\_class}.}
+\label{fig:07-Minimize.ipynb:separate}
+\end{figure}
+
+\noindent
+Figure \ref{fig:07-Minimize.ipynb:separate} on page \pageref{fig:07-Minimize.ipynb:separate} shows some auxiliary
+functions.
+\begin{enumerate}
+\item Line 1 -- 3 define the function \texttt{arb}, which returns an arbitrary element of a non-empty set $M$.
+      The assignment in line 2 assigns the first element that is found when the elements of $M$ are enumerated to
+      the variable \texttt{x}, while the variable \texttt{\_} collects the remaining elements, which are not
+      used.
+\item Line 5 -- 6 define the function \texttt{cart\_prod}, which computes the Cartesian product
+      $A \times B = \bigl\{ \pair(x, y) \bigm| x \in A \wedge y \in B \bigr\}$.
+\item Line 8 -- 14 define the function \texttt{separate}.  Given a set \texttt{Pairs} of pairs of states that are
+      known to be separable, it computes the set
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\bigl\{ \pair(p,q) \bigm| \exists c \in \Sigma: \langle \delta(p,c), \delta(q,c) \rangle \in \texttt{Pairs}
+      \bigr\}$
+      \\[0.2cm]
+      of all pairs that are separable because of these pairs.  Here, the transition function \texttt{𝛿} has to
+      be complete, since otherwise the expression \texttt{𝛿[q1, c]} fails for a missing key.
+\item Line 16 -- 17 define the function \texttt{find\_equivalence\_class}.  Given a state $p$ and a partition of
+      the set of states, i.e.~a set of disjoint sets that cover all states, it returns the set $C$ of the
+      partition that contains $p$:  The set comprehension in line 17 yields the set $\{ C \}$, and the function
+      \texttt{arb} extracts its only element.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def all_separable_step(S, Q, Σ, 𝛿):
+        return S | separate(S, Q, Σ, 𝛿)
+
+    def all_separable(Q, A, Σ, 𝛿):
+        Separable = cart_prod(Q - A, A) | cart_prod(A, Q - A)
+        return fixpoint(all_separable_step, Separable, Q, Σ, 𝛿)
+
+    def reachable_step(R, Σ, 𝛿):
+        return R | { 𝛿[p, c] for p in R for c in Σ }
+
+    def reachable(q0, Σ, 𝛿):
+        return fixpoint(reachable_step, { q0 }, Σ, 𝛿)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The functions that compute the separable pairs and the reachable states.}
+\label{fig:07-Minimize.ipynb:all_separable}
+\end{figure}
+
+\noindent
+Figure \ref{fig:07-Minimize.ipynb:all_separable} on page \pageref{fig:07-Minimize.ipynb:all_separable} shows the
+functions that compute the set of all separable pairs and the set of all reachable states.  Both sets are computed
+by a fixpoint iteration.  The notebook contains a copy of the function \texttt{fixpoint} that is shown in Figure
+\ref{fig:01-NFA-2-DFA.ipynb:fixpoint} on page \pageref{fig:01-NFA-2-DFA.ipynb:fixpoint}.
+\begin{enumerate}
+\item Line 1 -- 2 define the function \texttt{all\_separable\_step}, which computes the step from $V_k$ to
+      $V_{k+1}$ in the definition of the sets $V_k$ given above, since we have
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\begin{array}[t]{lcl}
+       V_{k+1} & = & V_k \cup \bigl\{ \pair(p,q) \bigm| \exists c \in \Sigma: \langle \delta(p,c), \delta(q,c)
+                     \rangle \in V_k \bigr\} \\[0.1cm]
+               & = & \texttt{all\_separable\_step}(V_k, Q, \Sigma, \delta).
+       \end{array}$
+\item Line 4 -- 6 define the function \texttt{all\_separable}.  Line 5 computes the set
+      $V_0 = \bigl(A \times (Q \backslash A)\bigr) \cup \bigl((Q \backslash A) \times A\bigr)$.  For sets, the
+      operator ``\texttt{-}'' computes the difference.  Starting with $V_0$, the fixpoint iteration in line 6
+      computes the sets $V_1$, $V_2$, $\cdots$ until it finds a set $V_K$ such that $V_{K+1} = V_K$.  This set
+      contains all pairs of separable states.
+\item Line 8 -- 9 define the function \texttt{reachable\_step}.  The set of all states that are reachable from the
+      start state $q_0$ is the smallest set $R$ such that $q_0 \in R$ holds and such that $R$ is a fixpoint of
+      the function
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{reachable\_step}(R) := R \cup \bigl\{ \delta(p, c) \bigm| p \in R \wedge c \in \Sigma \bigr\}$.
+\item Line 11 -- 12 define the function \texttt{reachable}.  Like the function \texttt{allStates} in Figure
+      \ref{fig:01-NFA-2-DFA.ipynb:fixpoint}, it computes this set with a fixpoint iteration that starts with the
+      set $\{ q_0 \}$.  After $n$ steps, the set contains exactly those states that can be reached from $q_0$ by
+      reading at most $n$ characters.
+\end{enumerate}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def minimize(F):
+        Q, Σ, 𝛿, q0, A = F
+        Q              = reachable(q0, Σ, 𝛿)
+        Separable      = all_separable(Q, A, Σ, 𝛿)
+        Equivalent     = cart_prod(Q, Q) - Separable
+        EquivClasses   = { frozenset({ p for p in Q
+                                         if (p, q) in Equivalent })
+                           for q in Q
+                         }
+        newQ0          = arb({ M for M in EquivClasses if q0 in M })
+        newAccept      = { M for M in EquivClasses if arb(M) in A }
+        newDelta = {}
+        for q in Q:
+            classOfQ = find_equivalence_class(q, EquivClasses)
+            for c in Σ:
+                newDelta[(classOfQ, c)] = find_equivalence_class(
+                                              𝛿[q, c], EquivClasses)
+        return EquivClasses, Σ, newDelta, newQ0, newAccept
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The function \texttt{minimize}.}
+\label{fig:07-Minimize.ipynb:minimize}
+\end{figure}
+
+\noindent
+Figure \ref{fig:07-Minimize.ipynb:minimize} on page \pageref{fig:07-Minimize.ipynb:minimize} shows the function
+\texttt{minimize}, which computes $\texttt{Min}(F)$ for a complete \simtextsc{Dfa} $F$.
+\begin{enumerate}
+\item Line 2 extracts the components of $F$.
+\item Line 3 replaces the set of states by the set of reachable states.  The theory has assumed that all states
+      of $F$ are reachable.  This line ensures that this assumption is satisfied.
+\item Line 4 computes the set $V_K$ of all pairs of separable states, and line 5 computes the equivalence relation
+      $\sim$ as the set of all pairs of states that are not separable.
+\item Line 6 -- 9 compute the set $\mathcal{Q}_\sim = \bigl\{ [q]_\sim \bigm| q \in Q \bigr\}$ of all equivalence
+      classes, where $[q]_\sim = \{ p \in Q \mid p \sim q \}$.  Equivalent states have the same equivalence class.
+      As \texttt{EquivClasses} is a set, it contains every equivalence class only once.
+\item Line 10 computes the start state $[q_0]_\sim$ of $\texttt{Min}(F)$, which is the equivalence class that
+      contains $q_0$.
+\item Line 11 computes the set $\widehat{A} = \bigl\{ [q]_\sim \bigm| q \in A \bigr\}$ of accepting states.  It
+      checks whether an arbitrary element of an equivalence class $M$ is accepting.  This is sufficient, since an
+      accepting state and a state that is not accepting are separable by the empty string.  Hence an equivalence
+      class contains either only accepting states or no accepting state at all.
+\item Line 12 -- 17 compute the transition function
+      $\Delta\bigl([q]_\sim, c\bigr) = \bigl[ \delta(q, c) \bigr]_\sim$.  If an equivalence class contains several
+      states, its transitions are computed once for each of them.  All these computations yield the same
+      result:  If $p \sim q$, then $\delta(p, c) \sim \delta(q, c)$, since otherwise the pair $\pair(p,q)$ would
+      be separable.
+\item Line 18 returns the five components of $\texttt{Min}(F)$.
+\end{enumerate}
+The notebook
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/08-Test-Minimize.ipynb}{\texttt{08-Test-Minimize.ipynb}}
+minimizes a \simtextsc{Dfa} with nine states and draws both finite state machines.
+
+The \textsl{Jupyter notebook}
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize-Table.ipynb}{\texttt{Python/Chapter-04-05/07-Minimize-Table.ipynb}}
