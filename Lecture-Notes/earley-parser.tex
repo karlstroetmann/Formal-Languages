@@ -176,20 +176,24 @@ $G = \langle V, \Sigma, R, s \rangle$ Earley's algorithm works as follows:
       $Q_i := \bigl\{ \bigr\}$ \quad for $i=1,\cdots,n$.
 \item After that we iterate from $i=0$ to $i=n$ and perform the following operations:
       \begin{enumerate}[(a)]
-      \item The set $Q_i$ is enlarged using completion until we find no further
-            Earley objects.
-      \item Next we use prediction to enlarge the set $Q_i$.
-            Again, this operation is performed until no new Earley objects are found.
+      \item The set $Q_i$ is enlarged using completion and prediction until no further Earley objects are found.
+            Hence $Q_i$ becomes the smallest set that contains the Earley objects that are already in $Q_i$ and
+            that is closed under completion and prediction.  This set is computed by a fixpoint iteration:  In
+            every step, completion and prediction are applied to $Q_i$ and the Earley objects that are found are
+            added to $Q_i$.  The iteration stops as soon as a step does not find a new Earley object.
       \item If $i < n$, we read the next token and use it to initialize $Q_{i+1}$.
       \end{enumerate}
-      If the grammar $G$ has  $\lambda$-rules, i.e.~if it has rules with empty right hand side of the form
+      If the grammar $G$ has no $\lambda$-rules, i.e.~no rules with empty right hand side of the form
       \\[0.2cm]
       \hspace*{1.3cm}
       $c \rightarrow \lambda$,
       \\[0.2cm]
-      then it might happen that after applying prediction in the set $Q_i$, we can immediately apply
-      completion in $Q_i$ again.  In this case prediction and completion have to be iterated until no further Earley
-      objects are generated for $Q_i$.
+      then a prediction can never enable a completion in $Q_i$.  In this case, we can first apply completion until
+      no further Earley objects are found and then apply prediction until no further Earley objects are found.  This
+      is how we proceed in the following example.  If the grammar has $\lambda$-rules, then it might happen that
+      after applying prediction in the set $Q_i$, we can immediately apply completion in $Q_i$ again.  The fixpoint
+      iteration takes care of this case, too, since it applies both operations until $Q_i$ does not change any
+      more.
 \item If after termination of the algorithm the set  $Q_n$ contains the Earley object
       $\pair(\widehat{s} \rightarrow s \mdot,0)$, then parsing is successful and we have shown that
       the string $w = x_1 \cdots x_n$ is an element of $L(G)$.
@@ -692,7 +696,8 @@ The class \texttt{Grammar} represents a context-free grammar.  Its definition is
 \subsection{The Class \texttt{EarleyParser}}
 The class \texttt{EarleyParser} implements Earley's algorithm.  Figure
 \ref{fig:01-Earley-Parser.ipynb:EarleyParser} on page \pageref{fig:01-Earley-Parser.ipynb:EarleyParser}
-shows its constructor and the method \texttt{parse}, which controls the algorithm.
+shows its constructor, the method \texttt{parse}, which controls the algorithm, and the method
+\texttt{completeAndPredict}, which computes a single step of the fixpoint iteration.
 
 \begin{figure}[!ht]
 \centering
@@ -717,10 +722,8 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
         "run Earley's algorithm"
         n = len(self.mString) - 1 # mString[0] = None
         for i in range(0, n+1):
-            change = True
-            while change:
-                change = self.complete(i)
-                change = self.predict(i) or change
+            self.mStateList[i] = fixpoint(self.completeAndPredict,
+                                          self.mStateList[i], i)
             self.scan(i)
         if self.mGrammar.finishObject() in self.mStateList[-1]:
             print('Parsing successful!')
@@ -729,9 +732,16 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
 
     EarleyParser.parse = earley_parse
     del earley_parse
+
+    def completeAndPredict(self, Qi, i):
+        return Qi | self.complete(Qi, i) | self.predict(Qi, i)
+
+    EarleyParser.completeAndPredict = completeAndPredict
+    del completeAndPredict
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The constructor of the class \texttt{EarleyParser} and the method \texttt{parse}.}
+\caption{The constructor of the class \texttt{EarleyParser} and the methods \texttt{parse} and
+  \texttt{completeAndPredict}.}
 \label{fig:01-Earley-Parser.ipynb:EarleyParser}
 \end{figure}
 
@@ -748,25 +758,36 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
             all empty at this point.  The set $Q_i$ is stored in \texttt{mStateList[$i$]}.
       \item Line 6 initializes $Q_0$ as the set $\bigl\{ \pair(\widehat{s} \rightarrow \mdot s, 0) \bigr\}$.
       \end{enumerate}
-\item Line 8 -- 20 define the function \texttt{earley\_parse}, which is attached to the class as the method
-      \texttt{parse} in line 22.
+\item Line 8 -- 18 define the function \texttt{earley\_parse}, which is attached to the class as the method
+      \texttt{parse} in line 20.
       \begin{enumerate}[(a)]
       \item Line 10 computes the number $n$ of tokens.  The value \texttt{None} at the beginning of
             \texttt{mString} must not be counted.
-      \item The \texttt{for} loop in line 11 -- 16 processes the sets $Q_0$, $Q_1$, $\cdots$, $Q_n$ in this order.
-      \item The \texttt{while} loop in line 13 -- 15 applies the completion operation and the prediction
-            operation to the set $Q_i$ until neither of these operations finds a new Earley object.  Both methods
-            return \texttt{True} if and only if they have added an Earley object to $Q_i$.  As explained above,
-            this repetition is only necessary if the grammar has $\lambda$-rules.
-
-            In line 15, the call of the method \texttt{predict} has to be the first operand of the operator
-            \texttt{or}.  As this operator does not evaluate its second operand if the first operand is true, the
-            method would otherwise be skipped whenever \texttt{change} is \texttt{True}.
-      \item Line 16 applies the scanning operation, which initializes the set $Q_{i+1}$.
-      \item After the \texttt{for} loop has finished, line 17 checks whether the set $Q_n$, which is the last
+      \item The \texttt{for} loop in line 11 -- 14 processes the sets $Q_0$, $Q_1$, $\cdots$, $Q_n$ in this order.
+      \item Line 12 -- 13 apply the completion operation and the prediction operation to the set $Q_i$ until
+            neither of these operations finds a new Earley object.  To this end, they call the function
+            \texttt{fixpoint}, which has been shown in Figure \ref{fig:01-NFA-2-DFA.ipynb:fixpoint} on page
+            \pageref{fig:01-NFA-2-DFA.ipynb:fixpoint}.  It computes a fixpoint of the method
+            \texttt{completeAndPredict}, starting with the current value of the set $Q_i$.  For $i = 0$, this is
+            the set that contains the start object, otherwise it is the set of those Earley objects that the
+            scanning operation has added to $Q_i$.  The expression \texttt{self.completeAndPredict} is a
+            \blue{bound method}\index{bound method}:  It is a function that calls the method
+            \texttt{completeAndPredict} for the object \texttt{self}.  The additional argument \texttt{i} of
+            \texttt{fixpoint} is passed to this function in every call.  The result of the fixpoint iteration is
+            stored as the new value of $Q_i$ in the list \texttt{mStateList}.
+      \item Line 14 applies the scanning operation, which initializes the set $Q_{i+1}$.
+      \item After the \texttt{for} loop has finished, line 15 checks whether the set $Q_n$, which is the last
             element of the list \texttt{mStateList}, contains the Earley object
-            $\pair(\widehat{s} \rightarrow s\mdot, 0)$.  Line 18 and line 20 print the result.
+            $\pair(\widehat{s} \rightarrow s\mdot, 0)$.  Line 16 and line 18 print the result.
       \end{enumerate}
+\item Line 23 -- 24 define the method \texttt{completeAndPredict}, which computes a single step of the fixpoint
+      iteration.  Its argument \texttt{Qi} is the current approximation of the set $Q_i$.  The methods
+      \texttt{complete} and \texttt{predict}, which are discussed below, return the sets of those Earley objects
+      that are found when the completion operation and the prediction operation are applied once to \texttt{Qi}.
+      The method \texttt{completeAndPredict} returns the union of \texttt{Qi} and these two sets.  The operator
+      ``\texttt{|}'' creates a new set, so \texttt{Qi} itself is not changed.  This is important, since the
+      function \texttt{fixpoint} compares the new set with \texttt{Qi} in order to decide whether the iteration
+      has to go on.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -781,27 +802,17 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
                 xrightmargin  = 0.5cm,
                 gobble        = 4,
               ]{python3}
-    def complete(self, i):
-        change = False
-        added  = True
-        Qi     = self.mStateList[i]
-        while added:
-            added = False
-            newQi = set()
-            for obj in Qi:
-                if obj.isComplete():
-                    c  = obj.mVariable
-                    j  = obj.mIndex
-                    Qj = self.mStateList[j]
-                    for waiting in Qj:
-                        if waiting.sameVar(c):
-                            moved = waiting.moveDot()
-                            newQi.add(moved)
-            if not (newQi <= Qi):
-                change = True
-                added  = True
-                Qi |= newQi
-        return change
+    def complete(self, Qi, i):
+        Result = set()
+        for obj in Qi:
+            if obj.isComplete():
+                c  = obj.mVariable
+                j  = obj.mIndex
+                Qj = Qi if j == i else self.mStateList[j]
+                for waiting in Qj:
+                    if waiting.sameVar(c):
+                        Result.add(waiting.moveDot())
+        return Result
 
     EarleyParser.complete = complete
     del complete
@@ -813,35 +824,33 @@ shows its constructor and the method \texttt{parse}, which controls the algorith
 
 \noindent
 Figure \ref{fig:01-Earley-Parser.ipynb:complete} on page \pageref{fig:01-Earley-Parser.ipynb:complete} shows the
-method \texttt{complete}.  The call \texttt{self.complete($i$)} applies the completion operation to the set $Q_i$:
+method \texttt{complete}.  The call \texttt{self.complete(Qi,~$i$)} applies the completion operation
 \\[0.2cm]
 \hspace*{1.3cm}
 $\pair(c \rightarrow \gamma \mdot, j) \in Q_i \wedge
  \pair(a \rightarrow \beta \mdot c \delta,k) \in Q_j \;\Rightarrow\;
- Q_i := Q_i \cup \bigl\{ \pair(a \rightarrow \beta c \mdot \delta,k) \bigr\}$.
+ Q_i := Q_i \cup \bigl\{ \pair(a \rightarrow \beta c \mdot \delta,k) \bigr\}$
+\\[0.2cm]
+once to the set \texttt{Qi}, which is the current approximation of the set $Q_i$.  It returns the set of all Earley
+objects $\pair(a \rightarrow \beta c \mdot \delta,k)$ that it finds.
 \begin{enumerate}
-\item Line 2 initializes the variable \texttt{change} to \texttt{False}.  This variable records whether the method
-      has added at least one Earley object to $Q_i$.  It is the result of the method, which is returned in line 21.
-\item Line 3 initializes the variable \texttt{added} to \texttt{True} so that the \texttt{while} loop in line
-      5 -- 20 is entered.  This loop is repeated as long as its last iteration has added a new Earley object to
-      $Q_i$, since a new Earley object can be complete, too, and then it might enable further completions.
-\item Line 4 sets the variable \texttt{Qi} to the set $Q_i$.
-\item At the beginning of every iteration, line 6 resets \texttt{added} to \texttt{False} and line 7 creates the
-      empty set \texttt{newQi}, which collects the Earley objects found in this iteration.  These Earley objects
-      cannot be added to $Q_i$ immediately, since \textsl{Python} does not allow a set to be changed while a loop
-      iterates over this set.
-\item The \texttt{for} loop in line 8 -- 16 inspects all Earley objects in $Q_i$.  Line 9 selects the complete Earley
-      objects, which have the form $\pair(c \rightarrow \gamma \mdot, j)$.  Line 10 and 11 extract the variable
-      $c$ and the index $j$ from such an Earley object and line 12 sets the variable \texttt{Qj} to the set $Q_j$.
-\item The \texttt{for} loop in line 13 -- 16 inspects all Earley objects in $Q_j$.  Line 14 selects those Earley
-      objects that have the form $\pair(a \rightarrow \beta \mdot c \delta, k)$.  For each of them, line 15 moves
+\item Line 2 initializes the variable \texttt{Result} with the empty set.  This set collects the Earley objects
+      that the method finds and it is returned in line 11.  The new Earley objects are not added to \texttt{Qi},
+      since \textsl{Python} does not allow a set to be changed while a loop iterates over this set.
+\item The \texttt{for} loop in line 3 -- 10 inspects all Earley objects in \texttt{Qi}.  Line 4 selects the complete
+      Earley objects, which have the form $\pair(c \rightarrow \gamma \mdot, j)$.  Line 5 and 6 extract the variable
+      $c$ and the index $j$ from such an Earley object.
+\item Line 7 sets the variable \texttt{Qj} to the set $Q_j$.  The conditional expression in this line has the value
+      \texttt{Qi} if $j = i$ holds and the value \texttt{self.mStateList[$j$]} otherwise.  If $j < i$, the set
+      $Q_j$ has already been computed and is stored in \texttt{self.mStateList[$j$]}.  If $j = i$, the Earley
+      objects that wait for the variable $c$ are elements of $Q_i$ itself.  This can only happen if
+      $c \Rightarrow^* \lambda$, i.e.~if the grammar has $\lambda$-rules.  As \texttt{self.mStateList[$i$]} is only
+      updated after the fixpoint iteration has finished, the method has to use the current approximation
+      \texttt{Qi} in this case.
+\item The \texttt{for} loop in line 8 -- 10 inspects all Earley objects in $Q_j$.  Line 9 selects those Earley
+      objects that have the form $\pair(a \rightarrow \beta \mdot c \delta, k)$.  For each of them, line 10 moves
       the marker over the variable $c$, which results in the Earley object
-      $\pair(a \rightarrow \beta c \mdot \delta, k)$, and line 16 adds this Earley object to \texttt{newQi}.
-\item Line 17 checks whether the set \texttt{newQi} contains an Earley object that is not yet an element of $Q_i$.
-      Here, the operator \texttt{<=} tests whether its left operand is a subset of its right operand.  If a new Earley
-      object has been found, line 18 and 19 record this fact and line 20 adds the new Earley objects to the set
-      \texttt{Qi}.  The operator \texttt{|=} changes this set in place.  As line 4 has not copied the set $Q_i$ but
-      has only given it a second name, line 20 also enlarges the set \texttt{self.mStateList[$i$]}.
+      $\pair(a \rightarrow \beta c \mdot \delta, k)$, and adds this Earley object to the set \texttt{Result}.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -856,25 +865,16 @@ $\pair(c \rightarrow \gamma \mdot, j) \in Q_i \wedge
                 xrightmargin  = 0.5cm,
                 gobble        = 4,
               ]{python3}
-    def predict(self, i):
-        change = False
-        added  = True
-        Qi     = self.mStateList[i]
-        while added:
-            added = False
-            newQi = set()
-            for obj in Qi:
-                c = obj.nextVar()
-                if c is not None:
-                    for rule in self.mGrammar.mRules:
-                        if c == rule[0]:
-                            newQi.add(EarleyObject(
-                                c, (), tuple(rule[1:]), i))
-            if not (newQi <= Qi):
-                change = True
-                added  = True
-                Qi |= newQi
-        return change
+    def predict(self, Qi, i):
+        Result = set()
+        for obj in Qi:
+            c = obj.nextVar()
+            if c is not None:
+                for rule in self.mGrammar.mRules:
+                    if c == rule[0]:
+                        Result.add(EarleyObject(
+                            c, (), tuple(rule[1:]), i))
+        return Result
 
     EarleyParser.predict = predict
     del predict
@@ -886,30 +886,30 @@ $\pair(c \rightarrow \gamma \mdot, j) \in Q_i \wedge
 
 \noindent
 Figure \ref{fig:01-Earley-Parser.ipynb:predict} on page \pageref{fig:01-Earley-Parser.ipynb:predict} shows the
-method \texttt{predict}.  The call \texttt{self.predict($i$)} applies the prediction operation to the set $Q_i$:
+method \texttt{predict}.  The call \texttt{self.predict(Qi,~$i$)} applies the prediction operation
 \\[0.2cm]
 \hspace*{1.3cm}
 $\pair(a \rightarrow \beta \mdot c \delta, k) \in Q_i
  \wedge (c \rightarrow \gamma) \in R
  \;\Rightarrow\;
- Q_i := Q_i \cup\bigl\{ \pair(c \rightarrow \mdot\gamma, i)\bigr\}$.
+ Q_i := Q_i \cup\bigl\{ \pair(c \rightarrow \mdot\gamma, i)\bigr\}$
 \\[0.2cm]
-This method has the same structure as the method \texttt{complete}.
+once to the set \texttt{Qi} and returns the set of all Earley objects $\pair(c \rightarrow \mdot\gamma, i)$ that it
+finds.  This method has the same structure as the method \texttt{complete}.
 \begin{enumerate}
-\item Line 2 -- 7 agree with the lines 2 -- 7 of the method \texttt{complete}.
-\item The \texttt{for} loop in line 8 -- 14 inspects all Earley objects in $Q_i$.  Line 9 computes the variable
+\item Line 2 initializes the variable \texttt{Result} with the empty set.  This set collects the Earley objects
+      that the method finds and it is returned in line 10.
+\item The \texttt{for} loop in line 3 -- 9 inspects all Earley objects in \texttt{Qi}.  Line 4 computes the variable
       following the marker.  If there is such a variable, the Earley object has the form
-      $\pair(a \rightarrow \beta \mdot c \delta, k)$ and the test in line 10 succeeds.
-\item The \texttt{for} loop in line 11 -- 14 inspects all grammar rules.  Line 12 selects those rules that have
-      the variable $c$ on their left hand side.  For every such rule $c \rightarrow \gamma$, line 13 -- 14 add the
-      Earley object $\pair(c \rightarrow \mdot\gamma, i)$ to \texttt{newQi}.  The list \texttt{rule[1:]} contains
-      the symbols of the right hand side $\gamma$.  It has to be converted into a tuple, since the hash value of an
-      Earley object is computed from the values of its fields and a list has no hash value.
-\item Line 15 -- 18 agree with the lines 17 -- 20 of the method \texttt{complete}.  The iteration is needed here,
-      since the right hand side $\gamma$ of a rule can start with a variable.  In this case, the new Earley object
-      leads to further predictions.
-\item Line 19 returns the value of the variable \texttt{change}.
+      $\pair(a \rightarrow \beta \mdot c \delta, k)$ and the test in line 5 succeeds.
+\item The \texttt{for} loop in line 6 -- 9 inspects all grammar rules.  Line 7 selects those rules that have
+      the variable $c$ on their left hand side.  For every such rule $c \rightarrow \gamma$, line 8 -- 9 add the
+      Earley object $\pair(c \rightarrow \mdot\gamma, i)$ to the set \texttt{Result}.  The list \texttt{rule[1:]}
+      contains the symbols of the right hand side $\gamma$.  It has to be converted into a tuple, since the hash value
+      of an Earley object is computed from the values of its fields and a list has no hash value.
 \end{enumerate}
+As the right hand side $\gamma$ of a rule can start with a variable, a new Earley object can lead to further
+predictions.  These are found in the next step of the fixpoint iteration.
 
 \begin{figure}[!ht]
 \centering
@@ -958,8 +958,9 @@ $\pair(a \rightarrow \beta \mdot T \gamma, k) \in Q_i \wedge x_{i+1} = T
       marker, i.e.~those that have the form $\pair(a \rightarrow \beta \mdot T \gamma, k)$ where $T = x_{i+1}$.
       Line 8 moves the marker over the token and adds the resulting Earley object to the set $Q_{i+1}$.
 \end{enumerate}
-In contrast to the methods \texttt{complete} and \texttt{predict}, no iteration is necessary here and the new Earley
-objects can be added directly, since they are added to the set $Q_{i+1}$ and not to the set $Q_i$.
+In contrast to completion and prediction, scanning needs no fixpoint iteration, since the Earley objects that it
+creates are added to the set $Q_{i+1}$ and not to the set $Q_i$.  For the same reason, they can be added to $Q_{i+1}$
+directly, while the loop in line 6 -- 8 iterates over the set $Q_i$.
 
 \section{Check Your Understanding}
 \begin{enumerate}[(a)]
