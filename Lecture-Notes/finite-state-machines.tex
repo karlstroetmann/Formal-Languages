@@ -563,8 +563,8 @@ This accounts for the $\varepsilon$ transitions.  The
   \end{enumerate}
   The \textsl{Jupyter notebook}
   \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/ReflexiveTransitiveClosure.ipynb}{\texttt{Python/Chapter-04-05/ReflexiveTransitiveClosure.ipynb}}
-  shows how $R^*$ can be computed.  As an application, it solves the puzzle of the missionaries and the
-  infidels who have to cross a river.}
+  shows how $R^*$ can be computed with a fixpoint iteration.  As an application, it solves the puzzle of the
+  missionaries and the infidels who have to cross a river.}
 of the relation $\leadsto$ is written as $\leadsto^*$.\glsadd{leadstostar}
 The language accepted by an \simtextsc{Nfa} $F$ is
 denoted as $L(F)$ and is defined as
@@ -627,8 +627,29 @@ transitions from the state $q$.   Formally, the set $\textsl{ec}(q)$ is computed
  
              If the state $p$ is an element of the $\varepsilon$-closure of the state $q$ and there is an
              $\varepsilon$-transition from $p$ to some state $r$, then $r$ is also an element
-             of the $\varepsilon$-closure of $q$. 
+             of the $\varepsilon$-closure of $q$.
 \end{enumerate}
+This definition suggests how the set $\textsl{ec}(q)$ can be computed.  We define the function
+\\[0.2cm]
+\hspace*{1.3cm}
+$\ds \textsl{ecStep}(M) := M \cup \bigcup \bigl\{ \delta(p, \varepsilon) \bigm| p \in M \bigr\}$
+\\[0.2cm]
+that maps a set $M \subseteq Q$ to the set that contains the states of $M$ together with all states that can be
+reached from a state in $M$ by a single $\varepsilon$-transition.  A set $M$ is a \blue{fixpoint}\index{fixpoint} of
+the function $\textsl{ecStep}$ if $\textsl{ecStep}(M) = M$ holds, i.e.~if every state that can be reached from a
+state in $M$ by an $\varepsilon$-transition is already an element of $M$.  Hence the inductive definition given
+above states that $\textsl{ec}(q)$ is the smallest fixpoint of $\textsl{ecStep}$ that contains the state $q$.  This
+set is computed by a \blue{fixpoint iteration}\index{fixpoint iteration}:  We start with the set
+$M_0 := \{ q \}$ and compute
+\\[0.2cm]
+\hspace*{1.3cm}
+$M_1 := \textsl{ecStep}(M_0)$, \quad $M_2 := \textsl{ecStep}(M_1)$, \quad $M_3 := \textsl{ecStep}(M_2)$, \quad
+$\cdots$
+\\[0.2cm]
+until we find a set $M_k$ such that $M_{k+1} = M_k$.  The set $M_n$ contains exactly those states that can be
+reached from $q$ with at most $n$ $\varepsilon$-transitions.  As $M_{k+1} = M_k$ implies $M_n = M_k$ for all
+$n \geq k$, we have $\textsl{ec}(q) = M_k$.  The iteration terminates, since we have
+$M_0 \subseteq M_1 \subseteq M_2 \subseteq \cdots$ and all these sets are subsets of the finite set $Q$.
 
 
 \begin{figure}[!ht]
@@ -652,8 +673,15 @@ We compute the $\varepsilon$-closure for all states:
 \item $\textsl{ec}(q_5) = \{ q_5, q_7, q_0, q_1, q_2 \}$,
 \item $\textsl{ec}(q_6) = \{ q_6, q_7, q_0, q_1, q_2 \}$,
 \item $\textsl{ec}(q_7) = \{ q_7, q_0, q_1, q_2 \}$.
-      \qed
 \end{enumerate}
+For example, the fixpoint iteration that computes $\textsl{ec}(q_5)$ yields the sets
+\\[0.2cm]
+\hspace*{1.3cm}
+$M_0 = \{ q_5 \}$, \quad $M_1 = \{ q_5, q_7 \}$, \quad $M_2 = \{ q_5, q_7, q_0 \}$,
+\\[0.2cm]
+\hspace*{1.3cm}
+$M_3 = \{ q_5, q_7, q_0, q_1, q_2 \}$, \quad and \quad $M_4 = M_3$.
+\qed
 
 \noindent
 In order to transform an \simtextsc{Nfa} into a  \simtextsc{Dfa}
@@ -843,8 +871,28 @@ Why then has  $\textsl{det}(F)$ only 8 and not $2^4 = 16$ states?
 The reason is that we can only reach those sets of states from the start $0$
 that contain the state $0$ because no matter whether we read an \texttt{a} or a \texttt{b},
  $F$ can always choose to switch to the state $0$.  Therefore, every set of states that is
-reachable from the state $0$ has to contain the state $0$.  Therefore, 
+reachable from the state $0$ has to contain the state $0$.  Therefore,
 sets that do not contain $0$ are not needed as states of $\textsl{det}(F)$.
+
+The computation of the states $S_0$, $\cdots$, $S_7$ in the solution above is another fixpoint iteration.  The set
+of those states of $\textsl{det}(F)$ that can be reached from the start state $\textsl{ec}(q_0)$ is the smallest set
+$\mathcal{S}$ such that $\textsl{ec}(q_0) \in \mathcal{S}$ holds and such that $\mathcal{S}$ is a fixpoint of the
+function
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{allStatesStep}(\mathcal{S}) := \mathcal{S} \cup \bigl\{ \Delta(M, c) \bigm| M \in \mathcal{S} \wedge c \in \Sigma \bigr\}$.
+\\[0.2cm]
+The equation $\textsl{allStatesStep}(\mathcal{S}) = \mathcal{S}$ states that every state that can be reached from a
+state in $\mathcal{S}$ by reading a single character is already an element of $\mathcal{S}$.  The fixpoint iteration
+starts with the set $\mathcal{S}_0 := \bigl\{ \textsl{ec}(q_0) \bigr\}$.  Then the set $\mathcal{S}_n$ contains
+exactly those states of $\textsl{det}(F)$ that can be reached from the start state by reading at most $n$
+characters.  As all these sets are subsets of the finite set $2^Q$, the iteration terminates.  For the
+\simtextsc{Nfa} of the exercise, it computes the sets
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathcal{S}_0 = \{ S_0 \}$, \quad $\mathcal{S}_1 = \{ S_0, S_1 \}$, \quad
+$\mathcal{S}_2 = \{ S_0, S_1, S_2, S_3 \}$, \quad $\mathcal{S}_3 = \{ S_0, S_1, \cdots, S_7 \}$, \quad and \quad
+$\mathcal{S}_4 = \mathcal{S}_3$.
 
 
 
@@ -863,13 +911,89 @@ Transform the \simtextsc{Nfa} $F$ that is shown in Figure \ref{fig:ab-or-ba-star
 into an equivalent \simtextsc{Dfa} $\textsl{det}(F)$. \eox
 
 \subsection{Implementation}
-It is straightforward to implement the theory developed so far. 
-The \textsl{Jupyter notebook} 
+It is straightforward to implement the theory developed so far.
+The \textsl{Jupyter notebook}
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/01-NFA-2-DFA.ipynb}{\texttt{Python/Chapter-04-05/01-NFA-2-DFA.ipynb}}
 \\[0.2cm]
-contains a program that takes a \simtextsc{Nfa} $F$ and computes the \simtextsc{Dfa} $\textsl{det}(F)$.
+contains a program that takes a \simtextsc{Nfa} $F$ and computes the \simtextsc{Dfa} $\textsl{det}(F)$.  The states
+of the computed \simtextsc{Dfa} are only those subsets of $Q$ that can be reached from the start state
+$\textsl{ec}(q_0)$.  As both the $\varepsilon$-closure and the set of these states are computed by a fixpoint
+iteration, the notebook implements the fixpoint iteration as a function of its own.  Figure
+\ref{fig:01-NFA-2-DFA.ipynb:fixpoint} on page \pageref{fig:01-NFA-2-DFA.ipynb:fixpoint} shows this function
+together with the functions that use it.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def fixpoint(f, x, *args):
+        while True:
+            y = f(x, *args)
+            if y == x:
+                return x
+            x = y
+
+    def epsClosureStep(M, δ):
+        return M | bigUnion({ frozenset(δ.get((q, '𝜀'), set()))
+                              for q in M })
+
+    def epsClosure(s, δ):
+        return fixpoint(epsClosureStep, frozenset({ s }), δ)
+
+    def allStatesStep(S, δ, Σ):
+        return S | { capitalDelta(M, c, δ) for M in S
+                                           for c in Σ
+                   }
+
+    def allStates(Q, δ, Σ):
+        return fixpoint(allStatesStep, { Q }, δ, Σ)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The function \texttt{fixpoint} and the functions that compute the $\varepsilon$-closure and the states of
+  $\textsl{det}(F)$.}
+\label{fig:01-NFA-2-DFA.ipynb:fixpoint}
+\end{figure}
+
+\begin{enumerate}
+\item Line 1 -- 6 define the function \texttt{fixpoint}.  Given a function \texttt{f}, a start value \texttt{x},
+      and additional arguments \texttt{args}, it computes the values
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{x}, \quad \texttt{f(x, *args)}, \quad \texttt{f(f(x, *args), *args)}, \quad $\cdots$
+      \\[0.2cm]
+      until it finds a fixpoint, i.e.~a value \texttt{y} that does not change when \texttt{f} is applied to it,
+      and returns this value.  The additional arguments are passed to \texttt{f} in every call.  They are needed, since the functions
+      $\textsl{ecStep}$ and $\textsl{allStatesStep}$ depend on the transition function $\delta$ and the function
+      $\textsl{allStatesStep}$ also depends on the alphabet $\Sigma$.
+\item Line 8 -- 10 define the function \texttt{epsClosureStep}, which implements the function $\textsl{ecStep}$.
+      The transition function $\delta$ is stored as a dictionary that maps a pair consisting of a state and a
+      character to a set of states.  The character $\varepsilon$ is represented as the string \texttt{'𝜀'}.  As
+      the dictionary has no entry for a state without $\varepsilon$-transitions, the expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{δ.get((q, '𝜀'), set())}
+      \\[0.2cm]
+      returns the empty set in this case.  The function \texttt{bigUnion} computes the union $\bigcup$ of a set
+      of sets.
+\item Line 12 -- 13 define the function \texttt{epsClosure}, which computes $\textsl{ec}(s)$ by a fixpoint
+      iteration that starts with the set $\{ s \}$.
+\item Line 15 -- 18 define the function \texttt{allStatesStep}, which implements the function
+      $\textsl{allStatesStep}$.  The function \texttt{capitalDelta} implements the function $\Delta$.
+\item Line 20 -- 21 define the function \texttt{allStates}.  Its argument \texttt{Q} is the start state
+      $\textsl{ec}(q_0)$ of $\textsl{det}(F)$.  The function computes the set of all states of
+      $\textsl{det}(F)$ that can be reached from \texttt{Q} by a fixpoint iteration that starts with the set
+      $\{ \texttt{Q} \}$.
+\end{enumerate}
 
 
 \section{From Regular Expression to NFAs}
