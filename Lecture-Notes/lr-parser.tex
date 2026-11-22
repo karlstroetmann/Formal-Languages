@@ -1459,13 +1459,22 @@ shows this class together with its methods.
 \end{enumerate}
 
 \subsection{States}
-A state of an SLR parser is a set of marked rules.  We could represent a state as a \texttt{frozenset} of marked
-rules.  However, then the marked rules of a state would be printed in an arbitrary order, since sets do not
-remember the order in which their elements have been inserted.  A state is easier to read if its marked rules are
-printed in the order in which they have been added to the state:  First the marked rules that result from moving
-the marker, then the marked rules that have been added by the computation of the closure.  Therefore, the class
-\texttt{State}, which is shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:State} on page
-\pageref{fig:04-SLR-Table-Generator.ipynb:State}, stores the marked rules of a state twice.
+A state of an SLR parser is a set of marked rules.  The notebook represents a state as a \texttt{frozenset} of
+marked rules.  In contrast to a \texttt{set}, a \texttt{frozenset} cannot be changed and therefore has a hash value.
+We need this, since states are collected in sets and are used as keys of the dictionary \texttt{mStateNames}, which
+assigns names to them.  Two frozen sets are equal if they contain the same elements, no matter in which order these
+elements have been inserted.  Hence, two states that contain the same marked rules are the same state.  For the type
+annotations, the notebook defines the type alias
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{State = frozenset[MarkedRule]}.
+\\[0.2cm]
+A set does not remember the order in which its elements have been inserted.  When \textsl{Python} prints a set of
+marked rules, the order of its elements can even change from one run of the notebook to the next, since
+\textsl{Python} randomizes the hash values of strings in every process.  Therefore, the notebook prints states with
+the function \texttt{state\_to\_str}, which is shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:state_to_str} on
+page \pageref{fig:04-SLR-Table-Generator.ipynb:state_to_str}.  It sorts the marked rules of a state by their string
+representations before it joins them into a single string.
 
 \begin{figure}[!ht]
 \centering
@@ -1479,58 +1488,13 @@ the marker, then the marked rules that have been added by the computation of the
                 xrightmargin  = 0.5cm,
                 gobble        = 4,
               ]{python3}
-    class State:
-        def __init__(self, items):
-            self.mItems = tuple(dict.fromkeys(items))
-            self.mKey   = frozenset(self.mItems)
-
-        def __eq__(self, other):
-            return isinstance(other, State) and \
-                   self.mKey == other.mKey
-
-        def __hash__(self):
-            return hash(self.mKey)
-
-        def __iter__(self):
-            return iter(self.mItems)
-
-        def __len__(self):
-            return len(self.mItems)
-
-        def __repr__(self):
-            return '{' + ', '.join(map(str, self.mItems)) + '}'
+    def state_to_str(state):
+        return '{' + ', '.join(sorted(map(str, state))) + '}'
 \end{minted}
 \vspace*{-0.3cm}
-\caption{The class \texttt{State}.}
-\label{fig:04-SLR-Table-Generator.ipynb:State}
+\caption{The function \texttt{state\_to\_str}.}
+\label{fig:04-SLR-Table-Generator.ipynb:state_to_str}
 \end{figure}
-
-\begin{enumerate}
-\item Line 2 -- 4 define the constructor, which takes the marked rules in the order of their insertion.
-      \begin{enumerate}[(a)]
-      \item Line 3 stores these marked rules in the tuple \texttt{mItems}.  To this end, the function
-            \texttt{dict.fromkeys} creates a dictionary whose keys are the marked rules and whose values are
-            \texttt{None}.  As a dictionary remembers the order in which its keys have been inserted, this
-            removes duplicates while keeping the order.  The tuple \texttt{mItems} is used whenever we iterate
-            over the marked rules of a state or print them.
-      \item Line 4 stores the same marked rules in the frozen set \texttt{mKey}.  Only this set is used when two
-            states are compared and when the hash value of a state is computed.
-      \end{enumerate}
-\item Line 6 -- 8 define the method \texttt{\_\_eq\_\_}, which compares the sets \texttt{mKey}:  Two states that
-      contain the same marked rules in a different order are the same state.
-\item Line 10 -- 11 define the method \texttt{\_\_hash\_\_}, which returns the hash value of the set
-      \texttt{mKey}.  Hence, equal states have equal hash values.  We need this method, since states are used as
-      keys of a dictionary that assigns names to them.
-\item Line 13 -- 14 define the method \texttt{\_\_iter\_\_}.  It enables loops of the form
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \texttt{for mr in state:}
-      \\[0.2cm]
-      which iterate over the marked rules of a state in the order of their insertion.
-\item Line 16 -- 17 define the method \texttt{\_\_len\_\_}, which returns the number of marked rules.  It is used
-      to check whether a state is empty.
-\item Line 19 -- 20 define the method \texttt{\_\_repr\_\_}, which converts a state into a string.
-\end{enumerate}
 
 \subsection{The Class \texttt{Grammar}}
 The class \texttt{Grammar} computes the SLR tables of a grammar.  Figure \ref{fig:04-SLR-Table-Generator.ipynb:Grammar}
@@ -1899,8 +1863,8 @@ and it is processed exactly once.
                 gobble        = 4,
               ]{python3}
     def reachable(Start, successors):
-        Result = list(dict.fromkeys(Start))
-        Seen   = set(Result)
+        Seen   = set(Start)
+        Result = list(Seen)
         for x in Result:
             for y in successors(x):
                 if y not in Seen:
@@ -1914,12 +1878,12 @@ and it is processed exactly once.
 \end{figure}
 
 \begin{enumerate}
-\item Line 2 initializes the list \texttt{Result} with the elements of \texttt{Start}.  The function
-      \texttt{dict.fromkeys} removes duplicates, while keeping the order of the elements.  The list
-      \texttt{Result} collects the elements that have been found and serves as the worklist at the same time.
-\item Line 3 initializes the set \texttt{Seen}, which always contains the same elements as the list
-      \texttt{Result}.  Line 6 uses it to check whether an element is new.  This check is fast for a set, while
-      for a list it would have to compare the element with every element of the list.
+\item Line 2 initializes the set \texttt{Seen} with the elements of \texttt{Start}.  This set contains the elements
+      that have been found so far.  Line 6 uses it to check whether an element is new.  This check is fast for a
+      set, while for a list it would have to compare the element with every element of the list.
+\item Line 3 initializes the list \texttt{Result} with the same elements.  This list always contains the same
+      elements as the set \texttt{Seen}, but in the order in which they have been found.  It serves as the worklist
+      at the same time.
 \item The \texttt{for} loop in line 4 -- 8 processes the elements of the list \texttt{Result}.  This list grows
       while the loop iterates over it.  This is no problem, since a \texttt{for} loop over a list accesses the
       elements of the list by their index and stops only when it reaches the current end of the list.  Therefore,
@@ -1934,7 +1898,7 @@ and it is processed exactly once.
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:cmp_closure} on page \pageref{fig:04-SLR-Table-Generator.ipynb:cmp_closure}
 shows the methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto}.  Given a set
 $\mathcal{M}$ of marked rules, the method \texttt{cmp\_closure} computes the set $\textsl{closure}(\mathcal{M})$ and
-returns it as a \texttt{State}.
+returns it as a frozen set.
 
 \begin{figure}[!ht]
 \centering
@@ -1949,8 +1913,8 @@ returns it as a \texttt{State}.
                 gobble        = 4,
               ]{python3}
     def cmp_closure(self, Marked_Rules):
-        return State(reachable(Marked_Rules,
-                               self.cmp_closure_successors))
+        return frozenset(reachable(Marked_Rules,
+                                   self.cmp_closure_successors))
 
     def cmp_closure_successors(self, mr):
         c = mr.next_var()
@@ -1961,8 +1925,8 @@ returns it as a \texttt{State}.
                  if rule.mVariable == c ]
 
     def goto(self, state, x):
-        return self.cmp_closure(mr.move_dot() for mr in state
-                                if mr.symbol_after_dot() == x)
+        return self.cmp_closure({ mr.move_dot() for mr in state
+                                  if mr.symbol_after_dot() == x })
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto}.}
@@ -1971,10 +1935,8 @@ returns it as a \texttt{State}.
 
 \begin{enumerate}
 \item Line 1 -- 3 define the method \texttt{cmp\_closure}.  It computes the marked rules that are reachable from the
-      given marked rules and turns them into a state.  The successors of a marked rule are computed by the bound
-      method \texttt{self.cmp\_closure\_successors}.  As the list returned by \texttt{reachable} starts with the
-      given marked rules, the state lists these marked rules first, followed by the marked rules that have been
-      added by the closure.
+      given marked rules and turns them into a frozen set, i.e.~into a state.  The successors of a marked rule are
+      computed by the bound method \texttt{self.cmp\_closure\_successors}.
 \item Line 5 -- 11 define the method \texttt{cmp\_closure\_successors}, which computes the successors of the
       marked rule \texttt{mr}.  Line 6 computes the variable following the marker.  If there is no such variable,
       the marked rule has no successors and line 8 returns the empty list.
@@ -1989,8 +1951,8 @@ $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, X \mdot \delta \mid (a \rightarrow \beta \mdot X\, \delta) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
-The generator expression in line 14 -- 15 selects those marked rules of the state in which the symbol $X$ follows
-the marker and moves the marker over $X$.  The symbol $X$ can be a variable or a token.  If $X$ does not follow the
+The set comprehension in line 14 -- 15 corresponds to the set in this definition:  It selects those marked rules of
+the state in which the symbol $X$ follows the marker and moves the marker over $X$.  The symbol $X$ can be a variable or a token.  If $X$ does not follow the
 marker in any marked rule of the state, the result is the empty state.
 
 \begin{figure}[!ht]
@@ -2007,16 +1969,17 @@ marker in any marked rule of the state, the result is the empty state.
               ]{python3}
     def all_states(self):
         start_state  = self.cmp_closure(
-            [ MarkedRule('ŝ', (), (self.mStart, '$')) ])
+            { MarkedRule('ŝ', (), (self.mStart, '$')) })
         self.mStates = reachable([ start_state ],
                                  self.all_states_successors)
         for n, state in enumerate(self.mStates):
             self.mStateNames[state] = f's{n}'
 
     def all_states_successors(self, state):
-        symbols = dict.fromkeys(mr.mBeta[0] for mr in state
-                                if not mr.is_complete())
-        return [ self.goto(state, x) for x in symbols if x != '$' ]
+        symbols = { mr.mBeta[0] for mr in state
+                    if not mr.is_complete() }
+        return [ self.goto(state, x) for x in sorted(symbols)
+                 if x != '$' ]
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The methods \texttt{all\_states} and \texttt{all\_states\_successors}.}
@@ -2038,23 +2001,25 @@ can be reached from the start state via the function $\textsl{goto}()$.
 \item Line 6 -- 7 give the state at index $n$ of the list \texttt{mStates} the name \texttt{s}$n$.  Hence, the
       start state is called \texttt{s0}, and the state with the name \texttt{s}$n$ is stored at index $n$ of the
       list \texttt{mStates}.
-\item Line 9 -- 12 define the method \texttt{all\_states\_successors}.  Given a state $\mathcal{M}$, it returns the
+\item Line 9 -- 13 define the method \texttt{all\_states\_successors}.  Given a state $\mathcal{M}$, it returns the
       states $\textsl{goto}(\mathcal{M}, X)$ for all symbols $X$ that follow the marker in a marked rule of
       $\mathcal{M}$.  For all other symbols $X$, the set $\textsl{goto}(\mathcal{M}, X)$ is empty and hence is not
-      a state.  Again, a dictionary is used as an ordered set:  The function \texttt{dict.fromkeys} in line 10 -- 11
-      removes duplicates, while keeping the order in which the symbols occur in the marked rules.  Therefore, the
-      states are named in the same way in every run.  If we used a set instead, the order of the symbols could
-      change from one run to the next, since \textsl{Python} randomizes the hash values of strings for every
-      process.
-\item Line 12 skips the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
+      a state.  The set comprehension in line 10 -- 11 collects these symbols.  As \texttt{symbols} is a set, it
+      contains every symbol only once, even if the symbol follows the marker in several marked rules.  Line 12
+      tries the symbols in sorted order.  Therefore, the states are found in the same order in every run and get
+      the same names.  If we iterated over the set \texttt{symbols} instead, the order of the symbols could change
+      from one run to the next, since \textsl{Python} randomizes the hash values of strings in every process.
+\item Line 13 skips the symbol $\symbol{36}$:  The parser never shifts $\symbol{36}$.  Instead, it accepts the
       input if the next token is $\symbol{36}$ and the current state contains the marked rule
       $\widehat{s} \rightarrow s \mdot \symbol{36}$.  Hence, the state
       $\bigl\{ \widehat{s} \rightarrow s\, \symbol{36} \mdot \bigr\}$ is not needed.
 \end{enumerate}
 For the grammar in the file \texttt{Examples/arith.g}, the method \texttt{all\_states} finds the 16 states that we
-have computed by hand in the previous section.  Since it processes the states and the symbols in the same order
-as we did, it even gives them the same names:  For example, the state $\textsl{goto}(s_0, \textsl{expr})$ is
-called \texttt{s1}, since \texttt{expr} is the first symbol following the marker in the start state.
+have computed by hand in the previous section.  However, it names them differently, since it tries the symbols in
+sorted order, while we have taken them in the order in which they occur in the marked rules of a state.  In the
+sorted order, the literals come first, since they start with a double quote, followed by the tokens, which consist
+of upper case letters, and the variables.  For example, the state $\textsl{goto}(s_0, \saquoted{(})$ is called
+\texttt{s1}, while the state $\textsl{goto}(s_0, \textsl{expr})$ is called \texttt{s3}.
 
 \subsection{Computing the Action Table and the Goto Table}
 Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_action_table} on page
@@ -2093,10 +2058,9 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
                         self.mActionTable[stateName, token] = \
                             ('shift', newName)
             # compute the accept action
-            for mr in state:
-                if mr == MarkedRule('ŝ', (self.mStart,), ('$',)):
-                    actionTable['$'] = 'accept'
-                    self.mActionTable[stateName, '$'] = 'accept'
+            if MarkedRule('ŝ', (self.mStart,), ('$',)) in state:
+                actionTable['$'] = 'accept'
+                self.mActionTable[stateName, '$'] = 'accept'
             # compute reduce actions
             for mr in state:
                 if mr.is_complete():
@@ -2118,7 +2082,7 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
 
 \begin{enumerate}
 \item Line 2 creates the empty action table.
-\item The \texttt{for} loop in line 3 -- 32 computes the actions of every state $\mathcal{M}$.  Line 4 looks up the
+\item The \texttt{for} loop in line 3 -- 31 computes the actions of every state $\mathcal{M}$.  Line 4 looks up the
       name of $\mathcal{M}$, and line 5 creates the dictionary \texttt{actionTable}, which collects the actions of
       $\mathcal{M}$.  Its keys are tokens.  In contrast to \texttt{mActionTable}, its \texttt{reduce} actions
       contain the grammar rules themselves instead of their names.  The notebook uses this dictionary to print
@@ -2130,23 +2094,23 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
       \texttt{all\_states} has given a name to the state $\textsl{goto}(\mathcal{M}, t)$, since $t$ follows the
       marker in a marked rule of $\mathcal{M}$.  The tokens are processed in sorted order, so that the actions are
       printed in the same order in every run.
-\item Line 16 -- 19 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the marked rule
+\item Line 16 -- 18 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the marked rule
       $\widehat{s} \rightarrow s \mdot \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
-      \texttt{accept}$.  The marked rule $\widehat{s} \rightarrow s\, \symbol{36} \mdot$ never occurs in a
+      \texttt{accept}$.  As a state is a set, line 16 can check this with the operator \texttt{in}.  The marked rule $\widehat{s} \rightarrow s\, \symbol{36} \mdot$ never occurs in a
       state, since the method \texttt{all\_states} skips the symbol $\symbol{36}$.  Hence, there is no
       \texttt{reduce} action for the rule $\widehat{s} \rightarrow s\, \symbol{36}$, as required by the definition
       of the function \textsl{action}.
-\item Line 21 -- 32 compute the \texttt{reduce} actions.  For every complete marked rule
-      $a \rightarrow \beta \mdot$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 25 creates
-      the action $\pair(\texttt{reduce}, a \rightarrow \beta)$, while line 24 looks up the action that has
+\item Line 20 -- 31 compute the \texttt{reduce} actions.  For every complete marked rule
+      $a \rightarrow \beta \mdot$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 24 creates
+      the action $\pair(\texttt{reduce}, a \rightarrow \beta)$, while line 23 looks up the action that has
       already been entered for $t$.
       \begin{enumerate}[(a)]
-      \item If there is no action for $t$ yet, line 27 -- 30 enter the new action into both dictionaries.  The
+      \item If there is no action for $t$ yet, line 26 -- 29 enter the new action into both dictionaries.  The
             dictionary \texttt{mActionTable} gets the name of the rule instead of the rule itself.
       \item Otherwise, a different action has been entered for $t$ before.  If this is a \texttt{shift} action,
             we have found a shift-reduce conflict.  If it is the \texttt{accept} action,
             we have found an accept-reduce conflict.  If it is a \texttt{reduce} action with a different
-            rule, we have found a reduce-reduce conflict.  Line 32 records the conflict.  In addition, the
+            rule, we have found a reduce-reduce conflict.  Line 31 records the conflict.  In addition, the
             notebook prints the state and both actions.  The action table keeps the action that has been entered
             first.  In particular, a shift-reduce conflict is resolved in favour of the \texttt{shift} action.
       \end{enumerate}
@@ -2207,15 +2171,15 @@ this state is not empty, line 7 -- 9 enter the names of both states into the got
                 xrightmargin = 0.5cm,
                 gobble       = 4,
               ]{text}
-    conflict in state s7:
-    s7 = {e → e "+" e •, e → e • "+" e, e → e • "*" e}
-    action("s7", "*") = ('shift', 's5')
-    action("s7", "*") = ('reduce', e → e "+" e)
+    conflict in state s9:
+    s9 = {e → e "+" e •, e → e • "*" e, e → e • "+" e}
+    action("s9", "*") = ('shift', 's5')
+    action("s9", "*") = ('reduce', e → e "+" e)
 
-    conflict in state s7:
-    s7 = {e → e "+" e •, e → e • "+" e, e → e • "*" e}
-    action("s7", "+") = ('shift', 's4')
-    action("s7", "+") = ('reduce', e → e "+" e)
+    conflict in state s9:
+    s9 = {e → e "+" e •, e → e • "*" e, e → e • "+" e}
+    action("s9", "+") = ('shift', 's6')
+    action("s9", "+") = ('reduce', e → e "+" e)
 \end{minted}
 \vspace*{-0.3cm}
 \caption{Two of the conflicts of the grammar \texttt{arith-ambiguous.g}.}
@@ -2227,7 +2191,7 @@ For the grammar in the file \texttt{Examples/arith.g}, the notebook does not fin
 \ref{fig:shift-reduce-conflict.grammar} on page \pageref{fig:shift-reduce-conflict.grammar}, extended by a rule for
 parentheses.  For this grammar, the notebook reports four shift-reduce conflicts.  Figure
 \ref{fig:04-SLR-Table-Generator.ipynb:conflicts} on page \pageref{fig:04-SLR-Table-Generator.ipynb:conflicts} shows the
-two conflicts in the state \texttt{s7}, which corresponds to the state $s_3$ that we have computed by hand for this
+two conflicts in the state \texttt{s9}, which corresponds to the state $s_3$ that we have computed by hand for this
 grammar.  The first conflict is the one that we have found there:  If the parser has read the string
 \texttt{1+2} and the next token is \saquoted{*}, it does not know whether \saquoted{*} binds stronger than
 \saquoted{+}.  The second conflict shows that the grammar does not specify the associativity of the operator
@@ -2951,9 +2915,10 @@ in Figure \ref{fig:01-Shift-Reduce-Parser-Pure.ipynb:parse}.
 
 The notebook has been derived from the SLR table generator.  Apart from the type annotations and the output, the
 parser for grammars, the class \texttt{GrammarRule}, the functions \texttt{is\_var}, \texttt{collect\_variables},
-\texttt{collect\_tokens}, \texttt{fixpoint}, \texttt{first\_list}, \texttt{eps\_union}, and \texttt{reachable}, the
-class \texttt{State}, and the methods \texttt{compute\_first}, \texttt{compute\_first\_step},
-\texttt{compute\_goto\_table}, and \texttt{dump\_parse\_table} are the same as there.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
+\texttt{collect\_tokens}, \texttt{fixpoint}, \texttt{first\_list}, \texttt{eps\_union}, \texttt{reachable}, and
+\texttt{state\_to\_str}, and the methods \texttt{compute\_first}, \texttt{compute\_first\_step},
+\texttt{compute\_goto\_table}, and \texttt{dump\_parse\_table} are the same as there.  A state is now a frozen set
+of extended marked rules.  Therefore, we discuss only those parts of the notebook that differ from the SLR table generator.  The listings are simplified in the same way as in Section \ref{section:slr-table-generator}.  In
 addition, they omit the variable \texttt{verbose}, which controls the output:  For a large grammar, printing all
 states together with the action table and the goto table would produce several megabytes of output.  Therefore,
 the notebook prints the states and the tables only if there are at most 100 states.  Conflicts are always printed.
@@ -3014,9 +2979,10 @@ combines extended marked rules that differ only in their sets of follow tokens.
             core = emr.to_marked_rule()
             Follow[core] = \
                 Follow.get(core, frozenset()) | emr.mFollow
-        return [ ExtendedMarkedRule(core.mVariable, core.mAlpha,
-                                    core.mBeta, L)
-                 for core, L in Follow.items() ]
+        return frozenset(ExtendedMarkedRule(core.mVariable,
+                                            core.mAlpha,
+                                            core.mBeta, L)
+                         for core, L in Follow.items())
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The class \texttt{ExtendedMarkedRule} and the function \texttt{combine\_rules}.}
@@ -3051,7 +3017,7 @@ combines extended marked rules that differ only in their sets of follow tokens.
       defines the class \texttt{MarkedRule} as in line 1 -- 9 of Figure
       \ref{fig:04-SLR-Table-Generator.ipynb:MarkedRule}, but without any further methods, since marked rules are only
       needed as cores.
-\item Line 26 -- 34 define the function \texttt{combine\_rules}.  Its argument \texttt{M} is a list of extended
+\item Line 26 -- 35 define the function \texttt{combine\_rules}.  Its argument \texttt{M} is a list of extended
       marked rules.  As discussed in the previous section, extended marked rules that have the same core are
       combined:  The e.m.r.s $c \rightarrow \alpha \mdot \beta: L_1$, $\cdots$,
       $c \rightarrow \alpha \mdot \beta: L_k$ are replaced by the single e.m.r.\@
@@ -3060,9 +3026,8 @@ combines extended marked rules that differ only in their sets of follow tokens.
       \item The dictionary \texttt{Follow} maps every core to the union of the sets of follow tokens of those
             e.m.r.s in \texttt{M} that have this core.  If the core of \texttt{emr} is not yet a key of this
             dictionary, the method \texttt{get} in line 31 returns the empty set.
-      \item Line 32 -- 34 create one e.m.r.\@ for every core.  As a dictionary remembers the order in which its keys
-            have been inserted, the combined e.m.r.\@ takes the place of the first e.m.r.\@ in \texttt{M} that has
-            this core.
+      \item Line 32 -- 35 create one e.m.r.\@ for every core and return these e.m.r.s as a frozen set.  Hence, the
+            result of \texttt{combine\_rules} is a state.
       \end{enumerate}
 \end{enumerate}
 
@@ -3124,9 +3089,9 @@ marked rule.  They differ only in the computation of the follow tokens and in th
                  if rule.mVariable == c ]
 
     def goto(self, state, x):
-        kernel = [ emr.move_dot() for emr in state
-                   if emr.symbol_after_dot() == x ]
-        return State(combine_rules(self.cmp_closure(kernel)))
+        kernel = { emr.move_dot() for emr in state
+                   if emr.symbol_after_dot() == x }
+        return combine_rules(self.cmp_closure(kernel))
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The methods \texttt{cmp\_closure}, \texttt{cmp\_closure\_successors}, and \texttt{goto} for extended marked
@@ -3161,9 +3126,9 @@ $\textsl{goto}(\mathcal{M}, X) := \textsl{closure}\Bigl( \bigl\{
    a \rightarrow \beta\, X \mdot \delta:L \mid (a \rightarrow \beta \mdot X\, \delta:L) \in \mathcal{M}
    \bigr\} \Bigr)$.
 \\[0.2cm]
-The list \texttt{kernel} in line 17 -- 18 contains those e.m.r.s of the state in which the symbol $X$ follows the
-dot, with the dot moved over $X$.  Line 19 computes the closure of these e.m.r.s, combines the e.m.r.s of the
-closure that have the same core, and turns the result into a state.  Hence, a state contains at most one e.m.r.\@
+The set \texttt{kernel} in line 17 -- 18 contains those e.m.r.s of the state in which the symbol $X$ follows the
+dot, with the dot moved over $X$.  Line 19 computes the closure of these e.m.r.s and combines the e.m.r.s of the
+closure that have the same core.  As \texttt{combine\_rules} returns a frozen set, the result is a state.  Hence, a state contains at most one e.m.r.\@
 for every core, as required in the previous section.  It does not matter that the e.m.r.s are combined only after
 the closure has been computed:  As
 \\[0.2cm]
@@ -3191,17 +3156,17 @@ $a \rightarrow \beta \mdot c\, \delta: L_2$ together.
     def all_states(self):
         start_rule   = ExtendedMarkedRule('ŝ', (), (self.mStart,),
                                           frozenset({'$'}))
-        start_state  = State(combine_rules(
-                           self.cmp_closure([ start_rule ])))
+        start_state  = combine_rules(
+                           self.cmp_closure({ start_rule }))
         self.mStates = reachable([ start_state ],
                                  self.all_states_successors)
         for n, state in enumerate(self.mStates):
             self.mStateNames[state] = f's{n}'
 
     def all_states_successors(self, state):
-        symbols = dict.fromkeys(emr.mBeta[0] for emr in state
-                                if not emr.is_complete())
-        return [ self.goto(state, x) for x in symbols ]
+        symbols = { emr.mBeta[0] for emr in state
+                    if not emr.is_complete() }
+        return [ self.goto(state, x) for x in sorted(symbols) ]
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The methods \texttt{all\_states} and \texttt{all\_states\_successors} for extended marked rules.}
@@ -3217,8 +3182,8 @@ shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:all_states} on page
 \item Line 2 -- 5 compute the start state
       $q_0 = \textsl{closure}\bigl(\{ \widehat{s} \rightarrow \mdot s: \symbol{36} \}\bigr)$.  The start e.m.r.\@
       has the follow token $\symbol{36}$, since the end marker $\symbol{36}$ has to follow the start symbol $s$.  As
-      in the method \texttt{goto}, the e.m.r.s of the closure are combined before the closure is turned into a
-      state.
+      in the method \texttt{goto}, the e.m.r.s of the closure that have the same core are combined, which yields
+      the start state.
 \item The SLR table generator has to skip the symbol $\symbol{36}$ when it computes the successors of a state.  This
       is not necessary here, since $\symbol{36}$ does not occur in the rules of the augmented grammar and therefore
       never follows the dot.
@@ -3259,11 +3224,10 @@ as the method shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_acti
                     self.mActionTable[stateName, token] = \
                         ('shift', newName)
             # compute the accept action
-            for mr in state:
-                if mr == ExtendedMarkedRule('ŝ', (self.mStart,), (),
-                                            frozenset({'$'})):
-                    actionTable['$'] = 'accept'
-                    self.mActionTable[stateName, '$'] = 'accept'
+            if ExtendedMarkedRule('ŝ', (self.mStart,), (),
+                                  frozenset({'$'})) in state:
+                actionTable['$'] = 'accept'
+                self.mActionTable[stateName, '$'] = 'accept'
             # compute reduce actions
             for mr in state:
                 if mr.is_complete() and mr.mVariable != 'ŝ':
@@ -3286,18 +3250,19 @@ as the method shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_acti
 \begin{enumerate}
 \item Line 7 -- 13 compute the \texttt{shift} actions.  In contrast to the SLR table generator, the token
       $\symbol{36}$ need not be excluded, since $\textsl{goto}(\mathcal{M}, \symbol{36})$ is always empty.
-\item Line 15 -- 19 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the e.m.r.\@
+\item Line 15 -- 18 compute the \texttt{accept} action:  If $\mathcal{M}$ contains the e.m.r.\@
       $\widehat{s} \rightarrow s \mdot: \symbol{36}$, then $\textsl{action}(\mathcal{M}, \symbol{36}) =
       \texttt{accept}$.  The token $\symbol{36}$ is the only follow token of every e.m.r.\@ that has the variable
       $\widehat{s}$ on its left hand side:  The start e.m.r.\@ has this follow token, the method \texttt{move\_dot}
       does not change the follow tokens, and the closure never adds an e.m.r.\@ for $\widehat{s}$, since
-      $\widehat{s}$ does not occur on the right hand side of any rule.  Therefore, line 16 -- 17 can compare the
-      e.m.r.s of $\mathcal{M}$ with the e.m.r.\@ whose set of follow tokens is $\{\symbol{36}\}$.
-\item Line 21 -- 32 compute the \texttt{reduce} actions.  For a complete e.m.r.\@ $a \rightarrow \beta \mdot: L$,
-      line 23 iterates over the follow tokens in $L$, whereas the SLR table generator iterates over the set
+      $\widehat{s}$ does not occur on the right hand side of any rule.  Therefore, line 15 -- 16 can check whether
+      $\mathcal{M}$ contains the e.m.r.\@ $\widehat{s} \rightarrow s \mdot: \symbol{36}$ with the set of follow
+      tokens $\{\symbol{36}\}$.
+\item Line 20 -- 31 compute the \texttt{reduce} actions.  For a complete e.m.r.\@ $a \rightarrow \beta \mdot: L$,
+      line 22 iterates over the follow tokens in $L$, whereas the SLR table generator iterates over the set
       $\textsl{Follow}(a)$.  As $L$ is often smaller than $\textsl{Follow}(a)$, fewer conflicts arise.
 
-      The test \texttt{mr.mVariable != 'ŝ'} in line 22 implements the condition $a \not= \widehat{s}$ of the
+      The test \texttt{mr.mVariable != 'ŝ'} in line 21 implements the condition $a \not= \widehat{s}$ of the
       definition of \textsl{action}.  As the e.m.r.\@ $\widehat{s} \rightarrow s \mdot: \symbol{36}$ is
       complete, the method would otherwise create the action $\pair(\texttt{reduce}, \widehat{s} \rightarrow s)$
       for the token $\symbol{36}$.  This action conflicts with the \texttt{accept} action, so a conflict would be
@@ -3322,27 +3287,27 @@ Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_goto_table} on page
 \pageref{fig:04-SLR-Table-Generator.ipynb:compute_goto_table}.
 
 The file \texttt{Examples/dragon-book.g} contains the grammar shown in Figure \ref{fig:dragon-book.grammar} on page
-\pageref{fig:dragon-book.grammar}, which is discussed in the next section.  For this grammar, the notebook finds 10
-states.  It names them in the same way as Figure \ref{fig:cc-LR.eps} on page \pageref{fig:cc-LR.eps}, which shows
-the LR-goto-graph of this grammar, so the output of the notebook can be compared with this figure.
+\pageref{fig:dragon-book.grammar}, which is discussed in the next section.  For this grammar, the notebook finds the
+10 states of the LR-goto-graph shown in Figure \ref{fig:cc-LR.eps} on page \pageref{fig:cc-LR.eps}, but it numbers
+them differently, since it tries the symbols in sorted order.
 
 For the grammar for arithmetic expressions in the file \texttt{Examples/arith.g}, the notebook finds 30 states,
-while the SLR table generator finds only 16 states.  Apart from the states \texttt{s0} and \texttt{s1}, the states
+while the SLR table generator finds only 16 states.  Apart from the states \texttt{s0} and \texttt{s3}, the states
 come in pairs:  The two states of a pair contain the same marked rules and differ only in their follow tokens.
 For example, the notebook computes the states
 \\[0.2cm]
 \hspace*{1.3cm}
 $\begin{array}[t]{lcl}
-   \texttt{s3}  & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \mdot:
+   \texttt{s4}  & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \mdot:
                       \{ \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/}, \symbol{36} \} \bigr\}
                       \quad \mbox{and} \\[0.1cm]
-   \texttt{s12} & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \mdot:
+   \texttt{s9}  & = & \bigl\{ \textsl{product} \rightarrow \textsl{factor} \mdot:
                       \{ \saquoted{)}, \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/} \} \bigr\}.
  \end{array}$
 \\[0.2cm]
-The parser reaches the state \texttt{s12} if the \textsl{factor} that it has just read occurs inside a pair of
+The parser reaches the state \texttt{s9} if the \textsl{factor} that it has just read occurs inside a pair of
 parentheses.  Then the next token can be a closing parenthesis, but not the end marker $\symbol{36}$.  For the state
-\texttt{s3}, it is the other way round.  This grammar has no conflicts.  The observation that many LR states differ
+\texttt{s4}, it is the other way round.  This grammar has no conflicts.  The observation that many LR states differ
 only in their follow tokens is the starting point of the LALR parsers discussed in the next section.
 
 For the ambiguous grammar in the file \texttt{Examples/arith-ambiguous.g}, the notebook reports eight shift-reduce
