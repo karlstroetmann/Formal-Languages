@@ -2062,7 +2062,7 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
                 actionTable['$'] = 'accept'
                 self.mActionTable[stateName, '$'] = 'accept'
             # compute reduce actions
-            for mr in state:
+            for mr in sorted(state, key=str):
                 if mr.is_complete():
                     for token in sorted(self.mFollow[mr.mVariable]):
                         action1 = actionTable.get(token)
@@ -2103,7 +2103,9 @@ entries are interpreted as \texttt{error}, as in the method \texttt{parse} shown
 \item Line 20 -- 31 compute the \texttt{reduce} actions.  For every complete marked rule
       $a \rightarrow \beta \mdot$ of $\mathcal{M}$ and every token $t \in \textsl{Follow}(a)$, line 24 creates
       the action $\pair(\texttt{reduce}, a \rightarrow \beta)$, while line 23 looks up the action that has
-      already been entered for $t$.
+      already been entered for $t$.  Line 20 processes the marked rules of $\mathcal{M}$ in sorted order.  If
+      $\mathcal{M}$ contains several complete marked rules, this order determines which \texttt{reduce} action is
+      entered first.  Sorting ensures that the action table and the reported conflicts are the same in every run.
       \begin{enumerate}[(a)]
       \item If there is no action for $t$ yet, line 26 -- 29 enter the new action into both dictionaries.  The
             dictionary \texttt{mActionTable} gets the name of the rule instead of the rule itself.
@@ -3229,7 +3231,7 @@ as the method shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_acti
                 actionTable['$'] = 'accept'
                 self.mActionTable[stateName, '$'] = 'accept'
             # compute reduce actions
-            for mr in state:
+            for mr in sorted(state, key=str):
                 if mr.is_complete() and mr.mVariable != 'ŝ':
                     for token in sorted(mr.mFollow):
                         action1 = actionTable.get(token)
@@ -3260,7 +3262,9 @@ as the method shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:compute_acti
       tokens $\{\symbol{36}\}$.
 \item Line 20 -- 31 compute the \texttt{reduce} actions.  For a complete e.m.r.\@ $a \rightarrow \beta \mdot: L$,
       line 22 iterates over the follow tokens in $L$, whereas the SLR table generator iterates over the set
-      $\textsl{Follow}(a)$.  As $L$ is often smaller than $\textsl{Follow}(a)$, fewer conflicts arise.
+      $\textsl{Follow}(a)$.  As $L$ is often smaller than $\textsl{Follow}(a)$, fewer conflicts arise.  As in the
+      SLR table generator, line 20 processes the e.m.r.s of $\mathcal{M}$ in sorted order, so that the action table
+      and the reported conflicts are the same in every run.
 
       The test \texttt{mr.mVariable != 'ŝ'} in line 21 implements the condition $a \not= \widehat{s}$ of the
       definition of \textsl{action}.  As the e.m.r.\@ $\widehat{s} \rightarrow s \mdot: \symbol{36}$ is
