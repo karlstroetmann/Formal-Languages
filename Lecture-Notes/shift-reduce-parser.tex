@@ -354,6 +354,7 @@ Figure \ref{fig:01-Shift-Reduce-Parser-Pure.ipynb} on page \pageref{fig:01-Shift
                 xrightmargin  = 0.5cm,
                 gobble        = 4,
               ]{python3}
+    @method_of(ShiftReduceParser)
     def parse(self, TL: list[Token]) -> bool:
         index                 = 0      # points to next token
         Symbols: list[Symbol] = []     # stack of tokens and variables
@@ -379,9 +380,6 @@ Figure \ref{fig:01-Shift-Reduce-Parser-Pure.ipynb} on page \pageref{fig:01-Shift
                     Symbols    = Symbols + [head]
                     state      = States[-1]
                     States    += [ self.mGotoTable[state, head] ]
-
-    ShiftReduceParser.parse = parse
-    del parse
 \end{minted} 
 \vspace*{-0.3cm}
 \caption{Implementation of a shift-reduce parser in \textsl{Python}}
@@ -403,6 +401,8 @@ create a new list instead of using the operator \texttt{+=}.  The invocation
 $\texttt{parse}(\textsl{TL})$ returns \texttt{True} if the token list \textsl{TL} can be
 parsed successfully and \texttt{False} otherwise.  The implementation of \texttt{parse} works as follows:
 \begin{enumerate}
+\item The decorator in line 1 adds the function \texttt{parse} to the class \texttt{ShiftReduceParser} as a
+      method.  The function \texttt{method\_of}, which creates this decorator, is defined in the notebook.
 \item The variable \textsl{index} points to the next token in the token list that is to be
       read.  Therefore, this variable is initialized to 0.
 \item The variable \textsl{Symbols} stores the stack of symbols.  The top of this stack is
@@ -426,7 +426,7 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
             In this case parsing is successful and therefore the function returns \texttt{True}.
       \item $\textsl{action}(q,t) = \pair(\texttt{shift}, s)$.
         
-            In this case, the token $t$ is pushed onto the symbol stack in line 16,
+            In this case, the token $t$ is pushed onto the symbol stack in line 17,
             while the state $s$ is pushed onto the stack of states.  Furthermore,
             the variable \textsl{index} is incremented to point to the next unread token.            
       \item $\textsl{action}(q,t) = \pair(\texttt{reduce}, A \rightarrow X_1 \cdots X_n)$.
@@ -436,7 +436,7 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
             \hspace*{1.3cm}
             $r = (A \rightarrow X_1 \cdots X_n)$
             \\[0.2cm]
-            to reduce the symbol stack.  The pattern in line 19 binds the variable \textsl{head} to the left
+            to reduce the symbol stack.  The pattern in line 20 binds the variable \textsl{head} to the left
             hand side $A$ of this rule and the variable \textsl{body} to the tuple $(X_1, \cdots,X_n)$ of the
             symbols on its right hand side.
 
@@ -448,10 +448,8 @@ parsed successfully and \texttt{False} otherwise.  The implementation of \texttt
             Furthermore, we have to remove $n$ states from the stack of states.
             After that, we set the variable \textsl{state} to the state that is on top of the
             stack of states after we have removed $n$ states.  Next, the new state
-            $\textsl{goto}(\textsl{state}, A)$ is put on top of the stack of states in line 25.
+            $\textsl{goto}(\textsl{state}, A)$ is put on top of the stack of states in line 26.
       \end{enumerate}
-\item Line 27 -- 28 attach the function \texttt{parse} to the class \texttt{ShiftReduceParser} as a method and
-      remove the global name \texttt{parse}.
 \end{enumerate}
 The Jupyter notebook \texttt{01-Shift-Reduce-Parser-Pure}, which is available at
 \\[0.2cm]

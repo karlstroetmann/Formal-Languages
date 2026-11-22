@@ -41,8 +41,10 @@ pdflatex -shell-escape formal-languages.tex
   - basedpyright cannot follow `%run`.  After a `%run X.ipynb`, a cell `if TYPE_CHECKING:` declares the
     functions, classes, types, and variables that the notebook uses from `X` (never executed).
     `python ../Python/check_declarations.py` checks that these declarations agree with the definitions.
-  - Methods that are defined in later cells and attached via `Class.m = m` are declared in the class body
-    with the body `...`; the checker then also checks the attached implementation against the declaration.
+  - Methods that are defined in later cells are added to their class by the decorator `@method_of(Class)`,
+    which every notebook that needs it defines.  They are declared in the class body with the body `...`, so
+    that the checker knows them.  The checker does not compare the implementation with the declaration; the
+    author accepts this for the sake of readability.
   - The type aliases of chapters 4 and 5 have one meaning in all notebooks (`State`, `Char`, `Delta`, `NFA`,
     `TransRel`, `DFA`, `RegExp` with `int` for the empty language, since the checker widens `Literal[0]`).
   - Bugs and limits of basedpyright: after `x += ...` in a later cell, `x` counts as unbound, so write
