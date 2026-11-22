@@ -128,20 +128,90 @@ same as the \emph{prediction operation} in the Earley algorithm. \eox
 \vspace*{0.3cm}
 
 \noindent
-For a given set \(\mathcal{M}\) of marked rules, the computation of \(\mathcal{K} := \textsl{closure}(\mathcal{M})\) can be done iteratively:
+For a given set \(\mathcal{M}\) of marked rules, the set \(\textsl{closure}(\mathcal{M})\) can be computed by a
+fixpoint iteration.  To describe this iteration, we define the \blue{successors}\index{successor} of a marked rule:
+The successors of a marked rule of the form \(a \rightarrow \beta \mdot c\, \delta\), where \(c\) is a variable, are
+the marked rules
+\\[0.2cm]
+\hspace*{1.3cm}
+\(c \rightarrow \mdot \gamma\) \quad for all grammar rules \quad \(c \rightarrow \gamma\),
+\\[0.2cm]
+i.e.~exactly those marked rules that condition 2 of the definition adds to the closure because of
+\(a \rightarrow \beta \mdot c\, \delta\).  All other marked rules have no successors.  Then
+\(\textsl{closure}(\mathcal{M})\) contains exactly those marked rules that are \blue{reachable}\index{reachable}
+from \(\mathcal{M}\):  These are the elements of \(\mathcal{M}\), their successors, the successors of these
+successors, and so on.  Figure \ref{fig:slr-closure} on page \pageref{fig:slr-closure} shows the computation of
+\(\textsl{closure}(\mathcal{M})\).
+
+\begin{figure}[!ht]
+  \centering
+
+\begin{Verbatim}[ frame         = lines,
+                  framesep      = 0.3cm,
+                  labelposition = bottomline,
+                  numbers       = left,
+                  numbersep     = -0.2cm,
+                  xleftmargin   = 0.0cm,
+                  xrightmargin  = 0.0cm,
+                  commandchars  = \\\{\},
+                  codes={\catcode`$=3\catcode`^=7\catcode`_=8}
+                ]
+    function reachable($\mathcal{S}$, successors) \{
+        $\mathcal{K}\,$  := $\mathcal{S}$;
+        $\mathcal{K}^{-}$ := $\{\}$;
+        while ($\mathcal{K}^{-}\!$ $\not=$ $\mathcal{K}$) \{
+            $\mathcal{K}^{-}\!$ := $\mathcal{K}$;
+            $\mathcal{K}$  := $\mathcal{K} \cup \bigcup\bigl\{\textsl{successors}(x) \mid x\in\mathcal{K}\bigr\}$;
+        \}
+        return $\mathcal{K}$;
+    \}
+
+    function successors($m$) \{
+        return $\bigl\{(c\rightarrow\mdot\gamma) \mid m = (a\rightarrow\beta\mdot{}c\,\delta)\wedge(c\rightarrow\gamma)\in{}R\bigr\}$;
+    \}
+
+    function closure($\mathcal{M}$) \{
+        return reachable($\mathcal{M}$, successors);
+    \}
+\end{Verbatim}
+% $
+\vspace*{-0.3cm}
+\caption{The computation of $\textsl{closure}(\mathcal{M})$ for a set $\mathcal{M}$ of marked rules.}
+\label{fig:slr-closure}
+\end{figure}
+
 \begin{enumerate}
-\item Initially, set \(\mathcal{K} := \mathcal{M}\).
-\item Then, find all rules of the form
+\item Line 1 -- 9 define the function \textsl{reachable}.  Given a set \(\mathcal{S}\) and a function
+      \textsl{successors} that assigns a set of successors to every element, it computes the smallest set
+      \(\mathcal{K}\) such that
+      \begin{enumerate}[(a)]
+      \item \(\mathcal{S} \subseteq \mathcal{K}\) and
+      \item \(\mathcal{K} = \mathcal{K} \cup \bigcup \bigl\{ \textsl{successors}(x) \bigm| x \in \mathcal{K} \bigr\}\).
+      \end{enumerate}
+      Condition (b) states that every successor of an element of \(\mathcal{K}\) is itself an element of
+      \(\mathcal{K}\).  Hence \(\mathcal{K}\) is the set of all elements that are reachable from \(\mathcal{S}\),
+      and it is the smallest fixpoint of the function
+      \(\mathcal{X} \mapsto \mathcal{X} \cup \bigcup \bigl\{ \textsl{successors}(x) \bigm| x \in \mathcal{X} \bigr\}\)
+      that contains \(\mathcal{S}\).  It is computed by a fixpoint iteration:  We start with
+      \(\mathcal{K}_0 := \mathcal{S}\) and compute
       \\[0.2cm]
       \hspace*{1.3cm}
-      \(a \rightarrow \beta \mdot c\, \delta\)
+      \(\mathcal{K}_{n+1} := \mathcal{K}_n \cup \bigcup \bigl\{ \textsl{successors}(x) \bigm| x \in \mathcal{K}_n \bigr\}\)
       \\[0.2cm]
-      within the set \(\mathcal{K}\), where \(c\) is a syntactic variable. Subsequently, for all rules of the form \(c \rightarrow \gamma\), add the new marked rule
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      \(c \rightarrow \mdot\gamma\)
-      \\[0.2cm]
-      into the set \(\mathcal{K}\). Repeat this step until no new rules are found.
+      until we find a set \(\mathcal{K}_k\) such that \(\mathcal{K}_{k+1} = \mathcal{K}_k\).  The variable
+      \(\mathcal{K}^-\) holds the previous approximation \(\mathcal{K}_n\), while the variable \(\mathcal{K}\) holds
+      the new approximation \(\mathcal{K}_{n+1}\).  The set \(\mathcal{K}_n\) contains exactly those elements that
+      can be reached from \(\mathcal{S}\) in at most \(n\) steps.  As we have
+      \(\mathcal{K}_0 \subseteq \mathcal{K}_1 \subseteq \mathcal{K}_2 \subseteq \cdots\), the iteration terminates
+      if all elements that are reachable from \(\mathcal{S}\) belong to a finite set.  This is the case here,
+      since a grammar has only finitely many marked rules.
+\item Line 11 -- 13 define the function \textsl{successors}.  The condition
+      \(m = (a\rightarrow\beta\mdot{}c\,\delta)\) can only be satisfied if a variable \(c\) follows the marker in
+      the marked rule \(m\).  In this case, \(\textsl{successors}(m)\) contains the marked rule
+      \(c \rightarrow \mdot \gamma\) for every grammar rule \(c \rightarrow \gamma\).  Otherwise,
+      \(\textsl{successors}(m)\) is empty.
+\item Line 15 -- 17 define the function \textsl{closure}.  It computes the set of those marked rules that are
+      reachable from \(\mathcal{M}\).
 \end{enumerate}
 
 \exampleEng
@@ -159,8 +229,13 @@ $
          \textsl{product} \rightarrow \textsl{product} \;\saquoted{*} \mdot \textsl{factor}, \\
    & & & \textsl{factor}  \rightarrow \mdot \saquoted{(}\; \textsl{expr} \aquoted{)}\!\!,          \\
    & & & \textsl{factor}  \rightarrow \mdot\simtextsc{Number}                                  \\
-   & & \bigr\}. & \hspace*{8cm} 
-\end{array}$  \eox
+   & & \bigr\}. & \hspace*{8cm}
+\end{array}$
+\\[0.2cm]
+The fixpoint iteration computes the sets \(\mathcal{K}_0 = \mathcal{M}\),
+\(\mathcal{K}_1 = \textsl{closure}(\mathcal{M})\), and \(\mathcal{K}_2 = \mathcal{K}_1\):  The two marked rules
+for \textsl{factor} are the successors of the marked rule in \(\mathcal{M}\), while they have no successors
+themselves, since no variable follows the marker.  \eox
 \vspace*{0.3cm}
 
 \noindent
@@ -1789,35 +1864,26 @@ These two conditions summarize the relationships 6 -- 9 that have been stated at
 The set $\textsl{Follow}(\widehat{s})$ remains empty, since $\widehat{s}$ does not occur on the right hand side of
 any rule.
 
-\subsection{Computing the States\label{section:slr-states}}
-Both the closure of a set of marked rules and the set of all states of the parser are computed according to the
-same scheme.  Assume that $\mathcal{S}$ is a set and that \textsl{successors} is a function that assigns a set
-$\textsl{successors}(x)$ of \blue{successors}\index{successor} to every element $x$.  Then there is a smallest set
-$\mathcal{K}$ such that
-\begin{enumerate}[(a)]
-\item $\mathcal{S} \subseteq \mathcal{K}$ and
-\item $x \in \mathcal{K} \;\Rightarrow\; \textsl{successors}(x) \subseteq \mathcal{K}$.
-\end{enumerate}
-The set $\mathcal{K}$ contains exactly those elements that are \blue{reachable}\index{reachable} from
-$\mathcal{S}$:  These are the elements of $\mathcal{S}$, their successors, the successors of these successors, and so
-on.
+\subsection{Computing the States}
+Both the closure of a set of marked rules and the set of all states of the parser are sets of elements that are
+reachable from a given set of elements:
 \begin{enumerate}
 \item $\textsl{closure}(\mathcal{M})$ is the set of marked rules that are reachable from $\mathcal{M}$ if the
-      successors of a marked rule $a \rightarrow \beta \mdot c\, \delta$, where $c$ is a variable, are the marked
-      rules $c \rightarrow \mdot \gamma$ such that $c \rightarrow \gamma$ is a grammar rule, while all other marked
-      rules have no successors.
+      successors of a marked rule are defined as in Figure \ref{fig:slr-closure} on page
+      \pageref{fig:slr-closure}.
 \item The states of the parser are the states that are reachable from $\{ q_0 \}$ if the successors of a state
       $\mathcal{M}$ are the states $\textsl{goto}(\mathcal{M}, X)$ for those symbols $X$ that follow the marker in a
       marked rule of $\mathcal{M}$.
 \end{enumerate}
-Therefore, we implement this scheme only once.  Figure \ref{fig:04-SLR-Table-Generator.ipynb:reachable} on page
-\pageref{fig:04-SLR-Table-Generator.ipynb:reachable} shows the function \texttt{reachable}.  Given an iterable
-\texttt{Start} and a function \texttt{successors} that returns the successors of its argument, it returns the list of
-all elements that are reachable from \texttt{Start}.  The iterative computation of the closure that has been
-described in the previous section inspects all marked rules of $\mathcal{K}$ again and again until no new marked rule
-is found.  In contrast, the function \texttt{reachable} uses a \blue{worklist}\index{worklist}, i.e.~a list of those
-elements that still have to be processed.  Every element is appended to the worklist when it is found, and it is
-processed exactly once.
+Therefore, the notebook implements the function \texttt{reachable} only once.  Figure
+\ref{fig:04-SLR-Table-Generator.ipynb:reachable} on page \pageref{fig:04-SLR-Table-Generator.ipynb:reachable} shows
+this function.  Given an iterable \texttt{Start} and a function \texttt{successors} that returns the successors of
+its argument, it returns the list of all elements that are reachable from \texttt{Start}.  Hence it computes the same
+elements as the function \textsl{reachable} shown in Figure \ref{fig:slr-closure}, but it does so more efficiently:
+The fixpoint iteration shown there computes the successors of all elements of $\mathcal{K}$ again and again until no
+new element is found.  In contrast, the function \texttt{reachable} uses a \blue{worklist}\index{worklist}, i.e.~a
+list of those elements that still have to be processed.  Every element is appended to the worklist when it is found,
+and it is processed exactly once.
 
 \begin{figure}[!ht]
 \centering
@@ -2276,19 +2342,19 @@ also play a role, because if $\delta \Rightarrow^* \lambda$ is true, then a foll
 can also follow the $c$. \eox 
 \vspace*{0.1cm}
 
-For a given set $\mathcal{M}$ of e.m.r.s, the set $\textsl{closure}(\mathcal{M})$ is computed by a fixpoint
-iteration according to the scheme that has been described in Section \ref{section:slr-states}:
-$\textsl{closure}(\mathcal{M})$ is the set of those e.m.r.s that are reachable from $\mathcal{M}$.  This time, the
-successors of an e.m.r.\@ of the form $a \rightarrow \beta \mdot c\, \delta: L$, where $c$ is a variable, are the
-e.m.r.s
+For a given set $\mathcal{M}$ of e.m.r.s, the set $\textsl{closure}(\mathcal{M})$ is computed in the same way as
+for marked rules:  It is the set of those e.m.r.s that are reachable from $\mathcal{M}$, and it is computed by the
+fixpoint iteration of the function \textsl{reachable} shown in Figure \ref{fig:slr-closure} on page
+\pageref{fig:slr-closure}.  Only the successors change:  The successors of an e.m.r.\@ of the form
+$a \rightarrow \beta \mdot c\, \delta: L$, where $c$ is a variable, are the e.m.r.s
 \\[0.2cm]
 \hspace*{1.3cm}
 $c \rightarrow \mdot \gamma: \bigcup \{ \textsl{First}(\delta\, t) \mid t \in L \}$ \quad for all grammar rules
 \quad $c \rightarrow \gamma$,
 \\[0.2cm]
 i.e.~exactly those e.m.r.s that condition 2 of the definition adds to the closure because of
-$a \rightarrow \beta \mdot c\, \delta: L$.  All other e.m.r.s have no successors.  Figure \ref{fig:closure} on page
-\pageref{fig:closure} shows the computation of $\textsl{closure}(\mathcal{M})$.
+$a \rightarrow \beta \mdot c\, \delta: L$.  All other e.m.r.s have no successors.  Figure \ref{fig:lr-closure} on
+page \pageref{fig:lr-closure} shows the functions \textsl{successors} and \textsl{closure} for e.m.r.s.
 
 \begin{figure}[!ht]
   \centering
@@ -2303,16 +2369,6 @@ $a \rightarrow \beta \mdot c\, \delta: L$.  All other e.m.r.s have no successors
                   commandchars  = \\\{\},
                   codes={\catcode`$=3\catcode`^=7\catcode`_=8}
                 ]
-    function reachable($\mathcal{S}$, successors) \{
-        $\mathcal{K}\,$  := $\mathcal{S}$;
-        $\mathcal{K}^{-}$ := $\{\}$;
-        while ($\mathcal{K}^{-}\!$ $\not=$ $\mathcal{K}$) \{
-            $\mathcal{K}^{-}\!$ := $\mathcal{K}$;
-            $\mathcal{K}$  := $\mathcal{K} \cup \bigcup\bigl\{\textsl{successors}(x) \mid x\in\mathcal{K}\bigr\}$;
-        \}
-        return $\mathcal{K}$;
-    \}
-
     function successors($e$) \{
         return $\bigl\{\left(c\rightarrow\mdot\gamma:\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}\right) \mid$
                 $e = (a\rightarrow\beta\mdot{}c\,\delta:L)\wedge(c\rightarrow\gamma)\in{}R\bigr\}$;
@@ -2324,49 +2380,25 @@ $a \rightarrow \beta \mdot c\, \delta: L$.  All other e.m.r.s have no successors
 \end{Verbatim}
 % $
 \vspace*{-0.3cm}
-\caption{The computation of $\textsl{closure}(\mathcal{M})$.}
-\label{fig:closure}
+\caption{The computation of $\textsl{closure}(\mathcal{M})$ for a set $\mathcal{M}$ of extended marked rules.}
+\label{fig:lr-closure}
 \end{figure}
 
 \begin{enumerate}
-\item Line 1 -- 9 define the function \textsl{reachable}.  Given a set $\mathcal{S}$ and a function
-      \textsl{successors}, it computes the smallest set $\mathcal{K}$ such that
-      \begin{enumerate}[(a)]
-      \item $\mathcal{S} \subseteq \mathcal{K}$ and
-      \item $\mathcal{K} = \mathcal{K} \cup \bigcup \bigl\{ \textsl{successors}(x) \bigm| x \in \mathcal{K} \bigr\}$.
-      \end{enumerate}
-      Condition (b) states that every successor of an element of $\mathcal{K}$ is itself an element of
-      $\mathcal{K}$.  Hence $\mathcal{K}$ is the set of all elements that are reachable from $\mathcal{S}$, and it
-      is the smallest fixpoint of the function
-      $\mathcal{X} \mapsto \mathcal{X} \cup \bigcup \bigl\{ \textsl{successors}(x) \bigm| x \in \mathcal{X} \bigr\}$
-      that contains $\mathcal{S}$.  It is computed by a fixpoint iteration:  We start with
-      $\mathcal{K}_0 := \mathcal{S}$ and compute
-      \\[0.2cm]
-      \hspace*{1.3cm}
-      $\mathcal{K}_{n+1} := \mathcal{K}_n \cup \bigcup \bigl\{ \textsl{successors}(x) \bigm| x \in \mathcal{K}_n \bigr\}$
-      \\[0.2cm]
-      until we find a set $\mathcal{K}_k$ such that $\mathcal{K}_{k+1} = \mathcal{K}_k$.  The variable
-      $\mathcal{K}^-$ holds the previous approximation $\mathcal{K}_n$, while the variable $\mathcal{K}$ holds the
-      new approximation $\mathcal{K}_{n+1}$.  The set $\mathcal{K}_n$ contains exactly those elements that can be
-      reached from $\mathcal{S}$ in at most $n$ steps.  As we have
-      $\mathcal{K}_0 \subseteq \mathcal{K}_1 \subseteq \mathcal{K}_2 \subseteq \cdots$ and all these sets are
-      subsets of the finite set of all e.m.r.s of the grammar, the iteration terminates.
-\item Line 11 -- 14 define the function \textsl{successors}.  The condition
+\item Line 1 -- 4 define the function \textsl{successors}.  The condition
       $e = (a\rightarrow\beta\mdot{}c\,\delta:L)$ can only be satisfied if a variable $c$ follows the dot in the
       e.m.r.\@ $e$.  In this case, $\textsl{successors}(e)$ contains the e.m.r.\@
       $c\rightarrow\mdot\gamma:\bigcup\{\textsl{First}(\delta\,t)\mid{}t\in{}L\}$ for every grammar rule
       $c \rightarrow \gamma$.  Otherwise, $\textsl{successors}(e)$ is empty.
-\item Line 16 -- 18 define the function \textsl{closure}.  It computes the set of those e.m.r.s that are reachable
-      from $\mathcal{M}$.
+\item Line 6 -- 8 define the function \textsl{closure}.  It computes the set of those e.m.r.s that are reachable
+      from $\mathcal{M}$ with the function \textsl{reachable} shown in Figure \ref{fig:slr-closure}.  The fixpoint
+      iteration terminates, since a grammar has only finitely many e.m.r.s:  Their sets of follow tokens are subsets
+      of the finite set of tokens.
 \end{enumerate}
 Compared to the computation of $\textsl{closure}()$ for marked rules, only the function \textsl{successors} has
 changed:  In the e.m.r.s that we include for a variable $c$ in $\textsl{closure}(\mathcal{M})$, we record the
 context in which $c$ appears in the set of follow tokens.  This makes it possible to describe the states of the
-parser more precisely than with marked rules.  The function \texttt{reachable} shown in Figure
-\ref{fig:04-SLR-Table-Generator.ipynb:reachable} on page \pageref{fig:04-SLR-Table-Generator.ipynb:reachable}
-computes the same set as the function \textsl{reachable} shown in Figure \ref{fig:closure}.  However, it does not
-compute the successors of all elements of $\mathcal{K}$ in every iteration.  Instead, it uses a worklist, so that
-the successors of every element are computed only once.
+parser more precisely than with marked rules.
 \vspace*{0.2cm}
 
 \noindent
