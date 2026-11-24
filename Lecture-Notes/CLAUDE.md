@@ -61,7 +61,7 @@ pdflatex -shell-escape formal-languages.tex
   `\saquoted`), the rest of the notes double quotes (`\quoted`, `\squoted`).  The end marker `$` is not a
   literal of the grammar and is never quoted, neither in the text nor in the figures nor in the List of
   Notation.
-- Chapter 10 writes SLR, LR, and LALR in plain capitals; chapter 11 keeps `\simtextsc{Lalr}`.
+- Chapter 10 writes SLR and LR in plain capitals.
 - Action names of shift-reduce parsers are set as `\texttt{shift}`, `\texttt{reduce}`, `\texttt{accept}`, and
   `\texttt{error}`.  "Extended marked rule" is abbreviated "e.m.r.", written `e.m.r.\@` before a blank or a
   brace, since the notes do not use `\frenchspacing`.

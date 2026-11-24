@@ -2912,8 +2912,8 @@ His theory is described in the paper
 
 \remarkEng
 The parsers discussed in this chapter choose their action by looking at the next token only.  In the
-literature, they are therefore called SLR(1), LALR(1), and LR(1) parsers, and the corresponding grammars are
-called SLR(1), LALR(1), and LR(1) grammars.  More generally, an LR($k$) parser looks at the next $k$ tokens.
+literature, they are therefore called SLR(1) and LR(1) parsers, and the corresponding grammars are called SLR(1)
+and LR(1) grammars.  More generally, an LR($k$) parser looks at the next $k$ tokens.
 \eox
 
 \section{Implementing an LR Table Generator in \textsl{Python}\label{section:lr-table-generator}}
@@ -3326,25 +3326,21 @@ $\begin{array}[t]{lcl}
 The parser reaches the state \texttt{s9} if the \textsl{factor} that it has just read occurs inside a pair of
 parentheses.  Then the next token can be a closing parenthesis, but not the end marker $\symbol{36}$.  For the state
 \texttt{s4}, it is the other way round.  This grammar has no conflicts.  The observation that many LR states differ
-only in their follow tokens is the starting point of the LALR parsers discussed in the next section.
+only in their follow tokens is the starting point of the next section, where we compact the state space.
 
 For the ambiguous grammar in the file \texttt{Examples/arith-ambiguous.g}, the notebook reports eight shift-reduce
 conflicts, which is twice the number of conflicts reported by the SLR table generator.  These are the conflicts
 found by the SLR table generator, two of which are shown in Figure \ref{fig:04-SLR-Table-Generator.ipynb:conflicts} on
 page \pageref{fig:04-SLR-Table-Generator.ipynb:conflicts}, but each of them occurs twice:  Once for an expression
 inside a pair of parentheses and once for an expression that is not enclosed in parentheses.  This example shows that
-conflicts that are caused by the ambiguity of a grammar cannot be avoided by a more powerful parsing method.  The
-results for the grammar of the programming language \texttt{C} are discussed at the beginning of the next section.
+conflicts that are caused by the ambiguity of a grammar cannot be avoided by a more powerful parsing method.
 
-\section{LALR Parsers$^*$ \label{section:lalr}}
-The number of states in an LR parser is often significantly larger than the number of states in an
-SLR parser for the same grammar. For instance, an SLR parser for the 
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Examples/c-grammar.g}{\texttt{C} grammar} 
-manages with 349 states. However, since this grammar is not an SLR grammar, creating
-an SLR parse table for it results in a number of
+The grammar of the programming language \texttt{C} in the file
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Examples/c-grammar.g}{\texttt{Examples/c-grammar.g}}
+is not an SLR grammar:  The SLR table generator computes 349 states, but the resulting parse table has a number of
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Examples/c-grammar-slr-table.txt}{conflicts},
-so that an SLR parser for this grammar does not work. In contrast, a canonical
-LR parser for this grammar has 1572 states, as you can see
+so that an SLR parser for this grammar does not work.  In contrast, the canonical LR parser for this grammar has
+1572 states, as you can see
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/Examples/c-grammar-lr-table.txt}{here}.
 Even this table contains a shift-reduce conflict, which occurs in two of its states:  If the parser has read
 an \texttt{if} statement without an \texttt{else} branch and the next token is \texttt{else}, it can either
@@ -3352,12 +3348,13 @@ shift this token or reduce with the rule for an \texttt{if} statement without \t
 caused by the \emph{dangling else problem}, which is discussed in Chapter \ref{chapter:compiler}:  The grammar
 is ambiguous at this point.  Parser generators like \simtextsc{Larkita} resolve this conflict by shifting, so
 that every \texttt{else} belongs to the nearest \texttt{if}.
-In the seventies, when the available main memory of most computers was still modestly sized compared to today,
-the large number of states of LR parsers was a problem in practice. A detailed analysis of the set of states of LR parsers showed that it is often possible to 
-combine certain states. This can significantly reduce the number of states in most cases.
-We illustrate the concept with an example and consider the grammar shown in
-Figure \ref{fig:dragon-book.grammar}, which I have taken from the \blue{Dragon Book}
-\cite{aho:2006}. (The ``Dragon Book'' is the standard work in the field of compiler construction.)
+
+\section{Compacting the State Space \label{section:compacting}}
+The canonical LR parser of a grammar often has many more states than the SLR parser of the same grammar, since it
+keeps apart states that only differ in the follow tokens of their marked rules.  In this section, we show how the
+state space of a canonical LR parser can be compacted by combining such states.  We illustrate the idea with the
+grammar shown in Figure \ref{fig:dragon-book.grammar}, which I have taken from the \blue{Dragon Book}
+\cite{aho:2006}.  (The ``Dragon Book'' is the standard work in the field of compiler construction.)
 
 \begin{figure}[htbp]
   \centering 
@@ -3385,7 +3382,7 @@ Figure \ref{fig:dragon-book.grammar}, which I have taken from the \blue{Dragon B
 \end{figure}
 
 Figure \ref{fig:cc-LR.eps} shows the so-called \blue{LR-goto-graph}\index{LR-goto-graph} for this grammar.
-The nodes of this graph are the states.  
+The nodes of this graph are the states.
 Looking at the LR-goto-graph, we find that the states $s_6$ and
 $s_3$ differ only in the sets of follow tokens, as on one hand, we have
 \\[0.2cm]
@@ -3415,212 +3412,42 @@ $\textsl{goto}(s_6, c) = s_9$
 \\[0.2cm]
 hold and that, on the other hand, the state $s_9$ changes into the state $s_8$ when we
 replace everywhere in $s_9$ the terminal $\symbol{36}$ with the set 
- $\{ \text{\saquoted{x}}, \text{\saquoted{y}}\}$. If we define the \blue{core}\index{core of a set of extended marked rules}
-of a set of extended marked rules by omitting the set of follow tokens in each rule, and then combine states with the same core, we
-obtain the goto-graph shown in Figure \ref{fig:cc-LALR.eps}.
-
+$\{ \text{\saquoted{x}}, \text{\saquoted{y}}\}$.  We define the
+\blue{core}\index{core of a set of extended marked rules} of a set of extended marked rules as the set of marked
+rules that results from omitting the follow tokens of all its rules.  If we combine all states that have the same
+core and unite the follow tokens of the corresponding marked rules, we obtain the goto-graph shown in Figure
+\ref{fig:cc-compact.eps}.  For example, the states $s_3$ and $s_6$ are combined into the state
+\\[0.2cm]
+\hspace*{1.3cm}
+$s_3 + s_6 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \mdot c: \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \},
+                     c \rightarrow \mdot \text{\aquoted{x}} c:  \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \},
+                     c \rightarrow \mdot \text{\aquoted{y}}:    \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \}
+             \Bigr\}$.
+\\[0.2cm]
+The compacted parser has only 7 instead of 10 states, and it has no conflicts.
 
 \begin{figure}[!ht]
 \centering
-  \includegraphics[scale=0.65]{Abbildungen/cc-LALR.pdf}
-  \caption{The LALR-goto-graph for the grammar from Figure \ref{fig:dragon-book.grammar}.}
-  \label{fig:cc-LALR.eps}
+  \includegraphics[scale=0.65]{Abbildungen/cc-compact.pdf}
+  \caption{The goto-graph for the grammar from Figure \ref{fig:dragon-book.grammar} after compacting the state
+    space.}
+  \label{fig:cc-compact.eps}
 \end{figure}
 
-To generalize and formalize the observations made while examining the grammar shown in Figure 
-\ref{fig:dragon-book.grammar}, we define a function 
-$\textsl{core}()$, which calculates the core of a set of e.m.r.s (extended marked rules) and thus transforms this set into 
-a set of marked rules:
+The \textsl{Jupyter notebook}
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{core}(\mathcal{M}) := 
-   \{ a \rightarrow \beta \mdot \gamma \mid (a \rightarrow \beta \mdot \gamma:L) \in \mathcal{M} \}$. 
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-10/08-Compacting-the-State-Space.ipynb}{\texttt{Python/Chapter-10/08-Compacting-the-State-Space.ipynb}}
 \\[0.2cm]
-Thus, the function $\textsl{core}()$ simply removes the set of follow tokens from the e.m.r.s.
-We had defined the function $\textsl{goto}()$ for a set $\mathcal{M}$ of extended
-marked rules and a symbol $x$ as
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{goto}(\mathcal{M}, x) := \textsl{closure}\Bigl( \bigl\{ 
- a \rightarrow \beta\, x \mdot \gamma:L \mid (a \rightarrow \beta \mdot x\, \gamma:L) \in \mathcal{M} 
- \bigr\} \Bigr)
-$.
-\\[0.2cm]
-Clearly, the set of follow tokens plays no role in the calculation of
-$\textsl{goto}(\mathcal{M}, x)$, formally for two e.m.r.-sets
-$\mathcal{M}_1$ and $\mathcal{M}_2$ and a symbol $x$, the formula holds:
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{core}(\mathcal{M}_1) = \textsl{core}(\mathcal{M}_2) \;\Rightarrow\;
- \textsl{core}(\textsl{goto}(\mathcal{M}_1, x)) = 
- \textsl{core}(\textsl{goto}(\mathcal{M}_2, x))
-$.
-\vspace*{0.2cm}
+computes both automata with \simtextsc{Larkita}.  By default, \simtextsc{Larkita} computes the canonical LR parser.
+If it is called with the keyword argument \texttt{merge\_states=True}, it compacts the state space by combining
+the states that have the same core.  For the grammar of Figure \ref{fig:dragon-book.grammar}, it combines the
+states $s_3$ and $s_6$, $s_4$ and $s_7$, and $s_8$ and $s_9$.  The canonical LR parser computed by
+\simtextsc{Larkita} numbers its states in the same way as Figure \ref{fig:cc-LR.eps}, and every state of the
+compacted parser lists the states of the canonical parser that it has been combined from.
 
-For two sets of e.m.r.s (extended marked rules) $\mathcal{M}$ and $\mathcal{N}$ that
-have the same core, we define the \blue{extended union}\index{extended union}\glsadd{uplus}  
-$\mathcal{M} \uplus \mathcal{N}$ of $\mathcal{M}$ and $\mathcal{N}$ as
-\\[0.2cm]
-\hspace*{1.3cm}
-$\mathcal{M} \uplus \mathcal{N} := 
-   \{ a \rightarrow \beta\mdot \gamma:K \cup L \mid 
-      (a \rightarrow \beta\mdot \gamma:K) \in \mathcal{M} \;\wedge\;
-      (a \rightarrow \beta\mdot \gamma:L) \in \mathcal{N}
-   \}
-$.
-\\[0.2cm] 
-We generalize this definition to an operation $\biguplus$, 
-defined on a set of sets of e.m.r.s: If $\frak{I}$
-is a set of sets of e.m.r.s, all having the same core, i.e.,
-\[ \frak{I} = \{ \mathcal{M}_1, \cdots, \mathcal{M}_k \} \quad \mbox{with} \quad
-   \textsl{core}(\mathcal{M}_i) = \textsl{core}(\mathcal{M}_j) \quad 
-   \mbox{for all $i,j\in\{1,\cdots,k\}$,} 
-\]
-then we define
-\[ \biguplus \frak{I} := \mathcal{M}_1 \uplus \cdots \uplus \mathcal{M}_k. 
-\]
-Let $\Delta$ be the set of all states of an LR parser. Then, the set of states of the
-corresponding LALR parser is given by the extended union of all subsets 
-of $\Delta$ whose elements have the same core:
-\[ \frak{Q} := \left\{ \biguplus \frak{I} \mid \frak{I} \in 2^\Delta \wedge 
-      \forall \mathcal{M},\mathcal{N} \in \frak{I}: \textsl{core}(\mathcal{M}) = \textsl{core}(\mathcal{N}) 
-      \wedge \mbox{$\frak{I}$ is maximal}
-   \right\}. 
-\]
-The requirement ``$\frak{I}$ maximal'' in the above definition expresses that in $\frak{I}$, indeed
-\underline{all} sets from $\Delta$ are combined that have the same core.
-The thus defined set $\frak{Q}$ is the set of LALR states.
-
-Next, we consider how the computation of $\textsl{goto}(\mathcal{M},X)$
-must change if $\mathcal{M}$ is an element of the set $\frak{Q}$ of LALR states.  
-To compute $\textsl{goto}(\mathcal{M},X)$, we first calculate the set
-\\[0.2cm]
-\hspace*{1.3cm}
-$\textsl{closure}\Bigl( \bigl\{  
-  a \rightarrow \alpha X \mdot \beta:L \mid (a \rightarrow \alpha \mdot X \beta:L) \in \mathcal{M} \bigr\} \Bigr)
-$.
-\\[0.2cm]
-The problem is that this set is generally not an element of the set $\frak{Q}$,
-as the states in $\frak{Q}$ arise from the combination of several LR states.
-However, the states that are combined in the computation of $\frak{Q}$ all have the same
-core. Therefore, the set
-\\[0.2cm]
-\hspace*{1.3cm}
-$\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
-  \textsl{core}\bigl(\textsl{closure}\bigl( \bigl\{  
-  a \rightarrow \beta\, X \mdot \gamma:L \mid (a \rightarrow \beta \mdot X\, \gamma:L) \in \mathcal{M} 
-  \bigr\} \bigr)\bigr)
-  \Bigr\}
-$
-\\[0.2cm]
-contains exactly one element and this element is the value of $\textsl{goto}(\mathcal{M}, X)$. Thus,
-we can set
-\\[0.2cm]
-\hspace*{-0.1cm}
-$\ds\textsl{goto}(\mathcal{M}, X) := \textsl{arb}\Bigl(\Bigl\{ q \in \frak{Q} \mid \textsl{core}(q) =
-  \textsl{core}\Bigl(\textsl{closure}\Bigl( \bigl\{  
-  a \rightarrow \beta\, X \mdot \gamma:L \mid (a \rightarrow \beta \mdot X\, \gamma:L) \in \mathcal{M} 
-  \bigr\} \Bigr)\Bigr)
-  \Bigr\} \Bigr)
-$
-\\[0.2cm]
-The function $\textsl{arb}()$ used here serves to extract an arbitrary element from a set.
-Since the set from which the element is extracted contains exactly one element, 
-$\textsl{goto}(\mathcal{M}, x)$ is well-defined.
-The computation of the expression $\textsl{action}(\mathcal{M}, t)$ does not change compared to the computation for
-an LR parser.
-
-\section{Comparison of SLR, LR, and LALR Parsers}
-We now want to compare the different methods with which we have constructed shift-reduce parsers in this
-chapter. Recall that a grammar $G$ is an SLR grammar if the SLR parser for $G$ has no conflicts.
-Analogously, $G$ is an \blue{LALR grammar}\index{LALR grammar} if the LALR parser for $G$ has no conflicts,
-and $G$ is a \blue{canonical LR grammar}\index{canonical LR grammar} if the canonical LR parser for $G$ has no
-conflicts.  The following relationships exist between these classes of grammars:
-\\[0.2cm]
-\hspace*{1.3cm}
-\blue{SLR grammar} $\subsetneq$ \blue{LALR grammar} $\subsetneq$ \blue{canonical LR grammar}
-\hspace*{\fill} $(\star)$
-\\[0.2cm]
-These inclusions are easy to understand: In defining the LR parsers, we
-added sets of follow tokens to the marked rules. This made it
-possible to avoid shift-reduce and reduce-reduce conflicts in certain cases.
-As the state sets of canonical LR parsers can become very large,
-we then combined sets of extended marked rules that have the same core. This is how we
-obtained the LALR parsers. However, by combining rule sets, we can
-in some cases introduce reduce-reduce conflicts, so the
-set of LALR grammars is a subset of the set of canonical LR grammars.
-
-We will show in the following subsections that the inclusions in $(\star)$ are proper.
-
-\remarkEng
-The inclusions in $(\star)$ hold for grammars, but not for languages.  We call a language $\mathcal{L}$ an
-\blue{SLR language}\index{SLR language} if there is an SLR grammar $G$ such that $L(G) = \mathcal{L}$.  The terms
-\blue{LALR language}\index{LALR language} and \blue{canonical LR language}\index{canonical LR language} are
-defined analogously.  These three classes of languages coincide:  For every canonical LR grammar there is an SLR
-grammar that generates the same language \cite{mickunas:76}.  For example, the grammar shown in Figure
-\ref{fig:reduce-reduce-conflict.grammar} is not an SLR grammar, but the language
-$\{\saquoted{xy}, \saquoted{yx}\}$ that it generates is also generated by the SLR grammar
-\\[0.2cm]
-\hspace*{1.3cm}
-$s \rightarrow \saquoted{x}\, \saquoted{y} \mid \saquoted{y}\, \saquoted{x}$.
-\\[0.2cm]
-Hence, the more powerful parsers do not recognize more languages.  Their advantage is that they accept more
-grammars, so that we have to rewrite a grammar less often in order to get rid of conflicts. \eox
-
-\subsection{\blue{SLR Grammar} $\subsetneq$ \blue{LALR Grammar}}
-The states of an LALR parser, as compared to those of an SLR parser, include sets of follow tokens. This makes LALR parsers at least as powerful as SLR parsers. We will now demonstrate that LALR parsers are indeed more powerful than SLR parsers. To support this claim, we present a grammar for which there exists an LALR parser, but no SLR parser. We had seen on page \pageref{fig:reduce-reduce-conflict.grammar} that the grammar
-\\[0.2cm]
-\hspace*{1.3cm}
-$s \;\rightarrow\; a \text{\aquoted{x}} a \text{\aquoted{y}} \mid b \text{\aquoted{y}} b \text{\aquoted{x}}$
-\\
-\hspace*{1.3cm}
-$a \;\rightarrow\;\lambda$ \quad
-\\
-\hspace*{1.3cm}
-$b \;\rightarrow\; \lambda$
-\\[0.2cm]
-is not an SLR grammar. Later, we saw that this grammar can be parsed by a
-canonical LR parser. We will now show that this grammar can also be parsed by
-an LALR parser. To do this, we calculate the set of LALR states.
-This requires first calculating the set of canonical LR states. We had already carried out this calculation earlier and obtained the following states:
-\begin{enumerate}
-\item $s_0  = \bigl\{ \widehat{s} \rightarrow \mdot s:\symbol{36},
-                     s \rightarrow \mdot a \;\saquoted{x}\; a \;\saquoted{y}:\symbol{36},
-                     s \rightarrow \mdot b \;\saquoted{y}\; b \;\saquoted{x}:\symbol{36},
-                     a \rightarrow \mdot: \saquoted{x},
-                     b \rightarrow \mdot: \saquoted{y}
-              \bigr\}
-      $,
-\item $s_1 = \bigl\{ \widehat{s} \rightarrow s \mdot:\symbol{36} \bigr\}$,
-\item $s_2 = \bigl\{ s \rightarrow a \mdot \saquoted{x}\; a \;\saquoted{y}:\symbol{36} \bigr\}$,
-\item $s_3 = \bigl\{ s \rightarrow b \mdot \saquoted{y}\; b \;\saquoted{x}: \symbol{36} \bigr\}$,
-\item $s_4 = \bigl\{ s \rightarrow a \;\saquoted{x} \mdot a \;\saquoted{y}:\symbol{36},
-                     a \rightarrow \mdot: \saquoted{y}
-              \bigr\}
-      $,
-\item $s_5 = \bigl\{ s \rightarrow b \;\saquoted{y} \mdot b \;\saquoted{x}: \symbol{36},
-                     b \rightarrow \mdot: \saquoted{x}
-             \bigr\}
-      $,
-\item $s_6 = \bigl\{ s \rightarrow a \;\saquoted{x}\; a \mdot \saquoted{y}:\symbol{36} \bigr\}$,
-\item $s_7 = \bigl\{ s \rightarrow b \;\saquoted{y}\; b \mdot \saquoted{x}: \symbol{36} \bigr\}$,
-\item $s_8 = \bigl\{ s \rightarrow a \;\saquoted{x}\; a \;\saquoted{y} \mdot :\symbol{36} \bigr\}$,
-\item $s_9 = \bigl\{ s \rightarrow b \;\saquoted{y}\; b \;\saquoted{x} \mdot: \symbol{36} \bigr\}$.
-\end{enumerate}
-We observe that the cores of all the states listed here are different.
-Therefore, for this grammar, the set of states of the LALR parser coincides with the set of
-states of the canonical LR parser. This implies that there are no conflicts in the
-LALR states, because in the transition from canonical LR parsers to
-LALR parsers, we have only combined states with the same core, and the
-definition of the functions $\textsl{goto}()$ and $\textsl{action}()$ remained unchanged.
- 
-\subsection{\blue{LALR Grammar} $\subsetneq$ \blue{Canonical LR Grammar}}
-We have defined LALR parsers by combining different states of a canonical LR parser. Therefore, it is clear
-that canonical LR parsers are at least as powerful as LALR parsers. To demonstrate that canonical LR parsers
-are indeed more powerful than LALR parsers, we need a grammar for which a canonical LR parser can be generated,
-but not an LALR parser. Figure \ref{fig:lr-but-notlalr.g} shows such a grammar, which I have taken from the
-Dragon Book. 
-
+However, compacting the state space can cause a conflict.  Figure \ref{fig:compacting-conflict.g} shows a grammar that
+I have also taken from the Dragon Book.  Its canonical LR parser has 14 states and no conflicts.
 \begin{figure}[htbp]
   \begin{center}
         \fcolorbox{blue}{sepia}{
@@ -3641,111 +3468,45 @@ Dragon Book.
   \vspace*{-0.3cm}
 
   \end{center}
-  \caption{A canonical LR grammar that is not an LALR grammar.}
-  \label{fig:lr-but-notlalr.g}
+  \caption{A grammar where compacting the state space causes a conflict.}
+  \label{fig:compacting-conflict.g}
 \end{figure}
-
-We first calculate the set of states for a canonical LR parser for this grammar. We obtain the following sets
-of extended marked rules: 
-\begin{enumerate}
-\item $s_0 = \textsl{closure}\bigl(\{\widehat{s} \rightarrow \mdot s: \symbol{36}\}\bigr) =
-       \{
-       \begin{array}[t]{lcl}
-         \widehat{s} & \rightarrow & \mdot s: \symbol{36},                \\
-         s           & \rightarrow & \mdot \saquoted{v}\; a \;\saquoted{y}: \symbol{36}, \\
-         s           & \rightarrow & \mdot \saquoted{w}\; b \;\saquoted{y}: \symbol{36}, \\
-         s           & \rightarrow & \mdot \saquoted{v}\; b \;\saquoted{z}: \symbol{36}, \\
-         s           & \rightarrow & \mdot \saquoted{w}\; a \;\saquoted{z}: \symbol{36}\;\},
-        \end{array}
-       $
-\item $s_1 = \textsl{goto}(s_0, s) =\{ \widehat{s} \rightarrow s \mdot: \symbol{36} \}$
-\item $s_2 = \textsl{goto}(s_0, \aquoted{v}) = \{ 
-       \begin{array}[t]{lcl}
-        s & \rightarrow & \saquoted{v} \mdot a \;\saquoted{y}: \symbol{36}, \\
-        s & \rightarrow & \saquoted{v} \mdot b \;\saquoted{z}: \symbol{36}, \\
-        a & \rightarrow & \mdot \saquoted{x}: \saquoted{y}, \\
-        b & \rightarrow & \mdot \saquoted{x}: \saquoted{z}\; \},
-       \end{array}
-      $
-\item $s_3 = \textsl{goto}(s_0, \aquoted{w}) = \{ 
-       \begin{array}[t]{lcl}
-       s & \rightarrow & \saquoted{w} \mdot b \;\saquoted{y}: \symbol{36},  \\
-       s & \rightarrow & \saquoted{w} \mdot a \;\saquoted{z}: \symbol{36},  \\
-       b & \rightarrow & \mdot \saquoted{x}: \saquoted{y},                \\
-       a & \rightarrow & \mdot \saquoted{x}: \saquoted{z}\; \},
-       \end{array}
-      $
-\item $s_4 = \textsl{goto}(s_2, a) =
-             \{ s \rightarrow \saquoted{v}\; a \mdot \saquoted{y}: \symbol{36} \}$,
-\item $s_5 = \textsl{goto}(s_2, b) =
-             \{ s \rightarrow \saquoted{v}\; b \mdot \saquoted{z}: \symbol{36} \}$,
-\item $s_6 = \textsl{goto}(s_2, \aquoted{x}) =
-             \{ a \rightarrow \saquoted{x} \mdot: \saquoted{y},\;
-                b \rightarrow \saquoted{x} \mdot: \saquoted{z} \}$,
-\item $s_7 = \textsl{goto}(s_3, b) =
-             \{ s \rightarrow \saquoted{w}\; b \mdot \saquoted{y}: \symbol{36} \}$,
-\item $s_8 = \textsl{goto}(s_3, a) =
-             \{ s \rightarrow \saquoted{w}\; a \mdot \saquoted{z}: \symbol{36} \}$,
-\item $s_9 = \textsl{goto}(s_3, \aquoted{x}) =
-             \{ b \rightarrow \saquoted{x} \mdot: \saquoted{y},\;
-                a \rightarrow \saquoted{x} \mdot: \saquoted{z} \}$,
-\item $s_{10} = \textsl{goto}(s_4, \aquoted{y}) =
-                \{ s \rightarrow \saquoted{v}\; a \;\saquoted{y} \mdot: \symbol{36} \}$,
-\item $s_{11} = \textsl{goto}(s_5, \aquoted{z}) =
-                \{ s \rightarrow \saquoted{v}\; b \;\saquoted{z} \mdot: \symbol{36} \}$,
-\item $s_{12} = \textsl{goto}(s_7, \aquoted{y}) =
-                \{ s \rightarrow \saquoted{w}\; b \;\saquoted{y} \mdot: \symbol{36} \}$,
-\item $s_{13} = \textsl{goto}(s_8, \aquoted{z}) =
-                \{ s \rightarrow \saquoted{w}\; a \;\saquoted{z} \mdot: \symbol{36} \}$.
-\end{enumerate}
-The only states where conflicts could occur are the sets $s_6$ and $s_9$, as in these states, reductions with both rules
+After the parser has read the tokens \saquoted{v} and \saquoted{x}, it is in the state
 \\[0.2cm]
 \hspace*{1.3cm}
-$a \rightarrow \saquoted{x}$ \quad and \quad
-$b \rightarrow \saquoted{x}$
+$s_6 = \bigl\{ a \rightarrow \saquoted{x} \mdot: \saquoted{y},\;
+               b \rightarrow \saquoted{x} \mdot: \saquoted{z} \bigr\}$,
 \\[0.2cm]
-are potentially possible. However, since the sets of follow tokens have an empty intersection, there is actually no conflict, and the grammar is a canonical LR grammar.
-
-Next, we calculate the LALR states for the grammar mentioned above. The only states that have a common core are $s_6$ and $s_9$, as
+while after reading the tokens \saquoted{w} and \saquoted{x}, it is in the state
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{core}(s_6) = \{ a \rightarrow \saquoted{x} \mdot,\;
-                b \rightarrow \saquoted{x} \mdot \} = \textsl{core}(s_9)$.
+$s_9 = \bigl\{ b \rightarrow \saquoted{x} \mdot: \saquoted{y},\;
+               a \rightarrow \saquoted{x} \mdot: \saquoted{z} \bigr\}$.
 \\[0.2cm]
-In calculating the LALR states, these two states are combined into one state $s_{\{6,9\}}$. This new state takes the form
-\\[0.2cm]
-\hspace*{1.3cm}
-$s_{\{6,9\}} = \bigl\{ a \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \},\;
-                       b \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \} \bigr\}$.
-\\[0.2cm]
-Here, there is obviously a reduce-reduce conflict, as on one hand we have
+Neither of these states has a conflict, since the follow tokens of their two marked rules are different.  For
+example, in the state $s_6$ the parser reduces with the rule $a \rightarrow \saquoted{x}$ if the next token is
+\saquoted{y}, and with the rule $b \rightarrow \saquoted{x}$ if the next token is \saquoted{z}.  This is right,
+since the token \saquoted{x} has to be reduced to $a$ in the string ``\texttt{vxy}'' and to $b$ in the string
+``\texttt{vxz}''.  However, both states have the same core
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_{\{6,9\}}, \saquoted{y}) = \pair(\texttt{reduce}, a \rightarrow \saquoted{x})$,
+$\bigl\{ a \rightarrow \saquoted{x} \mdot,\; b \rightarrow \saquoted{x} \mdot \bigr\}$.
 \\[0.2cm]
-but on the other hand, it also holds that
+If we combine them, we get the state
 \\[0.2cm]
 \hspace*{1.3cm}
-$\textsl{action}(s_{\{6,9\}}, \saquoted{y}) = \pair(\texttt{reduce}, b \rightarrow \saquoted{x})$.
+$s_6 + s_9 = \bigl\{ a \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \},\;
+                     b \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \} \bigr\}$,
+\\[0.2cm]
+which has a reduce-reduce conflict:  If the next token is \saquoted{y}, the parser could reduce with the rule
+$a \rightarrow \saquoted{x}$ as well as with the rule $b \rightarrow \saquoted{x}$, and the same holds for the
+token \saquoted{z}.
 
-\exerciseEng
-Let $G = \langle V, T, R, s \rangle$ be an LR grammar and $\mathcal{N}$ be the set of LALR states of the grammar. Explain why there can be no shift-reduce conflicts in the set $\mathcal{N}$. \eox
-
-\paragraph{Historical Notes}
-The theory of LALR parsing is due to Franklin L.~DeRemer, who developed it in his PhD thesis \cite{deRemer:69}.
-In a later paper \cite{deRemer:71}, he presented the simpler SLR parsers.  At the time when LALR parsing was
-invented, its space savings in comparison to LR parsing were crucial.
-
-\subsection{Evaluation of the Different Methods}
-In practice, SLR parsers are not sufficient, as there are a number of practically relevant language constructs for which no SLR parser can be generated. Canonical LR parsers are much more powerful but often require significantly more states. LALR parsers represent a compromise here: on the one hand, LALR parsers are almost as powerful as canonical LR parsers, as most canonical LR grammars that occur in practice are LALR grammars, but on the other hand, the memory requirements of LALR parsers are in the same order of magnitude as those of SLR parsers. For example, the SLR parse table for the \texttt{C} grammar has a total of 349 states and the corresponding LR parse table has 1572 states, while the LALR parser has 349 states, too.  In general, an LALR parser has exactly as many states as the SLR parser for the same grammar, since the cores of the states of the canonical LR parser are precisely the states of the SLR parser.
-In the main memories typically available today, however, canonical LR parsers can usually be accommodated without difficulty, so there is actually no compelling reason to use an LALR parser instead of an LR parser.  
-
-On the other hand, no one will want to program an LALR parser or a canonical LR parser by hand. Instead, you
-use a parser generator like \simtextsc{Larkita} for \textsl{Python}, which we have already used in Chapters
-\ref{chapter:larkita} and \ref{chapter:interpreter}, \textsl{Bison} for \texttt{C}, or \textsl{JavaCup} for
-\textsl{Java}.  While \textsl{JavaCup} can only generate an LALR parser,
-\href{http://www.gnu.org/software/bison/manual/bison.html}{\textsl{Bison}} can also generate an LR parser, and
-\simtextsc{Larkita} computes a canonical LR parser and merges states only when it is asked to do so. 
+\simtextsc{Larkita} takes this into account:  If it is called with the keyword argument
+\texttt{merge\_states=True}, it only combines states with the same core if this does not result in a conflict.
+For the grammar of Figure \ref{fig:compacting-conflict.g}, it keeps the states $s_6$ and $s_9$ apart, so the parser
+still has 14 states.  Section \ref{section:merging-states} discusses in detail when \simtextsc{Larkita} combines
+states.
 
 \section{Check Your Understanding}
 \begin{enumerate}[(a)]
@@ -3762,7 +3523,8 @@ use a parser generator like \simtextsc{Larkita} for \textsl{Python}, which we ha
 \item Define the notion of shift-reduce and reduce-reduce conflicts for both SLR parsers and for
       LR parsers. 
 \item Why are LR parser generators more powerful than SLR parser generators?
-\item How is the set of states reduced when we transform an LR parser into an LALR parser?
+\item How can the state space of a canonical LR parser be compacted?  Why can compacting the state space cause a
+      reduce-reduce conflict?
 \end{enumerate}
 
 
