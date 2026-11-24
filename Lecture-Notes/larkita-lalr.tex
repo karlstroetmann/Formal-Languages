@@ -15,8 +15,7 @@ discuss some of the more advanced features of \simtextsc{Larkita}.
 \item First, we show how shift-reduce and reduce-reduce conflicts are reported by \simtextsc{Larkita} and how the
       states of the canonical LR(1) parser that \simtextsc{Larkita} computes can be inspected.
 \item Then we discuss how these conflicts can be resolved:  Either the precedences and associativities of the
-      operators are encoded into the grammar itself, or they are specified by precedence declarations, as in the
-      parser generator \textsl{Bison}.
+      operators are encoded into the grammar itself, or they are specified by precedence declarations.
 \item Finally, we see that \simtextsc{Larkita} has no problem with a grammar that is an LR(1) grammar but not an
       \simtextsc{Lalr}(1) grammar, and we show how \simtextsc{Larkita} can reduce the number of states by merging
       those states that can be merged safely.
@@ -452,10 +451,9 @@ therefore cannot introduce or remove conflicts.
 \section{Precedence Declarations \label{section:precedence-declarations}}
 Encoding the precedences into the grammar has a drawback:  We need one syntactical variable for every precedence
 level, so the grammar becomes longer than the ambiguous grammar that we have started with, and the rules for the
-operators are spread over several syntactical variables.  The parser generators of the \textsl{Yacc} family, for
-example \textsl{Bison}, therefore take a different approach:  They keep the ambiguous grammar
-and resolve its shift-reduce conflicts with the help of \blue{precedence declarations}\index{precedence
-declaration}.  \simtextsc{Larkita} supports the precedence declarations of \textsl{Bison}.  Figure
+operators are spread over several syntactical variables.  Therefore, \simtextsc{Larkita} offers a different
+approach:  We keep the ambiguous grammar and resolve its shift-reduce conflicts with the help of
+\blue{precedence declarations}\index{precedence declaration}.  Figure
 \ref{fig:Precedence-Declarations.ipynb} on page \pageref{fig:Precedence-Declarations.ipynb} shows the ambiguous
 grammar of Figure \ref{fig:grammar-resolved.g}, which has been extended by the comparison operators \saquoted{<}
 and \saquoted{==} and by the unary minus, together with precedence declarations.  This grammar is discussed in the
@@ -540,44 +538,218 @@ notebook
       annotation \texttt{\%prec} has to be written at the end of an alternative, but in front of an alias or an
       annotation \texttt{\%ignore}.
 \end{enumerate}
-Next, we describe how the precedences resolve the shift-reduce conflicts.  Assume that a state $s$ of the LR(1)
-parser contains both a marked rule of the form
+\subsection{How Precedence Declarations Resolve Conflicts \label{section:resolving-with-precedences}}
+Next, we explain in detail how \simtextsc{Larkita} uses the precedence declarations to resolve shift-reduce
+conflicts.  In order to compare precedences, we number the precedence declarations from top to bottom:  The
+precedence $p(t)$ of a symbol $t$ is the number of the line in Figure \ref{fig:Precedence-Declarations.ipynb} in
+which $t$ is declared.\glsadd{prec}  Hence, we have
+\\[0.2cm]
+\hspace*{1.3cm}
+$p(\saquoted{<}) = p(\saquoted{==}) = 1$, \quad $p(\saquoted{+}) = p(\saquoted{-}) = 2$, \quad
+$p(\saquoted{*}) = p(\saquoted{/}) = 3$,
+\\[0.2cm]
+\hspace*{1.3cm}
+$p(\texttt{UMINUS}) = 4$, \quad and \quad $p(\saquoted{\symbol{94}}) = 5$.
+\\[0.2cm]
+The precedence $p(r)$ of a grammar rule $r$ is the precedence of the symbol after \texttt{\%prec} or, if there is
+no annotation \texttt{\%prec}, of the last terminal of the rule.  The section \texttt{Precedence} of the output file
+lists these precedences.  For the grammar at hand, the rules have the precedences shown in Figure
+\ref{fig:Precedence-Declarations.rules} on page \pageref{fig:Precedence-Declarations.rules}.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tabular}[t]{|r|l|c|c|}
+    \hline
+    & rule & symbol & $p(r)$ \\
+    \hline
+    \hline
+    (1)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{<} \textsl{expr}$  & \saquoted{<}  & 1 \\
+    \hline
+    (2)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{==} \textsl{expr}$ & \saquoted{==} & 1 \\
+    \hline
+    (3)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr}$  & \saquoted{+}  & 2 \\
+    \hline
+    (4)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{-} \textsl{expr}$  & \saquoted{-}  & 2 \\
+    \hline
+    (5)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{*} \textsl{expr}$  & \saquoted{*}  & 3 \\
+    \hline
+    (6)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{/} \textsl{expr}$  & \saquoted{/}  & 3 \\
+    \hline
+    (7)  & $\textsl{expr} \rightarrow \textsl{expr} \aquoted{\symbol{94}} \textsl{expr}$ & \saquoted{\symbol{94}} & 5 \\
+    \hline
+    (8)  & $\textsl{expr} \rightarrow \saquoted{-}\; \textsl{expr}$  & \texttt{UMINUS} & 4 \\
+    \hline
+    (9)  & $\textsl{expr} \rightarrow \saquoted{(}\; \textsl{expr} \aquoted{)}$  & --- & --- \\
+    \hline
+    (10) & $\textsl{expr} \rightarrow \texttt{NUMBER}$ & --- & --- \\
+    \hline
+  \end{tabular}
+  \caption{The precedences of the rules of the grammar shown in Figure \ref{fig:Precedence-Declarations.ipynb}.}
+  \label{fig:Precedence-Declarations.rules}
+\end{figure}
+
+\noindent
+The last terminals of the rules (9) and (10) are the token \saquoted{)} and the terminal \texttt{NUMBER}, which
+have not been declared with a precedence.  Therefore, these rules have no precedence.
+
+Now assume that a state $s$ of the LR(1) parser contains both a marked rule of the form
 \\[0.2cm]
 \hspace*{1.3cm}
 $A \rightarrow \alpha \mdot: L$ \quad where $t \in L$
 \\[0.2cm]
-and a marked rule of the form $B \rightarrow \beta \mdot t\, \gamma: K$.  Then the parser could either reduce
-with the rule $r = (A \rightarrow \alpha)$ or shift the token $t$.  If both the rule $r$ and the token $t$ have a
-precedence, the entry $\textsl{action}(s,t)$ of the action table is defined as follows:
-\begin{enumerate}
-\item If the precedence of $t$ is higher than the precedence of $r$, the token $t$ is shifted:
+and a marked rule of the form $B \rightarrow \beta \mdot t\, \gamma: K$.  Then there is a shift-reduce conflict
+when $\textsl{action}(s,t)$ is computed:  The parser could either reduce with the rule $r = (A \rightarrow \alpha)$
+or shift the token $t$.  For the grammar at hand, the conflicts arise in the states that are reached after an
+expression of the form $\textsl{expr}\; o\; \textsl{expr}$ has been read, where $o$ is one of the binary
+operators.  For example, after the string ``\texttt{1+2}'' has been read, the parser is in state 19 of the
+output file, which contains the following marked rules:
+\\[0.2cm]
+\hspace*{1.3cm}
+$\begin{array}[t]{llcl}
+   \bigl\{ & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{<}\; \textsl{expr}: L,  \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{==}\; \textsl{expr}: L, \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{+}\; \textsl{expr}: L,  \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \aquoted{+} \textsl{expr} \mdot: L,       \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{-}\; \textsl{expr}: L,  \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{*}\; \textsl{expr}: L,  \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{/}\; \textsl{expr}: L,  \\
+           & \textsl{expr} & \rightarrow & \textsl{expr} \mdot \saquoted{\symbol{94}}\; \textsl{expr}: L
+             \;\bigr\}
+ \end{array}$
+\\[0.2cm]
+where $L = \{ \saquoted{*}, \saquoted{+}, \saquoted{-}, \saquoted{/}, \saquoted{<}, \saquoted{==},
+\saquoted{\symbol{94}}, \texttt{\$END} \}$ is the set of all tokens that can follow an expression at the top level.
+The marked rule $\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr} \mdot: L$ conflicts with every
+other marked rule of this state.  The states that are reached after reading the other binary operators look the
+same, except for the marked rule that is complete.  Below, we only show the two marked rules of a state that are
+involved in the conflict under discussion.  There are six cases, which depend on the precedences $p(t)$ and $p(r)$
+and on the associativity of the token $t$.
+\begin{enumerate}[(a)]
+\item $p(t) > p(r)$.
+
+      In this case the precedence of the token $t$ is higher than the precedence of the rule $r$.
+      Therefore, the token $t$ is shifted:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(s,t) := \langle \texttt{shift}, \textsl{goto}(s,t) \rangle$.
-\item If the precedence of $r$ is higher than the precedence of $t$, the parser reduces with the rule $r$:
+      \\[0.2cm]
+      To understand this case, consider the string ``\texttt{1+2*3}''.  After ``\texttt{1+2}'' has been read and
+      the next token is \saquoted{*}, the parser is in state 19, which contains the marked rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr} \mdot: L$ \quad and \quad
+      $\textsl{expr} \rightarrow \textsl{expr} \mdot \saquoted{*}\; \textsl{expr}: L$.
+      \\[0.2cm]
+      As $p(\saquoted{*}) = 3 > 2 = p(3)$, the token \saquoted{*} is shifted and the parser goes to state 9.  This
+      is the right decision:  The parser must not reduce ``\texttt{1+2}'' with rule (3), because it has to
+      multiply the numbers $2$ and $3$ first.  Hence, the string is read as ``\texttt{1+(2*3)}''.
+\item $p(t) < p(r)$.
+
+      Now the precedence of the rule $r$ is higher than the precedence of the token $t$.  Therefore, the parser
+      reduces with the rule $r$:
       \\[0.2cm]
       \hspace*{1.3cm}
       $\textsl{action}(s,t) := \langle \texttt{reduce}, r \rangle$.
-\item If $r$ and $t$ have the same precedence, the associativity of $t$ decides:
-      \begin{enumerate}[(a)]
-      \item If $t$ has been declared with \texttt{\%left}, the parser reduces with the rule $r$.
-      \item If $t$ has been declared with \texttt{\%right}, the token $t$ is shifted.
-      \item If $t$ has been declared with \texttt{\%nonassoc}, we have $\textsl{action}(s,t) := \texttt{error}$.
-      \item If $t$ has been declared with \texttt{\%precedence}, the conflict is not resolved.
-      \end{enumerate}
-\end{enumerate}
-As before, all other shift-reduce conflicts are resolved in favour of shifting and reported with a
-\texttt{ConflictWarning}.  Precedence declarations have no influence on reduce-reduce conflicts.
+      \\[0.2cm]
+      To see that this makes sense, consider the string ``\texttt{1*2+3}''.  After ``\texttt{1*2}'' has been read
+      and the next token is \saquoted{+}, the parser is in state 21, which contains the marked rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \aquoted{*} \textsl{expr} \mdot: L$ \quad and \quad
+      $\textsl{expr} \rightarrow \textsl{expr} \mdot \saquoted{+}\; \textsl{expr}: L$.
+      \\[0.2cm]
+      As $p(\saquoted{+}) = 2 < 3 = p(5)$, the parser reduces ``\texttt{1*2}'' with rule (5), since it has to
+      multiply the numbers $1$ and $2$ before it can add $3$.  Hence, the string is read as
+      ``\texttt{(1*2)+3}''.
+\item $p(t) = p(r)$ and the token $t$ has been declared with \texttt{\%left}.
 
+      Then the parser reduces with the rule $r$:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{action}(s,t) := \langle \texttt{reduce}, r \rangle$.
+      \\[0.2cm]
+      To convince yourself that this is the right thing to do, consider the string ``\texttt{1-2-3}''.  After
+      ``\texttt{1-2}'' has been read and the next token is \saquoted{-}, the parser is in state 20, which
+      contains the marked rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \aquoted{-} \textsl{expr} \mdot: L$ \quad and \quad
+      $\textsl{expr} \rightarrow \textsl{expr} \mdot \saquoted{-}\; \textsl{expr}: L$.
+      \\[0.2cm]
+      As $p(\saquoted{-}) = 2 = p(4)$ and \saquoted{-} is left associative, the parser reduces with rule (4), i.e.~it
+      subtracts $2$ from $1$ first.  If it shifted the token \saquoted{-} instead, it would compute
+      ``\texttt{1-(2-3)}'' instead of ``\texttt{(1-2)-3}''.
+\item $p(t) = p(r)$ and the token $t$ has been declared with \texttt{\%right}.
+
+      In this case the token $t$ is shifted:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{action}(s,t) := \langle \texttt{shift}, \textsl{goto}(s,t) \rangle$.
+      \\[0.2cm]
+      In order to understand this case, consider the string ``\texttt{2\symbol{94}3\symbol{94}4}''.  After
+      ``\texttt{2\symbol{94}3}'' has been read and the next token is \saquoted{\symbol{94}}, the parser is in
+      state 23, which contains the marked rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \aquoted{\symbol{94}} \textsl{expr} \mdot: L$ \quad and \quad
+      $\textsl{expr} \rightarrow \textsl{expr} \mdot \saquoted{\symbol{94}}\; \textsl{expr}: L$.
+      \\[0.2cm]
+      As $p(\saquoted{\symbol{94}}) = 5 = p(7)$ and \saquoted{\symbol{94}} is right associative, the token
+      \saquoted{\symbol{94}} is shifted and the parser goes to state 11, since it first has to compute
+      ``\texttt{3\symbol{94}4}''.  Hence, the string is read as ``\texttt{2\symbol{94}(3\symbol{94}4)}''.
+\item $p(t) = p(r)$ and the token $t$ has been declared with \texttt{\%nonassoc}.
+
+      In this case we have a syntax error:
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{action}(s,t) := \texttt{error}$.
+      \\[0.2cm]
+      To understand this case, consider the string ``\texttt{1<2<3}''.  After ``\texttt{1<2}'' has been read and
+      the next token is \saquoted{<}, the parser is in state 17, which contains the marked rules
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      $\textsl{expr} \rightarrow \textsl{expr} \aquoted{<} \textsl{expr} \mdot: L$ \quad and \quad
+      $\textsl{expr} \rightarrow \textsl{expr} \mdot \saquoted{<}\; \textsl{expr}: L$.
+      \\[0.2cm]
+      As $p(\saquoted{<}) = 1 = p(1)$ and \saquoted{<} is non-associative, the parser recognizes that the second
+      \saquoted{<} is a syntax error.  The same holds for the token \saquoted{==}, which has the same precedence:
+      ``\texttt{1<2==3}'' is a syntax error, too.  The output file lists these entries of the action table as
+      ``\texttt{error~(nonassociative)}''.
+\item The conflict is not resolved if the token $t$ or the rule $r$ has no precedence, or if they have the same
+      precedence and $t$ has been declared with \texttt{\%precedence}, which specifies no associativity.
+
+      In this case, \simtextsc{Larkita} resolves the conflict in favour of shifting, as in Section
+      \ref{section:operator-precedence}, and reports it with a \texttt{ConflictWarning}.  The grammar shown in
+      Figure \ref{fig:Precedence-Declarations.ipynb} has no such conflicts.  However, the grammar of the
+      programming language that we compile in Chapter \ref{chapter:compiler} has one:  The keyword
+      \saquoted{else} has no precedence, so the conflict of the dangling \saquoted{else} is resolved in favour of
+      shifting.
+\end{enumerate}
+The rule (8) for the unary minus shows why the annotation \texttt{\%prec} is needed.  After the string
+``\texttt{-2}'' has been read, the parser is in state 12, which contains the marked rule
+$\textsl{expr} \rightarrow \saquoted{-}\; \textsl{expr} \mdot: L$ together with the marked rules
+$\textsl{expr} \rightarrow \textsl{expr} \mdot o\; \textsl{expr}: L$ for all binary operators $o$.
+\begin{enumerate}
+\item If the next token is \saquoted{*}, case (b) applies, since $p(\saquoted{*}) = 3 < 4 = p(8)$.  The parser
+      reduces with rule (8), so ``\texttt{-2*3}'' is read as ``\texttt{(-2)*3}''.
+\item If the next token is \saquoted{\symbol{94}}, case (a) applies, since
+      $p(\saquoted{\symbol{94}}) = 5 > 4 = p(8)$.  The token is shifted, so ``\texttt{-2\symbol{94}2}'' is read as
+      ``\texttt{-(2\symbol{94}2)}''.
+\end{enumerate}
+Without the annotation \texttt{\%prec}, rule (8) would have the precedence $p(\saquoted{-}) = 2$, so the token
+\saquoted{*} would be shifted and ``\texttt{-2*3}'' would be read as ``\texttt{-(2*3)}''.
+
+Finally, note that precedence declarations have no influence on reduce-reduce conflicts.
+
+\subsection{Inspecting the Resolved Conflicts}
 For the grammar shown in Figure \ref{fig:Precedence-Declarations.ipynb}, \simtextsc{Larkita} computes 42 states
 with 112 shift-reduce conflicts.  All of these conflicts are resolved by the precedence declarations, so no
-warning is issued.  The output file contains an additional section \texttt{Precedence}, which lists the precedence
-declarations together with the precedences of the rules.  Furthermore, every conflict is listed together with the
-reason for its resolution, which is written in the same way as by \textsl{Bison}.  Figure
-\ref{fig:Precedence-Declarations.state19} on page \pageref{fig:Precedence-Declarations.state19} shows the actions
-and the conflicts of state 19, which is reached after an expression of the form
-$\textsl{expr} \aquoted{+} \textsl{expr}$ has been read.  The marked rules of this state are omitted, since
-their follow sets contain all eight tokens that can follow an expression.
+warning is issued.  Besides the section \texttt{Precedence}, which lists the precedence declarations together with
+the precedences of the rules, the output file lists every conflict together with the reason for its resolution.
+Figure \ref{fig:Precedence-Declarations.state19} on page
+\pageref{fig:Precedence-Declarations.state19} shows the actions and the conflicts of state 19, which is reached
+after an expression of the form $\textsl{expr} \aquoted{+} \textsl{expr}$ has been read.  The marked rules of this
+state have been shown in Section \ref{section:resolving-with-precedences} and are omitted.
 
 \begin{figure}[!ht]
 \centering
@@ -632,20 +804,19 @@ their follow sets contain all eight tokens that can follow an expression.
 
 \noindent
 The rule (3), i.e.~the rule $\textsl{expr} \rightarrow \textsl{expr} \aquoted{+} \textsl{expr}$, has the
-precedence of the token \saquoted{+}.
+precedence of the token \saquoted{+}.  The reasons that are given for the resolutions refer to the cases of
+Section \ref{section:resolving-with-precedences}:
 \begin{enumerate}
-\item The tokens \saquoted{*}, \saquoted{/}, and \saquoted{\symbol{94}} have a higher precedence than rule (3).
-      Therefore, they are shifted.  \textsl{Bison} writes this comparison as \texttt{("+"~<~"*")}.  For the string
-      ``\texttt{1+2*3}'', the parser shifts the token \saquoted{*}, so that ``\texttt{2*3}'' is reduced first.
+\item The tokens \saquoted{*}, \saquoted{/}, and \saquoted{\symbol{94}} have a higher precedence than rule (3),
+      so they are shifted according to case (a).  \simtextsc{Larkita} writes this comparison as
+      \texttt{("+"~<~"*")}:  The symbol with the lower precedence comes first.
+\item The tokens \saquoted{<} and \saquoted{==} have a lower precedence than rule (3), so the parser reduces
+      according to case (b).  This is written as \texttt{("<"~<~"+")}.
 \item The tokens \saquoted{+} and \saquoted{-} have the same precedence as rule (3).  As they are left
-      associative, the parser reduces.  This is written as \texttt{(\%left~"+")}.
-\item The tokens \saquoted{<} and \saquoted{==} have a lower precedence than rule (3), so the parser reduces, too.
+      associative, the parser reduces according to case (c).  This is written as \texttt{(\%left~"+")}.
 \end{enumerate}
 Compare this state with the state shown in Figure \ref{fig:Conflicts.ipynb:state5} on page
-\pageref{fig:Conflicts.ipynb:state5}, where every conflict has been resolved in favour of shifting.  In the state
-that is reached after reading an expression of the form $\textsl{expr} \aquoted{<} \textsl{expr}$, the actions
-for the tokens \saquoted{<} and \saquoted{==} are \texttt{error}, since these operators are non-associative.  The
-output file lists these actions as ``\texttt{error~(nonassociative)}''.
+\pageref{fig:Conflicts.ipynb:state5}, where every conflict has been resolved in favour of shifting.
 
 The automaton has many conflicts, because the canonical LR(1) automaton contains the states for expressions
 twice:  once for expressions at the top level and once for expressions inside parentheses, whose follow sets
