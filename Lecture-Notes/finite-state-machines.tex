@@ -564,7 +564,9 @@ This accounts for the $\varepsilon$ transitions.  The
   The \textsl{Jupyter notebook}
   \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/ReflexiveTransitiveClosure.ipynb}{\texttt{Python/Chapter-04-05/ReflexiveTransitiveClosure.ipynb}}
   shows how $R^*$ can be computed with a fixpoint iteration.  As an application, it solves the puzzle of the
-  missionaries and the infidels who have to cross a river.}
+  missionaries and the infidels who have to cross a river.  Section \ref{section:reachable} shows how a path from
+  one element to another can be computed with a fixpoint iteration and solves another puzzle of this kind.%
+  \label{footnote:rtc}}
 of the relation $\leadsto$ is written as $\leadsto^*$.\glsadd{leadstostar}
 The language accepted by an \simtextsc{Nfa} $F$ is
 denoted as $L(F)$ and is defined as
@@ -1995,6 +1997,243 @@ applies the function \texttt{dfa\_2\_regexp} to a \simtextsc{Dfa} with three sta
 expression is nearly unreadable, it is simplified with the function \texttt{simplify} from the notebook
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/Simplify.ipynb}{\texttt{Simplify.ipynb}}.
 
+\section{Reachable States \label{section:reachable}}
+Several algorithms for finite state machines need to know which states can be reached from the start state.  For
+example, the minimization of a \simtextsc{Dfa}, which is discussed in the next section, removes all states that
+can not be reached, and in Chapter \ref{chapter:regular-languages} we check whether the language accepted by a
+\simtextsc{Dfa} is empty by checking whether an accepting state can be reached.  In this section, we discuss
+reachability with respect to an arbitrary binary relation and show how a path from one element to another can be
+computed.  As an application, we solve a classic puzzle.
+
+Given a set $M$ and a binary relation $R \subseteq M \times M$, we interpret $R$ as a directed graph:  The elements
+of $M$ are the nodes of this graph and there is an edge from $x$ to $y$ iff $\pair(x,y) \in R$.  A
+\blue{path}\index{path} of length $n$ is a list $[x_0, x_1, \cdots, x_n]$ of elements of $M$ such that
+\\[0.2cm]
+\hspace*{1.3cm}
+$\pair(x_{i-1}, x_i) \in R$ \quad for all $i \in \{1, \cdots, n\}$
+\\[0.2cm]
+holds.  The case $n = 0$ is allowed:  For every $x \in M$, the list $[x]$ is a path of length $0$.  An element
+$y \in M$ is \blue{reachable}\index{reachable} from an element $x \in M$ iff there is a path
+$[x_0, \cdots, x_n]$ such that $x_0 = x$ and $x_n = y$.  This is the case iff the pair $\pair(x,y)$ is an element of
+the reflexive-transitive closure $R^*$ of $R$, which has been defined in the footnote on page
+\pageref{footnote:rtc}.
+
+For a \simtextsc{Dfa} $F = \langle Q, \Sigma, \delta, q_0, A \rangle$, the set $M$ is the set of states $Q$ and
+the relation $R$ is given as
+\\[0.2cm]
+\hspace*{1.3cm}
+$R := \bigl\{ \pair(p, \delta(p, c)) \bigm| p \in Q \wedge c \in \Sigma \wedge \delta(p, c) \not= \Omega \bigr\}$.
+\\[0.2cm]
+Then a path $[q_0, \cdots, q_n]$ from $q_0$ to a state $p = q_n$ corresponds to a string $w = c_1 \cdots c_n$
+such that $\delta(q_{i-1}, c_i) = q_i$ for all $i \in \{1, \cdots, n\}$.  Hence, a state $p$ is reachable from the
+start state $q_0$ iff there is a string $w \in \Sigma^*$ such that $\delta^*(q_0, w) = p$.
+
+\subsection{The Puzzle of the Wolf, the Goat, and the Cabbage}
+A farmer has to take a wolf, a goat, and a cabbage from the left bank of a river to its right bank.  There is a
+boat, but it is so small that the farmer can take at most one of the three along on every crossing.  Furthermore,
+only the farmer can row the boat.  However, the wolf and the goat must never be left alone on one bank of the
+river, since the wolf would eat the goat.  Likewise, the goat would eat the cabbage if these two were left alone.
+How can the farmer get the wolf, the goat, and the cabbage safely to the right bank?
+
+We call the farmer, the wolf, the goat, and the cabbage the \emph{objects} of the puzzle.  The set of all objects
+is
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{All} := \{ \textsl{farmer}, \textsl{wolf}, \textsl{goat}, \textsl{cabbage} \}$.
+\\[0.2cm]
+A state of the puzzle is represented as the set $S \subseteq \textsl{All}$ of the objects on the left bank of the
+river.  Then the objects on the right bank are the elements of the set $\textsl{All} \backslash S$.  Hence, the
+start state is the set $\textsl{All}$ and the goal state is the empty set $\{\}$.  Not every subset of
+$\textsl{All}$ is allowed as a state:  If the farmer is not on one bank of the river, then the goat must not be on
+this bank together with the cabbage or together with the wolf.  For a set $B$ of objects on one bank, we define
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{problem}(B) \;:\Longleftrightarrow\; \textsl{farmer} \not\in B \wedge
+ \bigl( \{ \textsl{goat}, \textsl{cabbage} \} \subseteq B \vee \{ \textsl{wolf}, \textsl{goat} \} \subseteq B \bigr)$.
+\\[0.2cm]
+Then the set of all states is
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{States} := \bigl\{ S \in 2^{\textsl{All}} \bigm| \neg \textsl{problem}(S) \wedge
+ \neg \textsl{problem}(\textsl{All} \backslash S) \bigr\}$.
+\\[0.2cm]
+Six of the $16$ subsets of $\textsl{All}$ are excluded, so there are $10$ states.
+
+Next, we describe the crossings of the river as a binary relation on the set $\textsl{States}$.  If the farmer is
+on the left bank in a state $S$, then the farmer takes a set $B \subseteq S$ of objects to the right bank.  This set
+has to contain the farmer, since only the farmer can row the boat, and it has at most two elements, since the
+farmer can take at most one more object along.  Furthermore, the new state $S \backslash B$ has to be an element of
+$\textsl{States}$.  Hence, the crossings from the left bank to the right bank are described by the relation
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{LeftToRight} := \bigl\{ \pair(S, S \backslash B) \bigm| S \in \textsl{States} \wedge B \in 2^S \wedge
+ \textsl{farmer} \in B \wedge |B| \leq 2 \wedge S \backslash B \in \textsl{States} \bigr\}$.
+\\[0.2cm]
+Every crossing from the right bank to the left bank undoes a crossing from the left bank to the right bank.
+Therefore, the crossings from the right bank to the left bank are described by the relation
+\\[0.2cm]
+\hspace*{1.3cm}
+$\textsl{RightToLeft} := \bigl\{ \pair(S_2, S_1) \bigm| \pair(S_1, S_2) \in \textsl{LeftToRight} \bigr\}$
+\\[0.2cm]
+and all crossings are described by the relation
+$\textsl{Crossings} := \textsl{LeftToRight} \cup \textsl{RightToLeft}$.  The puzzle can be solved iff the goal
+state $\{\}$ is reachable from the start state $\textsl{All}$ with respect to the relation $\textsl{Crossings}$, and
+every path from $\textsl{All}$ to $\{\}$ is a solution.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.8]{Abbildungen/wolf-goat-cabbage.pdf}
+  \caption{The states of the puzzle of the wolf, the goat, and the cabbage and the crossings between them.}
+  \label{fig:wolf-goat-cabbage.dot}
+\end{figure}
+
+Figure \ref{fig:wolf-goat-cabbage.dot} on page \pageref{fig:wolf-goat-cabbage.dot} shows the graph of the relation
+$\textsl{Crossings}$.  Every node shows the objects on the left bank, a vertical bar for the river, and the objects
+on the right bank.  As every crossing can be undone, the edges $\pair(S_1, S_2)$ and $\pair(S_2, S_1)$ are drawn
+as a single edge with arrow heads at both ends.  The start state is at the top and the goal state is at the bottom.
+The graph shows that the puzzle has two solutions:  After the farmer has taken the goat to the right bank and
+returned, the farmer can either take the wolf or the cabbage across next.  The solution that is computed below is
+drawn in red.
+
+\subsection{Computing a Path with a Fixpoint Iteration}
+In order to find a path from a node $\textsl{start}$ to a node $\textsl{goal}$, we compute sets of paths with a
+fixpoint iteration.  We start with the path $[\textsl{start}]$ of length $0$ and extend all paths that have been
+found so far by one more edge in every step.  To this end, we define the \blue{path product}\index{path product}
+$P \bullet R$ of a set $P$ of paths and a binary relation $R$ as\glsadd{pathproduct}
+\\[0.2cm]
+\hspace*{1.3cm}
+$P \bullet R := \bigl\{ [x_0, \cdots, x_n, y] \bigm| [x_0, \cdots, x_n] \in P \wedge \pair(x_n, y) \in R \wedge
+ y \not\in \{ x_0, \cdots, x_n \} \bigr\}$.
+\\[0.2cm]
+The path product leaves out the paths that visit a node twice:  If a path visits a node twice, the part of the path
+between the two visits is a detour that can be cut out.  Now we define a sequence $(P_k)_{k \in \mathbb{N}}$ of sets
+of paths by induction on $k$:
+\begin{enumerate}[(a)]
+\item $P_0 := \bigl\{ [\textsl{start}] \bigr\}$,
+\item $P_{k+1} := \left\{
+       \begin{array}{ll}
+         P_k                     & \mbox{if a path in $P_k$ ends in $\textsl{goal}$,} \\[0.1cm]
+         P_k \cup P_k \bullet R  & \mbox{otherwise.}
+       \end{array}\right.$
+\end{enumerate}
+As long as no path in $P_k$ ends in $\textsl{goal}$, the set $P_k$ contains all paths of length at most $k$ that
+start in $\textsl{start}$ and do not visit a node twice.  We have $P_0 \subseteq P_1 \subseteq P_2 \subseteq \cdots$
+and there are only finitely many paths that do not visit a node twice.  Hence, this sequence can not grow forever:
+There is a $K \in \mathbb{N}$ such that $P_{K+1} = P_K$, i.e.~$P_K$ is a fixpoint.  If $\textsl{goal}$ is reachable
+from $\textsl{start}$, then $K$ is the length of a shortest path from $\textsl{start}$ to $\textsl{goal}$ and the
+paths in $P_K$ that end in $\textsl{goal}$ are exactly the shortest paths from $\textsl{start}$ to $\textsl{goal}$.
+Otherwise, no path in $P_K$ ends in $\textsl{goal}$.
+
+\subsection{Implementation}
+The \textsl{Jupyter notebook}
+\\[0.2cm]
+\hspace*{1.3cm}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Wolf-Goat-Cabbage.ipynb}{\texttt{Python/Chapter-04-05/07-Wolf-Goat-Cabbage.ipynb}}
+\\[0.2cm]
+models the puzzle as described above and solves it.  It represents a state as a \texttt{frozenset} of strings and a
+path as a tuple of states.  Figure \ref{fig:07-Wolf-Goat-Cabbage.ipynb:reachable} on page
+\pageref{fig:07-Wolf-Goat-Cabbage.ipynb:reachable} shows the functions that compute a path.  The function
+\texttt{fixpoint} is the function shown in Figure \ref{fig:01-NFA-2-DFA.ipynb:fixpoint} on page
+\pageref{fig:01-NFA-2-DFA.ipynb:fixpoint}.
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[ frame         = lines,
+                framesep      = 0.3cm,
+                firstnumber   = 1,
+                bgcolor       = sepia,
+                numbers       = left,
+                numbersep     = 0.3cm,
+                xleftmargin   = 0.5cm,
+                xrightmargin  = 0.5cm,
+                gobble        = 4,
+              ]{python3}
+    def path_product(P, R):
+        return { p + (y,) for p in P
+                          for (x, y) in R
+                          if  p[-1] == x and y not in p
+               }
+
+    def reachable_step(Paths, goal, R):
+        if { p for p in Paths if p[-1] == goal } != set():
+            return Paths
+        return Paths | path_product(Paths, R)
+
+    def path_name(p):
+        return [state_name(S) for S in p]
+
+    def reachable(start, goal, R):
+        Paths = fixpoint(reachable_step, { (start,) }, goal, R)
+        Found = { p for p in Paths if p[-1] == goal }
+        if Found == set():
+            return ()
+        return min(Found, key=path_name)
+\end{minted}
+\vspace*{-0.3cm}
+\caption{The function \texttt{reachable} and its auxiliary functions.}
+\label{fig:07-Wolf-Goat-Cabbage.ipynb:reachable}
+\end{figure}
+
+\begin{enumerate}
+\item Line 1 -- 5 define the function \texttt{path\_product}, which computes the path product $P \bullet R$.  For
+      a tuple \texttt{p}, the expression \texttt{p[-1]} denotes its last element.  The expression
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{p + (y,)}
+      \\[0.2cm]
+      appends \texttt{y} to \texttt{p}, since \texttt{(y,)} is the tuple that contains only \texttt{y}.  The
+      condition
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{y not in p}
+      \\[0.2cm]
+      leaves out the paths that visit a node twice.
+\item Line 7 -- 10 define the function \texttt{reachable\_step}, which computes $P_{k+1}$ from $P_k$.  If a path in
+      \texttt{Paths} ends in \texttt{goal}, it returns \texttt{Paths} unchanged.  Then \texttt{Paths} is a fixpoint
+      and the fixpoint iteration stops.
+\item Line 12 -- 13 define the function \texttt{path\_name}, which turns a path into the list of the names of its
+      states.  The function \texttt{state\_name}, which is defined in the notebook, turns a state into a string
+      that lists the objects on the left bank, a vertical bar, and the objects on the right bank, e.g.
+      \\[0.2cm]
+      \hspace*{1.3cm}
+      \texttt{'wolf cabbage | farmer goat'}.
+      \\[0.2cm]
+      These strings are also used as the labels of the nodes in Figure \ref{fig:wolf-goat-cabbage.dot}.
+\item Line 15 -- 20 define the function \texttt{reachable}.  Line 16 performs the fixpoint iteration, which starts
+      with the set $P_0$ that contains only the path \texttt{(start,)}.  Line 17 collects the paths that end in
+      \texttt{goal}.  If there is no such path, \texttt{goal} can not be reached from \texttt{start} and line 19
+      returns the empty tuple.  The empty tuple is not a path, since every path contains at least the node it
+      starts with.  Otherwise, there may be several shortest paths.  As \textsl{Python} does not specify the
+      order in which the elements of a set are enumerated, line 20 returns the path whose list of state names is
+      the smallest with respect to the lexicographic order.  For sets of strings, this order can change every time
+      the notebook is run.  Choosing the smallest path ensures that the result is always the same.
+\end{enumerate}
+For the puzzle, the function call
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{reachable(All, frozenset(), Crossings)}
+\\[0.2cm]
+returns a path of length $7$, which is drawn in red in Figure \ref{fig:wolf-goat-cabbage.dot}:
+\begin{enumerate}
+\item The farmer takes the goat to the right bank.
+\item The farmer returns alone.
+\item The farmer takes the wolf to the right bank.
+\item The farmer takes the goat back to the left bank.
+\item The farmer takes the cabbage to the right bank.
+\item The farmer returns alone.
+\item The farmer takes the goat to the right bank.
+\end{enumerate}
+Both solutions are found in the same step of the fixpoint iteration.  The function \texttt{reachable} picks the
+solution in which the farmer takes the wolf across first, since the name of the state that is reached by this
+crossing starts with \texttt{cabbage}, while the name of the state that is reached by taking the cabbage across
+starts with \texttt{wolf}.
+
+In the worst case, the number of paths grows exponentially with the number of nodes.  For big graphs, search
+algorithms like \textsl{breadth-first search}, which are presented in the lecture on
+artificial intelligence, are more efficient.  If we only need the set of the nodes that are reachable, but not the
+paths that lead to them, a simpler fixpoint iteration suffices.  The next section uses such a fixpoint iteration to
+compute the reachable states of a \simtextsc{Dfa}.
+
 \section{Minimization of Finite State Machines}
 In this section we show how to minimize the number of states of a \simtextsc{Dfa}
 \\[0.2cm]
@@ -2064,9 +2303,9 @@ and then $\delta^*(q,w)$ is defined by induction on $w$ as follows:
 \item $\delta^*(q, cv) := \delta^*(\delta(q, c), v)$ \quad for all $q \in Q$, $c \in \Sigma$, and $v \in \Sigma^*$.
 \end{enumerate}
 
-Obviously, in a \simtextsc{Dfa} 
+Obviously, in a \simtextsc{Dfa}
 $F = \langle Q, \Sigma, \delta, q_0, A \rangle$ we can remove all the states $p \in Q$ which are not
-\blue{reachable} from the start state.  A state $p$ is \blue{reachable}\index{reachable} iff 
+reachable from the start state.  As shown in Section \ref{section:reachable}, a state $p$ is reachable iff
 a string $w \in \Sigma^*$ is given, such that
 \\[0.2cm]
 \hspace*{1.3cm}
@@ -2318,7 +2557,7 @@ $L\bigl(a \cdot (b \cdot a)^*\bigr)$.  Perform the following steps:
 The \textsl{Jupyter notebook} 
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize.ipynb}{\texttt{Python/Chapter-04-05/07-Minimize.ipynb}}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/08-Minimize.ipynb}{\texttt{Python/Chapter-04-05/08-Minimize.ipynb}}
 \\[0.2cm]
 contains a program that takes a  \simtextsc{Dfa} $F$ and returns an equivalent \simtextsc{Dfa} that has
 the minimum number of states.  It represents \simtextsc{Dfa}s with the types \texttt{TransRel} and \texttt{DFA} shown
@@ -2358,11 +2597,11 @@ the function \texttt{bigUnion} in Section \ref{section:nfa-2-dfa}, they are repr
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The functions \texttt{arb}, \texttt{cart\_prod}, \texttt{separate}, and \texttt{find\_equivalence\_class}.}
-\label{fig:07-Minimize.ipynb:separate}
+\label{fig:08-Minimize.ipynb:separate}
 \end{figure}
 
 \noindent
-Figure \ref{fig:07-Minimize.ipynb:separate} on page \pageref{fig:07-Minimize.ipynb:separate} shows some auxiliary
+Figure \ref{fig:08-Minimize.ipynb:separate} on page \pageref{fig:08-Minimize.ipynb:separate} shows some auxiliary
 functions.
 \begin{enumerate}
 \item Line 1 -- 3 define the function \texttt{arb}, which returns an arbitrary element of a non-empty set $M$.
@@ -2413,11 +2652,11 @@ functions.
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The functions that compute the separable pairs and the reachable states.}
-\label{fig:07-Minimize.ipynb:all_separable}
+\label{fig:08-Minimize.ipynb:all_separable}
 \end{figure}
 
 \noindent
-Figure \ref{fig:07-Minimize.ipynb:all_separable} on page \pageref{fig:07-Minimize.ipynb:all_separable} shows the
+Figure \ref{fig:08-Minimize.ipynb:all_separable} on page \pageref{fig:08-Minimize.ipynb:all_separable} shows the
 functions that compute the set of all separable pairs and the set of all reachable states.  Both sets are computed
 by a fixpoint iteration.  The notebook contains a copy of the function \texttt{fixpoint} that is shown in Figure
 \ref{fig:01-NFA-2-DFA.ipynb:fixpoint} on page \pageref{fig:01-NFA-2-DFA.ipynb:fixpoint}.
@@ -2445,7 +2684,9 @@ by a fixpoint iteration.  The notebook contains a copy of the function \texttt{f
 \item Line 11 -- 12 define the function \texttt{reachable}.  Like the function \texttt{allStates} in Figure
       \ref{fig:01-NFA-2-DFA.ipynb:fixpoint}, it computes this set with a fixpoint iteration that starts with the
       set $\{ q_0 \}$.  After $n$ steps, the set contains exactly those states that can be reached from $q_0$ by
-      reading at most $n$ characters.
+      reading at most $n$ characters.  Unlike the function \texttt{reachable} in Figure
+      \ref{fig:07-Wolf-Goat-Cabbage.ipynb:reachable} on page \pageref{fig:07-Wolf-Goat-Cabbage.ipynb:reachable},
+      it does not compute any paths, since only the set of reachable states is needed.
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -2481,11 +2722,11 @@ by a fixpoint iteration.  The notebook contains a copy of the function \texttt{f
 \end{minted}
 \vspace*{-0.3cm}
 \caption{The function \texttt{minimize}.}
-\label{fig:07-Minimize.ipynb:minimize}
+\label{fig:08-Minimize.ipynb:minimize}
 \end{figure}
 
 \noindent
-Figure \ref{fig:07-Minimize.ipynb:minimize} on page \pageref{fig:07-Minimize.ipynb:minimize} shows the function
+Figure \ref{fig:08-Minimize.ipynb:minimize} on page \pageref{fig:08-Minimize.ipynb:minimize} shows the function
 \texttt{minimize}, which computes $\texttt{Min}(F)$ for a complete \simtextsc{Dfa} $F$.
 \begin{enumerate}
 \item Line 2 extracts the components of $F$.
@@ -2510,13 +2751,13 @@ Figure \ref{fig:07-Minimize.ipynb:minimize} on page \pageref{fig:07-Minimize.ipy
 \item Line 18 returns the five components of $\texttt{Min}(F)$.
 \end{enumerate}
 The notebook
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/08-Test-Minimize.ipynb}{\texttt{08-Test-Minimize.ipynb}}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/09-Test-Minimize.ipynb}{\texttt{09-Test-Minimize.ipynb}}
 minimizes a \simtextsc{Dfa} with nine states and draws both finite state machines.
 
 The \textsl{Jupyter notebook}
 \\[0.2cm]
 \hspace*{1.3cm}
-\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/07-Minimize-Table.ipynb}{\texttt{Python/Chapter-04-05/07-Minimize-Table.ipynb}}
+\href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-04-05/08-Minimize-Table.ipynb}{\texttt{Python/Chapter-04-05/08-Minimize-Table.ipynb}}
 \\[0.2cm]
 implements the same algorithm, but it also computes the tables that have been used in the example above
 and displays them.  For every step, it explains why the pairs of states that are entered into the table

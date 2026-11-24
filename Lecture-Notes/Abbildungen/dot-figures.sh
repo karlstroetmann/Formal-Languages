@@ -19,7 +19,7 @@ nfas="aLeer aEpsilon aChar aConcat aPlus aStar"
 others="abstara abstarbabab abstarbabab-nd ab-or-ba-star a2 exercise-13
         nicht-gleichwertig gleichwertig
         parse-tree abstract-syntax-tree abstract-syntax-tree-prod abstract-syntax-tree-vars
-        cc-LR cc-LALR"
+        cc-LR cc-LALR wolf-goat-cabbage"
 if [ $# -eq 0 ]; then
     set -- $nfas $others
 fi
