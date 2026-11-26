@@ -3414,12 +3414,32 @@ hold and that, on the other hand, the state $s_9$ changes into the state $s_8$ w
 replace everywhere in $s_9$ the terminal $\symbol{36}$ with the set 
 $\{ \text{\saquoted{x}}, \text{\saquoted{y}}\}$.  We define the
 \blue{core}\index{core of a set of extended marked rules} of a set of extended marked rules as the set of marked
-rules that results from omitting the follow tokens of all its rules.  If we combine all states that have the same
-core and unite the follow tokens of the corresponding marked rules, we obtain the goto-graph shown in Figure
-\ref{fig:cc-compact.eps}.  For example, the states $s_3$ and $s_6$ are combined into the state
+rules that results from omitting the follow tokens of all its rules.  Formally, we define a function
+$\textsl{core}()$, which calculates the core of a set of e.m.r.s and thus transforms this set into a set of marked
+rules:\glsadd{core}
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_3 + s_6 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \mdot c: \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \},
+$\textsl{core}(\mathcal{M}) :=
+   \{ a \rightarrow \beta \mdot \gamma \mid (a \rightarrow \beta \mdot \gamma:L) \in \mathcal{M} \}$.
+\\[0.2cm]
+Thus, the function $\textsl{core}()$ simply removes the set of follow tokens from the e.m.r.s.
+For two sets of e.m.r.s $\mathcal{M}$ and $\mathcal{N}$ that have the same core, we define the
+\blue{extended union}\index{extended union}\glsadd{uplus} $\mathcal{M} \uplus \mathcal{N}$ of $\mathcal{M}$ and
+$\mathcal{N}$ as
+\\[0.2cm]
+\hspace*{1.3cm}
+$\mathcal{M} \uplus \mathcal{N} :=
+   \{ a \rightarrow \beta\mdot \gamma:K \cup L \mid
+      (a \rightarrow \beta\mdot \gamma:K) \in \mathcal{M} \;\wedge\;
+      (a \rightarrow \beta\mdot \gamma:L) \in \mathcal{N}
+   \}
+$.
+\\[0.2cm]
+If we combine all states that have the same core with the extended union, we obtain the goto-graph shown in
+Figure \ref{fig:cc-compact.eps}.  For example, the states $s_3$ and $s_6$ are combined into the state
+\\[0.2cm]
+\hspace*{1.3cm}
+$s_3 \uplus s_6 = \Bigl\{ c \rightarrow \text{\saquoted{x}} \mdot c: \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \},
                      c \rightarrow \mdot \text{\aquoted{x}} c:  \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \},
                      c \rightarrow \mdot \text{\aquoted{y}}:    \{ \text{\saquoted{x}}, \text{\saquoted{y}}, \symbol{36} \}
              \Bigr\}$.
@@ -3495,7 +3515,7 @@ $\bigl\{ a \rightarrow \saquoted{x} \mdot,\; b \rightarrow \saquoted{x} \mdot \b
 If we combine them, we get the state
 \\[0.2cm]
 \hspace*{1.3cm}
-$s_6 + s_9 = \bigl\{ a \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \},\;
+$s_6 \uplus s_9 = \bigl\{ a \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \},\;
                      b \rightarrow \saquoted{x} \mdot: \{\saquoted{y}, \saquoted{z} \} \bigr\}$,
 \\[0.2cm]
 which has a reduce-reduce conflict:  If the next token is \saquoted{y}, the parser could reduce with the rule
