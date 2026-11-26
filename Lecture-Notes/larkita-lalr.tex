@@ -128,7 +128,7 @@ in Figure \ref{fig:Conflicts.ipynb} is created.  This grammar is stored in the f
                 xleftmargin  = 0.3cm,
                 xrightmargin = 0.3cm,
               ]{python3}
-    from larkita import Larkita, ConflictWarning, GrammarError
+    from larkita import Larkita
 
     parser = Larkita.open('conflicts.lark', out_file='conflicts.out')
 \end{minted}
@@ -197,38 +197,9 @@ The rules are referred to by their numbers in the section \texttt{Rules} at the 
 The important observation is the remark ``\blue{\texttt{resolved as shift}}\index{shift-reduce conflict!resolution by Larkita@resolution by \simtextsc{Larkita}}'':  As our grammar does not
 declare the precedences of its operators, \simtextsc{Larkita} resolves \emph{every} shift-reduce conflict in favour
 of shifting.  We will see in Section \ref{section:precedence-declarations} how precedence declarations change this
-decision.  Furthermore, we can declare that we do not want to tolerate conflicts at all.
-The module \texttt{warnings} of \textsl{Python} can turn the \texttt{ConflictWarning} into an exception, as
-shown in Figure \ref{fig:conflicts-strict} on page \pageref{fig:conflicts-strict}.  Then the message of the
-exception is the text of the warning.  It is a good idea to develop a grammar this way, for then a conflict
-cannot be overlooked.
+decision.  Besides the output file, the attribute \texttt{conflicts} of the parser lists all conflicts.  For the
+grammar of Figure \ref{fig:Conflicts.ipynb}, \texttt{len(parser.conflicts)} is 4.
 
-\begin{figure}[!ht]
-\centering
-\begin{minted}[ frame        = lines,
-                framesep     = 0.3cm,
-                bgcolor      = sepia,
-                numbers      = left,
-                numbersep    = 0.3cm,
-                xleftmargin  = 0.3cm,
-                xrightmargin = 0.3cm,
-              ]{python3}
-    import warnings
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('error', ConflictWarning)
-        try:
-            Larkita.open('conflicts.lark', out_file='conflicts.out')
-        except ConflictWarning as e:
-            print(e)
-\end{minted}
-\vspace*{-0.3cm}
-\caption{Turning shift-reduce conflicts into errors.}
-\label{fig:conflicts-strict}
-\end{figure}
-\FloatBarrier
-
-\noindent
 Reduce-reduce conflicts are treated much more severely.  A reduce-reduce conflict always raises an exception of
 class \texttt{GrammarError}.  We will see an example of this in Section \ref{section:resolving-conflicts}.
 
@@ -413,8 +384,8 @@ because the additive and multiplicative operators associate to the left, while t
 \texttt{fact : atom "\symbol{94}" fact;}
 \\[0.2cm]
 is right recursive, because exponentiation associates to the right.  This grammar is an LR(1)
-grammar: if we build a parser for it after turning the \texttt{ConflictWarning} into an exception as shown in
-Figure \ref{fig:conflicts-strict}, no exception is raised.  The Jupyter notebook
+grammar: if we build a parser for it, \simtextsc{Larkita} issues no \texttt{ConflictWarning} and the list
+\texttt{parser.conflicts} is empty.  The Jupyter notebook
 \\[0.2cm]
 \hspace*{1.3cm}
 \href{https://github.com/karlstroetmann/Formal-Languages/blob/master/Python/Chapter-11/02-Conflicts-Resolved.ipynb}{Python/Chapter-11/02-Conflicts-Resolved.ipynb}
@@ -1332,8 +1303,8 @@ The precedences and associativities are defined as follows:
 \end{enumerate}
 Furthermore, the language should support parentheses, variables, and the constants ``$\top$'' and ``$\bot$''.
 Solve this exercise twice:  First, introduce one syntactical variable for every precedence level.  Then, use
-precedence declarations instead.  In both cases, turn the \texttt{ConflictWarning} into an exception as shown in
-Figure \ref{fig:conflicts-strict} so that you notice immediately if your grammar has a conflict.
+precedence declarations instead.  In both cases, make sure that \simtextsc{Larkita} issues no
+\texttt{ConflictWarning} for your grammar.
 
 \exerciseEng
 Implement a parser (using \simtextsc{Larkita}) that evaluates operations on sets of integers.
