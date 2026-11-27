@@ -2,6 +2,13 @@
 
 ## Before anything else
 
+Activate the conda environment `fl` before running anything:  Every shell command starts with
+`conda activate fl && ...`, since each command runs in a new shell.  `conda activate` keeps the environment
+at the place of `base` in the `PATH`, behind the directories that `~/.zshrc` puts first (`~/.local/bin`,
+`~/.pixi/bin`), so a `python` in one of them wins over the environment's.  For this reason, the link
+`~/.local/bin/python` to Homebrew's Python, which lacks the required packages, was removed.  If in doubt, check
+with `which python`.  `conda run -n fl python` does not avoid the problem.
+
 If this directory contains a file `todo.md`, carry out its tasks before doing anything else, even before
 answering the first request of a session, and report what was done.  The tasks are meant for every computer
 on which the notes are built, and each of them checks first whether it is needed.  Hence `todo.md` stays in
@@ -36,10 +43,9 @@ pdflatex -shell-escape formal-languages.tex
   lr-parser (chapter 10), larkita-lalr, pytunia, compiler + compiler-2 (chapter 13).
 - `notation.tex` holds the entries of the *List of Notation* (package `glossaries`).
 - The Python notebooks live in `../Python/Chapter-NN/`, numbered like the chapters
-  (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl`, e.g.
-  `conda run -n fl jupyter nbconvert --to notebook --execute --output /tmp/out.ipynb X.ipynb`;
-  the Homebrew Python lacks the required packages.
-- Type checking of notebooks: all notebooks use basedpyright (`conda run -n fl basedpyright X.ipynb`; live in
+  (`Chapter-04-05` covers chapters 4 and 5).  They run in the conda environment `fl` (see "Before
+  anything else"), e.g. `jupyter nbconvert --to notebook --execute --output /tmp/out.ipynb X.ipynb`.
+- Type checking of notebooks: all notebooks use basedpyright (`basedpyright X.ipynb` in `fl`; live in
   JupyterLab via jupyterlab-lsp).
   The settings are in `../Python/pyrightconfig.json` (mode "standard"; the default mode warns about every
   unused return value, e.g. of `outfile.write`; `extraPaths` names the Larkita checkout, because basedpyright
@@ -48,7 +54,7 @@ pdflatex -shell-escape formal-languages.tex
   needed.  The author does not want `# type: ignore` or other suppressions; errors are fixed by declarations:
   - basedpyright cannot follow `%run`.  After a `%run X.ipynb`, a cell `if TYPE_CHECKING:` declares the
     functions, classes, types, and variables that the notebook uses from `X` (never executed).
-    `python ../Python/check_declarations.py` checks that these declarations agree with the definitions.
+    `python3 ../Python/check_declarations.py` checks that these declarations agree with the definitions.
   - Methods that are defined in later cells are added to their class by the decorator `@method_of(Class)`,
     which every notebook that needs it defines.  They are declared in the class body with the body `...`, so
     that the checker knows them.  The checker does not compare the implementation with the declaration; the
