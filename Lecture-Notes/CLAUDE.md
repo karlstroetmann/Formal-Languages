@@ -80,6 +80,9 @@ pdflatex -shell-escape formal-languages.tex
   Larkita's tutorial uses an identical copy of the lexer.  After a change of the lexer, update the hash
   (list both hashes while the copies differ) and delete `_minted`, since minted's cache
   does not notice changes of a lexer.
+- Assembler listings (chapters 12 and 13) use `{pytunia_lexer.py:PytuniaLexer}`: Pygments' Jasmin lexer
+  extended by Pytunia's types in Java notation (`java.lang.String[]`, `max(int, int) int`).  Its hash is
+  listed in `~/.latexminted_config` as well; the same rules apply after a change.
 - The notebooks keep their grammars in `.lark` files next to them (chapter 13: one file per piece in
   `../Python/Chapter-13/Grammar/`), display them with `Code(filename=..., language='larkita')`, and load
   them with `Larkita.open`.  Listings of these grammars show the contents of the files, so line numbers in
