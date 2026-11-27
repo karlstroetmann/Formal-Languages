@@ -1,5 +1,13 @@
 # Lecture notes "Formal Languages and Their Applications"
 
+## Before anything else
+
+If this directory contains a file `todo.md`, carry out its tasks before doing anything else, even before
+answering the first request of a session, and report what was done.  The tasks are meant for every computer
+on which the notes are built, and each of them checks first whether it is needed.  Hence `todo.md` stays in
+this directory until the author says that it is done everywhere.  It reaches the other computers through
+iCloud and is not committed.
+
 ## Building
 
 ```
