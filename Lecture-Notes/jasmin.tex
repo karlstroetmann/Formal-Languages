@@ -91,7 +91,8 @@ hardware platforms that support \textsl{Java}.
 
 \begin{figure}[!ht]
 \centering
-\begin{tcolorbox}[colback=sepia, boxrule=1pt, sharp corners, boxsep=0pt]
+\begin{tcolorbox}[colback=sepia, boxrule=1pt, sharp corners, boxsep=0pt,
+                  grow to left by=3mm, grow to right by=3mm]
 \begin{Verbatim}[ frame         = lines, 
                   framesep      = 0.3cm, 
                   firstnumber   = 1,
@@ -104,18 +105,18 @@ hardware platforms that support \textsl{Java}.
 .class public Hello
 .super java.lang.Object
 
-.method public <init>()V
+.method public <init>() void
     aload 0
-    invokenonvirtual java.lang.Object.<init>()V
+    invokenonvirtual java.lang.Object.<init>() void
     return
 .end method
 
-.method public static main([Ljava.lang.String;)V
+.method public static main(java.lang.String[]) void
     .limit locals 1
     .limit stack  2
-    getstatic     java.lang.System.out Ljava.io.PrintStream;
+    getstatic     java.lang.System.out java.io.PrintStream
     ldc           "Hello World!"
-    invokevirtual java.io.PrintStream.println(Ljava.lang.String;)V 
+    invokevirtual java.io.PrintStream.println(java.lang.String) void
     return
 .end method
 \end{Verbatim}
@@ -182,19 +183,16 @@ We discuss this program line by line.
         signature.  The string 
         \\[0.2cm]
         \hspace*{1.3cm}
-        \texttt{main([Ljava.lang.String;)V}
+        \texttt{main(java.lang.String[]) void}
         \\[0.2cm]
-        specifies the signature:
-        \begin{enumerate}
-        \item The string ``\texttt{main}''  is the name of the method that is defined.
-        \item The character ``\texttt{[}'' specifies that the first argument is an array.
-        \item The character ``\texttt{L}'' specifies that this array consists of objects.
-        \item The string ``\texttt{java.lang.String;}'' specifies that these objects are objects of
-              the class \\
-              ``\texttt{java.lang.String}''.
-        \item Finally, the character ``\texttt{V}'' specifies that the return type of the method \texttt{main}
-              is ``\texttt{void}''.
-       \end{enumerate}
+        specifies that the method \texttt{main} takes one argument, which is an array of objects of the
+        class \texttt{java.lang.String}, and that its return type is \texttt{void}.  As in \textsl{Java}, the
+        types of the arguments are written inside the parentheses and are separated by commas.  However, the
+        arguments have no names, classes are specified by their full names, and the return type follows the
+        closing parenthesis.\footnote{
+          \textsl{Jasmin} does not support this notation.  It only accepts the notation that is used inside
+          class files.  This notation is discussed on page \pageref{jvm-descriptors}.  \simtextsc{Pytunia}
+          accepts both notations.}
   \item Line 11 uses the directive ``\texttt{\green{.limit locals}}'' to specify the number of local variables 
         used by the method \texttt{main}.  In this case, there is just one local variable.  This variable
         corresponds to the parameter of the method main.  The assembler file shown in Figure
@@ -653,7 +651,7 @@ We proceed to discuss some of the assembler instructions.
       For example,  
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{getstatic java.lang.System.out Ljava.io.PrintStream;}
+      \texttt{getstatic java.lang.System.out java.io.PrintStream}
       \\[0.2cm] 
       pushes a reference to the \texttt{PrintStream} that is known as 
       \\[0.2cm]
@@ -848,7 +846,7 @@ In this subsection we discuss those commands that change the control flow.
       \texttt{java.io.PrintStream} we have to write:
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{invokevirtual java.io.PrintStream.println(I)V}
+      \texttt{invokevirtual java.io.PrintStream.println(int) void}
       \\[0.2cm]
       Before the command \texttt{invokevirtual} is executed, we have to put the arguments of the method
       onto the stack.  For example, if we want to invoke the method \texttt{println} that takes an integer
@@ -862,11 +860,10 @@ In this subsection we discuss those commands that change the control flow.
       and that takes one integer argument we have to write:
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{invokestatic  Sum.sum(I)I}
+      \texttt{invokestatic  Sum.sum(int) int}
       \\[0.2cm]
-      In the type specification ``\texttt{sum(I)I}'' the first ``\texttt{I}'' specifies that \texttt{sum}
-      takes one integer argument, while the second ``\texttt{I}'' specifies that the method \texttt{sum}
-      returns an integer.
+      Here ``\texttt{(int)}'' specifies that \texttt{sum} takes one argument of type \texttt{int}, while the
+      last ``\texttt{int}'' specifies that the method \texttt{sum} returns an integer.
 
       Before the command \texttt{invokestatic} is executed, we have to put the arguments of the method
       onto the stack.  For example, if we want to invoke the method \texttt{sum} described  above, then we
@@ -950,23 +947,23 @@ We discuss the implementation of this program next.
     .class public Sum
     .super java.lang.Object
     
-    .method public <init>()V
+    .method public <init>() void
         ...
     .end method
     
-    .method public static main([Ljava.lang.String;)V
+    .method public static main(java.lang.String[]) void
         .limit locals 1
         .limit stack  3
-        getstatic     java.lang.System.out Ljava.io.PrintStream;
+        getstatic     java.lang.System.out java.io.PrintStream
         ldc           6
         dup
         imul
-        invokestatic  Sum.sum(I)I
-        invokevirtual java.io.PrintStream.println(I)V
+        invokestatic  Sum.sum(int) int
+        invokevirtual java.io.PrintStream.println(int) void
         return
     .end method
     
-    .method public static sum(I)I
+    .method public static sum(int) int
         .limit locals 2
         .limit stack  2
         ldc    0
@@ -1133,6 +1130,26 @@ parts of a class name by the character ``\texttt{/}'', since the names are store
 It is rather unfortunate that
 the company developing \textsl{Java} has decided not to make their assembler public.  Still, we can
 see that the output produced by \texttt{javap} is quite similar to the input accepted by \simtextsc{Pytunia}.
+
+Furthermore, \texttt{javap} shows the types in the compact notation that is used inside class
+files.\label{jvm-descriptors}  In this notation, the types \texttt{boolean}, \texttt{byte}, \texttt{char},
+\texttt{short}, \texttt{int}, \texttt{long}, \texttt{float}, \texttt{double}, and \texttt{void} are written as the
+letters ``\texttt{Z}'', ``\texttt{B}'', ``\texttt{C}'', ``\texttt{S}'', ``\texttt{I}'', ``\texttt{J}'', ``\texttt{F}'',
+``\texttt{D}'', and ``\texttt{V}''.  A class $c$ is written as ``\texttt{L}$c$\texttt{;}'', and the type of an
+array is written as the character ``\texttt{[}'' followed by the type of its elements.  The types of the
+arguments of a method are written one after the other without commas, and the return type follows the closing
+parenthesis without a blank.  For example, the signature
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{main(java.lang.String[]) void}
+\\[0.2cm]
+is written as
+\\[0.2cm]
+\hspace*{1.3cm}
+\texttt{main([Ljava/lang/String;)V}
+\\[0.2cm]
+inside a class file, and \texttt{javap} shows the signature of the method \texttt{sum} as ``\texttt{(I)I}''.
+\simtextsc{Pytunia} accepts this notation, too.
 
 \begin{figure}[!ht]
 \centering
