@@ -82,7 +82,9 @@ pdflatex -shell-escape formal-languages.tex
   does not notice changes of a lexer.
 - Assembler listings (chapters 12 and 13) use `{pytunia_lexer.py:PytuniaLexer}`: Pygments' Jasmin lexer
   extended by Pytunia's types in Java notation (`java.lang.String[]`, `max(int, int) int`).  Its hash is
-  listed in `~/.latexminted_config` as well; the same rules apply after a change.
+  listed in `~/.latexminted_config` as well; the same rules apply after a change.  Pytunia (0.5 or newer)
+  ships the identical class as the Pygments plugin `pytunia` (`pytunia/pygments_lexer.py`), which the
+  notebooks use via `Code(filename=..., language='pytunia')`; keep both copies of the class identical.
 - The notebooks keep their grammars in `.lark` files next to them (chapter 13: one file per piece in
   `../Python/Chapter-13/Grammar/`), display them with `Code(filename=..., language='larkita')`, and load
   them with `Larkita.open`.  Listings of these grammars show the contents of the files, so line numbers in
