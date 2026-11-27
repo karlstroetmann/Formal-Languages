@@ -102,20 +102,20 @@ hardware platforms that support \textsl{Java}.
                   xrightmargin  = 0.0cm,
                 ]
 .class public Hello
-.super java/lang/Object
+.super java.lang.Object
 
 .method public <init>()V
     aload 0
-    invokenonvirtual java/lang/Object/<init>()V
+    invokenonvirtual java.lang.Object.<init>()V
     return
 .end method
 
-.method public static main([Ljava/lang/String;)V
+.method public static main([Ljava.lang.String;)V
     .limit locals 1
     .limit stack  2
-    getstatic     java/lang/System/out Ljava/io/PrintStream;
+    getstatic     java.lang.System.out Ljava.io.PrintStream;
     ldc           "Hello World!"
-    invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V 
+    invokevirtual java.io.PrintStream.println(Ljava.lang.String;)V 
     return
 .end method
 \end{Verbatim}
@@ -144,14 +144,18 @@ We discuss this program line by line.
 \item Line 2 uses the directive ``\texttt{\green{.super}}'' to specify the super class of the class
       \texttt{Hello}.  In our examples, the super class will always be the class \texttt{Object}.
       Since this class resides in the package ``\texttt{java.lang}'', the super class has to be
-      specified as 
+      specified by its full name
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{java/lang/Object}.
+      \texttt{java.lang.Object}.
       \\[0.2cm]
-      Observe that the character ``\texttt{.}'' in the class name ``\texttt{java.lang.Object}''
-      has to be replaced by the character ``\texttt{/}''.  This is true even if a \textsl{Windows}
-      operating system is used.
+      Inside a class file, the parts of a class name are separated by the character ``\texttt{/}''
+      instead of the character ``\texttt{.}'', i.e.~the class file contains the name
+      ``\texttt{java/lang/Object}''.  \simtextsc{Pytunia} accepts both notations, since it replaces
+      every ``\texttt{.}'' in a class name by ``\texttt{/}''.\footnote{
+        \textsl{Jasmin} does this replacement only in some places, e.g.~in the directive
+        ``\texttt{.super}'', but not everywhere.  Therefore, programs for \textsl{Jasmin} usually use
+        the character ``\texttt{/}''.}
 \item The lines 4 -- 8 initialize the program.  This code is always the same and corresponds to a
   constructor for the class \texttt{Hello}.  It is equivalent to the following \textsl{Java} code:
 
@@ -165,9 +169,9 @@ We discuss this program line by line.
                 xleftmargin   = 0.8cm,
                 xrightmargin  = 0.8cm,
               ]{java}
-    public Hello() {
-        super(); // Calls the constructor of java.lang.Object
-    }
+  public Hello() {
+      super(); // Calls the constructor of java.lang.Object
+  }
 \end{minted}
 
       As this code is copied verbatim to the beginning 
@@ -178,14 +182,14 @@ We discuss this program line by line.
         signature.  The string 
         \\[0.2cm]
         \hspace*{1.3cm}
-        \texttt{main([Ljava/lang/String;)V}
+        \texttt{main([Ljava.lang.String;)V}
         \\[0.2cm]
         specifies the signature:
         \begin{enumerate}
         \item The string ``\texttt{main}''  is the name of the method that is defined.
         \item The character ``\texttt{[}'' specifies that the first argument is an array.
         \item The character ``\texttt{L}'' specifies that this array consists of objects.
-        \item The string ``\texttt{java/lang/String;}'' specifies that these objects are objects of
+        \item The string ``\texttt{java.lang.String;}'' specifies that these objects are objects of
               the class \\
               ``\texttt{java.lang.String}''.
         \item Finally, the character ``\texttt{V}'' specifies that the return type of the method \texttt{main}
@@ -649,7 +653,7 @@ We proceed to discuss some of the assembler instructions.
       For example,  
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{getstatic java/lang/System/out Ljava/io/PrintStream;}
+      \texttt{getstatic java.lang.System.out Ljava.io.PrintStream;}
       \\[0.2cm] 
       pushes a reference to the \texttt{PrintStream} that is known as 
       \\[0.2cm]
@@ -844,7 +848,7 @@ In this subsection we discuss those commands that change the control flow.
       \texttt{java.io.PrintStream} we have to write:
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{invokevirtual java/io/PrintStream/println(I)V}
+      \texttt{invokevirtual java.io.PrintStream.println(I)V}
       \\[0.2cm]
       Before the command \texttt{invokevirtual} is executed, we have to put the arguments of the method
       onto the stack.  For example, if we want to invoke the method \texttt{println} that takes an integer
@@ -858,7 +862,7 @@ In this subsection we discuss those commands that change the control flow.
       and that takes one integer argument we have to write:
       \\[0.2cm]
       \hspace*{1.3cm}
-      \texttt{invokestatic  Sum/sum(I)I}
+      \texttt{invokestatic  Sum.sum(I)I}
       \\[0.2cm]
       In the type specification ``\texttt{sum(I)I}'' the first ``\texttt{I}'' specifies that \texttt{sum}
       takes one integer argument, while the second ``\texttt{I}'' specifies that the method \texttt{sum}
@@ -944,21 +948,21 @@ We discuss the implementation of this program next.
                   xrightmargin  = 0.0cm,
                 ]
     .class public Sum
-    .super java/lang/Object
+    .super java.lang.Object
     
     .method public <init>()V
         ...
     .end method
     
-    .method public static main([Ljava/lang/String;)V
+    .method public static main([Ljava.lang.String;)V
         .limit locals 1
         .limit stack  3
-        getstatic     java/lang/System/out Ljava/io/PrintStream;
+        getstatic     java.lang.System.out Ljava.io.PrintStream;
         ldc           6
         dup
         imul
-        invokestatic  Sum/sum(I)I
-        invokevirtual java/io/PrintStream/println(I)V
+        invokestatic  Sum.sum(I)I
+        invokevirtual java.io.PrintStream.println(I)V
         return
     .end method
     
@@ -1124,7 +1128,9 @@ Next, in order to \emph{decompile} the ``\texttt{.class}'' file, we run the comm
 \texttt{javap -c Sum.class}
 \\[0.2cm]
 The output of this command is shown in Figure \ref{fig:Sum.class}.  We see that the syntax used by
-\texttt{javap} differs a bit from the syntax used by \textsl{Jasmin}.  It is rather unfortunate that
+\texttt{javap} differs a bit from the syntax used by \textsl{Jasmin}.  For example, \texttt{javap} separates the
+parts of a class name by the character ``\texttt{/}'', since the names are stored this way in the class file.
+It is rather unfortunate that
 the company developing \textsl{Java} has decided not to make their assembler public.  Still, we can
 see that the output produced by \texttt{javap} is quite similar to the input accepted by \simtextsc{Pytunia}.
 

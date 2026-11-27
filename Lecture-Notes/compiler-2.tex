@@ -280,13 +280,13 @@ arguments $a_1$, $\cdots$, $a_n$.  Then there are two cases:
       In this case we have to define the \blue{signature}\index{signature of a method} \mytt{fs} of $f$ as the string
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mytt{fs} := \mytt{java/io/PrintStream/println(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)V}$.
+      $\mytt{fs} := \mytt{java.io.PrintStream.println(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)V}$.
       \\[0.2cm]
       Furthermore, we define the command \mytt{gs} for putting the object \mytt{java.lang.System.out} onto the
       stack as 
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mytt{gs} :=  \mytt{getstatic java/lang/System/out Ljava/io/PrintStream;}$.
+      $\mytt{gs} :=  \mytt{getstatic java.lang.System.out Ljava.io.PrintStream;}$.
       \\[0.2cm]
       Then we can define the
       value of
@@ -317,7 +317,7 @@ def compile_expr(expr, st, class_name):
         ...
         case 'call', 'println', *args:
             CmdLst    = [
-                indent('getstatic java/lang/System/out Ljava/io/PrintStream;')
+                indent('getstatic java.lang.System.out Ljava.io.PrintStream;')
             ]
             stck_size = 0
             cnt       = 0
@@ -327,7 +327,7 @@ def compile_expr(expr, st, class_name):
                 CmdLst   += L
                 cnt      += 1
             CmdLst += [
-                indent(f'invokevirtual java/io/PrintStream/println({"I"*cnt})V')
+                indent(f'invokevirtual java.io.PrintStream.println({"I"*cnt})V')
             ]
             return CmdLst, stck_size
         ...
@@ -359,7 +359,7 @@ def compile_expr(expr, st, class_name):
       the \blue{signature} \mytt{fs} of the function $f$ as the string
       \\[0.2cm]
       \hspace*{1.3cm}
-      $\mytt{fs} := \mytt{class\_name/}\mytt{f(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)I}$.
+      $\mytt{fs} := \mytt{class\_name.}\mytt{f(}\underbrace{\mytt{I}\cdots\mytt{I}}_{n}\mytt{)I}$.
       \\[0.2cm]
       Then we can define the
       value of
@@ -402,7 +402,7 @@ def compile_expr(expr, st, class_name):
                 stck_size = max(stck_size, cnt + sz_arg)
                 CmdLst   += L
                 cnt      += 1
-            CmdLst += [indent(f'invokestatic {class_name}/{f}({"I"*cnt})I')]
+            CmdLst += [indent(f'invokestatic {class_name}.{f}({"I"*cnt})I')]
             return CmdLst, max(stck_size, 1)
         ...
 \end{minted}
@@ -1107,7 +1107,7 @@ def compile_fct(fct_def, class_name):
                  ['.end method']
         return CmdLst, size
     else:
-        method = '.method public static main([Ljava/lang/String;)V'
+        method = '.method public static main([Ljava.lang.String;)V'
         CmdLst = [method, limit_locals, limit_stack] + CmdLst + \
                  [return_stmnt, '.end method']
         return CmdLst, size
@@ -1137,7 +1137,7 @@ are two cases.
                         commandchars  = \\\{\},
                         codes={\catcode`$=3\catcode`^=7\catcode`_=8}
                       ]
-    .method public static main([Ljava/lang/String;)V
+    .method public static main([Ljava.lang.String;)V
     .limit locals \(l\) 
     .limit stack \(s\)
        \(s_1\)
@@ -1264,10 +1264,10 @@ def compile_program(file_name):
         CmdLst += L + ['\n']
     with open(outfile, 'w') as handle:
         handle.write('.class public ' + base + '\n');
-        handle.write('.super java/lang/Object\n\n');
+        handle.write('.super java.lang.Object\n\n');
         handle.write('.method public <init>()V\n');
         handle.write('    aload 0\n');
-        handle.write('    invokenonvirtual java/lang/Object/<init>()V\n');
+        handle.write('    invokenonvirtual java.lang.Object.<init>()V\n');
         handle.write('    return\n');
         handle.write('.end method\n\n');
         for cmd in CmdLst:
@@ -1362,7 +1362,7 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
                  xrightmargin  = 0.8cm,
                ]
     .class public MySum
-    .super java/lang/Object
+    .super java.lang.Object
     
     .method public <init>()V
         ...
@@ -1397,7 +1397,7 @@ we get the program that is shown in Figure \ref{fig:MySum.jas} on page \pageref{
             ireturn
     .end method
             
-    .method public static main([Ljava/lang/String;)V
+    .method public static main([Ljava.lang.String;)V
     .limit locals 1
     .limit stack  2
             ...
